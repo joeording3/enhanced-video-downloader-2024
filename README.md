@@ -232,6 +232,8 @@ videodownloader-server start
 
 # Run in foreground mode
 videodownloader-server start --foreground
+# Or use the shorter --fg flag
+videodownloader-server start --fg
 
 # Start with verbose output (shows all log messages instead of just warnings/errors)
 videodownloader-server start --verbose
@@ -244,6 +246,9 @@ videodownloader-server stop
 
 # Restart the server
 videodownloader-server restart
+
+# Restart in foreground mode
+videodownloader-server restart --fg
 
 # Restart with force option (to handle cases where another instance might be running)
 videodownloader-server restart --force

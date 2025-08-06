@@ -96,6 +96,12 @@ describe("Background Script - Core Functions", () => {
       addEventListener: jest.fn(),
       removeEventListener: jest.fn(),
     }));
+
+    // Mock chrome.storage.local.set and get to return promises
+    (global as any).chrome.storage.local.set = jest
+      .fn()
+      .mockResolvedValue(undefined);
+    (global as any).chrome.storage.local.get = jest.fn().mockResolvedValue({});
   });
 
   describe("Logging Functions", () => {

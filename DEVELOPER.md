@@ -327,10 +327,12 @@ npm run test:mutation:pre-commit
 Mutation testing is now integrated into the standard development workflow:
 
 1. **Pre-commit Hooks**: Critical files trigger mutation testing automatically
+
    - `extension/src/background-logic.ts` → JavaScript mutation testing
    - `server/config.py` → Python mutation testing
 
 2. **CI/CD Pipeline**: Full mutation testing runs on all commits
+
    - JavaScript: Stryker mutation testing on all TypeScript files
    - Python: Optimized mutmut testing on critical modules
 
@@ -349,10 +351,12 @@ Mutation testing is now integrated into the standard development workflow:
 4. **Bug Fixes**: Add tests that kill the specific mutation
 
 **Target Scores:**
+
 - **JavaScript/TypeScript**: 80% (break threshold: 70%)
 - **Python**: 80% (break threshold: 70%)
 
 **Current Status:**
+
 - **JavaScript**: 38.24% (BELOW THRESHOLD - needs improvement)
 - **Python**: Baseline establishment in progress
 
@@ -381,15 +385,18 @@ make mutation-py-quick
 #### Interpreting Mutation Results
 
 1. **Survived Mutations**: Tests didn't catch the mutation
+
    - Add more specific test cases
    - Improve test assertions
    - Add boundary condition tests
 
 2. **Killed Mutations**: Tests successfully caught the mutation
+
    - Good test coverage for that code path
    - No action needed
 
 3. **Timeout Mutations**: Tests took too long to run
+
    - Optimize test performance
    - Reduce test complexity
 

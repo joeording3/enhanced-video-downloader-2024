@@ -45,13 +45,12 @@ def clear_logs() -> Response:
 
     # Find the log file to archive
     try:
-        # Determine project root (2 levels up from this file)
-        project_root = Path(__file__).parent.parent.parent
-        config_path = project_root / "config.json"
-
-        cfg = Config(config_path)  # type: ignore[arg-type]
+        # Configuration is now environment-only
+        cfg = Config.load()
         # Get log path from config or fallback
         log_path = cfg.get_value("log_path")
+        # Determine project root (2 levels up from this file)
+        project_root = Path(__file__).parent.parent.parent
         log_path = project_root / "server_output.log" if not log_path else Path(log_path)
 
         if log_path.exists() and os.access(log_path, os.W_OK):

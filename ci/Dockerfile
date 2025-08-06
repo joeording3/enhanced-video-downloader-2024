@@ -19,7 +19,6 @@ RUN pip install --no-cache-dir gunicorn
 # Copy the rest of the application
 COPY server/ /app/server/
 COPY extraction_rules.json .
-COPY config.json .
 
 # Create directories
 RUN mkdir -p /data/downloads /data/logs

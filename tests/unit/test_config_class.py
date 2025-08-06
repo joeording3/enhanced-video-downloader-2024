@@ -1,6 +1,5 @@
 """Unit tests for server.config.Config class."""
 
-import json
 import os
 from pathlib import Path
 from typing import Any
@@ -14,37 +13,30 @@ pytestmark = pytest.mark.unit
 
 
 def test_load_json_override(tmp_path: Path, monkeypatch: Any) -> None:
-    """Test Config.load with JSON file override.
+    """Test Config.load with environment variable override.
 
     :param tmp_path: Temporary directory path for testing.
     :param monkeypatch: pytest monkeypatch fixture for mocking.
     :returns: None.
     """
-    # Create a JSON config file with overrides
-    config_data = {"server_port": 9999, "debug_mode": True}
-    config_file = tmp_path / "test_config.json"
-    config_file.write_text(json.dumps(config_data))
-    monkeypatch.setenv("CONFIG_PATH", str(config_file))
-    # Ensure no env override
-    monkeypatch.delenv("SERVER_PORT", raising=False)
-    monkeypatch.delenv("DEBUG_MODE", raising=False)
+    # Set environment variables for testing
+    monkeypatch.setenv("SERVER_PORT", "9999")
+    monkeypatch.setenv("DEBUG_MODE", "true")
     cfg = Config.load()
     assert cfg.server_port == 9999
     assert cfg.debug_mode is True
 
 
 def test_load_json_invalid(tmp_path: Path, monkeypatch: Any) -> None:
-    """Test Config.load with invalid JSON file content.
+    """Test Config.load with invalid environment variables.
 
     :param tmp_path: Temporary directory path for testing.
     :param monkeypatch: pytest monkeypatch fixture for mocking.
     :returns: None.
     """
-    # Create a JSON config file with invalid content
-    config_file = tmp_path / "test_config.json"
-    config_file.write_text("not a valid json")
-    monkeypatch.setenv("CONFIG_PATH", str(config_file))
-    monkeypatch.delenv("SERVER_PORT", raising=False)
+    # Set invalid environment variables
+    monkeypatch.setenv("SERVER_PORT", "invalid")
+    monkeypatch.setenv("DEBUG_MODE", "invalid")
     cfg = Config.load()
     # Should fallback to default values
     assert cfg.server_port == get_server_port()
@@ -102,19 +94,15 @@ def test_valid_keys_and_as_dict(tmp_path: Path, monkeypatch: Any) -> None:
     :param monkeypatch: pytest monkeypatch fixture for mocking.
     :returns: None.
     """
-    # Use JSON override to get predictable values
-    config_data = {"server_port": 3333, "debug_mode": True}
-    config_file = tmp_path / "test_config.json"
-    config_file.write_text(json.dumps(config_data))
-    monkeypatch.setenv("CONFIG_PATH", str(config_file))
-    monkeypatch.delenv("DEBUG_MODE", raising=False)
-    monkeypatch.delenv("SERVER_PORT", raising=False)
+    # Use environment variables to get predictable values
+    monkeypatch.setenv("SERVER_PORT", "3333")
+    monkeypatch.setenv("DEBUG_MODE", "true")
     cfg = Config.load()
     # valid_keys should include known fields
     keys = Config.valid_keys()
     assert "server_port" in keys
     assert "debug_mode" in keys
-    # as_dict should reflect the overrides
+    # as_dict should reflect the environment values
     cfg_dict = cfg.as_dict()
     assert isinstance(cfg_dict, dict)
     assert cfg_dict.get("server_port") == 3333

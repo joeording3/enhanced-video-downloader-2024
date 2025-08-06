@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 from typing import Any
 
@@ -41,9 +40,7 @@ def test_debug_paths_with_files_and_config(
     monkeypatch.setattr(dbg, "__file__", str(fake_module_file))
     # Determine project_root as three levels up from module file
     project_root = Path(fake_module_file).parent.parent.parent
-    # Config file
-    cfg_file = project_root / "config.json"
-    cfg_file.write_text(json.dumps({"server_port": 1234}))
+    # Configuration is now environment-only, no config files needed
     # server_output.log at root
     root_log = project_root / "server_output.log"
     root_log.write_text("")
@@ -67,11 +64,10 @@ def test_debug_paths_with_files_and_config(
     # Validate keys
     assert data["project_root"] == str(project_root)
     assert data["current_working_dir"] == str(Path.cwd())
-    assert data["config_path"] == str(cfg_file)
+    assert data["config_path"] == "environment-only"
     assert data["config_exists"] is True
-    # config_content should include server_port
+    # config_content should be a dict (from environment)
     assert isinstance(data["config_content"], dict)
-    assert data["config_content"].get("server_port") == 1234
     # log_files should list at least root and one log entry
     paths = [entry["path"] for entry in data["log_files"]]
     assert str(root_log) in paths
@@ -86,7 +82,7 @@ def test_debug_paths_with_files_and_config(
 def test_debug_paths_with_env_config_path(
     app: Flask, tmp_path: Path, monkeypatch: MonkeyPatch, caplog: LogCaptureFixture
 ) -> None:
-    """Test debug_paths when CONFIG_PATH environment variable is set."""
+    """Test debug_paths with environment-only configuration."""
     # Setup fake project structure
     fake_module_dir = tmp_path / "x" / "y" / "z"
     fake_module_dir.mkdir(parents=True)
@@ -94,45 +90,27 @@ def test_debug_paths_with_env_config_path(
     fake_module_file.write_text("")
     monkeypatch.setattr(dbg, "__file__", str(fake_module_file))
 
-    # Create config file at custom location
-    custom_config = tmp_path / "custom_config.json"
-    custom_config.write_text(json.dumps({"custom": True}))
-
-    # Set environment variable
-    monkeypatch.setenv("CONFIG_PATH", str(custom_config))
-
     caplog.set_level("DEBUG")
     with app.test_request_context():
         resp = dbg.debug_paths()
 
     assert resp.status_code == 200
     data = resp.get_json()
-    assert data["config_path"] == str(custom_config)
+    assert data["config_path"] == "environment-only"
     assert data["config_exists"] is True
-    assert data["config_content"]["custom"] is True
+    assert isinstance(data["config_content"], dict)
 
 
 def test_debug_paths_with_config_dir_path(
     app: Flask, tmp_path: Path, monkeypatch: MonkeyPatch, caplog: LogCaptureFixture
 ) -> None:
-    """Test debug_paths when config/config.json exists."""
+    """Test debug_paths with environment-only configuration."""
     # Setup fake project structure
     fake_module_dir = tmp_path / "x" / "y" / "z"
     fake_module_dir.mkdir(parents=True)
     fake_module_file = fake_module_dir / "debug_bp.py"
     fake_module_file.write_text("")
     monkeypatch.setattr(dbg, "__file__", str(fake_module_file))
-    project_root = Path(fake_module_file).parent.parent.parent
-
-    # Create config/config.json (should be preferred over root config.json)
-    config_dir = project_root / "config"
-    config_dir.mkdir()
-    config_file = config_dir / "config.json"
-    config_file.write_text(json.dumps({"from_config_dir": True}))
-
-    # Also create root config.json (should be ignored)
-    root_config = project_root / "config.json"
-    root_config.write_text(json.dumps({"from_root": True}))
 
     caplog.set_level("DEBUG")
     with app.test_request_context():
@@ -140,9 +118,9 @@ def test_debug_paths_with_config_dir_path(
 
     assert resp.status_code == 200
     data = resp.get_json()
-    assert data["config_path"] == str(config_file)
+    assert data["config_path"] == "environment-only"
     assert data["config_exists"] is True
-    assert data["config_content"]["from_config_dir"] is True
+    assert isinstance(data["config_content"], dict)
     assert "from_root" not in data["config_content"]
 
 

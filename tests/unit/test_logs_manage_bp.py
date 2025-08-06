@@ -20,8 +20,13 @@ def stub_logs_manage(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
 
     # Stub Config to accept any path and provide no custom log_path
     class DummyConfig:
-        def __init__(self, config_path: Any) -> None:
-            # Annotate _data to satisfy mypy
+        @classmethod
+        def load(cls):
+            instance = cls()
+            instance._data = {}
+            return instance
+
+        def __init__(self) -> None:
             self._data: Dict[str, Any] = {}
 
         def get_value(self, key: str) -> Any:
@@ -116,9 +121,14 @@ def test_clear_logs_endpoint_variants(
         custom_log.write_text("line1")
 
         class CustomConfig:
-            def __init__(self, path: Any) -> None:
-                # Annotate _data to satisfy mypy
-                self._data: Dict[str, Any] = {"log_path": str(custom_log)}
+            @classmethod
+            def load(cls):
+                instance = cls()
+                instance._data = {"log_path": str(custom_log)}
+                return instance
+
+            def __init__(self) -> None:
+                self._data: Dict[str, Any] = {}
 
             def get_value(self, key: str) -> Any:
                 return self._data.get(key)

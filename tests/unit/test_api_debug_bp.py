@@ -1,6 +1,5 @@
 """Unit tests for server.api.debug_bp module."""
 
-import os
 import time
 from pathlib import Path
 from unittest.mock import patch
@@ -204,17 +203,17 @@ class TestDebugEndpoints:
             assert data["config_content"] is None or isinstance(data["config_content"], dict)
 
     def test_debug_paths_endpoint_environment_config(self):
-        """Test debug/paths endpoint with environment config path."""
+        """Test debug/paths endpoint with environment-only configuration."""
         app = Flask(__name__)
         app.register_blueprint(debug_bp)
 
-        with patch.dict(os.environ, {"CONFIG_PATH": "/custom/config.json"}), app.test_client() as client:
+        with app.test_client() as client:
             response = client.get("/debug/paths")
 
             assert response.status_code == 200
             data = response.json
             assert "config_path" in data
-            assert data["config_path"] == "/custom/config.json"
+            assert data["config_path"] == "environment-only"
 
     def test_debug_paths_endpoint_logging_info(self):
         """Test debug/paths endpoint logging information."""

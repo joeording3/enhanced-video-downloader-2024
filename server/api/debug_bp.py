@@ -4,7 +4,6 @@ Provide debug endpoints for troubleshooting the server.
 Only used in development/debug mode.
 """
 
-import json
 import logging
 import os
 from pathlib import Path
@@ -103,25 +102,12 @@ def debug_paths() -> Any:
 
     cwd = str(Path.cwd())
 
-    # Determine config file path (env override, then config/config.json, then root config.json)
-    env_path = os.getenv("CONFIG_PATH")
-    if env_path:
-        cfg_path = Path(env_path)
-    else:
-        cfg_dir_path = project_root / "config" / "config.json"
-        root_cfg_path = project_root / "config.json"
-        cfg_path = cfg_dir_path if cfg_dir_path.exists() else root_cfg_path
-    # Load config content
+    # Configuration is now environment-only
     config_content = None
-    if cfg_path.exists():
-        try:
-            with cfg_path.open(encoding="utf-8") as f:
-                config_content = json.load(f)
-        except Exception:
-            try:
-                config_content = Config.load().as_dict()
-            except Exception as e2:
-                config_content = {"error": str(e2)}
+    try:
+        config_content = Config.load().as_dict()
+    except Exception as e:
+        config_content = {"error": str(e)}
 
     logging_info: Dict[str, Any] = {"root_level": logging.getLogger().level}
 
@@ -138,8 +124,8 @@ def debug_paths() -> Any:
         {
             "project_root": str(project_root),
             "current_working_dir": cwd,
-            "config_path": str(cfg_path),
-            "config_exists": cfg_path.exists(),
+            "config_path": "environment-only",
+            "config_exists": True,
             "config_content": config_content,
             "log_files": log_paths,
             "logging_config": logging_info,

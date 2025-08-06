@@ -805,7 +805,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               if (res.ok) {
                 sendResponse({ status: "success" });
                 // Server will be gone, so trigger a new scan after a short delay
-                setTimeout(() => findServerPort(true), 2000);
+                if (!isTestEnvironment) {
+                  setTimeout(() => findServerPort(true), 2000);
+                }
               } else {
                 sendResponse({
                   status: "error",
@@ -915,7 +917,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 // Initialize background script when loaded (skip in Jest)
-if (typeof process === "undefined" || !process.env.JEST_WORKER_ID) {
+const isTestEnvironment =
+  typeof process !== "undefined" &&
+  (process.env.JEST_WORKER_ID || process.env.NODE_ENV === "test");
+
+// Debug logging
+if (typeof process !== "undefined") {
+  console.log("Background script initialization debug:");
+  console.log("process.env.JEST_WORKER_ID:", process.env.JEST_WORKER_ID);
+  console.log("process.env.NODE_ENV:", process.env.NODE_ENV);
+  console.log("isTestEnvironment:", isTestEnvironment);
+}
+
+if (!isTestEnvironment) {
   // Set up initialization on service worker lifecycle events
   chrome.runtime.onInstalled.addListener(() => {
     initializeActionIconTheme();
@@ -985,19 +999,21 @@ export const persistQueue = async (): Promise<void> => {
 };
 
 // Initialize persisted queue on startup
-chrome.storage.local.get(_queueStorageKey, (res) => {
-  downloadQueue = res[_queueStorageKey] || [];
-  updateQueueUI();
-});
-
-// Initialize persisted active downloads on startup
-chrome.storage.local.get("activeDownloads", (res) => {
-  if (res.activeDownloads) {
-    Object.assign(activeDownloads, res.activeDownloads);
-    log(
-      "Restored active downloads from storage:",
-      Object.keys(activeDownloads).length
-    );
+if (!isTestEnvironment) {
+  chrome.storage.local.get(_queueStorageKey, (res) => {
+    downloadQueue = res[_queueStorageKey] || [];
     updateQueueUI();
-  }
-});
+  });
+
+  // Initialize persisted active downloads on startup
+  chrome.storage.local.get("activeDownloads", (res) => {
+    if (res.activeDownloads) {
+      Object.assign(activeDownloads, res.activeDownloads);
+      log(
+        "Restored active downloads from storage:",
+        Object.keys(activeDownloads).length
+      );
+      updateQueueUI();
+    }
+  });
+}

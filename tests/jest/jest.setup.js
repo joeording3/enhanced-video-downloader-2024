@@ -57,7 +57,7 @@ global.chrome = {
   },
   storage: {
     local: {
-      get: jest.fn((keys, callback) => {
+      get: jest.fn().mockImplementation((keys, callback) => {
         if (typeof keys === "function") {
           callback = keys;
           keys = null;
@@ -69,7 +69,7 @@ global.chrome = {
         // Return a promise for async usage
         return Promise.resolve({});
       }),
-      set: jest.fn((items, callback) => {
+      set: jest.fn().mockImplementation((items, callback) => {
         if (typeof callback === "function") {
           callback();
         }

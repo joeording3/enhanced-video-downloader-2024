@@ -1,0 +1,4 @@
+# file: /Users/josephording/myscripts/Enhanced Video Downloader/server/config.py
+# hypothesis_version: 6.137.1
+
+[',', '1', 'ALLOWED_DOMAINS', 'ALLOW_PLAYLISTS', 'CONSOLE_LOG_LEVEL', 'Config', 'DEBUG_MODE', 'DOWNLOAD_DIR', 'ENABLE_HISTORY', 'FFMPEG_PATH', 'Invalid', 'LOG_LEVEL', 'LOG_PATH', 'Missing', 'N/A', 'SCAN_INTERVAL_MS', 'SERVER_HOST', 'SERVER_PORT', 'SHOW_DOWNLOAD_BUTTON', '__main__', 'allow_playlists', 'allowed_domains', 'console_log_level', 'debug_mode', 'download_dir', 'enable_history', 'ffmpeg_path', 'json', 'log_level', 'log_path', 'scan_interval_ms', 'server_host', 'server_port', 'show_download_button', 'true', 'yes']

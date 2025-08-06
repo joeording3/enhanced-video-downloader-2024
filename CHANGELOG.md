@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **2025-01-27**: Added --fg flag to CLI start and restart commands
+
+  - Added --fg option to start command as alternative to --foreground
+  - Added --fg option to restart command as alternative to --foreground
+  - Implemented logic to override daemon setting when --fg flag is used
+  - Updated function signatures and docstrings to include fg parameter
+  - Maintained backward compatibility with existing --daemon/--foreground options
+  - Verified CLI help output shows new --fg option correctly
+  - Confirmed existing tests continue to pass with new functionality
+
 ### Fixed
 
 - **2025-08-06**: Cleaned up empty junk folders in root directory

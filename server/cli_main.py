@@ -7,7 +7,6 @@ configuration, debug utilities, and system maintenance via a unified CLI.
 
 import json
 import logging
-import os
 import platform
 import shutil
 import subprocess
@@ -51,8 +50,6 @@ def get_cli_commands():
     return download_command, history_command, resume_group, status_command, utils_command
 
 
-
-
 # Project modules
 
 
@@ -63,7 +60,7 @@ log = logging.getLogger(__name__)
 # Project paths
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent  # Correctly assumes cli.py is in server/
-CONFIG_PATH = PROJECT_ROOT / "config.json"
+# Configuration is now environment-only, no config files needed
 # LOCK_PATH is now defined in server.lock and used via functions from there,
 # but server.cli might still need its own reference for messages or direct checks if any.
 # For consistency, let's use the one from server.lock if possible, or redefine carefully.
@@ -77,23 +74,15 @@ SERVER_MAIN_SCRIPT = SCRIPT_DIR / "__main__.py"
 # --- Command Line Interface ---
 @click.group(invoke_without_command=True)
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose logging")
-@click.option(
-    "--config-path",
-    type=click.Path(exists=True),
-    default=None,
-    help="Path to config.json (default: auto-detect or $CONFIG_PATH env)",
-)
 @click.pass_context
-def cli(ctx: click.Context, verbose: bool, config_path: Optional[str]) -> None:
+def cli(ctx: click.Context, verbose: bool) -> None:
     """Initialize Enhanced Video Downloader CLI and register subcommands."""
     if verbose:
         logging.getLogger().setLevel(logging.DEBUG)
         log.setLevel(logging.DEBUG)
         log.debug("Verbose logging enabled")
-    # Determine config path: CLI option, then CONFIG_PATH env, then default constant
-    config_path_str = config_path or os.getenv("CONFIG_PATH")
-    config_path_str = config_path_str or str(CONFIG_PATH)
-    ctx.obj = {"config_path": config_path_str}
+    # Configuration is now environment-only
+    ctx.obj = {}
     # Subcommands are registered below
     # If no subcommand provided, show help and exit
     if ctx.invoked_subcommand is None:
@@ -104,6 +93,45 @@ def cli(ctx: click.Context, verbose: bool, config_path: Optional[str]) -> None:
 # Server lifecycle commands
 
 
+# Extracted helper functions for start_server and stop_server
+def _run_start_server(
+    ctx,
+    daemon: bool,
+    host: Optional[str] = None,
+    port: Optional[int] = None,
+    download_dir: Optional[str] = None,
+    gunicorn: bool = False,
+    workers: int = 1,
+    verbose: bool = False,
+    force: bool = False,
+    timeout: int = 30,
+    retry_attempts: int = 3,
+    auto_port: bool = False,
+):
+    """Start the server with all CLI options for use by start_server command and tests."""
+    log = logging.getLogger("server.cli")
+    log.info(
+        f"_run_start_server called with: daemon={daemon}, host={host}, port={port}, "
+        f"download_dir={download_dir}, gunicorn={gunicorn}, workers={workers}, "
+        f"verbose={verbose}, force={force}, timeout={timeout}, "
+        f"retry_attempts={retry_attempts}, auto_port={auto_port}"
+    )
+
+    # Call the actual helper functions that are mocked in tests
+    cfg = _cli_load_config(ctx)
+    _cli_set_logging(verbose)
+
+    resolved_host, resolved_port, _ = _resolve_start_params(cfg, host, port, download_dir)
+    _cli_pre_start_checks(resolved_host, resolved_port, force)
+
+    cmd = _cli_build_command(cfg, resolved_host, resolved_port, gunicorn, workers)
+
+    if daemon:
+        _cli_execute_daemon(cmd, resolved_host, resolved_port)
+    else:
+        _cli_execute_foreground(cmd, resolved_host, resolved_port)
+
+
 @cli.command("start")
 @click.option(
     "--daemon/--foreground",
@@ -111,6 +139,11 @@ def cli(ctx: click.Context, verbose: bool, config_path: Optional[str]) -> None:
     is_flag=True,
     default=True,
     help=("Run the server as a daemon (background process) or in foreground. Default: daemon."),
+)
+@click.option(
+    "--fg",
+    is_flag=True,
+    help=("Run the server in foreground mode (same as --foreground)"),
 )
 @click.option("--host", help="Host to bind to (default: from config)")
 @click.option("--port", type=int, help="Port to listen on (default: from config)")
@@ -157,6 +190,7 @@ def cli(ctx: click.Context, verbose: bool, config_path: Optional[str]) -> None:
 def start_server(
     ctx: click.Context,
     daemon: bool,
+    fg: bool,
     host: Optional[str],
     port: Optional[int],
     download_dir: Optional[str],
@@ -177,6 +211,8 @@ def start_server(
         Click context object.
     daemon : bool
         Run as a daemon if True, else run in foreground.
+    fg : bool
+        Run in foreground mode if True (overrides daemon setting).
     host : Optional[str]
         Host address to bind the server.
     port : Optional[int]
@@ -203,6 +239,10 @@ def start_server(
     None
         This command does not return a value.
     """
+    # If --fg flag is used, override daemon setting to run in foreground
+    if fg:
+        daemon = False
+
     _run_start_server(
         ctx,
         daemon,
@@ -261,6 +301,11 @@ def stop_server(_ctx: click.Context, timeout: int, force: bool):
     default=True,
     help=("Run the restarted server as a daemon (background process) or in foreground. Default: daemon."),
 )
+@click.option(
+    "--fg",
+    is_flag=True,
+    help=("Run the restarted server in foreground mode (same as --foreground)"),
+)
 @click.option("--host", help="Host to bind to (default: from config)")
 @click.option("--port", type=int, help="Port to listen on (default: from config)")
 @click.option("--gunicorn", is_flag=True, help="Run using Gunicorn WSGI server (production)")
@@ -295,6 +340,7 @@ def stop_server(_ctx: click.Context, timeout: int, force: bool):
 def restart_server_command(
     ctx: click.Context,
     daemon: bool,
+    fg: bool,
     host: Optional[str],
     port: Optional[int],
     gunicorn: bool,
@@ -313,6 +359,8 @@ def restart_server_command(
         Click context object.
     daemon : bool
         Run restarted server as a daemon if True.
+    fg : bool
+        Run restarted server in foreground mode if True (overrides daemon setting).
     host : Optional[str]
         Host address to bind the server.
     port : Optional[int]
@@ -335,6 +383,10 @@ def restart_server_command(
     None
         This command does not return a value.
     """
+    # If --fg flag is used, override daemon setting to run in foreground
+    if fg:
+        daemon = False
+
     _run_restart_server_enhanced(
         ctx,
         daemon,
@@ -590,11 +642,8 @@ if __name__ == "__main__":
 
 
 # Helpers for start_server to reduce complexity
-def _cli_load_config(ctx: click.Context) -> Config:
-    config_path = ctx.obj.get("config_path")
-    if not isinstance(config_path, Path):
-        config_path = Path(config_path)
-    return Config(json.loads(config_path.read_text()))
+def _cli_load_config(_ctx: click.Context) -> Config:
+    return Config.load()
 
 
 def _cli_set_logging(verbose: bool) -> None:
@@ -839,45 +888,6 @@ def _cli_stop_pre_checks() -> List[psutil.Process]:
             except Exception:
                 log.warning(f"Cannot add process PID {pid} from lock file.")
     return entities
-
-
-# Extracted helper functions for start_server and stop_server
-def _run_start_server(
-    ctx,
-    daemon: bool,
-    host: Optional[str] = None,
-    port: Optional[int] = None,
-    download_dir: Optional[str] = None,
-    gunicorn: bool = False,
-    workers: int = 1,
-    verbose: bool = False,
-    force: bool = False,
-    timeout: int = 30,
-    retry_attempts: int = 3,
-    auto_port: bool = False,
-):
-    """Start the server with all CLI options for use by start_server command and tests."""
-    log = logging.getLogger("server.cli")
-    log.info(
-        f"_run_start_server called with: daemon={daemon}, host={host}, port={port}, "
-        f"download_dir={download_dir}, gunicorn={gunicorn}, workers={workers}, "
-        f"verbose={verbose}, force={force}, timeout={timeout}, "
-        f"retry_attempts={retry_attempts}, auto_port={auto_port}"
-    )
-
-    # Call the actual helper functions that are mocked in tests
-    cfg = _cli_load_config(ctx)
-    _cli_set_logging(verbose)
-
-    resolved_host, resolved_port, _ = _resolve_start_params(cfg, host, port, download_dir)
-    _cli_pre_start_checks(resolved_host, resolved_port, force)
-
-    cmd = _cli_build_command(cfg, resolved_host, resolved_port, gunicorn, workers)
-
-    if daemon:
-        _cli_execute_daemon(cmd, resolved_host, resolved_port)
-    else:
-        _cli_execute_foreground(cmd, resolved_host, resolved_port)
 
 
 def _run_stop_server_enhanced(timeout: int, force: bool) -> None:

@@ -5,9 +5,7 @@ This module provides the `Config` class for loading, accessing, and
 saving server configuration with type validation and default handling.
 """
 
-import json
 import os  # Added os for the __main__ example
-from pathlib import Path
 from typing import Any, Callable, Dict, List, Tuple, Union
 
 from pydantic import ValidationError
@@ -93,20 +91,13 @@ class Config:
     @classmethod
     def load(cls) -> "Config":
         """
-        Load configuration from JSON file, applying environment overrides unless CONFIG_PATH is set.
+        Load configuration from environment variables only.
 
-        :returns: Config instance with merged JSON and environment data.
+        :returns: Config instance with environment data.
         :rtype: Config
         """
-        config_data = _load_json_config()
-        # If CONFIG_PATH is explicitly provided, use JSON config only (ignore other env overrides)
-        if os.getenv("CONFIG_PATH"):
-            merged = config_data
-        else:
-            env_data = _collect_env_data()
-            # Merge with environment overrides taking precedence
-            merged = {**config_data, **env_data}
-        pydantic_config = ServerConfig.model_validate(merged)
+        env_data = _collect_env_data()
+        pydantic_config = ServerConfig.model_validate(env_data)
         return cls(pydantic_config)
 
     def update_config(self, update_payload: Dict[str, Any]) -> None:
@@ -169,27 +160,7 @@ if __name__ == "__main__":  # pragma: no cover
         pass
 
 
-# Load JSON config from file
-def _load_json_config() -> Dict[str, Any]:
-    """
-    Load configuration data from JSON file specified by CONFIG_PATH env var.
-
-    :returns: Configuration data as a dict, empty on error or if unset.
-    :rtype: Dict[str, Any]
-    """
-    # Determine JSON config path from env or default config directory
-    config_path = os.getenv("CONFIG_PATH")
-    if not config_path:
-        default_path = Path(__file__).parent.parent / "config" / "config.json"
-        if default_path.exists():
-            config_path = str(default_path)
-        else:
-            return {}
-    try:
-        data = json.loads(Path(config_path).read_text())
-        return data if isinstance(data, dict) else {}
-    except Exception:
-        return {}
+# Configuration is now environment-only, no JSON files needed
 
 
 # Mapping of environment variables to config keys and caster functions

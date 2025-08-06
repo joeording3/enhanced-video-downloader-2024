@@ -1,10 +1,9 @@
-import json
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-from server.config import Config, _collect_env_data, _load_json_config
+from server.config import Config, _collect_env_data
 
 
 def test_get_value_and_getattr() -> None:
@@ -31,36 +30,11 @@ def test_valid_keys_and_as_dict() -> None:
     assert isinstance(d.get("download_dir"), (str,))
 
 
-def test_load_merges_json_and_env(monkeypatch: Any, tmp_path: Path) -> None:
-    # Create a temporary config.json file
-    cfg_file = tmp_path / "config.json"
-    with open(cfg_file, "w") as f:
-        json.dump({"server_port": 5555}, f)
-    # Monkeypatch environment variables
-    monkeypatch.setenv("CONFIG_PATH", str(cfg_file))
-    # No env overrides
-    # Load should read only JSON
+def test_load_environment_only(monkeypatch: Any) -> None:
+    # Test that Config.load() works with environment variables only
+    monkeypatch.setenv("SERVER_PORT", "5555")
     cfg = Config.load()
     assert cfg.server_port == 5555
-    # Now simulate env override
-    monkeypatch.delenv("CONFIG_PATH")
-    monkeypatch.setenv("SERVER_PORT", "6666")
-    download_dir = tmp_path / "downloads"
-    monkeypatch.setenv("DOWNLOAD_DIR", str(download_dir))
-    # Also patch _load_json_config to return JSON
-    monkeypatch.setattr("server.config._load_json_config", lambda: {"server_port": 7777})
-    cfg2 = Config.load()
-    # env override should take precedence
-    assert cfg2.server_port == 6666
-    assert cfg2.download_dir == download_dir.absolute()
-
-
-def test_load_json_config_no_file(monkeypatch: Any, tmp_path: Path) -> None:
-    # Simulate invalid CONFIG_PATH to a non-existent file
-    invalid_file = tmp_path / "missing.json"
-    monkeypatch.setenv("CONFIG_PATH", str(invalid_file))
-    # Should return empty dict on read failure
-    assert _load_json_config() == {}
 
 
 def test_collect_env_data_empty(monkeypatch: Any) -> None:

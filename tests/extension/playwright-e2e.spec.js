@@ -57,7 +57,7 @@ const _CHROME_API_MOCK = {
         cb({ status: "success" });
       }
     },
-    onMessage: { addListener: () => { } },
+    onMessage: { addListener: () => {} },
   },
   tabs: {
     query: () => Promise.resolve([{ id: 1, url: "https://example.com" }]),
@@ -112,14 +112,14 @@ const customAssertions = {
 /**
  * Collect coverage data for Chromium browser
  * @param {import('@playwright/test').Page} page - Playwright page object
- * @param {string} browserName - Browser name
+ * @param {string} _browserName - Browser name
  * @param {string} testName - Test name for coverage file
  * @returns {Promise<Object|null>} Coverage data or null
  */
-async function collectCoverage(page, browserName, testName) {
+async function collectCoverage(page, _browserName, testName) {
   if (
     process.env.PLAYWRIGHT_COVERAGE !== "true" ||
-    browserName !== "chromium"
+    _browserName !== "chromium"
   ) {
     return null; // Explicitly return null
   }
@@ -130,7 +130,7 @@ async function collectCoverage(page, browserName, testName) {
     return { coverage, testName };
   } catch (error) {
     console.log(
-      `[E2E] Coverage not available for ${browserName}: ${error.message}`
+      `[E2E] Coverage not available for ${_browserName}: ${error.message}`
     );
     return null;
   }
@@ -139,11 +139,11 @@ async function collectCoverage(page, browserName, testName) {
 /**
  * Save coverage data to file system
  * @param {Object|null} coverageData - Coverage data object
- * @param {string} browserName - Browser name
+ * @param {string} _browserName - Browser name
  * @param {string} testName - Test name
  */
-async function saveCoverage(coverageData, browserName, testName) {
-  if (!coverageData || browserName !== "chromium") {
+async function saveCoverage(coverageData, _browserName, testName) {
+  if (!coverageData || _browserName !== "chromium") {
     return;
   }
   try {
@@ -152,13 +152,13 @@ async function saveCoverage(coverageData, browserName, testName) {
     const outDir = path.resolve(__dirname, "../../coverage/frontend");
     fs.mkdirSync(outDir, { recursive: true });
     fs.writeFileSync(
-      path.join(outDir, `playwright-coverage-${testName}-${browserName}.json`),
+      path.join(outDir, `playwright-coverage-${testName}-${_browserName}.json`),
       JSON.stringify(stoppedCoverage)
     );
-    console.log(`[PASS] Coverage saved for ${testName} (${browserName})`); // Added logging
+    console.log(`[PASS] Coverage saved for ${testName} (${_browserName})`); // Added logging
   } catch (error) {
     console.log(
-      `[E2E] Failed to save coverage for ${browserName}: ${error.message}`
+      `[E2E] Failed to save coverage for ${_browserName}: ${error.message}`
     );
   }
 }
@@ -180,7 +180,7 @@ async function setupChromeAPIMock(page) {
             cb({ status: "success" });
           }
         },
-        onMessage: { addListener: () => { } },
+        onMessage: { addListener: () => {} },
       },
       tabs: {
         query: () => Promise.resolve([{ id: 1, url: "https://example.com" }]),
@@ -255,9 +255,9 @@ test.describe("Chrome Extension E2E Tests", () => {
      */
     test("popup.html loads successfully with enhanced validation", async ({
       page,
-      browserName,
+      _browserName,
     }) => {
-      const coverageData = await collectCoverage(page, browserName, "popup");
+      const coverageData = await collectCoverage(page, _browserName, "popup");
       await setupChromeAPIMock(page);
 
       // Navigate to popup with monitoring
@@ -300,7 +300,7 @@ test.describe("Chrome Extension E2E Tests", () => {
       // Performance validation
       customAssertions.assertPageLoadPerformance(loadTime);
 
-      await saveCoverage(coverageData, browserName, "popup");
+      await saveCoverage(coverageData, _browserName, "popup");
     });
 
     /**
@@ -308,9 +308,9 @@ test.describe("Chrome Extension E2E Tests", () => {
      */
     test("options.html loads with comprehensive form validation", async ({
       page,
-      browserName,
+      _browserName,
     }) => {
-      const coverageData = await collectCoverage(page, browserName, "options");
+      const coverageData = await collectCoverage(page, _browserName, "options");
       await setupChromeAPIMock(page);
 
       // Navigate with monitoring
@@ -356,7 +356,7 @@ test.describe("Chrome Extension E2E Tests", () => {
       // Performance validation
       customAssertions.assertPageLoadPerformance(loadTime);
 
-      await saveCoverage(coverageData, browserName, "options");
+      await saveCoverage(coverageData, _browserName, "options");
     });
 
     /**
@@ -413,9 +413,13 @@ test.describe("Chrome Extension E2E Tests", () => {
      */
     test("download button functionality with comprehensive interaction testing", async ({
       page,
-      browserName,
+      _browserName,
     }) => {
-      const coverageData = await collectCoverage(page, browserName, "download");
+      const coverageData = await collectCoverage(
+        page,
+        _browserName,
+        "download"
+      );
       await setupChromeAPIMock(page);
 
       await page.goto(`${baseUrl}/ui/popup.html`);
@@ -447,7 +451,7 @@ test.describe("Chrome Extension E2E Tests", () => {
       const isStillClickable = await downloadButton.isEnabled();
       expect(isStillClickable).toBe(true);
 
-      await saveCoverage(coverageData, browserName, "download");
+      await saveCoverage(coverageData, _browserName, "download");
     });
 
     /**
@@ -455,11 +459,11 @@ test.describe("Chrome Extension E2E Tests", () => {
      */
     test("form submission and validation workflows", async ({
       page,
-      browserName,
+      _browserName,
     }) => {
       const coverageData = await collectCoverage(
         page,
-        browserName,
+        _browserName,
         "form-validation"
       );
       await setupChromeAPIMock(page);
@@ -512,7 +516,7 @@ test.describe("Chrome Extension E2E Tests", () => {
         }
       }
 
-      await saveCoverage(coverageData, browserName, "form-validation");
+      await saveCoverage(coverageData, _browserName, "form-validation");
     });
 
     /**
@@ -674,9 +678,9 @@ test.describe("Chrome Extension E2E Tests", () => {
      */
     test("search functionality in options page", async ({
       page,
-      browserName,
+      _browserName,
     }) => {
-      const coverageData = await collectCoverage(page, browserName, "search");
+      const coverageData = await collectCoverage(page, _browserName, "search");
       await setupChromeAPIMock(page);
 
       await page.goto(`${baseUrl}/ui/options.html`);
@@ -700,7 +704,7 @@ test.describe("Chrome Extension E2E Tests", () => {
         }
       }
 
-      await saveCoverage(coverageData, browserName, "search");
+      await saveCoverage(coverageData, _browserName, "search");
     });
 
     /**
@@ -1185,7 +1189,7 @@ test.describe("Chrome Extension E2E Tests", () => {
 
       // Test browser-specific JavaScript features
       const supportsAsyncAwait = await page.evaluate(() => {
-        return typeof (async () => { }) === "function";
+        return typeof (async () => {}) === "function";
       });
       expect(supportsAsyncAwait).toBe(true);
 
@@ -1241,7 +1245,7 @@ test.describe("Chrome Extension E2E Tests", () => {
         try {
           localStorage.setItem("test", "value");
           return localStorage.getItem("test") === "value";
-        } catch (e) {
+        } catch (_e) {
           return false;
         }
       });
@@ -1252,7 +1256,7 @@ test.describe("Chrome Extension E2E Tests", () => {
         try {
           sessionStorage.setItem("test", "value");
           return sessionStorage.getItem("test") === "value";
-        } catch (e) {
+        } catch (_e) {
           return false;
         }
       });
@@ -1331,7 +1335,7 @@ test.describe("Chrome Extension E2E Tests", () => {
           for (let i = 0; i < 5; i++) {
             window.chrome.runtime.sendMessage(
               { type: "getAppStatus" },
-              () => { }
+              () => {}
             );
           }
         }
@@ -1349,11 +1353,11 @@ test.describe("Chrome Extension E2E Tests", () => {
      */
     test("Chrome extension API message handling", async ({
       page,
-      browserName,
+      _browserName,
     }) => {
       const coverageData = await collectCoverage(
         page,
-        browserName,
+        _browserName,
         "api-message-handling"
       );
       await setupChromeAPIMock(page);
@@ -1412,16 +1416,16 @@ test.describe("Chrome Extension E2E Tests", () => {
         }
       });
 
-      await saveCoverage(coverageData, browserName, "api-message-handling");
+      await saveCoverage(coverageData, _browserName, "api-message-handling");
     });
 
     /**
      * Test background script functionality
      */
-    test("background script functionality", async ({ page, browserName }) => {
+    test("background script functionality", async ({ page, _browserName }) => {
       const coverageData = await collectCoverage(
         page,
-        browserName,
+        _browserName,
         "background-script"
       );
       await setupChromeAPIMock(page);
@@ -1466,16 +1470,16 @@ test.describe("Chrome Extension E2E Tests", () => {
         }
       });
 
-      await saveCoverage(coverageData, browserName, "background-script");
+      await saveCoverage(coverageData, _browserName, "background-script");
     });
 
     /**
      * Test server discovery and connection
      */
-    test("server discovery and connection", async ({ page, browserName }) => {
+    test("server discovery and connection", async ({ page, _browserName }) => {
       const coverageData = await collectCoverage(
         page,
-        browserName,
+        _browserName,
         "server-discovery"
       );
       await setupChromeAPIMock(page);
@@ -1495,7 +1499,7 @@ test.describe("Chrome Extension E2E Tests", () => {
               if (response.ok) {
                 return port;
               }
-            } catch (error) {
+            } catch (_error) {
               console.log(`Port ${port} not available`);
             }
           }
@@ -1514,7 +1518,7 @@ test.describe("Chrome Extension E2E Tests", () => {
           try {
             const response = await fetch(`http://localhost:${port}/status`);
             return response.ok;
-          } catch (error) {
+          } catch (_error) {
             return false;
           }
         };
@@ -1525,7 +1529,7 @@ test.describe("Chrome Extension E2E Tests", () => {
         });
       });
 
-      await saveCoverage(coverageData, browserName, "server-discovery");
+      await saveCoverage(coverageData, _browserName, "server-discovery");
     });
 
     /**
@@ -1533,11 +1537,11 @@ test.describe("Chrome Extension E2E Tests", () => {
      */
     test("download functionality and progress tracking", async ({
       page,
-      browserName,
+      _browserName,
     }) => {
       const coverageData = await collectCoverage(
         page,
-        browserName,
+        _browserName,
         "download-functionality"
       );
       await setupChromeAPIMock(page);
@@ -1594,16 +1598,16 @@ test.describe("Chrome Extension E2E Tests", () => {
         }
       });
 
-      await saveCoverage(coverageData, browserName, "download-functionality");
+      await saveCoverage(coverageData, _browserName, "download-functionality");
     });
 
     /**
      * Test configuration management
      */
-    test("configuration management", async ({ page, browserName }) => {
+    test("configuration management", async ({ page, _browserName }) => {
       const coverageData = await collectCoverage(
         page,
-        browserName,
+        _browserName,
         "config-management"
       );
       await setupChromeAPIMock(page);
@@ -1651,16 +1655,16 @@ test.describe("Chrome Extension E2E Tests", () => {
         console.log("Config validation errors:", errors);
       });
 
-      await saveCoverage(coverageData, browserName, "config-management");
+      await saveCoverage(coverageData, _browserName, "config-management");
     });
 
     /**
      * Test history management functionality
      */
-    test("history management functionality", async ({ page, browserName }) => {
+    test("history management functionality", async ({ page, _browserName }) => {
       const coverageData = await collectCoverage(
         page,
-        browserName,
+        _browserName,
         "history-management"
       );
       await setupChromeAPIMock(page);
@@ -1705,8 +1709,8 @@ test.describe("Chrome Extension E2E Tests", () => {
                         <span class="filename">${item.filename}</span>
                         <span class="status">${item.status}</span>
                         <span class="timestamp">${new Date(
-            item.timestamp
-          ).toLocaleString()}</span>
+                          item.timestamp
+                        ).toLocaleString()}</span>
                     `;
           return li;
         };
@@ -1722,7 +1726,7 @@ test.describe("Chrome Extension E2E Tests", () => {
         console.log("Created history item:", historyItem);
       });
 
-      await saveCoverage(coverageData, browserName, "history-management");
+      await saveCoverage(coverageData, _browserName, "history-management");
     });
 
     /**
@@ -1731,7 +1735,7 @@ test.describe("Chrome Extension E2E Tests", () => {
     test("drag and drop functionality", async ({ page, _browserName }) => {
       const coverageData = await collectCoverage(
         page,
-        browserName,
+        _browserName,
         "drag-drop"
       );
       await setupChromeAPIMock(page);
@@ -1746,7 +1750,7 @@ test.describe("Chrome Extension E2E Tests", () => {
         const testDragEvent = new Event("dragstart");
         testDragEvent.dataTransfer = {
           setData: (_type, data) => {
-            console.log("Set drag data:", type, data);
+            console.log("Set drag data:", _type, data);
           },
         };
 
@@ -1779,7 +1783,7 @@ test.describe("Chrome Extension E2E Tests", () => {
         }
       });
 
-      await saveCoverage(coverageData, browserName, "drag-drop");
+      await saveCoverage(coverageData, _browserName, "drag-drop");
     });
 
     /**
@@ -1788,7 +1792,7 @@ test.describe("Chrome Extension E2E Tests", () => {
     test("theme switching functionality", async ({ page, _browserName }) => {
       const coverageData = await collectCoverage(
         page,
-        browserName,
+        _browserName,
         "theme-switching"
       );
       await setupChromeAPIMock(page);
@@ -1840,7 +1844,7 @@ test.describe("Chrome Extension E2E Tests", () => {
         console.log("Saved theme preference:", savedTheme);
       });
 
-      await saveCoverage(coverageData, browserName, "theme-switching");
+      await saveCoverage(coverageData, _browserName, "theme-switching");
     });
 
     /**
@@ -1849,7 +1853,7 @@ test.describe("Chrome Extension E2E Tests", () => {
     test("error handling and recovery", async ({ page, _browserName }) => {
       const coverageData = await collectCoverage(
         page,
-        browserName,
+        _browserName,
         "error-handling"
       );
       await setupChromeAPIMock(page);
@@ -1907,7 +1911,7 @@ test.describe("Chrome Extension E2E Tests", () => {
         handleNetworkError("https://invalid-url-that-will-fail.com/api/test");
       });
 
-      await saveCoverage(coverageData, browserName, "error-handling");
+      await saveCoverage(coverageData, _browserName, "error-handling");
     });
 
     /**
@@ -1915,11 +1919,11 @@ test.describe("Chrome Extension E2E Tests", () => {
      */
     test("performance monitoring and optimization", async ({
       page,
-      browserName,
+      _browserName,
     }) => {
       const coverageData = await collectCoverage(
         page,
-        browserName,
+        _browserName,
         "performance-monitoring"
       );
       await setupChromeAPIMock(page);
@@ -1988,7 +1992,7 @@ test.describe("Chrome Extension E2E Tests", () => {
         optimizeDOM();
       });
 
-      await saveCoverage(coverageData, browserName, "performance-monitoring");
+      await saveCoverage(coverageData, _browserName, "performance-monitoring");
     });
   });
 });

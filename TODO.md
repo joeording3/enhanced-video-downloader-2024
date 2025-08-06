@@ -25,11 +25,20 @@
   - [x] Set up automated mutation testing for new code changes
   - [x] Create mutation testing guidelines for developers
 
-- [ ] **FIX CLI FUNCTION ORDERING ISSUE**: Resolve function definition order in server/cli_main.py
+- [x] **FIX CLI FUNCTION ORDERING ISSUE**: Resolve function definition order in server/cli_main.py
 
-  - [ ] Fix NameError for \_run_start_server and \_run_stop_server_enhanced
-  - [ ] Ensure all CLI commands work correctly
-  - [ ] Test server start/stop functionality
+  - [x] Fix NameError for \_run_start_server and \_run_stop_server_enhanced
+  - [x] Ensure all CLI commands work correctly
+  - [x] Test server start/stop functionality
+
+- [x] **ADD CLI --fg TOGGLE**: Add --fg flag to start and restart commands for foreground mode
+
+  - [x] Add --fg option to start command with proper help text
+  - [x] Add --fg option to restart command with proper help text
+  - [x] Implement logic to override daemon setting when --fg is used
+  - [x] Update function signatures and docstrings
+  - [x] Test CLI help output shows new --fg option
+  - [x] Verify existing tests still pass
 
 - [x] **FIX CLI CONFIGURATION ISSUES**: Resolved CLI import and configuration problems
 
@@ -155,8 +164,23 @@
       Tests**: All Python tests passing (776 tests, 69% coverage)\n - [x] **Frontend Tests**: Most
       frontend tests passing (482/485 tests passing)\n - [x] **Configuration Migration**: Confirmed
       environment-based configuration is working\n - [x] **Extension Color Fix**: Confirmed CSS
-      variables replaced with hex values in badge colors\n\n- [ ] **NEXT TASK**: [Add next task
-      here]
+      variables replaced with hex values in badge colors\n\n- [x] **CLEAN UP JUNK FOLDERS**:
+      Successfully used the prevent\*junk*folders.py script to clean up project root\n\n - [x]
+      Identified and removed 11 junk folders with random Unicode characters\n - [x] Verified cleanup
+      was successful with no remaining junk folders\n - [x] Set up continuous monitoring to prevent
+      future junk folder accumulation\n - [x] Confirmed script properly distinguishes between junk
+      and legitimate folders\n\n- [x] **ENHANCE EMPTY FOLDER CLEANUP SCRIPT**: Modified script to
+      delete any empty folders using .gitignore patterns\n\n - [x] Updated script to remove any
+      empty folders in root directory\n - [x] Added .gitignore pattern parsing to limit scope and
+      respect important directories\n - [x] Enhanced protection list to include all critical project
+      folders\n - [x] Added verbose logging option for debugging\n - [x] Tested script functionality
+      with empty and non-empty folders\n - [x] Verified script correctly protects important
+      directories while cleaning up empty ones\n - [x] Fixed script to remove single-character empty
+      folders (T, N, *)\n - [x] Removed single-character folders from critical protection list\n -
+      [x] Successfully cleaned up 3 additional empty folders\n - [x] Fixed script to remove
+      test-related empty folders (test_write, test_port_range_end, reset)\n - [x] Removed test
+      folders from critical protection list\n - [x] Successfully cleaned up 3 more empty folders\n -
+      [x] Total cleanup: 17 empty folders removed\n\n- [ ] **NEXT TASK**: [Add next task here]
 
 ## Completed Tasks
 
