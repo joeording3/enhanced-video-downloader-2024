@@ -1,0 +1,584 @@
+/* CSS Variables from styles.css */
+:root {
+/* Typography */
+  --font-family: sans-serif;
+  --font-size-xs: 11px;
+  --font-size-small: 12px;
+  --font-size-medium: 14px;
+  --font-size-large: 16px;
+  --font-size-xl: 18px;
+  --font-size-xxl: 20px;
+  --font-weight-normal: normal;
+  --font-weight-bold: bold;
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 20px;
+  --spacing-xxl: 24px;
+
+  /* Border Radius */
+  --border-radius-sm: 3px;
+  --border-radius-md: 4px;
+  --border-radius-lg: 6px;
+  --border-radius-xl: 8px;
+
+  /* Shadows */
+  --shadow-light: rgb(0 0 0 / 10%);
+  --shadow-medium: rgb(0 0 0 / 20%);
+  --shadow-dark: rgb(0 0 0 / 30%);
+  --shadow-white: rgb(255 255 255 / 50%);
+
+  /* Z-Index Values */
+  --z-index-normal: 1;
+  --z-index-dropdown: 1000;
+  --z-index-modal: 10000;
+  --z-index-tooltip: 100000;
+  --z-index-maximum: 2147483647;
+
+  /* Light Theme Colors */
+  --color-primary: #007bff;
+  --color-primary-hover: #0056b3;
+  --color-primary-focus: #004085;
+  --color-success: #28a745;
+  --color-success-hover: #1e7e34;
+  --color-success-light: #218838;
+  --color-warning: #ffc107;
+  --color-warning-hover: #e0a800;
+  --color-error: #dc3545;
+  --color-error-hover: #c82333;
+  --color-info: #17a2b8;
+  --color-info-hover: #138496;
+  --color-disabled: #6c757d;
+  --color-disabled-hover: #545b62;
+  --color-disabled-light: #5a6268;
+
+  /* Light Theme Background Colors */
+  --bg-primary-light: #f0f0f0;
+  --bg-secondary-light: #fff;
+  --bg-tertiary-light: #f5f5f5;
+  --bg-quaternary-light: #f9f9f9;
+  --bg-input-light: #fff;
+  --bg-button-light: #fff;
+
+  /* Light Theme Text Colors */
+  --text-primary-light: #333;
+  --text-secondary-light: #666;
+  --text-tertiary-light: #555;
+  --text-quaternary-light: #888;
+  --text-muted-light: #aaa;
+  --text-inverse-light: #fff;
+
+  /* Light Theme Border Colors */
+  --border-primary-light: #ddd;
+  --border-secondary-light: #ccc;
+  --border-tertiary-light: #e0e0e0;
+  --border-focus-light: #007bff;
+
+  /* Dark Theme Colors */
+  --color-primary-dark: #007bff;
+  --color-primary-hover-dark: #0056b3;
+  --color-primary-focus-dark: #004085;
+  --color-success-dark: #28a745;
+  --color-success-hover-dark: #1e7e34;
+  --color-success-light-dark: #218838;
+  --color-warning-dark: #ffc107;
+  --color-warning-hover-dark: #e0a800;
+  --color-error-dark: #dc3545;
+  --color-error-hover-dark: #c82333;
+  --color-info-dark: #17a2b8;
+  --color-info-hover-dark: #138496;
+  --color-disabled-dark: #495057;
+  --color-disabled-hover-dark: #545b62;
+  --color-disabled-light-dark: #5a6268;
+
+  /* Dark Theme Background Colors */
+  --bg-primary-dark: #1e1e1e;
+  --bg-secondary-dark: #2a2a2a;
+  --bg-tertiary-dark: #333;
+  --bg-quaternary-dark: #3a3a3a;
+  --bg-input-dark: #333;
+  --bg-button-dark: #444;
+
+  /* Dark Theme Text Colors */
+  --text-primary-dark: #e0e0e0;
+  --text-secondary-dark: #bbb;
+  --text-tertiary-dark: #aaa;
+  --text-quaternary-dark: #888;
+  --text-muted-dark: #666;
+  --text-inverse-dark: #000;
+
+  /* Dark Theme Border Colors */
+  --border-primary-dark: #444;
+  --border-secondary-dark: #555;
+  --border-tertiary-dark: #3a3a3a;
+  --border-focus-dark: #007bff;
+
+  /* Link Colors */
+  --link-primary-light: #007bff;
+  --link-hover-light: #0056b3;
+  --link-primary-dark: #64b5f6;
+  --link-hover-dark: #2196f3;
+
+  /* Scrollbar Colors */
+  --scrollbar-track-light: #f1f1f1;
+  --scrollbar-thumb-light: #c1c1c1;
+  --scrollbar-thumb-hover-light: #a8a8a8;
+  --scrollbar-track-dark: #2c2c2c;
+  --scrollbar-thumb-dark: #555;
+  --scrollbar-thumb-hover-dark: #6b6b6b;
+
+  /* Status Colors */
+  --status-pending: #ffc107;
+  --status-complete: #28a745;
+  --status-error: #dc3545;
+  --status-skipped: #6c757d;
+  --status-default: #17a2b8;
+
+  /* Notification Colors */
+  --notification-success-bg: #e7f3ff;
+  --notification-success-border: #b3d9ff;
+  --notification-success-text: #0056b3;
+  --notification-success-bg-dark: #1a3a5f;
+  --notification-success-border-dark: #2d5a8b;
+  --notification-success-text-dark: #7bb3ff;
+  --notification-error-bg: #f8d7da;
+  --notification-error-border: #f5c6cb;
+  --notification-error-text: #721c24;
+  --notification-error-bg-dark: #4a1e1e;
+  --notification-error-border-dark: #5a2d2d;
+  --notification-error-text-dark: #f5a3a3;
+
+  /* Button States */
+  --button-hover-opacity: 0.8;
+  --button-active-opacity: 0.6;
+  --button-disabled-opacity: 0.5;
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+
+  /* Default Theme (Light) */
+  --background-color: var(--bg-primary-light);
+  --text-color: var(--text-primary-light);
+  --container-bg: var(--bg-secondary-light);
+  --border-color: var(--border-primary-light);
+  --header-bg: var(--bg-tertiary-light);
+  --button-bg: var(--color-primary);
+  --button-hover: var(--color-primary-hover);
+  --button-text: var(--text-inverse-light);
+  --shadow-color: var(--shadow-light);
+  --success-color: var(--color-success);
+  --warning-color: var(--color-warning);
+  --error-color: var(--color-error);
+  --disabled-color: var(--color-disabled);
+  --input-bg: var(--bg-input-light);
+  --input-text: var(--text-primary-light);
+  --input-border: var(--border-secondary-light);
+  --input-focus-border: var(--border-focus-light);
+  --select-bg: var(--bg-input-light);
+  --select-text: var(--text-primary-light);
+  --select-border: var(--border-secondary-light);
+  --label-text: var(--text-tertiary-light);
+  --link-color: var(--link-primary-light);
+  --link-hover-color: var(--link-hover-light);
+  --separator-color: var(--border-tertiary-light);
+  --scrollbar-track-color: var(--scrollbar-track-light);
+  --scrollbar-thumb-color: var(--scrollbar-thumb-light);
+  --scrollbar-thumb-hover-color: var(--scrollbar-thumb-hover-light);
+}
+
+/* Popup-specific styles - using variables from styles.css */
+
+/* History item specific styles */
+.history-item-timestamp {
+  font-size: var(--font-size-small);
+  color: var(--text-quaternary-light);
+}
+
+.history-item-detail {
+  color: var(--text-tertiary-light);
+}
+
+.history-item-error {
+  color: var(--color-error);
+}
+
+.history-item-url {
+  font-size: var(--font-size-xs);
+  word-break: break-all;
+}
+
+/* Dark theme overrides for history items - Now using shared dark theme styles from styles.css */
+
+/* General styles */
+html {
+  background-color: var(--background-color);
+  width: 400px; /* Popup width */
+  min-height: 100%;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb-color) var(--scrollbar-track-color);
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--background-color);
+  color: var(--text-color);
+  margin: 0;
+  padding: var(--spacing-md);
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.container {
+  background-color: var(--container-bg);
+  padding: var(--spacing-lg);
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 2px 10px var(--shadow-color);
+}
+
+/* Header styling */
+.header {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.header h1 {
+  margin: 0 0 0 var(--spacing-md);
+  font-size: 1.1em; /* Slightly smaller for popup */
+  flex-grow: 1;
+  color: var(--text-color);
+}
+
+.header-logo {
+  height: 24px;
+}
+
+.header-actions button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2em; /* Larger icon for settings */
+  padding: var(--spacing-sm);
+  color: var(--text-color); /* Ensure icon color matches text */
+}
+
+/* Server Status Indicator - Now using shared styles from styles.css */
+
+/* Button styling - Now using shared component classes from styles.css */
+button {
+  background-color: var(--button-bg);
+  color: var(--button-text);
+  border: none;
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  cursor: pointer;
+  transition: var(--transition-normal);
+  font-weight: var(--font-weight-bold);
+}
+
+button:hover {
+  background-color: var(--button-hover);
+}
+
+button:disabled {
+  background-color: var(--disabled-color);
+  cursor: not-allowed;
+  opacity: var(--button-disabled-opacity);
+}
+
+/* Main controls */
+.main-controls {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.main-controls button {
+  flex: 1;
+  text-align: center;
+  padding: var(--spacing-sm) var(--spacing-md); /* Smaller padding for these buttons */
+  font-size: 0.9em;
+}
+
+/* List styling (Current Downloads & History) */
+h2 {
+  font-size: 1em;
+  margin: var(--spacing-lg) 0 var(--spacing-md) 0;
+  color: var(--text-color);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--separator-color);
+}
+
+#download-status, /* For current downloads */
+#download-history {
+  list-style-type: none;
+  padding: 0;
+  margin: 0 0 var(--spacing-md) 0;
+  max-height: 120px; /* Adjust as needed */
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  background-color: var(--input-bg); /* Use input-bg for list background */
+}
+
+#download-status li,
+#download-history li {
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.9em;
+  color: var(--text-color);
+}
+
+#download-status li:last-child,
+#download-history li:last-child {
+  border-bottom: none;
+}
+
+/* Status text styling for list items - Now using shared styles from styles.css */
+.hist-status-pending {
+  color: var(--warning-color);
+}
+
+.hist-status-complete {
+  color: var(--success-color);
+}
+
+.hist-status-error {
+  color: var(--error-color);
+}
+
+.hist-status-skipped {
+  color: var(--disabled-color);
+}
+
+.hist-status-default {
+  color: var(--text-color);
+}
+
+/* Progress bar (if used in popup) */
+progress {
+  width: 100%;
+  height: 6px;
+  margin-top: var(--spacing-sm);
+  accent-color: var(--button-bg);
+}
+
+/* History Controls */
+.history-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) 0;
+  margin-bottom: var(--spacing-md);
+}
+
+.history-controls-middle-group {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.history-controls label {
+  margin-bottom: 0;
+  margin-right: var(--spacing-sm);
+  font-weight: var(--font-weight-normal);
+  font-size: 0.9em;
+  color: var(--label-text);
+}
+
+.history-controls select {
+  width: auto;
+  padding: var(--spacing-sm);
+  font-size: 0.9em;
+  background-color: var(--select-bg);
+  color: var(--select-text);
+  border: 1px solid var(--select-border);
+  border-radius: var(--border-radius-md);
+}
+
+.history-controls button {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 0.9em;
+}
+
+#page-info {
+  font-size: 0.9em;
+  color: var(--text-color);
+  white-space: nowrap;
+}
+
+/* History Action Buttons */
+.history-actions {
+  margin-top: var(--spacing-sm);
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.history-action-btn {
+  padding: var(--spacing-sm) var(--spacing-md); /* Smaller padding */
+  font-size: 0.8em; /* Slightly smaller font */
+  flex-grow: 1; /* Allow buttons to share space if needed */
+}
+
+.delete-btn {
+  background-color: var(--error-color); /* Example: make delete button red */
+}
+
+.delete-btn:hover {
+  background-color: var(--error-color-hover);
+}
+
+/* Status message at the bottom */
+#status {
+  margin-top: var(--spacing-md);
+  text-align: center;
+  font-size: 0.9em;
+  color: var(--text-color);
+  min-height: 1.2em; /* Reserve space */
+}
+
+/* Disclaimer */
+#disclaimer {
+  margin-top: var(--spacing-lg);
+  font-size: 0.75em;
+  color: var(--label-text); /* Use label text color for less emphasis */
+  text-align: center;
+}
+
+/* WebKit Scrollbar Styles - Now using shared styles from styles.css */
+
+/* Ensure any direct input/select/label elements in popup.html are styled if not covered by specific sections */
+input[type="text"],
+input[type="number"],
+input[type="file"],
+select {
+  padding: var(--spacing-md);
+  border: 1px solid var(--input-border);
+  border-radius: var(--border-radius-md);
+  background-color: var(--input-bg);
+  color: var(--input-text);
+  box-sizing: border-box;
+  transition: var(--transition-normal);
+  width: 100%; /* Default to full width if used directly */
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+select:focus {
+  border-color: var(--input-focus-border);
+  outline: none;
+}
+
+label {
+  color: var(--label-text);
+  display: block;
+  margin-bottom: var(--spacing-sm);
+  font-weight: var(--font-weight-bold);
+}
+
+/* Queue and Active item styling */
+.queued-item {
+  font-style: italic;
+  opacity: 0.8;
+}
+
+.active-item {
+  font-weight: var(--font-weight-bold);
+}
+
+/* Paused status indicator */
+.status-paused {
+  color: var(--warning-color);
+  opacity: 0.9;
+  font-style: italic;
+}
+
+/* Error display styling */
+.error-display {
+  display: none;
+  color: var(--error-color);
+  background-color: rgb(220 53 69 / 10%);
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius-md);
+  margin-bottom: var(--spacing-md);
+}
+
+/* Status message severity classes - Now using standardized selectors from styles.css */
+
+/* Error message summary in list items */
+.error-message-summary {
+  color: var(--error-color);
+  font-weight: var(--font-weight-bold);
+}
+
+/* Status label for list items */
+.item-status {
+  display: inline-block;
+  margin-right: var(--spacing-sm);
+  font-size: 0.9em;
+  color: var(--text-color);
+}
+
+/* Percentage label next to progress bar */
+.item-percent {
+  margin-left: var(--spacing-sm);
+  font-size: 0.8em;
+  color: var(--text-color);
+}
+
+/* Semantic error details using <details> */
+.error-details summary {
+  cursor: pointer;
+  font-weight: var(--font-weight-bold);
+  color: var(--error-color);
+  margin-bottom: var(--spacing-sm);
+}
+
+.error-details-content {
+  display: none;
+  color: var(--error-color);
+  background-color: rgb(220 53 69 / 10%);
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius-md);
+  margin-top: var(--spacing-sm);
+}
+
+.error-details[open] .error-details-content {
+  display: block;
+}
+
+/* Visual treatments by severity for popup list items */
+#download-status li.severity-error {
+  border-left: 4px solid var(--error-color);
+  padding-left: var(--spacing-sm);
+}
+
+#download-status li.severity-warning {
+  border-left: 4px solid var(--warning-color);
+  padding-left: var(--spacing-sm);
+}
+
+#download-status li.severity-info {
+  border-left: 4px solid var(--link-color);
+  padding-left: var(--spacing-sm);
+}
+
+/* Contextual help link styling */
+.error-help-link {
+  display: inline-block;
+  margin-top: var(--spacing-sm);
+  color: var(--link-color);
+  background: none;
+  border: none;
+  text-decoration: underline;
+  padding: 0;
+  font-size: 0.9em;
+  cursor: pointer;
+}

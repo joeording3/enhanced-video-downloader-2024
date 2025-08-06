@@ -1,0 +1,94 @@
+{
+  "manifest_version": 3,
+  "name": "Enhanced Video Downloader",
+  "version": "0.3.0",
+  "description": "Download videos from various platforms with ease. Supports multiple formats and resolutions.",
+  "permissions": [
+    "storage",
+    "notifications",
+    "activeTab",
+    "scripting",
+    "downloads",
+    "contextMenus",
+    "declarativeNetRequestWithHostAccess",
+    "tabs"
+  ],
+  "host_permissions": ["*://*/*", "http://127.0.0.1:*/", "http://localhost:*/"],
+  "action": {
+    "default_popup": "extension/dist/popup.html",
+    "default_icon": {
+      "16": "extension/icons/icon16.png",
+      "48": "extension/icons/icon48.png",
+      "128": "extension/icons/icon128.png"
+    },
+    "theme_icons": [
+      {
+        "light": "extension/icons/icon48.png",
+        "dark": "extension/icons/darkicon48.png",
+        "size": 48
+      },
+      {
+        "light": "extension/icons/icon16.png",
+        "dark": "extension/icons/darkicon16.png",
+        "size": 16
+      },
+      {
+        "light": "extension/icons/icon128.png",
+        "dark": "extension/icons/darkicon128.png",
+        "size": 128
+      }
+    ]
+  },
+  "background": {
+    "service_worker": "extension/dist/background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "exclude_matches": ["*://localhost:*/*", "*://127.0.0.1:*/*"],
+      "js": ["extension/dist/youtube_enhance.js", "extension/dist/content.js"],
+      "css": ["extension/dist/content.css"],
+      "run_at": "document_idle",
+      "all_frames": true,
+      "match_about_blank": true
+    }
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "youtube_rules",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  },
+  "icons": {
+    "16": "extension/icons/icon16.png",
+    "48": "extension/icons/icon48.png",
+    "128": "extension/icons/icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "extension/dist/popup.html",
+        "extension/dist/options.html",
+        "extension/dist/popup.css",
+        "extension/dist/options.css",
+        "extension/dist/options-logs.css",
+        "extension/dist/content.css",
+        "extension/icons/darkicon16.png",
+        "extension/icons/darkicon48.png",
+        "extension/icons/darkicon128.png",
+        "extension/icons/icon16.png",
+        "extension/icons/icon48.png",
+        "extension/icons/icon128.png"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self'; connect-src *;"
+  },
+  "options_page": "extension/dist/options.html"
+}

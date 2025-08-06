@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Enhanced Video Downloader</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header class="header">
+        <img src="../icons/darkicon48.png" alt="EVD" class="header-logo" />
+        <h1>Enhanced Video Downloader</h1>
+        <div
+          class="server-status"
+          id="server-status"
+          title="Server Connection Status"
+        >
+          <span
+            class="server-status-indicator"
+            id="server-status-indicator"
+          ></span>
+          <span class="server-status-text" id="server-status-text"
+            >Checking...</span
+          >
+        </div>
+        <div class="header-actions">
+          <button
+            id="open-settings"
+            title="Settings"
+            aria-label="Open Settings"
+          >
+            Settings
+          </button>
+        </div>
+      </header>
+
+      <main>
+        <section class="main-controls" aria-labelledby="main-controls-heading">
+          <h2 id="main-controls-heading" class="visually-hidden">
+            Main Controls
+          </h2>
+          <!-- Visually hidden heading for section -->
+          <button id="enhanced-download-button">DOWNLOAD</button>
+          <button id="toggle-enhanced-download-button">HIDE</button>
+          <button id="reset-button-position">RESET</button>
+        </section>
+        <div class="spacing-md"></div>
+        <div id="config-error-display" class="error-display"></div>
+        <section
+          id="current-downloads-container"
+          aria-labelledby="current-downloads-heading"
+        >
+          <h2 id="current-downloads-heading">Current Downloads</h2>
+          <ul id="download-status"></ul>
+        </section>
+
+        <div class="spacing-sm"></div>
+        <section id="history-section" aria-labelledby="history-heading">
+          <h2 id="history-heading">History</h2>
+          <div class="history-controls">
+            <button id="prev-page" disabled aria-label="Previous History Page">
+              &laquo; Prev
+            </button>
+            <span class="history-controls-middle-group">
+              <label for="items-per-page">Items:</label>
+              <select id="items-per-page" aria-label="Items per page">
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50" selected>50</option>
+                <option value="100">100</option>
+              </select>
+              <span id="page-info" aria-live="polite">Page 1 of 1</span>
+            </span>
+            <button id="next-page" disabled aria-label="Next History Page">
+              Next &raquo;
+            </button>
+          </div>
+          <ul id="download-history"></ul>
+        </section>
+        <div id="status" aria-live="polite"></div>
+      </main>
+
+      <footer>
+        <p id="disclaimer">
+          Disclaimer: Ensure you have permission to download content. The author
+          is not responsible for misuse.
+        </p>
+      </footer>
+    </div>
+    <script src="../dist/popup.js" type="module"></script>
+  </body>
+</html>

@@ -1,0 +1,135 @@
+{
+  "description": "Unified ignore patterns for all development tools - single source of truth",
+  "version": "1.0.0",
+  "patterns": {
+    "common": [
+      ".git/",
+      ".venv/",
+      "venv/",
+      "node_modules/",
+      "build/",
+      "dist/",
+      "__pycache__/",
+      ".mypy_cache/",
+      ".pytest_cache/",
+      ".ruff_cache/",
+      "etc/",
+      ".github/",
+      ".husky/",
+      "logs/",
+      "coverage/",
+      "htmlcov/",
+      "*.egg-info/",
+      ".eggs/",
+      "server.lock",
+      "mutants/",
+      ".stryker-tmp/"
+    ],
+    "system_files": [
+      ".DS_Store",
+      "Thumbs.db",
+      "ehthumbs.db",
+      "Desktop.ini",
+      "*.code-workspace",
+      ".vscode/",
+      ".idea/"
+    ],
+    "compiled_files": [
+      "*.py[cod]",
+      "*$py.class",
+      "*.min.css",
+      "*.css.map",
+      "*.js.map",
+      "*.d.ts"
+    ],
+    "logs_and_temp": [
+      "*.log",
+      "*.tmp",
+      "*.swp",
+      "*.swo",
+      "*.bak",
+      "*~",
+      ".eslintcache",
+      "npm-debug.log*",
+      "yarn-debug.log*",
+      "yarn-error.log*",
+      "pnpm-debug.log*",
+      ".cache/",
+      ".cache-loader/",
+      "tmp/",
+      "tmp_*/",
+      "temp/"
+    ],
+    "test_artifacts": [
+      "jest-cache/",
+      "jest-coverage/",
+      "coverage.*",
+      "*.cover",
+      "*.pyc",
+      "*.pyo"
+    ],
+    "extension_specific": [
+      "extension-instrumented/",
+      "extension/dist/",
+      "tests/extension/test_extension_ui_e2e.spec.ts",
+      "tests/extension/test_extension_ui_e2e.js"
+    ],
+    "config_files": [
+      "babel.config.js",
+      "stryker.conf.js",
+      "jest.config.js",
+      "eslint.config.cjs",
+      ".prettierrc",
+      ".stylelintrc.json",
+      ".flake8",
+      "pyproject.toml",
+      "tsconfig.json",
+      "mutmut.ini"
+    ]
+  },
+  "tool_specific": {
+    "git": {
+      "description": "Git ignore patterns - subset of common + system + logs",
+      "patterns": ["common", "system_files", "logs_and_temp", "test_artifacts"]
+    },
+    "prettier": {
+      "description": "Prettier ignore patterns - all patterns except config files",
+      "patterns": [
+        "common",
+        "system_files",
+        "compiled_files",
+        "logs_and_temp",
+        "test_artifacts",
+        "extension_specific"
+      ]
+    },
+    "eslint": {
+      "description": "ESLint ignore patterns - common + extension specific + config files",
+      "patterns": ["common", "extension_specific", "config_files"]
+    },
+    "stylelint": {
+      "description": "Stylelint ignore patterns - common + compiled CSS files",
+      "patterns": ["common", "compiled_files"]
+    },
+    "jest": {
+      "description": "Jest ignore patterns - common + extension specific",
+      "patterns": ["common", "extension_specific"]
+    },
+    "flake8": {
+      "description": "Flake8 ignore patterns - common + compiled Python files",
+      "patterns": ["common", "compiled_files"]
+    },
+    "black": {
+      "description": "Black ignore patterns - common + compiled Python files",
+      "patterns": ["common", "compiled_files"]
+    },
+    "ruff": {
+      "description": "Ruff ignore patterns - common + compiled Python files",
+      "patterns": ["common", "compiled_files"]
+    },
+    "isort": {
+      "description": "isort ignore patterns - common",
+      "patterns": ["common"]
+    }
+  }
+}

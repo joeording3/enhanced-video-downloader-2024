@@ -1,0 +1,109 @@
+/* Log option styles */
+.log-options {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin: var(--spacing-sm) 0;
+  padding: 0 var(--spacing-sm);
+  font-size: 0.9em;
+}
+
+.button-style-checkbox {
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--bg-quaternary-light);
+  border: 1px solid var(--border-secondary-light);
+  border-radius: var(--border-radius-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  margin-left: var(--spacing-xs);
+  cursor: pointer;
+  font-size: 0.9em;
+  user-select: none;
+}
+
+body.dark-theme .button-style-checkbox {
+  background-color: var(--bg-quaternary-dark);
+  border-color: var(--border-secondary-dark);
+  color: var(--text-primary-dark);
+}
+
+.button-style-checkbox:hover {
+  background-color: var(--bg-tertiary-light);
+}
+
+body.dark-theme .button-style-checkbox:hover {
+  background-color: var(--bg-tertiary-dark);
+}
+
+.log-options label {
+  display: flex;
+  align-items: center;
+  margin-left: var(--spacing-lg);
+  cursor: pointer;
+}
+
+.log-options input[type="checkbox"] {
+  margin-right: var(--spacing-xs);
+}
+
+.log-options select {
+  margin-left: var(--spacing-xs);
+  padding: var(--border-radius-sm);
+  border-radius: var(--border-radius-sm);
+}
+
+body.dark-theme .log-options {
+  color: var(--text-secondary-dark);
+}
+
+body.dark-theme .log-options select {
+  background-color: var(--bg-input-dark);
+  color: var(--text-secondary-dark);
+  border-color: var(--border-secondary-dark);
+}
+
+/* Log message styles */
+.log-success {
+  color: var(--color-success);
+  font-weight: var(--font-weight-bold);
+}
+
+.log-warning {
+  color: var(--color-warning);
+  font-weight: var(--font-weight-bold);
+}
+
+.log-error {
+  color: var(--color-error);
+  font-weight: var(--font-weight-bold);
+}
+
+/* Log viewer textarea */
+#logViewerTextarea {
+  width: 100%;
+  height: 300px;
+  font-family: monospace;
+  font-size: var(--font-size-small);
+  padding: var(--spacing-sm);
+  background-color: var(--bg-quaternary-light);
+  border: 1px solid var(--border-secondary-light);
+  border-radius: var(--border-radius-sm);
+  margin-top: var(--spacing-sm);
+  resize: vertical;
+  overflow-y: auto;
+}
+
+body.dark-theme #logViewerTextarea {
+  background-color: var(--bg-secondary-dark);
+  color: var(--text-primary-dark);
+  border-color: var(--border-secondary-dark);
+}
+
+.log-empty {
+  color: var(--color-disabled);
+  font-style: italic;
+}
+
+body.dark-theme .log-empty {
+  color: var(--text-secondary-dark);
+}

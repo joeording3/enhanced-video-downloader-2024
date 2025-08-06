@@ -1,0 +1,30 @@
+# Generated from config/ignore-patterns.json - DO NOT EDIT DIRECTLY
+# Run: python scripts/generate-ignore-files.py to update
+
+*$py.class
+*.css.map
+*.d.ts
+*.egg-info/
+*.js.map
+*.min.css
+*.py[cod]
+.eggs/
+.git/
+.github/
+.husky/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.stryker-tmp/
+.venv/
+__pycache__/
+build/
+coverage/
+dist/
+etc/
+htmlcov/
+logs/
+mutants/
+node_modules/
+server.lock
+venv/

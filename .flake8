@@ -1,0 +1,20 @@
+[flake8]
+max-line-length = 120
+extend-ignore = E203, W503
+exclude =
+    *$py.class, *.css.map, *.d.ts, *.egg-info, *.js.map, *.min.css, *.py[cod], .eggs, .git, .github, .husky, .mypy_cache, .pytest_cache, .ruff_cache, .stryker-tmp, .venv, __pycache__, build, coverage, dist, etc, htmlcov, logs, mutants, node_modules, server.lock, venv
+# File-specific ignores
+# Allow imports not at top of file for path adjustment in server/cli.py
+per-file-ignores =
+    server/cli.py: E402
+    server/cli_helpers.py: D103
+    server/config.py: D107
+    server/__main__.py: D205
+    server/api/restart_bp.py: E501
+    server/logging_setup.py: D200, D205
+    server/downloads/gallery_dl.py: E501
+    server/downloads/ytdlp.py: D200, D103, D401
+    server/schemas.py: D101, D102, D200
+    server/disable_launchagents.py: D205, D213
+    tests/**/*.py: D100, D101, D102, D103, D105, D107, D202, PT004, PT006, PT013, PT018, PT022
+

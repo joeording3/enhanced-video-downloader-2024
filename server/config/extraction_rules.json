@@ -1,0 +1,78 @@
+[
+  { "host": "youtube.com", "tool": "yt-dlp" },
+  { "host": "youtu.be", "tool": "yt-dlp" },
+  { "host": "vimeo.com", "tool": "yt-dlp" },
+  { "host": "dailymotion.com", "tool": "yt-dlp" },
+  { "host": "twitch.tv", "tool": "yt-dlp" },
+  { "host": "x.com", "tool": "gallery-dl" },
+  { "host": "twitter.com", "tool": "gallery-dl" },
+  { "host": "reddit.com", "tool": "gallery-dl" },
+  { "host": "pixiv.net", "tool": "gallery-dl" },
+  { "host": "deviantart.com", "tool": "gallery-dl" },
+  { "host": "flickr.com", "tool": "gallery-dl" },
+  { "host": "tumblr.com", "tool": "gallery-dl" },
+  { "host": "instagram.com", "tool": "gallery-dl" },
+  { "host": "imgur.com", "tool": "gallery-dl" },
+  { "host": "pornhub.com", "tool": "yt-dlp" },
+  { "host": "xvideos.com", "tool": "yt-dlp" },
+  { "host": "xhamster.com", "tool": "yt-dlp" },
+  { "host": "spankbang.com", "tool": "yt-dlp" },
+  { "host": "thisvid.com", "tool": "yt-dlp" },
+  { "host": "beeg.com", "tool": "yt-dlp" },
+  { "host": "motherless.com", "tool": "yt-dlp" },
+  {
+    "host": "hypnotube.com",
+    "tool": "yt-dlp",
+    "options": { "nocheckcertificate": true, "format": "best" }
+  },
+  { "host": "rule34.xxx", "tool": "gallery-dl" },
+  { "host": "danbooru.donmai.us", "tool": "gallery-dl" },
+  { "host": "gelbooru.com", "tool": "gallery-dl" },
+  { "host": "e621.net", "tool": "gallery-dl" },
+  { "host": "furaffinity.net", "tool": "gallery-dl" },
+  { "host": "newgrounds.com", "tool": "gallery-dl" },
+  { "host": "vk.com", "tool": "gallery-dl" },
+  { "host": "facebook.com", "tool": "yt-dlp" },
+  { "host": "tiktok.com", "tool": "yt-dlp" },
+  { "host": "soundcloud.com", "tool": "yt-dlp" },
+  { "host": "bilibili.com", "tool": "yt-dlp" },
+  { "host": "archive.org", "tool": "yt-dlp" },
+  { "host": "bitchute.com", "tool": "yt-dlp" },
+  { "host": "rumble.com", "tool": "yt-dlp" },
+  { "host": "odysee.com", "tool": "yt-dlp" },
+  { "host": "kick.com", "tool": "yt-dlp" },
+  { "host": "nhentai.net", "tool": "gallery-dl" },
+  { "host": "zerochan.net", "tool": "gallery-dl" },
+  { "host": "weibo.com", "tool": "gallery-dl" },
+  {
+    "host": "patreon.com",
+    "tool": "gallery-dl",
+    "options": {
+      "write-metadata": true,
+      "retries": 3,
+      "cookies-from-browser": "firefox"
+    }
+  },
+  { "host": "unsplash.com", "tool": "gallery-dl" },
+  { "host": "pinterest.com", "tool": "gallery-dl" },
+  { "host": "artstation.com", "tool": "gallery-dl" },
+  { "host": "behance.net", "tool": "gallery-dl" },
+  { "host": "safebooru.org", "tool": "gallery-dl" },
+  { "host": "konachan.com", "tool": "gallery-dl" },
+  { "host": "yande.re", "tool": "gallery-dl" },
+  { "host": "e-hentai.org", "tool": "gallery-dl" },
+  { "host": "kemono.su", "tool": "gallery-dl" },
+  { "host": "coomer.su", "tool": "gallery-dl" },
+  {
+    "host": "default",
+    "tool": "yt-dlp",
+    "selectors": [
+      { "type": "dom", "selector": "video", "attr": "src" },
+      { "type": "dom", "selector": "source", "attr": "src" },
+      { "type": "dom", "selector": "audio", "attr": "src" }
+    ],
+    "regex": [
+      "https?://[^\"'\\s>]+\\.(mp4|webm|m3u8|mp3|ogg|wav)(\\?[^\"'\\s>]*)?"
+    ]
+  }
+]

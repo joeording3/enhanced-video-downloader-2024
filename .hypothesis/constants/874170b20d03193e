@@ -1,0 +1,4 @@
+# file: /Users/josephording/myscripts/Enhanced Video Downloader/server/cli_commands/status.py
+# hypothesis_version: 6.137.1
+
+['status', 'unknown', 'uptime']

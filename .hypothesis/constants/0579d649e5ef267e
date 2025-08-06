@@ -1,0 +1,4 @@
+# file: /Users/josephording/myscripts/Enhanced Video Downloader/server/downloads/resume.py
+# hypothesis_version: 6.137.1
+
+['*.part', 'DOWNLOAD_DIR', 'downloadId', 'download_playlist', 'error', 'failed', 'message', 'page_title', 'resumed_count', 'status', 'success', 'url']

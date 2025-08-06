@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs",
+    "outDir": "./extension-instrumented",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["jest", "node", "@testing-library/jest-dom"],
+    "baseUrl": ".",
+    "paths": {
+      "extension/*": ["extension/*"],
+      "extension/src/*": ["extension/src/*"]
+    }
+  },
+  "include": ["extension/src/**/*.ts", "tests/**/*.ts", "tests/**/*.js"],
+  "exclude": ["node_modules", "tests/extension/test_extension_ui_e2e.spec.ts"]
+}

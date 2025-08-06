@@ -1,0 +1,120 @@
+{
+  "name": "enhanced-video-downloader",
+  "version": "1.0.0",
+  "description": "## Overview Enhanced Video Downloader is a Chrome extension and local Python server (Flask + yt-dlp) for reliable, resumable video downloads from a wide range of sites. It features a draggable download button, popup controls, download history, and robust error handling.",
+  "main": "extension/background.js",
+  "scripts": {
+    "test": "jest --runInBand",
+    "test:extension": "jest --runInBand tests/extension",
+    "test:extension:ts": "jest --runInBand tests/extension --config jest.config.js",
+    "test:extension:coverage": "BABEL_ENV=coverage PLAYWRIGHT_COVERAGE=true jest --runInBand tests/extension --coverage --coverageReporters=json --coverageDirectory=coverage/frontend",
+    "test:playwright": "playwright test",
+    "test:playwright:ui": "playwright test --ui",
+    "test:playwright:headed": "playwright test --headed",
+    "test:playwright:debug": "playwright test --debug",
+    "test:e2e": "playwright test test_extension_ui_e2e.js",
+    "test:mutation:js": "stryker run",
+    "test:mutation:py": "python scripts/optimize_mutmut.py --run",
+    "test:mutation:py:fast": "python scripts/optimize_mutmut.py --run --modules server/config.py server/schemas.py",
+    "test:mutation:py:analyze": "python scripts/optimize_mutmut.py --analyze --report",
+    "test:mutation:py:optimize": "python scripts/optimize_mutmut.py --all",
+    "test:mutation:all": "npm run test:mutation:js && npm run test:mutation:py",
+    "test:mutation:js:fast": "stryker run --mutate extension/src/background-logic.ts",
+    "test:mutation:py:fast:quick": "python scripts/fast_mutmut.py",
+    "test:mutation:pre-commit": "npm run test:mutation:js:fast && npm run test:mutation:py:fast",
+    "test:mutation:automated": "python scripts/automated_mutation_testing.py",
+    "test:mutation:ci": "python scripts/automated_mutation_testing.py --ci",
+    "build:ts": "scripts/build-ts.sh",
+    "lint:style": "stylelint \"**/*.css\" --ignore-pattern \"htmlcov/**\"",
+    "lint:fix": "eslint --fix --config eslint.config.cjs --ext .js,.mjs,.cjs,.ts . && stylelint --fix \"**/*.css\" --ignore-pattern \"htmlcov/**\" && prettier --write . && npm run lint:fix:py",
+    "lint:fix:py": ".venv/bin/ruff check --fix . --exclude mutants && .venv/bin/isort --profile black . && .venv/bin/black .",
+    "lint": "npm run lint:fix && eslint --config eslint.config.cjs --ext .js,.mjs,.cjs,.ts . && stylelint \"**/*.css\" --ignore-pattern \"htmlcov/**\" && npm run lint:py",
+    "lint:py": ".venv/bin/ruff check . --exclude mutants",
+    "lint:all": "npm run lint && npm run lint:py",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "format:py": ".venv/bin/black .",
+    "format:all": "npm run format && npm run format:py",
+    "prepare": "husky install",
+    "instrument:extension": "BABEL_ENV=coverage babel extension --out-dir extension-instrumented --extensions .js,.mjs --plugins babel-plugin-istanbul",
+    "build:extension": "tsc -p tsconfig.json && esbuild extension/src/youtube_enhance.ts --bundle --outdir=extension/dist --platform=browser --format=esm",
+    "bundle:extension": "esbuild extension/dist/content.js extension/dist/youtube_enhance.js --bundle --platform=browser --format=iife --outdir=extension/dist --entry-names=[name]"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joeording3/Enhanced-Video-Downloader.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/joeording3/Enhanced-Video-Downloader/issues"
+  },
+  "homepage": "https://github.com/joeording3/Enhanced-Video-Downloader#readme",
+  "devDependencies": {
+    "@babel/cli": "^7.27.2",
+    "@babel/preset-env": "^7.27.2",
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.27.0",
+    "@playwright/test": "^1.53.0",
+    "@stryker-mutator/core": "^9.0.1",
+    "@stryker-mutator/jest-runner": "^9.0.1",
+    "@stryker-mutator/typescript-checker": "^9.0.1",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@types/jest": "^29.5.14",
+    "@typescript-eslint/eslint-plugin": "^8.32.1",
+    "@typescript-eslint/parser": "^8.32.1",
+    "babel-jest": "^29.7.0",
+    "babel-plugin-istanbul": "^6.1.1",
+    "esbuild": "^0.25.5",
+    "eslint": "^9.27.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "esm": "^3.2.25",
+    "express": "^4.18.2",
+    "globals": "^16.1.0",
+    "husky": "^8.0.3",
+    "istanbul-lib-coverage": "^3.2.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^30.0.0-beta.3",
+    "jsonlint": "^1.6.3",
+    "lint-staged": "^16.0.0",
+    "playwright": "^1.52.0",
+    "prettier": "^2.8.8",
+    "puppeteer": "^19.0.0",
+    "stylelint": "^16.19.1",
+    "stylelint-config-standard": "^38.0.0",
+    "ts-jest": "^29.3.4",
+    "v8-to-istanbul": "^9.3.0"
+  },
+  "lint-staged": {
+    "*.{js,mjs,cjs,ts,jsx,tsx}": [
+      "eslint --fix --cache --max-warnings=0 --no-warn-ignored",
+      "prettier --write"
+    ],
+    "*.{css,html,json,md}": [
+      "prettier --write"
+    ],
+    "*.md": [
+      "python scripts/check_markdown_emojis.py",
+      "prettier --write"
+    ],
+    "server/**/*.py": [
+      ".venv/bin/ruff check --fix",
+      ".venv/bin/isort --profile black",
+      ".venv/bin/black --quiet"
+    ],
+    "tests/**/*.py": [
+      ".venv/bin/ruff check --fix",
+      ".venv/bin/isort --profile black",
+      ".venv/bin/black --quiet"
+    ],
+    "extension/src/background-logic.ts": [
+      "npm run test:mutation:js:fast"
+    ],
+    "server/config.py": [
+      "npm run test:mutation:py:fast"
+    ]
+  },
+  "packageManager": "pnpm@10.11.0+sha512.6540583f41cc5f628eb3d9773ecee802f4f9ef9923cc45b69890fb47991d4b092964694ec3a4f738a420c918a333062c8b925d312f42e4f0c263eb603551f977"
+}

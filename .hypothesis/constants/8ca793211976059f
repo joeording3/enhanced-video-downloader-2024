@@ -1,0 +1,4 @@
+# file: /Users/josephording/myscripts/Enhanced Video Downloader/server/__init__.py
+# hypothesis_version: 6.137.1
+
+['/api/history', '/ui', 'GET', 'INFO', 'POST', 'extension', 'history_api', 'log_level', 'ui']

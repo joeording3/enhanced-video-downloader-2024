@@ -1,0 +1,27 @@
+{
+  "extends": "stylelint-config-standard",
+  "ignoreFiles": [
+    "**/.git/**",
+    "**/.venv/**",
+    "**/venv/**",
+    "**/node_modules/**",
+    "**/build/**",
+    "**/dist/**",
+    "**/__pycache__/**",
+    "**/.mypy_cache/**",
+    "**/.pytest_cache/**",
+    "**/.ruff_cache/**",
+    "**/etc/**",
+    "**/.github/**",
+    "**/.husky/**",
+    "**/logs/**",
+    "**/coverage/**",
+    "**/*.egg-info/**",
+    "**/server.lock"
+  ],
+  "rules": {
+    "selector-id-pattern": null,
+    "no-descending-specificity": null,
+    "no-duplicate-selectors": null
+  }
+}

@@ -1,0 +1,4 @@
+# file: /Users/josephording/myscripts/Enhanced Video Downloader/server/api/history_bp.py
+# hypothesis_version: 6.137.1
+
+[200, 400, 500, '/api/history', '/history', 'Clear failed.', 'GET', 'Invalid payload.', 'POST', 'action', 'clear', 'domain', 'error', 'history', 'message', 'page', 'per_page', 'status', 'success', 'total_items', 'url']

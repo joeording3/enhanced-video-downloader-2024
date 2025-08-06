@@ -1,0 +1,4 @@
+# file: /Users/josephording/myscripts/Enhanced Video Downloader/server/downloads/gallery_dl.py
+# hypothesis_version: 6.137.1
+
+[200, 400, 500, 'N/A', 'No URL provided', 'an unconfigured path', 'downloadId', 'download_dir', 'error', 'gallery-dl', 'ignore', 'message', 'options', 'status', 'success', 'url', 'utf-8']

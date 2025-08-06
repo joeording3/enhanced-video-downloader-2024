@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Enhanced Video Downloader Settings</title>
+    <link rel="stylesheet" href="options.css" />
+    <link rel="stylesheet" href="options-logs.css" />
+  </head>
+  <body>
+    <div class="container settings-container">
+      <div
+        class="theme-toggle"
+        id="theme-toggle"
+        title="Toggle Dark/Light Mode"
+        role="button"
+        aria-label="Toggle Dark/Light Mode"
+      >
+        Theme
+      </div>
+
+      <!-- Search Bar -->
+      <div class="search-container">
+        <input
+          type="text"
+          id="settings-search"
+          placeholder="Search settings..."
+          aria-label="Search settings"
+        />
+        <span class="search-icon">Search</span>
+      </div>
+
+      <header class="options-header">
+        <h1>
+          <img
+            src="../icons/icon48.png"
+            alt="EVD"
+            id="options-header-icon"
+          />Settings
+        </h1>
+        <div
+          class="server-status"
+          id="server-status"
+          title="Server Connection Status"
+        >
+          <span
+            class="server-status-indicator"
+            id="server-status-indicator"
+          ></span>
+          <span class="server-status-text" id="server-status-text"
+            >Checking...</span
+          >
+        </div>
+      </header>
+
+      <main>
+        <form id="settings-form" autocomplete="off">
+          <!-- Server Configuration Section -->
+          <section class="settings-group" data-category="server">
+            <h2 class="section-title">
+              <span class="section-icon">Display</span>
+              Server Configuration
+            </h2>
+            <div class="section-content">
+              <fieldset>
+                <legend>Connection Settings</legend>
+                <div class="settings-section">
+                  <label for="settings-server-port">
+                    Server Port
+                    <span class="required-indicator">*</span>
+                  </label>
+                  <div class="input-group">
+                    <input
+                      type="number"
+                      id="settings-server-port"
+                      name="server-port"
+                      min="1024"
+                      max="65535"
+                      placeholder="8080"
+                      required
+                    />
+                    <div class="validation-message" id="port-validation"></div>
+                  </div>
+                  <div class="settings-hint">
+                    Port number between 1024-65535. Default is 8080.
+                  </div>
+                </div>
+              </fieldset>
+            </div>
+          </section>
+
+          <!-- Download Settings Section -->
+          <section class="settings-group" data-category="download">
+            <h2 class="section-title">
+              <span class="section-icon">Folder</span>
+              Download Settings
+            </h2>
+            <div class="section-content">
+              <fieldset>
+                <legend>Storage & Format</legend>
+                <div class="settings-section">
+                  <label for="settings-download-dir">
+                    Download Folder
+                    <span class="required-indicator">*</span>
+                  </label>
+                  <div class="settings-row">
+                    <input
+                      type="text"
+                      id="settings-download-dir"
+                      name="download-dir"
+                      placeholder="/path/to/downloads"
+                      required
+                    />
+                    <button
+                      type="button"
+                      title="Choose folder"
+                      aria-label="Choose Download Folder"
+                      class="folder-picker-btn"
+                    >
+                      Choose
+                    </button>
+                  </div>
+                  <div class="validation-message" id="folder-validation"></div>
+                  <div class="settings-hint">
+                    Absolute path where downloaded files will be saved.
+                  </div>
+                  <input
+                    type="file"
+                    id="settings-folder-input"
+                    webkitdirectory
+                    directory
+                  />
+                </div>
+
+                <div class="settings-section">
+                  <label for="settings-ytdlp-format">Video Format</label>
+                  <div class="input-group">
+                    <select id="settings-ytdlp-format" name="ytdlp-format">
+                      <option value="bestvideo+bestaudio/best">
+                        Best Quality (MP4/WEBM)
+                      </option>
+                      <option value="best">Best Available Single File</option>
+                      <option value="mp4">MP4 (Best)</option>
+                      <option value="webm">WebM (Best)</option>
+                      <option value="bestaudio[ext=m4a]">
+                        Best Audio (M4A)
+                      </option>
+                      <option value="bestaudio[ext=opus]">
+                        Best Audio (Opus)
+                      </option>
+                    </select>
+                    <div
+                      class="validation-message"
+                      id="format-validation"
+                    ></div>
+                    <div class="format-info" id="format-info">
+                      <span class="info-icon">Info</span>
+                      <span class="info-text"
+                        >Best quality with separate video and audio
+                        streams</span
+                      >
+                    </div>
+                  </div>
+                </div>
+
+                <div class="settings-section checkbox-group">
+                  <label class="checkbox-item">
+                    <input
+                      type="checkbox"
+                      id="settings-allow-playlists"
+                      name="allow-playlists"
+                    />
+                    <span class="checkbox-label">Allow Playlists</span>
+                    <div class="checkbox-hint">
+                      Download entire playlists when available
+                    </div>
+                  </label>
+                </div>
+              </fieldset>
+            </div>
+          </section>
+
+          <!-- Behavior Settings Section -->
+          <section class="settings-group" data-category="behavior">
+            <h2 class="section-title">
+              <span class="section-icon">Settings</span>
+              Behavior Settings
+            </h2>
+            <div class="section-content">
+              <fieldset>
+                <legend>General Options</legend>
+                <div class="settings-section checkbox-group">
+                  <label class="checkbox-item">
+                    <input
+                      type="checkbox"
+                      id="settings-enable-history"
+                      name="enable-history"
+                    />
+                    <span class="checkbox-label">Enable History</span>
+                    <div class="checkbox-hint">
+                      Track download history for future reference
+                    </div>
+                  </label>
+                  <label class="checkbox-item">
+                    <input
+                      type="checkbox"
+                      id="settings-enable-debug"
+                      name="enable-debug"
+                    />
+                    <span class="checkbox-label">Debug Mode</span>
+                    <div class="checkbox-hint">
+                      Enable detailed logging for troubleshooting
+                    </div>
+                  </label>
+                </div>
+
+                <div class="settings-section">
+                  <label for="settings-log-level">Log Level</label>
+                  <div class="input-group">
+                    <select id="settings-log-level" name="log-level">
+                      <option value="error">Errors Only</option>
+                      <option value="info" selected>Normal</option>
+                      <option value="debug">Verbose</option>
+                    </select>
+                    <div
+                      class="validation-message"
+                      id="log-level-validation"
+                    ></div>
+                    <div class="log-level-info" id="log-level-info">
+                      <span class="info-icon">Info</span>
+                      <span class="info-text"
+                        >Normal level provides essential information</span
+                      >
+                    </div>
+                  </div>
+                </div>
+              </fieldset>
+            </div>
+          </section>
+
+          <!-- Actions Section -->
+          <section class="settings-group" data-category="actions">
+            <h2 class="section-title">
+              <span class="section-icon">Tools</span>
+              Actions
+            </h2>
+            <div class="section-content">
+              <div class="settings-actions">
+                <button
+                  type="button"
+                  id="settings-resume-downloads"
+                  class="action-btn primary"
+                >
+                  <span class="btn-icon">Play</span>
+                  Resume Partial Downloads
+                </button>
+                <button
+                  type="button"
+                  id="settings-clear-history"
+                  class="action-btn secondary"
+                >
+                  <span class="btn-icon">Delete</span>
+                  Clear History
+                </button>
+                <button
+                  type="button"
+                  id="restart-server"
+                  class="action-btn secondary"
+                >
+                  <span class="btn-icon">Restart</span>
+                  Restart Server
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Save Button -->
+          <div class="save-section">
+            <button type="submit" id="save-settings" class="save-btn">
+              <span class="btn-icon">Save</span>
+              Save Settings
+            </button>
+            <div id="settings-status" class="status-message"></div>
+          </div>
+        </form>
+
+        <!-- Logs Section -->
+        <section
+          id="log-container"
+          aria-labelledby="log-title"
+          class="settings-group"
+          data-category="logs"
+        >
+          <h2 class="section-title">
+            <span class="section-icon">Logs</span>
+            Server Logs
+          </h2>
+          <div class="section-content">
+            <div id="log-header">
+              <h3 id="log-title">Log Viewer</h3>
+              <div id="log-controls">
+                <button
+                  id="log-refresh"
+                  title="Refresh logs"
+                  aria-label="Refresh Server Logs"
+                >
+                  Refresh
+                </button>
+                <button
+                  id="log-clear"
+                  title="Clear logs"
+                  aria-label="Clear Server Logs"
+                >
+                  Clear
+                </button>
+                <label class="button-style-checkbox">
+                  <input type="checkbox" id="log-filter-werkzeug" />
+                  Filter Werkzeug
+                </label>
+                <label class="button-style-checkbox">
+                  <input
+                    type="checkbox"
+                    id="log-toggle-auto"
+                    title="Toggle auto-refresh"
+                    aria-label="Toggle Log Auto-Refresh"
+                  />
+                  Auto-refresh
+                </label>
+                <label>
+                  <input type="checkbox" id="log-recent-first" checked />
+                  Recent logs first
+                </label>
+                <label>
+                  <select id="log-limit">
+                    <option value="100">100 lines</option>
+                    <option value="500" selected>500 lines</option>
+                    <option value="1000">1000 lines</option>
+                    <option value="0">All logs</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+            <div id="log-display" role="log" aria-live="polite"></div>
+            <textarea id="logViewerTextarea" readonly></textarea>
+          </div>
+        </section>
+
+        <!-- Error History Section -->
+        <section
+          id="error-history-container"
+          aria-labelledby="error-history-title"
+          class="settings-group"
+          data-category="errors"
+        >
+          <h2 class="section-title">
+            <span class="section-icon">Warning</span>
+            Download Error History
+          </h2>
+          <div class="section-content">
+            <h3 id="error-history-title">Recent Errors</h3>
+            <ul id="error-history-list"></ul>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <p id="disclaimer">
+          Disclaimer: Ensure you have permission to download content. The author
+          is not responsible for misuse.
+        </p>
+      </footer>
+    </div>
+    <script type="module" src="../dist/options.js"></script>
+  </body>
+</html>

@@ -1,0 +1,74 @@
+# Generated from config/ignore-patterns.json - DO NOT EDIT DIRECTLY
+# Run: python scripts/generate-ignore-files.py to update
+
+# Python
+
+*.pyc
+*.pyo
+.mypy_cache/
+.pytest_cache/
+__pycache__/
+
+# Node.js
+
+node_modules/
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build artifacts
+
+.cache-loader/
+.cache/
+.eslintcache
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+build/
+dist/
+jest-cache/
+
+# System files
+
+.DS_Store
+.cache-loader/
+.cache/
+.eggs/
+.eslintcache
+.git/
+.github/
+.husky/
+.idea/
+.ruff_cache/
+.stryker-tmp/
+.venv/
+.vscode/
+
+# Other
+
+*.bak
+*.code-workspace
+*.cover
+*.egg-info/
+*.log
+*.swo
+*.swp
+*.tmp
+*~
+Desktop.ini
+Thumbs.db
+coverage.*
+coverage/
+ehthumbs.db
+etc/
+htmlcov/
+jest-coverage/
+logs/
+mutants/
+server.lock
+temp/
+tmp/
+tmp_*/
+venv/

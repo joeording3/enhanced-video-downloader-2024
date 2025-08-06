@@ -1,0 +1,568 @@
+"""
+Provide blueprint for download-related API endpoints.
+
+This module defines endpoints for processing video downloads, gallery
+downloads, and resuming downloads using underlying handlers and
+Pydantic validation.
+"""
+
+import logging
+from pathlib import Path
+from typing import Any, Dict, Optional, Tuple
+
+import psutil
+from flask import Blueprint, jsonify, request
+from flask.wrappers import Response
+from pydantic import ValidationError
+from werkzeug.exceptions import BadRequest
+
+from server.config import Config
+from server.downloads import progress_data
+from server.downloads.gallery_dl import handle_gallery_dl_download
+from server.downloads.resume import handle_resume_download
+from server.downloads.ytdlp import download_process_registry, download_tempfile_registry, handle_ytdlp_download
+from server.schemas import DownloadRequest, GalleryDLRequest, PriorityRequest, ResumeRequest
+
+# Create blueprint with '/api' prefix
+download_bp = Blueprint("download", __name__, url_prefix="/api")
+logger = logging.getLogger(__name__)
+
+
+# Helper functions for the /api/download endpoint
+def _parse_download_raw() -> Dict[str, Any]:
+    """Parse and return raw JSON payload from the request."""
+    data = request.get_json(force=True)
+    return data if isinstance(data, dict) else {}
+
+
+def _get_download_id(raw_data: Dict[str, Any]) -> str:
+    """Extract the downloadId or use 'unknown' if missing."""
+    download_id = raw_data.get("downloadId", "unknown")
+    return str(download_id) if download_id is not None else "unknown"
+
+
+def _missing_url_response(download_id: str) -> Tuple[Response, int]:
+    """Return a Flask JSON error response for a missing URL in the request."""
+    return (
+        jsonify(
+            {
+                "status": "error",
+                "message": "URL is required",
+                "error_type": "MISSING_URL",
+                "downloadId": download_id,
+            }
+        ),
+        400,
+    )
+
+
+def _maybe_handle_gallery(raw_data: Dict[str, Any]) -> Optional[Any]:
+    """Handle GalleryDL flow if requested."""
+    if raw_data.get("use_gallery_dl", False):
+        validated = GalleryDLRequest(**raw_data).model_dump()
+        return handle_gallery_dl_download(validated)
+    return None
+
+
+def _validation_error_response(e: ValidationError, download_id: str) -> Tuple[Response, int]:
+    """Return JSON response for Pydantic validation errors."""
+    field_errors = []
+    for error in e.errors():
+        loc = ".".join(str(loc) for loc in error["loc"])
+        field_errors.append(f"{loc}: {error['msg']}")
+    logger.warning(f"Validation failed for download request [{download_id}]: {'; '.join(field_errors)}")
+    return (
+        jsonify(
+            {
+                "status": "error",
+                "message": f"Invalid request data: {'; '.join(field_errors)}",
+                "error_type": "VALIDATION_ERROR",
+                "downloadId": download_id,
+                "validation_errors": field_errors,
+            }
+        ),
+        400,
+    )
+
+
+def _playlist_permission_response(validated_data: Dict[str, Any], download_id: str) -> Optional[Tuple[Response, int]]:
+    """Check if playlist downloads are allowed in config."""
+    if validated_data.get("download_playlist", False):
+        config = Config.load()
+        if not config.get_value("allow_playlists", False):
+            logger.warning(f"Playlist download denied for [{download_id}]: Playlists not allowed")
+            return (
+                jsonify(
+                    {
+                        "status": "error",
+                        "message": "Playlist downloads are not allowed by server configuration",
+                        "error_type": "PLAYLIST_DOWNLOADS_DISABLED",
+                        "downloadId": download_id,
+                    }
+                ),
+                403,
+            )
+        logger.info(f"Playlist download allowed for [{download_id}]: Playlists enabled")
+    return None
+
+
+def _log_validated_request(download_id: str, validated_data: Dict[str, Any]) -> None:
+    """Log a safe copy of the validated request for debugging."""
+    safe_data = validated_data.copy()
+    if "url" in safe_data:
+        url_val = safe_data["url"]
+        safe_data["url"] = f"{url_val[:50]}..." if len(url_val) > 50 else url_val
+    logger.debug(f"Processing validated download request [{download_id}]: {safe_data}")
+
+
+def _get_cancel_proc(download_id: str) -> Tuple[Optional[psutil.Process], Optional[Tuple[Response, int]]]:
+    """Retrieve process for cancellation or return error response."""
+    proc = download_process_registry.get(download_id)
+    if not proc:
+        return None, (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": "No active download with given ID.",
+                    "downloadId": download_id,
+                }
+            ),
+            404,
+        )
+    return proc, None
+
+
+def _terminate_proc(proc: psutil.Process, download_id: str) -> Tuple[None, Optional[Tuple[Response, int]]]:
+    """Attempt graceful then forceful termination, or return error response."""
+    try:
+        proc.terminate()
+        try:
+            proc.wait(timeout=3)
+        except psutil.TimeoutExpired:
+            proc.kill()
+    except Exception:
+        return None, (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": "Failed to terminate download process",
+                    "downloadId": download_id,
+                }
+            ),
+            500,
+        )
+    else:
+        return None, None
+
+
+def _cleanup_cancel_partfiles(download_id: str) -> None:
+    """Remove any .part files for a canceled download."""
+    try:
+        cfg = Config.load()
+        download_dir = cfg.get_value("download_dir", "")
+        prefix = download_tempfile_registry.get(download_id)
+        if download_dir and prefix:
+            path = Path(download_dir)
+            for pf in path.glob(f"{prefix}*.part"):
+                pf.unlink()
+    except Exception:
+        pass
+
+
+def _download_error_response(message: str, error_type: str, download_id: str, status_code: int) -> Tuple[Response, int]:
+    """Create standardized error response for download endpoint."""
+    return (
+        jsonify(
+            {
+                "status": "error",
+                "message": message,
+                "error_type": error_type,
+                "downloadId": download_id,
+            }
+        ),
+        status_code,
+    )
+
+
+def _priority_response(status: str, message: str, download_id: str, status_code: int, **kwargs) -> Tuple[Response, int]:
+    """Create standardized response for priority endpoint."""
+    response_data = {"status": status, "message": message, "downloadId": download_id, **kwargs}
+    return jsonify(response_data), status_code
+
+
+def _process_download_request(raw_data: Dict[str, Any]) -> Tuple[Any, Optional[str]]:
+    """Process download request and return response or None if validation fails."""
+    download_id = _get_download_id(raw_data)
+
+    # Missing URL check
+    if not raw_data.get("url"):
+        logger.warning(f"Missing URL in download request [{download_id}]")
+        return _missing_url_response(download_id), None
+
+    # GalleryDL flow
+    resp = _maybe_handle_gallery(raw_data)
+    if resp is not None:
+        return resp, None
+
+    # Validate with Pydantic
+    try:
+        download_request = DownloadRequest(**raw_data)
+    except ValidationError as e:
+        return _validation_error_response(e, download_id), None
+
+    validated_data = download_request.model_dump()
+
+    # Playlist permission check
+    resp = _playlist_permission_response(validated_data, download_id)
+    if resp is not None:
+        return resp, None
+
+    # Log the validated request safely
+    _log_validated_request(download_id, validated_data)
+
+    # Proceed with the download
+    return handle_ytdlp_download(validated_data), None
+
+
+@download_bp.route("/download", methods=["POST", "OPTIONS"])
+def download() -> Any:
+    """
+    Process video download requests.
+
+    Parse and validate request JSON for download options, handle gallery or
+    standard download flow based on flags, and return the appropriate
+    Flask response.
+
+    Returns
+    -------
+    Any
+        Flask JSON response representing download status or error message.
+    """
+    if request.method == "OPTIONS":
+        return "", 204
+
+    raw_data = {}
+    try:
+        # Parse raw JSON and extract download ID
+        raw_data = _parse_download_raw()
+
+        # Process the request
+        response, _ = _process_download_request(raw_data)
+    except ValidationError as e:
+        logger.warning(f"Invalid download request: {e}")
+        return _download_error_response(
+            f"Invalid request data: {e}", "VALIDATION_ERROR", raw_data.get("downloadId", "unknown"), 400
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error processing download request: {e}", exc_info=True)
+        return _download_error_response(
+            f"Server error: {e!s}", "SERVER_ERROR", raw_data.get("downloadId", "unknown"), 500
+        )
+
+    return response
+
+
+@download_bp.route("/gallery-dl", methods=["POST", "OPTIONS"])
+def gallery_dl() -> Any:
+    """
+    Process gallery download requests using gallery-dl.
+
+    Returns
+    -------
+    Any
+        Flask JSON response representing download status or error message.
+    """
+    if request.method == "OPTIONS":
+        return "", 204
+
+    raw_data = {}
+    try:
+        raw_data = request.get_json(force=True)
+        download_id = raw_data.get("downloadId", "unknown")
+
+        # Validate with Pydantic
+        gallery_request = GalleryDLRequest(**raw_data)
+        validated_data = gallery_request.model_dump()
+
+        logger.debug(f"Processing gallery-dl request [{download_id}]: {validated_data}")
+
+        # Pass to gallery-dl handler
+        return handle_gallery_dl_download(validated_data)
+
+    except ValidationError as e:
+        logger.warning(f"Invalid gallery-dl request: {e}")
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": f"Invalid request data: {e}",
+                    "error_type": "VALIDATION_ERROR",
+                    "downloadId": raw_data.get("downloadId", "unknown"),
+                }
+            ),
+            400,
+        )
+    except Exception as e:
+        logger.error(f"Error processing gallery-dl request: {e}", exc_info=True)
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": f"Server error: {e!s}",
+                    "error_type": "SERVER_ERROR",
+                    "downloadId": raw_data.get("downloadId", "unknown"),
+                }
+            ),
+            500,
+        )
+
+
+@download_bp.route("/resume", methods=["POST"])
+def resume() -> Any:
+    """
+    Resume downloads from partial files.
+
+    Returns
+    -------
+    Any
+        Flask JSON response representing resume status or error message.
+    """
+    raw_data = {}
+    try:
+        raw_data = request.get_json(force=True)
+        download_id = raw_data.get("downloadId", "unknown")
+
+        # Validate with Pydantic
+        resume_request = ResumeRequest(**raw_data)
+        validated_data = resume_request.model_dump()
+
+        logger.debug(f"Processing resume request [{download_id}]: {validated_data}")
+
+        # Pass to resume handler
+        return handle_resume_download(validated_data)
+
+    except ValidationError as e:
+        logger.warning(f"Invalid resume request: {e}")
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": f"Invalid request data: {e}",
+                    "error_type": "VALIDATION_ERROR",
+                    "downloadId": raw_data.get("downloadId", "unknown"),
+                }
+            ),
+            400,
+        )
+    except Exception as e:
+        logger.error(f"Error processing resume request: {e}", exc_info=True)
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": f"Server error: {e!s}",
+                    "error_type": "SERVER_ERROR",
+                    "downloadId": raw_data.get("downloadId", "unknown"),
+                }
+            ),
+            500,
+        )
+
+
+@download_bp.route("/download/<download_id>/cancel", methods=["POST", "OPTIONS"])
+def cancel_download(download_id: str) -> Any:
+    """
+    Cancel an active download and cleanup partial files.
+
+    Parameters
+    ----------
+    download_id : str
+        Identifier of the download to cancel.
+
+    Returns
+    -------
+    Any
+        Flask JSON response tuple (response, status code) indicating cancellation result or error.
+    """
+    if request.method == "OPTIONS":
+        return "", 204
+
+    # Lookup process and early error
+    proc, resp = _get_cancel_proc(download_id)
+    if resp:
+        return resp
+
+    # Terminate process and handle errors
+    assert proc is not None  # If resp was None, proc should not be None
+    _, resp = _terminate_proc(proc, download_id)
+    if resp:
+        return resp
+
+    # Cleanup partial files
+    _cleanup_cancel_partfiles(download_id)
+
+    # Remove from registries
+    download_process_registry.pop(download_id, None)
+    download_tempfile_registry.pop(download_id, None)
+    return (
+        jsonify(
+            {
+                "status": "success",
+                "message": "Download canceled.",
+                "downloadId": download_id,
+            }
+        ),
+        200,
+    )
+
+
+@download_bp.route("/download/<download_id>/pause", methods=["POST", "OPTIONS"])
+def pause_download(download_id: str) -> Any:
+    """
+    Pause an active download by suspending its process.
+
+    Parameters
+    ----------
+    download_id : str
+        Identifier of the download to pause.
+
+    Returns
+    -------
+    Any
+        Flask JSON response tuple (response, status code) indicating pause result or error.
+    """
+    if request.method == "OPTIONS":
+        return "", 204
+
+    proc = download_process_registry.get(download_id)
+    if not proc:
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": "No active download with given ID.",
+                    "downloadId": download_id,
+                }
+            ),
+            404,
+        )
+    try:
+        proc.suspend()
+    except Exception as e:
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": f"Failed to pause download: {e}",
+                    "downloadId": download_id,
+                }
+            ),
+            500,
+        )
+    return (
+        jsonify(
+            {
+                "status": "success",
+                "message": "Download paused.",
+                "downloadId": download_id,
+            }
+        ),
+        200,
+    )
+
+
+@download_bp.route("/download/<download_id>/resume", methods=["POST", "OPTIONS"])
+def resume_download(download_id: str) -> Any:
+    """
+    Resume a paused download by continuing its process.
+
+    Parameters
+    ----------
+    download_id : str
+        Identifier of the download to resume.
+
+    Returns
+    -------
+    Any
+        Flask JSON response tuple (response, status code) indicating resume result or error.
+    """
+    if request.method == "OPTIONS":
+        return "", 204
+
+    proc = download_process_registry.get(download_id)
+    if not proc:
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": "No paused download with given ID.",
+                    "downloadId": download_id,
+                }
+            ),
+            404,
+        )
+    try:
+        proc.resume()
+    except Exception as e:
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": f"Failed to resume download: {e}",
+                    "downloadId": download_id,
+                }
+            ),
+            500,
+        )
+    return (
+        jsonify(
+            {
+                "status": "success",
+                "message": "Download resumed.",
+                "downloadId": download_id,
+            }
+        ),
+        200,
+    )
+
+
+def _process_priority_request(download_id: str, data: Dict[str, Any]) -> Tuple[Response, int]:
+    """Process priority request and return response."""
+    try:
+        pr = PriorityRequest(**data)
+    except ValidationError as e:
+        errors = [err.get("msg") for err in e.errors()]
+        return _priority_response("error", f"Invalid priority value: {errors}", download_id, 400)
+
+    # Stub mode: if using legacy progress_data, update stub
+    if download_id in progress_data:
+        progress_data[download_id]["priority"] = pr.priority
+        return _priority_response("success", f"Priority for {download_id} set to {pr.priority}", download_id, 200)
+
+    # Process mode: adjust OS process priority
+    proc = download_process_registry.get(download_id)
+    if not proc:
+        return _priority_response("error", "Download not found", download_id, 404)
+
+    try:
+        proc.nice(pr.priority)
+    except Exception as e:
+        return _priority_response("error", f"Failed to set priority: {e}", download_id, 500)
+
+    return _priority_response("success", "Priority set successfully", download_id, 200, priority=pr.priority)
+
+
+@download_bp.route("/download/<download_id>/priority", methods=["POST", "OPTIONS"])
+def set_priority(download_id: str) -> Any:
+    """Adjust the OS process priority (nice value) for a download process."""
+    # Handle preflight
+    if request.method == "OPTIONS":
+        return "", 204
+
+    # Parse and validate payload
+    try:
+        data = request.get_json(force=True)
+    except BadRequest:
+        return _priority_response("error", "Invalid JSON", download_id, 400)
+
+    return _process_priority_request(download_id, data)

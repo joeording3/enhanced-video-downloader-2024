@@ -1,0 +1,4 @@
+# file: /Users/josephording/myscripts/Enhanced Video Downloader/server/api/restart_bp.py
+# hypothesis_version: 6.137.1
+
+[200, 204, 500, '/restart', 'OPTIONS', 'POST', 'error', 'message', 'restart', 'status', 'success']
