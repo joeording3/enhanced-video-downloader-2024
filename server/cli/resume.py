@@ -6,7 +6,7 @@ from pathlib import Path
 
 import click
 
-from server.cli_helpers import _cli_build_opts, resume_failed_downloads, resume_incomplete_downloads
+from server.cli_helpers import cli_build_opts, resume_failed_downloads, resume_incomplete_downloads
 from server.config import Config
 
 
@@ -166,7 +166,7 @@ def resume_failed_cmd(
     resume_failed_downloads(
         download_ids=list(download_ids),
         download_dir=download_dir,
-        build_opts_func=_cli_build_opts,
+        build_opts_func=cli_build_opts,
         logger=logger,
         order=order,
         priority=priority,

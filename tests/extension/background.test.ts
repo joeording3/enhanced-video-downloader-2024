@@ -19,7 +19,7 @@ import {
   getServerPort,
   getClientPort,
   getPortRange,
-} from "../../extension/src/constants";
+} from "../../extension/src/core/constants";
 import { CentralizedLogger } from "../../extension/src/core/logger";
 import { ExtensionStateManager } from "../../extension/src/core/state-manager";
 

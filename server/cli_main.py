@@ -219,7 +219,7 @@ def cli(ctx: click.Context, verbose: bool) -> None:
 
 # Extracted helper functions for start_server and stop_server
 def _run_start_server(
-    ctx,
+    ctx: click.Context,
     daemon: bool,
     host: str | None = None,
     port: int | None = None,
@@ -697,7 +697,7 @@ def disable_launchagents_cmd(_ctx: click.Context, verify: bool, enable: bool, ba
         time.sleep(2)  # Give system time to process changes
 
         # Check if agents are still active
-        still_active = []
+        still_active: list[Path] = []
         for agent_path in agents_found:
             try:
                 if system == "darwin":
@@ -1058,7 +1058,7 @@ def _run_restart_server_enhanced(
 def _preserve_server_state() -> dict[str, Any] | None:
     """Preserve server state for restoration after restart."""
     try:
-        state = {}
+        state: dict[str, Any] = {}
 
         # Preserve download history
         history_file = PROJECT_ROOT / "server" / "data" / "history.json"
@@ -1147,8 +1147,8 @@ def _run_server_status_enhanced(ctx: click.Context, detailed: bool, json_output:
 
     # Initialize variables for detailed status
     cpu_usage = 0.0
-    mem_info = None
-    disk_io = None
+    mem_info: Any = None
+    disk_io: Any = None
     status = "unknown"
     cmd_str = ""
 
@@ -1177,7 +1177,10 @@ def _run_server_status_enhanced(ctx: click.Context, detailed: bool, json_output:
             disk_io = proc.io_counters()  # type: ignore[attr-defined]
             log.info(f"CPU Usage: {cpu_usage}%")
             log.info(f"Memory Usage: {mem_info.rss} MB")
-            log.info(f"Disk I/O: Read {disk_io.read_bytes} bytes, Write {disk_io.write_bytes} bytes")
+            log.info(  # type: ignore[attr-defined]
+                f"Disk I/O: Read {disk_io.read_bytes} bytes, "  # type: ignore[attr-defined]
+                f"Write {disk_io.write_bytes} bytes"  # type: ignore[attr-defined]
+            )
 
     except psutil.NoSuchProcess:
         log.warning(f"Server process PID {pid_from_lock} (from lock file) does not exist. Lock file is stale.")
@@ -1202,7 +1205,10 @@ def _run_server_status_enhanced(ctx: click.Context, detailed: bool, json_output:
         if detailed and mem_info and disk_io:
             status_dict["cpu_usage"] = cpu_usage
             status_dict["memory_usage"] = mem_info.rss
-            status_dict["disk_io"] = {"read_bytes": disk_io.read_bytes, "write_bytes": disk_io.write_bytes}
+            status_dict["disk_io"] = {  # type: ignore[attr-defined]
+                "read_bytes": disk_io.read_bytes,  # type: ignore[attr-defined]
+                "write_bytes": disk_io.write_bytes,  # type: ignore[attr-defined]
+            }
 
         click.echo(json.dumps(status_dict, indent=2))
     else:
@@ -1223,9 +1229,9 @@ def _run_server_status_enhanced(ctx: click.Context, detailed: bool, json_output:
         if detailed and mem_info and disk_io:
             click.echo(f"   CPU Usage: {cpu_usage:.1f}%")
             click.echo(f"   Memory Usage: {mem_info.rss / 1024 / 1024:.1f} MB")
-            click.echo(
-                f"   Disk I/O: {disk_io.read_bytes / 1024 / 1024:.1f} MB read, "
-                + f"{disk_io.write_bytes / 1024 / 1024:.1f} MB written"
+            click.echo(  # type: ignore[attr-defined]
+                f"   Disk I/O: {disk_io.read_bytes / 1024 / 1024:.1f} MB read, "  # type: ignore[attr-defined]
+                + f"{disk_io.write_bytes / 1024 / 1024:.1f} MB written"  # type: ignore[attr-defined]
             )
 
 

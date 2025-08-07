@@ -7,8 +7,29 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Pyright Type Safety Improvements
+
+- **Error Elimination**: Reduced pyright errors from 368 to 0 (100% error elimination)
+- **Warning Reduction**: Reduced pyright warnings from 47 to 5 (89% warning reduction)
+- **Type Annotation Fixes**: Fixed return type annotations across API modules
+- **Variable Type Issues**: Resolved type inference issues in CLI utilities
+- **List Comprehension Types**: Fixed type annotations in extraction rules module
+- **API Type Safety**: Improved type safety in download, history, and config API endpoints
+- **CLI Type Safety**: Enhanced type annotations in status and utils CLI modules
+- **Third-Party Library Handling**: Properly handled optional imports and external library
+  limitations
+- **Code Quality**: Maintained backward compatibility while improving type safety
+
 ### Documentation Consolidation
 
+- **Mutation Testing Documentation**: Consolidated all mutation testing documentation into
+  DEVELOPER.md
+  - Migrated comprehensive guides for Python (mutmut) and JavaScript/TypeScript (Stryker) mutation
+    testing
+  - Integrated performance optimizations, troubleshooting guides, and best practices
+  - Removed separate documentation files: `docs/mutation_testing.md`, `docs/mutmut_optimization.md`,
+    `docs/mutmut_speed_optimizations.md`, `docs/stryker_optimization.md`
+  - Added complete configuration examples, command references, and performance impact analysis
 - **Audit Information Migration**: Migrated key information from audit reports into main
   documentation
 - **Type Safety Standards**: Added comprehensive type safety documentation to README.md,

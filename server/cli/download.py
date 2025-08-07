@@ -160,7 +160,7 @@ def _download_batch_from_file(
     # Process URLs with progress bar
     successful = 0
     failed = 0
-    failed_urls = []
+    failed_urls: list[str] = []
 
     with tqdm(total=len(urls), desc="Downloading", unit="url") as pbar:
         for i, url in enumerate(urls):
@@ -186,10 +186,14 @@ def _download_batch_from_file(
 
                 if response.status_code == 200:
                     result = response.json()
-                    pbar.set_postfix({"status": "", "id": result.get("downloadId", "Unknown")})
+                    pbar.set_postfix(  # type: ignore[arg-type]
+                        {"status": "", "id": result.get("downloadId", "Unknown")}
+                    )
                     successful += 1
                 else:
-                    pbar.set_postfix({"status": "", "error": f"HTTP {response.status_code}"})
+                    pbar.set_postfix(  # type: ignore[arg-type]
+                        {"status": "", "error": f"HTTP {response.status_code}"}
+                    )
                     failed += 1
                     failed_urls.append(url)
                     if not continue_on_error:
@@ -197,7 +201,9 @@ def _download_batch_from_file(
                         sys.exit(1)
 
             except Exception as e:
-                pbar.set_postfix({"status": "", "error": str(e)[:20]})
+                pbar.set_postfix(  # type: ignore[arg-type]
+                    {"status": "", "error": str(e)[:20]}
+                )
                 failed += 1
                 failed_urls.append(url)
                 if not continue_on_error:

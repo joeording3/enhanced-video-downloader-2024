@@ -85,13 +85,16 @@ def _handle_history_append(data: dict[str, Any]) -> tuple[Response, int]:
 def _history_post(data: Any) -> tuple[Response, int]:
     """Handle POST /history: sync full history, clear, or append entry."""
     if isinstance(data, list):
-        return _handle_history_sync(data)
+        # Type annotation to help pyright
+        history_list: list[dict[str, Any]] = data  # type: ignore[assignment]
+        return _handle_history_sync(history_list)
 
     if isinstance(data, dict):
-        action = data.get("action")
+        data_dict: dict[str, Any] = data  # type: ignore[assignment]
+        action: str | None = data_dict.get("action")
         if action == "clear":
             return _handle_history_clear()
-        return _handle_history_append(data)
+        return _handle_history_append(data_dict)
 
     return _error_response("Invalid payload.", 400)
 

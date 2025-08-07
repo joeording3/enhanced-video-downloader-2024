@@ -39,7 +39,7 @@ exports.handleThemeToggle = handleThemeToggle;
 exports.initializeOptionsTheme = initializeOptionsTheme;
 const utils_1 = require("./lib/utils");
 const history_1 = require("./history");
-const constants_1 = require("./constants");
+const constants_1 = require("./core/constants");
 const setStatus = (elementId, message, isError = false, timeout = 3000) => {
     const statusElement = document.getElementById(elementId);
     if (!statusElement)

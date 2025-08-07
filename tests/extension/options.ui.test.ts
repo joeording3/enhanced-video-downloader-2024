@@ -13,11 +13,11 @@ import {
   getServerPort,
   getClientPort,
   getPortRange,
-} from "../../extension/src/constants";
+} from "../../extension/src/core/constants";
 
 // Mock the constants to return a wider port range for testing
-jest.mock("../../extension/src/constants", () => ({
-  ...jest.requireActual("../../extension/src/constants"),
+jest.mock("../../extension/src/core/constants", () => ({
+  ...jest.requireActual("../../extension/src/core/constants"),
   getPortRange: jest.fn(() => [5001, 9099]),
 }));
 

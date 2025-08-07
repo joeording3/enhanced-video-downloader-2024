@@ -13,7 +13,7 @@ import {
   fetchHistory,
   renderHistoryItems,
 } from "./history";
-import { getServerPort, getPortRange } from "./constants";
+import { getServerPort, getPortRange } from "./core/constants";
 
 const setStatus = (
   elementId: string,

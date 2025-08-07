@@ -7,7 +7,7 @@
  */
 
 import type { ServerConfig, HistoryEntry } from "./types";
-import { getServerPort, getClientPort, getPortRange } from "./constants";
+import { getServerPort, getClientPort, getPortRange } from "./core/constants";
 
 /**
  * Interface for API services used by the message handlers.

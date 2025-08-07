@@ -15,7 +15,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const background_1 = require("../../extension/src/background");
-const constants_1 = require("../../extension/src/constants");
+const constants_1 = require("../../extension/src/core/constants");
 const logger_1 = require("../../extension/src/core/logger");
 const state_manager_1 = require("../../extension/src/core/state-manager");
 // Mock global fetch

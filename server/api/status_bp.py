@@ -11,7 +11,7 @@ from flask import Blueprint, jsonify, request
 from flask.wrappers import Response
 
 from server.downloads import progress_data, progress_lock
-from server.downloads.ytdlp import _map_error_message, _parse_bytes, download_errors_from_hooks
+from server.downloads.ytdlp import download_errors_from_hooks, map_error_message, parse_bytes
 
 status_bp = Blueprint("status", __name__, url_prefix="/api")
 
@@ -45,7 +45,7 @@ def _analyze_progress_trend(history: list[dict[str, Any]]) -> dict[str, Any]:
 
     try:
         # Extract percent values
-        percents = []
+        percents: list[float] = []
         for entry in history:
             percent_str = entry.get("percent", "0%")
             if percent_str and percent_str.endswith("%"):
@@ -106,9 +106,9 @@ def _enhance_status_data(status: dict[str, Any]) -> dict[str, Any]:
 
         # Calculate average speed
         try:
-            speed_values = []
+            speed_values: list[float] = []
             for speed_str in enhanced_status["speeds"]:
-                speed_bytes = _parse_bytes(speed_str)
+                speed_bytes = parse_bytes(speed_str)
                 if speed_bytes is not None:
                     speed_values.append(speed_bytes)
 
@@ -146,7 +146,7 @@ def get_all_status() -> Response:
         # Include errors and troubleshooting suggestions
         for download_id, error in download_errors_from_hooks.items():
             # Determine user-friendly suggestion
-            _, suggestion = _map_error_message(error.get("original_message", ""))
+            _, suggestion = map_error_message(error.get("original_message", ""))
             if download_id in combined:
                 combined[download_id]["error"] = error
                 combined[download_id]["troubleshooting"] = error.get("troubleshooting", suggestion)
@@ -176,7 +176,7 @@ def get_status_by_id(download_id: str) -> Response | tuple[Response, int]:
         if error:
             response_data["error"] = error
             # Add troubleshooting suggestion
-            _, suggestion = _map_error_message(error.get("original_message", ""))
+            _, suggestion = map_error_message(error.get("original_message", ""))
             response_data["troubleshooting"] = error.get("troubleshooting", suggestion)
 
         return jsonify(response_data)
@@ -212,9 +212,9 @@ def clear_status_bulk() -> Response | tuple[Response, int]:
         except ValueError:
             return jsonify({"status": "error", "message": f"Invalid age value: {age_param}"}), 400
 
-    cleared_ids = []
+    cleared_ids: list[str] = []
     with progress_lock:
-        ids_to_remove = []
+        ids_to_remove: list[str] = []
         for download_id, v in progress_data.items():
             # Apply status filter if provided
             if status_filter and v.get("status") != status_filter:

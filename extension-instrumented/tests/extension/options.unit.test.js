@@ -12,7 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const options_1 = require("../../extension/src/options");
 const state_manager_1 = require("../../extension/src/core/state-manager");
 // Mock the constants module to return a wider port range for testing
-jest.mock("../../extension/src/constants", () => (Object.assign(Object.assign({}, jest.requireActual("../../extension/src/constants")), { getPortRange: jest.fn(() => [5001, 9099]) })));
+jest.mock("../../extension/src/core/constants", () => (Object.assign(Object.assign({}, jest.requireActual("../../extension/src/core/constants")), { getPortRange: jest.fn(() => [5001, 9099]) })));
 // Mock Chrome APIs
 const mockChrome = {
     storage: {

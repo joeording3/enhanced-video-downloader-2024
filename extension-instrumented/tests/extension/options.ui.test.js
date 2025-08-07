@@ -5,7 +5,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const options_1 = require("extension/src/options");
 // Mock the constants to return a wider port range for testing
-jest.mock("../../extension/src/constants", () => (Object.assign(Object.assign({}, jest.requireActual("../../extension/src/constants")), { getPortRange: jest.fn(() => [5001, 9099]) })));
+jest.mock("../../extension/src/core/constants", () => (Object.assign(Object.assign({}, jest.requireActual("../../extension/src/core/constants")), { getPortRange: jest.fn(() => [5001, 9099]) })));
 describe("Options UI Logic Tests", () => {
     beforeEach(() => {
         // Set up DOM elements needed for tests

@@ -32,7 +32,9 @@ logger = logging.getLogger(__name__)
 def _parse_download_raw() -> dict[str, Any]:
     """Parse and return raw JSON payload from the request."""
     data: Any = request.get_json(force=True)
-    return data if isinstance(data, dict) else {}
+    if isinstance(data, dict):
+        return data  # type: ignore[return-value]
+    return {}
 
 
 def _get_download_id(raw_data: dict[str, Any]) -> str:
@@ -66,7 +68,7 @@ def _maybe_handle_gallery(raw_data: dict[str, Any]) -> Any | None:
 
 def _validation_error_response(e: ValidationError, download_id: str) -> tuple[Response, int]:
     """Return JSON response for Pydantic validation errors."""
-    field_errors = []
+    field_errors: list[str] = []
     for error in e.errors():
         loc = ".".join(str(loc) for loc in error["loc"])
         field_errors.append(f"{loc}: {error['msg']}")
@@ -184,9 +186,11 @@ def _download_error_response(message: str, error_type: str, download_id: str, st
     )
 
 
-def _priority_response(status: str, message: str, download_id: str, status_code: int, **kwargs) -> tuple[Response, int]:
+def _priority_response(
+    status: str, message: str, download_id: str, status_code: int, **kwargs: Any
+) -> tuple[Response, int]:
     """Create standardized response for priority endpoint."""
-    response_data = {"status": status, "message": message, "downloadId": download_id, **kwargs}
+    response_data: dict[str, Any] = {"status": status, "message": message, "downloadId": download_id, **kwargs}
     return jsonify(response_data), status_code
 
 
@@ -297,7 +301,7 @@ def gallery_dl() -> Any:
                     "status": "error",
                     "message": f"Invalid request data: {e}",
                     "error_type": "VALIDATION_ERROR",
-                    "downloadId": raw_data.get("downloadId", "unknown"),
+                    "downloadId": raw_data.get("downloadId", "unknown"),  # type: ignore[arg-type]
                 }
             ),
             400,
@@ -310,7 +314,7 @@ def gallery_dl() -> Any:
                     "status": "error",
                     "message": f"Server error: {e!s}",
                     "error_type": "SERVER_ERROR",
-                    "downloadId": raw_data.get("downloadId", "unknown"),
+                    "downloadId": raw_data.get("downloadId", "unknown"),  # type: ignore[arg-type]
                 }
             ),
             500,
@@ -349,7 +353,7 @@ def resume() -> Any:
                     "status": "error",
                     "message": f"Invalid request data: {e}",
                     "error_type": "VALIDATION_ERROR",
-                    "downloadId": raw_data.get("downloadId", "unknown"),
+                    "downloadId": raw_data.get("downloadId", "unknown"),  # type: ignore[arg-type]
                 }
             ),
             400,
@@ -362,7 +366,7 @@ def resume() -> Any:
                     "status": "error",
                     "message": f"Server error: {e!s}",
                     "error_type": "SERVER_ERROR",
-                    "downloadId": raw_data.get("downloadId", "unknown"),
+                    "downloadId": raw_data.get("downloadId", "unknown"),  # type: ignore[arg-type]
                 }
             ),
             500,
@@ -562,6 +566,8 @@ def set_priority(download_id: str) -> Any:
     # Parse and validate payload
     try:
         data = request.get_json(force=True)
+        if data is None:
+            return _priority_response("error", "Invalid JSON", download_id, 400)
     except BadRequest:
         return _priority_response("error", "Invalid JSON", download_id, 400)
 

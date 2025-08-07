@@ -22,7 +22,12 @@
     "optimize:tree-shaking": "node scripts/optimize_tree_shaking.js",
     "profile:performance": "node scripts/profile_performance.js",
     "optimize:all": "npm run analyze:bundle && npm run optimize:tree-shaking && npm run profile:performance",
-    "test:mutation:js:fast": "stryker run"
+    "test:mutation:js": "stryker run",
+    "test:mutation:js:fast": "stryker run stryker.fast.conf.js",
+    "test:mutation:js:minimal": "stryker run stryker.minimal.conf.js",
+    "test:mutation:js:ultra-minimal": "stryker run stryker.ultra-minimal.conf.js",
+    "test:mutation:js:debug": "stryker run --logLevel debug --fileLogLevel trace",
+    "test:mutation:js:analyze": "stryker run --reporter html --reporter clear-text"
   },
   "repository": {
     "type": "git",

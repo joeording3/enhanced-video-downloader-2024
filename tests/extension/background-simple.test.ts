@@ -1,5 +1,5 @@
 import { checkServerStatus } from "../../extension/src/background";
-import { getServerPort } from "../../extension/src/constants";
+import { getServerPort } from "../../extension/src/core/constants";
 
 // Mock global fetch
 const mockFetch = jest.fn();

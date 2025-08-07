@@ -66,7 +66,9 @@
       "coverage.*",
       "*.cover",
       "*.pyc",
-      "*.pyo"
+      "*.pyo",
+      "test-results/",
+      "playwright-report/"
     ],
     "extension_specific": [
       "extension-instrumented/",
@@ -85,12 +87,39 @@
       "pyproject.toml",
       "tsconfig.json",
       "mutmut.ini"
-    ]
+    ],
+    "environment_files": [".env", ".envrc", "*.env", "*.envrc"],
+    "coverage_files": [
+      ".coverage",
+      ".coverage.*",
+      "coverage_html/",
+      "htmlcov/"
+    ],
+    "lock_files": [
+      "package-lock.json",
+      "uv.lock",
+      "yarn.lock",
+      "pnpm-lock.yaml"
+    ],
+    "reports_and_docs": ["reports/", "docs/_build/", "docs/.doctrees/"],
+    "ci_and_deployment": ["ci/", ".github/workflows/", ".github/actions/"],
+    "hypothesis_cache": [".hypothesis/"]
   },
   "tool_specific": {
     "git": {
-      "description": "Git ignore patterns - subset of common + system + logs",
-      "patterns": ["common", "system_files", "logs_and_temp", "test_artifacts"]
+      "description": "Git ignore patterns - subset of common + system + logs + environment",
+      "patterns": [
+        "common",
+        "system_files",
+        "logs_and_temp",
+        "test_artifacts",
+        "environment_files",
+        "coverage_files",
+        "lock_files",
+        "reports_and_docs",
+        "ci_and_deployment",
+        "hypothesis_cache"
+      ]
     },
     "prettier": {
       "description": "Prettier ignore patterns - all patterns except config files",
@@ -100,36 +129,105 @@
         "compiled_files",
         "logs_and_temp",
         "test_artifacts",
-        "extension_specific"
+        "extension_specific",
+        "environment_files",
+        "coverage_files",
+        "lock_files",
+        "reports_and_docs",
+        "ci_and_deployment",
+        "hypothesis_cache"
       ]
     },
     "eslint": {
       "description": "ESLint ignore patterns - common + extension specific + config files",
-      "patterns": ["common", "extension_specific", "config_files"]
+      "patterns": [
+        "common",
+        "extension_specific",
+        "config_files",
+        "environment_files",
+        "coverage_files",
+        "lock_files",
+        "reports_and_docs",
+        "ci_and_deployment",
+        "hypothesis_cache"
+      ]
     },
     "stylelint": {
       "description": "Stylelint ignore patterns - common + compiled CSS files",
-      "patterns": ["common", "compiled_files"]
+      "patterns": [
+        "common",
+        "compiled_files",
+        "environment_files",
+        "coverage_files",
+        "lock_files",
+        "reports_and_docs",
+        "ci_and_deployment",
+        "hypothesis_cache"
+      ]
     },
     "jest": {
       "description": "Jest ignore patterns - common + extension specific",
-      "patterns": ["common", "extension_specific"]
+      "patterns": [
+        "common",
+        "extension_specific",
+        "environment_files",
+        "coverage_files",
+        "lock_files",
+        "reports_and_docs",
+        "ci_and_deployment",
+        "hypothesis_cache"
+      ]
     },
     "flake8": {
       "description": "Flake8 ignore patterns - common + compiled Python files",
-      "patterns": ["common", "compiled_files"]
+      "patterns": [
+        "common",
+        "compiled_files",
+        "environment_files",
+        "coverage_files",
+        "lock_files",
+        "reports_and_docs",
+        "ci_and_deployment",
+        "hypothesis_cache"
+      ]
     },
     "black": {
       "description": "Black ignore patterns - common + compiled Python files",
-      "patterns": ["common", "compiled_files"]
+      "patterns": [
+        "common",
+        "compiled_files",
+        "environment_files",
+        "coverage_files",
+        "lock_files",
+        "reports_and_docs",
+        "ci_and_deployment",
+        "hypothesis_cache"
+      ]
     },
     "ruff": {
       "description": "Ruff ignore patterns - common + compiled Python files",
-      "patterns": ["common", "compiled_files"]
+      "patterns": [
+        "common",
+        "compiled_files",
+        "environment_files",
+        "coverage_files",
+        "lock_files",
+        "reports_and_docs",
+        "ci_and_deployment",
+        "hypothesis_cache"
+      ]
     },
     "isort": {
       "description": "isort ignore patterns - common",
-      "patterns": ["common"]
+      "patterns": [
+        "common",
+        "environment_files",
+        "coverage_files",
+        "lock_files",
+        "reports_and_docs",
+        "ci_and_deployment",
+        "hypothesis_cache"
+      ]
     }
   }
 }

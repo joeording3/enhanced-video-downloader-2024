@@ -702,7 +702,7 @@ def _build_resume_options(downloader_type: str, url: str, download_dir: Path, pr
     """Build appropriate options for resuming with the specified downloader."""
     if downloader_type == "yt-dlp":
         output_template = str(download_dir / "%(title)s.%(ext)s")
-        opts = _cli_build_opts(url, output_template, None)
+        opts = cli_build_opts(url, output_template, None)
 
         # Add resume-specific options
         opts.update(
@@ -729,7 +729,7 @@ def _build_resume_options(downloader_type: str, url: str, download_dir: Path, pr
         return opts
     # Fallback to yt-dlp
     output_template = str(download_dir / "%(title)s.%(ext)s")
-    return _cli_build_opts(url, output_template, None)
+    return cli_build_opts(url, output_template, None)
 
 
 def _resume_with_downloader(
@@ -843,7 +843,7 @@ def wait_for_server_start_cli(port: int, host: str = "127.0.0.1", timeout: int =
 # Helper functions remain for use by the main CLI
 
 
-def _cli_build_opts(url: str, output_template: str, extra_params: dict[str, Any] | None = None) -> dict[str, Any]:
+def cli_build_opts(url: str, output_template: str, extra_params: dict[str, Any] | None = None) -> dict[str, Any]:
     """
     Build download options for CLI operations.
 
@@ -1347,7 +1347,7 @@ def _maintenance_resume_failed(download_dir: Path | None, log: logging.Logger) -
         log.warning("Download directory not configured, skipping failed downloads resume")
         return
     try:
-        resume_failed_downloads([], download_dir, _cli_build_opts, log)
+        resume_failed_downloads([], download_dir, cli_build_opts, log)
     except Exception:
         log.exception("Maintenance Error: Could not resume failed downloads")
 

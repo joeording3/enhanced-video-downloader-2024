@@ -227,7 +227,7 @@ ${coreFiles.map((file) => `export * from './${file}';`).join("\n")}
   console.log("Created optimized core barrel export");
 
   // Create optimized constants export
-  const constantsPath = path.join(__dirname, "../extension/src/constants.ts");
+  const constantsPath = path.join(__dirname, "../extension/src/core/constants.ts");
   const _constantsContent = fs.readFileSync(constantsPath, "utf8");
 
   // Extract only used constants
@@ -245,8 +245,8 @@ ${coreFiles.map((file) => `export * from './${file}';`).join("\n")}
  */
 
 ${usedConstants
-  .map((constant) => `export { ${constant} } from './constants';`)
-  .join("\n")}
+      .map((constant) => `export { ${constant} } from './core/constants';`)
+      .join("\n")}
 `;
 
   const optimizedConstantsPath = path.join(

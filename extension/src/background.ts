@@ -19,7 +19,7 @@ import {
   handleClearHistory,
   discoverServerPort,
 } from "./background-logic";
-import { getServerPort, getPortRange } from "./constants";
+import { getServerPort, getPortRange } from "./core/constants";
 import { stateManager } from "./core/state-manager";
 import { validationService } from "./core/validation-service";
 import { errorHandler, CentralizedErrorHandler } from "./core/error-handler";

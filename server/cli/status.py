@@ -27,7 +27,7 @@ def server_command(as_json: bool) -> None:
 
     if as_json:
         # Format processes for JSON output
-        json_processes = []
+        json_processes: list[dict[str, Any]] = []
         for proc in processes:
             pid = proc.get("pid")
             port = proc.get("port")
@@ -76,11 +76,9 @@ def get_active_downloads() -> list[dict[str, Any]]:
     try:
         response = requests.get(f"http://127.0.0.1:{port}/status", timeout=10)
         if response.status_code == 200:
-            data = response.json()
-            active_downloads = data.get("active_downloads", [])
-            if isinstance(active_downloads, list):
-                return active_downloads
-            return []
+            data: dict[str, Any] = response.json()
+            active_downloads: list[dict[str, Any]] = data.get("active_downloads", [])
+            return active_downloads
         click.echo(f"Error retrieving downloads: {response.status_code}")
         click.echo(response.text)
         sys.exit(1)

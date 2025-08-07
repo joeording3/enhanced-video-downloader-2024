@@ -14,8 +14,10 @@ __pycache__/
 node_modules/
 npm-debug.log*
 pnpm-debug.log*
+pnpm-lock.yaml
 yarn-debug.log*
 yarn-error.log*
+yarn.lock
 
 # Build artifacts
 
@@ -28,6 +30,7 @@ yarn-error.log*
 __pycache__/
 build/
 dist/
+docs/_build/
 jest-cache/
 
 # System files
@@ -35,11 +38,18 @@ jest-cache/
 .DS_Store
 .cache-loader/
 .cache/
+.coverage
+.coverage.*
 .eggs/
+.env
+.envrc
 .eslintcache
 .git/
 .github/
+.github/actions/
+.github/workflows/
 .husky/
+.hypothesis/
 .idea/
 .ruff_cache/
 .stryker-tmp/
@@ -52,6 +62,8 @@ jest-cache/
 *.code-workspace
 *.cover
 *.egg-info/
+*.env
+*.envrc
 *.log
 *.swo
 *.swp
@@ -59,16 +71,24 @@ jest-cache/
 *~
 Desktop.ini
 Thumbs.db
+ci/
 coverage.*
 coverage/
+coverage_html/
+docs/.doctrees/
 ehthumbs.db
 etc/
 htmlcov/
 jest-coverage/
 logs/
 mutants/
+package-lock.json
+playwright-report/
+reports/
 server.lock
 temp/
+test-results/
 tmp/
 tmp_*/
+uv.lock
 venv/

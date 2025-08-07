@@ -47,7 +47,7 @@ def actual_resume_logic_for_file(part_file_path: str, _download_dir: str, _app_c
         return False
     # Prepare data for downloader
     download_id = part_path.stem
-    data = {
+    data: dict[str, Any] = {
         "url": url,
         "downloadId": download_id,
         "page_title": part_path.stem,

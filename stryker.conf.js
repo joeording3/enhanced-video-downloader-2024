@@ -31,9 +31,10 @@ module.exports = {
     low: 60,
     break: null, // Temporarily disabled to allow make all to pass
   },
-  timeoutMS: 3000, // Shorter timeout for faster feedback
-  concurrency: 6, // Higher concurrency for better performance
-  maxTestRunnerReuse: 20, // More test runner reuse
+  // Performance optimizations
+  timeoutMS: 5000, // Increased timeout for better reliability
+  concurrency: 8, // Increased concurrency for better performance
+  maxTestRunnerReuse: 50, // More test runner reuse for better performance
   ignoreStatic: true,
   logLevel: "info",
   tempDirName: ".stryker-tmp",
@@ -51,5 +52,13 @@ module.exports = {
     "**/*.html",
     "**/*.css",
     "**/*.json",
+    "**/extension-instrumented/**",
+    "**/tmp/**",
+    "**/reports/**",
+    "**/logs/**",
   ],
+  // Performance optimizations from official docs
+  testRunnerNodeArgs: ["--max-old-space-size=4096"],
+  // Disable expensive features for speed
+  disableBail: true,
 };

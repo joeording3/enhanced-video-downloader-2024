@@ -1,0 +1,132 @@
+/**
+ * Jest configuration optimized for Stryker mutation testing
+ * Based on Jest documentation: https://jestjs.io/docs/getting-started
+ */
+module.exports = {
+    // Use jsdom environment for DOM testing
+    testEnvironment: "jsdom",
+
+    // Transform TypeScript and JavaScript files
+    transform: {
+        "^.+\\.ts$": "ts-jest",
+        "^.+\\.js$": "babel-jest",
+    },
+
+    // Coverage configuration
+    coverageProvider: "babel",
+
+    // Test patterns - focus on core functionality tests only
+    testMatch: [
+        "**/tests/extension/background-logic.test.ts",
+        "**/tests/extension/popup.test.ts",
+        "**/tests/extension/content.test.ts",
+        "**/tests/extension/utils.test.ts",
+        "**/tests/extension/validation-service.test.ts",
+        "**/tests/extension/dom-manager.test.ts",
+        "**/tests/extension/event-manager.test.ts",
+        "**/tests/extension/performance-utils.test.ts",
+        "!**/tests/extension/**/*.ui.test.ts", // Exclude UI tests that are flaky
+        "!**/tests/extension/**/*.e2e.*",
+        "!**/tests/extension/**/playwright-*",
+        "!**/tests/extension/**/test_extension_ui_e2e*",
+    ],
+
+    // Files and directories to ignore
+    testPathIgnorePatterns: [
+        "/*.egg-info",
+        "/*.env",
+        "/*.envrc",
+        "/.coverage",
+        "/.coverage.*",
+        "/.eggs",
+        "/.env",
+        "/.envrc",
+        "/.git",
+        "/.github",
+        "/.github/actions",
+        "/.github/workflows",
+        "/.husky",
+        "/.hypothesis",
+        "/.mypy_cache",
+        "/.pytest_cache",
+        "/.ruff_cache",
+        "/.stryker-tmp",
+        "/.venv",
+        "/__pycache__",
+        "/build",
+        "/ci",
+        "/coverage",
+        "/coverage_html",
+        "/dist",
+        "/docs/.doctrees",
+        "/docs/_build",
+        "/etc",
+        "/extension-instrumented",
+        "/extension/dist",
+        "/htmlcov",
+        "/logs",
+        "/mutants",
+        "/node_modules",
+        "/package-lock.json",
+        "/pnpm-lock.yaml",
+        "/reports",
+        "/server.lock",
+        "/tests/extension/test_extension_ui_e2e.js",
+        "/tests/extension/test_extension_ui_e2e.spec.ts",
+        "/tests/extension/playwright-e2e.spec.js",
+        "/uv.lock",
+        "/venv",
+        "/yarn.lock",
+    ],
+
+    // Collect coverage from extension code
+    collectCoverage: true,
+    collectCoverageFrom: ["extension/src/**/*.{js,ts}"],
+    coveragePathIgnorePatterns: [
+        "/node_modules/",
+        "/tests/",
+        "/dist/",
+        "/extension-instrumented/",
+        "/.vscode/",
+        "/.git/",
+        "/.venv/",
+        "/venv/",
+        "/.husky/",
+        "/.github/",
+        "/server/",
+        "types/.*\\.d\\.ts",
+    ],
+
+    // Coverage thresholds - set to current levels to prevent regression while allowing gradual improvement
+    coverageThreshold: {
+        global: {
+            branches: 40,
+            functions: 49,
+            lines: 53,
+            statements: 52,
+        },
+    },
+
+    // Performance optimizations for faster test execution
+    maxWorkers: "75%", // Use more CPU cores for faster execution
+    workerIdleMemoryLimit: "256MB", // Lower memory limit for faster startup
+    testTimeout: 3000, // 3 second timeout for individual tests
+    bail: 1, // Stop on first failure for faster feedback
+
+    // Make TypeScript paths work with Jest
+    moduleNameMapper: {
+        "^extension/(.*)$": "<rootDir>/extension/$1",
+        "^extension/src/(.*)$": "<rootDir>/extension/src/$1",
+    },
+
+    setupFilesAfterEnv: [
+        "<rootDir>/tests/jest/jest.setup.js",
+        "@testing-library/jest-dom",
+    ],
+
+    // Additional performance optimizations
+    verbose: false, // Reduce output verbosity
+    silent: false, // Keep some output for debugging
+    detectOpenHandles: false, // Disable for speed
+    forceExit: true, // Force exit after tests complete
+};

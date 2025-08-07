@@ -201,11 +201,13 @@ def _display_table(config_dict: dict[str, Any], verbose: bool) -> None:
 
     # Display each configuration item
     for key, value in config_dict.items():
+        # Type annotation to help pyright
+        value: Any = value
         # Format value for display
         if isinstance(value, dict):
-            display_value = f"<{len(value)} items>"
+            display_value = f"<{len(value)} items>"  # type: ignore[arg-type]
         elif isinstance(value, list):
-            display_value = f"[{len(value)} items]"
+            display_value = f"[{len(value)} items]"  # type: ignore[arg-type]
         elif value is None:
             display_value = "null"
         else:
@@ -284,7 +286,8 @@ def config_set_command(
 
     Examples:
         videodownloader-server utils config set --port {get_server_port()}
-        videodownloader-server utils config set --key-value f"server_port={get_server_port()}" --key-value "log_level=debug"
+        videodownloader-server utils config set --key-value f"server_port={get_server_port()}" \
+            --key-value "log_level=debug"
         videodownloader-server utils config set --port {get_server_port()} --backup --test
     """
     try:
@@ -404,7 +407,7 @@ def _validate_and_convert_value(key: str, value: str) -> Any:
 
 def _validate_updates(updates: dict[str, Any], config_data: Config) -> list[str]:
     """Validate configuration updates."""
-    errors = []
+    errors: list[str] = []
 
     for key, value in updates.items():
         # Check if key exists in configuration
@@ -544,7 +547,6 @@ def logs_view_command(
         videodownloader-server utils logs view --tail --pattern "download.*completed"
         videodownloader-server utils logs view --export filtered_logs.txt
     """
-
     # ANSI color codes for log levels
     colors = {
         "debug": "\033[36m",  # Cyan
@@ -600,7 +602,7 @@ def logs_view_command(
         return
 
     # Collect filtered lines for export
-    exported_lines = []
+    exported_lines: list[str] = []
 
     if tail:
         # Real-time tailing
@@ -634,8 +636,9 @@ def logs_view_command(
         # Static viewing
         for log_file in log_files:
             try:
-                log_lines = read_log_file(log_file, lines, None)  # Don't filter here, we'll do it manually
-                filtered_lines = []
+                # Don't filter here, we'll do it manually
+                log_lines = read_log_file(log_file, lines, None)
+                filtered_lines: list[str] = []
 
                 for line in log_lines:
                     if matches_filters(line, filter_text, level, pattern):

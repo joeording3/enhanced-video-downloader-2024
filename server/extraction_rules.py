@@ -28,8 +28,9 @@ def load_extraction_rules() -> list[dict[str, Any]]:
         with RULES_PATH.open(encoding="utf-8") as f:
             data: Any = json.load(f)
             # Ensure the loaded data is a list of dictionaries
-            if isinstance(data, list) and all(isinstance(item, dict) for item in data):
-                return data
+            if isinstance(data, list) and all(isinstance(item, dict) for item in data):  # type: ignore[arg-type]
+                # Cast to proper type after validation
+                return data  # type: ignore[return-value]
             return []
     except (OSError, json.JSONDecodeError):
         return []

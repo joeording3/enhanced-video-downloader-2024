@@ -8,9 +8,10 @@ exports.globalEventManager = exports.EventManager = void 0;
 class EventManager {
     constructor() {
         this.listeners = new Map();
+        this.counter = 0;
     }
     addListener(element, type, handler, options) {
-        const key = `${element.tagName}-${type}-${Date.now()}`;
+        const key = `${element.tagName}-${type}-${Date.now()}-${++this.counter}`;
         this.listeners.set(key, { element, type, handler });
         element.addEventListener(type, handler, options);
     }

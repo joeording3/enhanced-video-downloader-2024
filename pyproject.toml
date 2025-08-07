@@ -91,7 +91,7 @@ target-version = ["py38"]
 # skip these directories/files entirely
 exclude = '''
 /(
-  .*$py.class | .*.css.map | .*.d.ts | .*.egg-info | .*.js.map | .*.min.css | .*.py[cod] | .eggs | .git | .github | .husky | .mypy_cache | .pytest_cache | .ruff_cache | .stryker-tmp | .venv | __pycache__ | build | coverage | dist | etc | htmlcov | logs | mutants | node_modules | server.lock | venv
+  .*$py.class | .*.css.map | .*.d.ts | .*.egg-info | .*.env | .*.envrc | .*.js.map | .*.min.css | .*.py[cod] | .coverage | .coverage.* | .eggs | .env | .envrc | .git | .github | .github/actions | .github/workflows | .husky | .hypothesis | .mypy_cache | .pytest_cache | .ruff_cache | .stryker-tmp | .venv | __pycache__ | build | ci | coverage | coverage_html | dist | docs/.doctrees | docs/_build | etc | htmlcov | logs | mutants | node_modules | package-lock.json | pnpm-lock.yaml | reports | server.lock | uv.lock | venv | yarn.lock
 )/
 '''
 

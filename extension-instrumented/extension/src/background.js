@@ -20,7 +20,7 @@ Object.defineProperty(exports, "actionIconPaths", { enumerable: true, get: funct
 const utils_1 = require("./lib/utils");
 Object.defineProperty(exports, "debounce", { enumerable: true, get: function () { return utils_1.debounce; } });
 const background_logic_1 = require("./background-logic");
-const constants_1 = require("./constants");
+const constants_1 = require("./core/constants");
 const state_manager_1 = require("./core/state-manager");
 const error_handler_1 = require("./core/error-handler");
 const logger_1 = require("./core/logger");

@@ -317,8 +317,8 @@ def _calculate_improved_eta(speeds: list[str], downloaded: str, total: str) -> s
 
     try:
         # Parse downloaded and total bytes
-        downloaded_bytes = _parse_bytes(downloaded)
-        total_bytes = _parse_bytes(total)
+        downloaded_bytes = parse_bytes(downloaded)
+        total_bytes = parse_bytes(total)
 
         if downloaded_bytes is None or total_bytes is None:
             return ""
@@ -333,7 +333,7 @@ def _calculate_improved_eta(speeds: list[str], downloaded: str, total: str) -> s
 
         for speed_str in recent_speeds:
             clean_speed = speed_str.strip().split("/")[0]
-            speed_bytes = _parse_bytes(clean_speed)
+            speed_bytes = parse_bytes(clean_speed)
             if speed_bytes is not None:
                 speed_values.append(speed_bytes)
 
@@ -346,7 +346,7 @@ def _calculate_improved_eta(speeds: list[str], downloaded: str, total: str) -> s
         return ""
 
 
-def _parse_bytes(bytes_str: str) -> int | None:
+def parse_bytes(bytes_str: str) -> int | None:
     """
     Parse bytes string (e.g., "1.5MiB", "2.3GB") to integer bytes.
 
@@ -824,7 +824,7 @@ def _cleanup_partial_files(prefix: str, download_path: Path, download_id: str) -
         logger.warning(f"[{download_id}] Failed to clean partial files: {cleanup_err}")
 
 
-def _map_error_message(error_message: str) -> tuple[str, str]:
+def map_error_message(error_message: str) -> tuple[str, str]:
     """
     Map a raw error message to a structured error_type and user-friendly message.
 
@@ -864,7 +864,7 @@ def _handle_yt_dlp_download_error(
         logger.info(f"[{download_id}] Using error details from progress hook: {error_type} - {client_error}")
     else:
         # Map common errors
-        error_type, user_msg = _map_error_message(exc_message)
+        error_type, user_msg = map_error_message(exc_message)
         client_error = exc_message
 
     logger.error(f"[{download_id}] yt-dlp download error for URL {url}: Type='{error_type}', Message='{client_error}'")

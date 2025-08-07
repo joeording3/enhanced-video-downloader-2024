@@ -1,5 +1,5 @@
 import { discoverServerPort } from "../background-logic";
-import { getServerPort, getPortRange } from "../constants";
+import { getServerPort, getPortRange } from "../core/constants";
 
 describe("discoverServerPort", () => {
   const defaultPort = getServerPort();

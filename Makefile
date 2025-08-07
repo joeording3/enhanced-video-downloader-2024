@@ -198,8 +198,8 @@ mutation: mutation-js mutation-py
 
 mutation-fast:
 	@echo "=== Running Fast Mutation Testing (Critical Modules Only) ==="
-	@echo "Running JavaScript mutation testing on background-logic.ts..."
-	npm run test:mutation:js:fast || (echo "JavaScript mutation testing failed" && exit 1)
+	@echo "Running JavaScript mutation testing on single critical file..."
+	make mutation-js-ultra-minimal || (echo "JavaScript mutation testing failed" && exit 1)
 	@echo "JavaScript mutation testing passed"
 	@echo "Running Python mutation testing on critical modules..."
 	timeout 60 python -m mutmut run || (echo "Python mutation testing failed" && exit 1)
@@ -210,6 +210,31 @@ mutation-js:
 	@echo "=== Running Stryker Mutation Testing (JavaScript/TypeScript) ==="
 	npm run test:mutation:js
 	@echo "Stryker mutation testing complete"
+
+mutation-js-fast:
+	@echo "=== Running Fast Stryker Mutation Testing (Critical Files Only) ==="
+	npm run test:mutation:js:fast
+	@echo "Fast Stryker mutation testing complete"
+
+mutation-js-minimal:
+	@echo "=== Running Minimal Stryker Mutation Testing (Single File) ==="
+	npm run test:mutation:js:minimal
+	@echo "Minimal Stryker mutation testing complete"
+
+mutation-js-ultra-minimal:
+	@echo "=== Running Ultra-Minimal Stryker Mutation Testing (Fastest) ==="
+	npm run test:mutation:js:ultra-minimal
+	@echo "Ultra-minimal Stryker mutation testing complete"
+
+mutation-js-debug:
+	@echo "=== Running Stryker Mutation Testing with Debug Output ==="
+	npm run test:mutation:js:debug
+	@echo "Stryker debug testing complete"
+
+mutation-js-analyze:
+	@echo "=== Running Stryker Mutation Testing with Analysis ==="
+	npm run test:mutation:js:analyze
+	@echo "Stryker analysis complete"
 
 mutation-py:
 	@echo "=== Running Mutmut Mutation Testing (Python) ==="
