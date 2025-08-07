@@ -6,9 +6,10 @@ This file contains configuration for pytest, including fixtures and plugins.
 
 import os
 import sys
+from collections.abc import Generator
 from pathlib import Path
 from threading import Thread
-from typing import Any, Dict, Generator
+from typing import Any
 
 import pytest
 from click.testing import CliRunner
@@ -25,7 +26,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.resolve()))
 
 
 @pytest.fixture
-def sample_download_request() -> Dict[str, Any]:
+def sample_download_request() -> dict[str, Any]:
     """Return a sample download request for testing."""
     return {
         "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
@@ -35,7 +36,7 @@ def sample_download_request() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def sample_config() -> Dict[str, Any]:
+def sample_config() -> dict[str, Any]:
     """Return a sample configuration for testing."""
     return {
         "server_port": 5050,
@@ -45,7 +46,7 @@ def sample_config() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def app(sample_config: Dict[str, Any]) -> Flask:
+def app(sample_config: dict[str, Any]) -> Flask:
     """Create and return a Flask app using the sample config."""
     pydantic_config = ServerConfig.model_validate(sample_config)
     cfg = Config(pydantic_config)

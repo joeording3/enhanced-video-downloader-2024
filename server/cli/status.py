@@ -4,7 +4,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import click
 import requests
@@ -36,7 +36,7 @@ def server_command(as_json: bool) -> None:
 
             # Format uptime for JSON
             uptime_formatted = None
-            if isinstance(uptime, (int, float)):
+            if isinstance(uptime, int | float):
                 hours, remainder = divmod(uptime, 3600)
                 minutes, seconds = divmod(remainder, 60)
                 uptime_formatted = f"{int(hours)}h {int(minutes)}m {int(seconds)}s"
@@ -54,7 +54,7 @@ def server_command(as_json: bool) -> None:
         click.echo(f"PID {pid}")
         click.echo(f"Port {port}")
         # Format uptime
-        if isinstance(uptime, (int, float)):
+        if isinstance(uptime, int | float):
             hours, remainder = divmod(uptime, 3600)
             minutes, seconds = divmod(remainder, 60)
             click.echo(f"Uptime: {int(hours)}h {int(minutes)}m {int(seconds)}s")
@@ -63,7 +63,7 @@ def server_command(as_json: bool) -> None:
 
 
 # Helper to fetch active downloads (used by downloads_command)
-def get_active_downloads() -> List[Dict[str, Any]]:
+def get_active_downloads() -> list[dict[str, Any]]:
     """Fetch active downloads from the server via API."""
     if not is_server_running():
         click.echo("Server is not running. Please start the server first.")

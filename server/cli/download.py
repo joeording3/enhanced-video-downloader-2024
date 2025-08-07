@@ -4,7 +4,7 @@ import json
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import click
 import requests
@@ -380,7 +380,7 @@ def list_command(active_only: bool, failed_only: bool, format: str) -> None:
         sys.exit(1)
 
 
-def _display_downloads_table(downloads: List[Dict[str, Any]]) -> None:
+def _display_downloads_table(downloads: list[dict[str, Any]]) -> None:
     """Display downloads in a formatted table."""
     if not downloads:
         click.echo(" No downloads found.")

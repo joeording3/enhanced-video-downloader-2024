@@ -1,5 +1,5 @@
 import logging
-from typing import Generator, Optional
+from collections.abc import Generator
 
 import pytest
 from flask.testing import FlaskClient
@@ -96,7 +96,7 @@ def test_priority_success(client: FlaskClient) -> None:
 
     class DummyProc:
         def __init__(self) -> None:
-            self.priority: Optional[int] = None
+            self.priority: int | None = None
 
         def nice(self, value: int) -> None:
             self.priority = value

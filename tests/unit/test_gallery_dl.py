@@ -1,6 +1,6 @@
 import subprocess
 from pathlib import Path
-from typing import Any, Optional, Tuple
+from typing import Any
 
 import pytest
 from flask import Flask
@@ -21,7 +21,7 @@ def app_ctx() -> Any:
 
 
 class DummyConfig:
-    def __init__(self, download_dir: Optional[str] = None) -> None:
+    def __init__(self, download_dir: str | None = None) -> None:
         self._dir = download_dir
 
     def get_value(self, key: str, default: Any = None) -> Any:
@@ -36,7 +36,7 @@ class DummyProcess:
         self._stdout = stdout
         self._stderr = stderr
 
-    def communicate(self) -> Tuple[bytes, bytes]:
+    def communicate(self) -> tuple[bytes, bytes]:
         return (self._stdout, self._stderr)
 
 
@@ -91,7 +91,7 @@ def test_successful_download(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
             captured["cwd"] = cwd
             self.returncode = 0
 
-        def communicate(self) -> Tuple[bytes, bytes]:
+        def communicate(self) -> tuple[bytes, bytes]:
             return (b"out", b"")
 
     monkeypatch.setattr(subprocess, "Popen", FakePopen)
@@ -114,7 +114,7 @@ def test_failed_download(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
         def __init__(self, cmd: Any, stdout: Any, stderr: Any, cwd: str) -> None:
             self.returncode = 1
 
-        def communicate(self) -> Tuple[bytes, bytes]:
+        def communicate(self) -> tuple[bytes, bytes]:
             return (b"", b"err msg")
 
     monkeypatch.setattr(subprocess, "Popen", FakePopen)

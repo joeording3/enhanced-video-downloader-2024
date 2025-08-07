@@ -12,7 +12,6 @@ This script:
 import subprocess
 import sys
 from pathlib import Path
-from typing import List, Optional, Tuple
 
 ROOT_DIR = Path(__file__).resolve().parent
 # Prefer existing .venv directory for virtual environment, else use "venv"
@@ -31,7 +30,7 @@ DEV_PKGS = [
 ]
 
 
-def run_cmd(cmd: List[str], cwd: Optional[Path] = None, exit_on_error: bool = True) -> bool:
+def run_cmd(cmd: list[str], cwd: Path | None = None, exit_on_error: bool = True) -> bool:
     """Run a command in a subprocess and handle errors."""
     try:
         subprocess.run(cmd, check=True, cwd=cwd or ROOT_DIR)
@@ -44,7 +43,7 @@ def run_cmd(cmd: List[str], cwd: Optional[Path] = None, exit_on_error: bool = Tr
         return True
 
 
-def setup_venv() -> Tuple[Path, Path]:
+def setup_venv() -> tuple[Path, Path]:
     """Create and activate a virtual environment."""
     if not VENV_DIR.exists():
         run_cmd([sys.executable, "-m", "venv", str(VENV_DIR)])

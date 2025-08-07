@@ -10,7 +10,7 @@ import logging
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 from urllib.parse import urlparse
 
 import browser_cookie3  # type: ignore[import-untyped]
@@ -67,7 +67,7 @@ except ImportError:
 
 
 # Helper functions to simplify build_opts and reduce its complexity
-def _default_ydl_opts(output_path: str, download_playlist: bool) -> Dict[str, Any]:
+def _default_ydl_opts(output_path: str, download_playlist: bool) -> dict[str, Any]:
     return {
         "format": "bestvideo+bestaudio/best",
         "merge_output_format": "mp4",
@@ -84,7 +84,7 @@ def _default_ydl_opts(output_path: str, download_playlist: bool) -> Dict[str, An
     }
 
 
-def _apply_custom_opts(ydl_opts: Dict[str, Any], custom_opts: Any, _download_id: Optional[str]) -> None:
+def _apply_custom_opts(ydl_opts: dict[str, Any], custom_opts: Any, _download_id: str | None) -> None:
     if isinstance(custom_opts, dict):
         ydl_opts.update(
             {
@@ -98,7 +98,7 @@ def _apply_custom_opts(ydl_opts: Dict[str, Any], custom_opts: Any, _download_id:
         logger.warning("Config ytdlp_options is not a dictionary, using defaults only")
 
 
-def _apply_playlist_flags(ydl_opts: Dict[str, Any], download_playlist: bool) -> None:
+def _apply_playlist_flags(ydl_opts: dict[str, Any], download_playlist: bool) -> None:
     """
     Apply playlist flags to yt-dlp options.
 
@@ -124,14 +124,14 @@ def _apply_playlist_flags(ydl_opts: Dict[str, Any], download_playlist: bool) -> 
         ydl_opts.pop("yesplaylist", None)  # Remove yesplaylist if present
 
 
-def _assign_progress_hook(ydl_opts: Dict[str, Any], download_id: str) -> None:
-    def progress_hook_wrapper(d: Dict[str, Any]) -> None:
+def _assign_progress_hook(ydl_opts: dict[str, Any], download_id: str) -> None:
+    def progress_hook_wrapper(d: dict[str, Any]) -> None:
         return ytdlp_progress_hook(d, download_id)
 
     ydl_opts["progress_hooks"] = [progress_hook_wrapper]
 
 
-def _handle_cookies(ydl_opts: Dict[str, Any], download_id: Optional[str]) -> None:
+def _handle_cookies(ydl_opts: dict[str, Any], download_id: str | None) -> None:
     cfb = ydl_opts.get("cookies_from_browser")
     if not cfb:
         return
@@ -145,7 +145,7 @@ def _handle_cookies(ydl_opts: Dict[str, Any], download_id: Optional[str]) -> Non
         logger.warning(f"[{download_id}] Could not extract browser cookies: {e}")
 
 
-def build_opts(output_path: str, download_id: Optional[str] = None, download_playlist: bool = False) -> Dict[str, Any]:
+def build_opts(output_path: str, download_id: str | None = None, download_playlist: bool = False) -> dict[str, Any]:
     """
     Build options dictionary for yt-dlp.
 
@@ -168,7 +168,7 @@ def build_opts(output_path: str, download_id: Optional[str] = None, download_pla
     ytdlp_config_options = config.get_value("yt_dlp_options", {})
 
     # Start with default options
-    ydl_opts: Dict[str, Any] = _default_ydl_opts(output_path, download_playlist)
+    ydl_opts: dict[str, Any] = _default_ydl_opts(output_path, download_playlist)
 
     # Override with config options if present
     _apply_custom_opts(ydl_opts, ytdlp_config_options, download_id)
@@ -188,15 +188,15 @@ def build_opts(output_path: str, download_id: Optional[str] = None, download_pla
 
 # Global or class-level dictionary to store detailed errors from hooks
 # This is a simple way; a more robust solution might involve a class or context manager
-download_errors_from_hooks: Dict[str, Dict[str, Any]] = {}
+download_errors_from_hooks: dict[str, dict[str, Any]] = {}
 # Registry mapping download IDs to partial-file prefixes for cleanup
-download_tempfile_registry: Dict[str, str] = {}
+download_tempfile_registry: dict[str, str] = {}
 # Registry mapping download IDs to their download process for cancellation
-download_process_registry: Dict[str, psutil.Process] = {}
+download_process_registry: dict[str, psutil.Process] = {}
 
 
 # Progress hook helpers to reduce complexity of ytdlp_progress_hook
-def _extract_video_metadata(d: Dict[str, Any]) -> Dict[str, Any]:
+def _extract_video_metadata(d: dict[str, Any]) -> dict[str, Any]:
     """
     Extract video metadata from yt-dlp progress data.
 
@@ -210,7 +210,7 @@ def _extract_video_metadata(d: Dict[str, Any]) -> Dict[str, Any]:
     Dict[str, Any]
         Dictionary containing video metadata.
     """
-    metadata: Dict[str, Any] = {}
+    metadata: dict[str, Any] = {}
 
     # Extract id
     if "id" in d:
@@ -277,7 +277,7 @@ def _extract_video_metadata(d: Dict[str, Any]) -> Dict[str, Any]:
     return metadata
 
 
-def _calculate_eta_from_speeds(speed_values: List[int], remaining_bytes: int) -> str:
+def _calculate_eta_from_speeds(speed_values: list[int], remaining_bytes: int) -> str:
     """Calculate ETA from speed values."""
     if not speed_values:
         return ""
@@ -293,7 +293,7 @@ def _calculate_eta_from_speeds(speed_values: List[int], remaining_bytes: int) ->
     return _format_duration(eta_seconds)
 
 
-def _calculate_improved_eta(speeds: List[str], downloaded: str, total: str) -> str:
+def _calculate_improved_eta(speeds: list[str], downloaded: str, total: str) -> str:
     """
     Calculate improved ETA using historical speed data.
 
@@ -329,7 +329,7 @@ def _calculate_improved_eta(speeds: List[str], downloaded: str, total: str) -> s
 
         # Calculate average speed from recent measurements (last 10)
         recent_speeds = speeds[-10:] if len(speeds) > 10 else speeds
-        speed_values: List[int] = []
+        speed_values: list[int] = []
 
         for speed_str in recent_speeds:
             clean_speed = speed_str.strip().split("/")[0]
@@ -346,7 +346,7 @@ def _calculate_improved_eta(speeds: List[str], downloaded: str, total: str) -> s
         return ""
 
 
-def _parse_bytes(bytes_str: str) -> Optional[int]:
+def _parse_bytes(bytes_str: str) -> int | None:
     """
     Parse bytes string (e.g., "1.5MiB", "2.3GB") to integer bytes.
 
@@ -418,7 +418,7 @@ def _format_duration(seconds: float) -> str:
     return f"{hours}h{minutes}m"
 
 
-def _progress_downloading(d: Dict[str, Any], download_id: Optional[str]) -> None:
+def _progress_downloading(d: dict[str, Any], download_id: str | None) -> None:
     """Handle 'downloading' status updates from yt-dlp."""
     str_id = str(download_id) if download_id else "unknown_id"
     percent = str(d.get("_percent_str", "")).strip()
@@ -488,7 +488,7 @@ def _progress_downloading(d: Dict[str, Any], download_id: Optional[str]) -> None
         }
 
 
-def _progress_finished(d: Dict[str, Any], download_id: Optional[str]) -> None:
+def _progress_finished(d: dict[str, Any], download_id: str | None) -> None:
     """Handle 'finished' status updates from yt-dlp."""
     str_id = str(download_id) if download_id else "unknown_id"
     filename = d.get("filename")
@@ -510,7 +510,7 @@ def _progress_finished(d: Dict[str, Any], download_id: Optional[str]) -> None:
         logger.warning(f"Download {str_id} finished with no filename provided")
 
 
-def _progress_error(d: Dict[str, Any], download_id: Optional[str]) -> None:
+def _progress_error(d: dict[str, Any], download_id: str | None) -> None:
     """Handle 'error' status updates from yt-dlp."""
     str_id = str(download_id) if download_id else "unknown_id"
     error_msg = str(d.get("error", "Unknown error from hook"))
@@ -557,7 +557,7 @@ def _progress_error(d: Dict[str, Any], download_id: Optional[str]) -> None:
         }
 
 
-def ytdlp_progress_hook(d: Dict[str, Any], download_id: Optional[str]) -> None:
+def ytdlp_progress_hook(d: dict[str, Any], download_id: str | None) -> None:
     """
     Process progress updates from yt-dlp.
 
@@ -575,7 +575,7 @@ def ytdlp_progress_hook(d: Dict[str, Any], download_id: Optional[str]) -> None:
     None
         This hook does not return a value.
     """
-    status: Optional[str] = d.get("status")
+    status: str | None = d.get("status")
     if status == "downloading":
         _progress_downloading(d, download_id)
     elif status == "finished":
@@ -585,7 +585,7 @@ def ytdlp_progress_hook(d: Dict[str, Any], download_id: Optional[str]) -> None:
 
 
 # Added helper to initialize download request data and prepare directory
-def _init_download(data: Dict[str, Any]) -> Tuple[Optional[Path], str, str, str, bool, Optional[Tuple[Any, int]]]:
+def _init_download(data: dict[str, Any]) -> tuple[Path | None, str, str, str, bool, tuple[Any, int] | None]:
     """
     Validate request data and prepare download directory or return error response tuple.
 
@@ -668,7 +668,7 @@ def _init_download(data: Dict[str, Any]) -> Tuple[Optional[Path], str, str, str,
 # Helper to prepare file naming metadata and output template
 def _prepare_download_metadata(
     url: str, page_title: str, download_id: str, download_path: Path
-) -> Tuple[str, str, str, str]:
+) -> tuple[str, str, str, str]:
     """
     Sanitize page title and URL to generate a safe filename, id component, prefix, and output template.
 
@@ -704,7 +704,7 @@ def _prepare_download_metadata(
 
 
 # Helper to assert playlist downloads are allowed by config
-def _assert_playlist_allowed(download_id: str, download_playlist: bool) -> Optional[Tuple[Any, int]]:
+def _assert_playlist_allowed(download_id: str, download_playlist: bool) -> tuple[Any, int] | None:
     """
     Check server config for playlist permissions and return an error response if disallowed.
     """
@@ -824,7 +824,7 @@ def _cleanup_partial_files(prefix: str, download_path: Path, download_id: str) -
         logger.warning(f"[{download_id}] Failed to clean partial files: {cleanup_err}")
 
 
-def _map_error_message(error_message: str) -> Tuple[str, str]:
+def _map_error_message(error_message: str) -> tuple[str, str]:
     """
     Map a raw error message to a structured error_type and user-friendly message.
 
@@ -846,7 +846,7 @@ def _handle_yt_dlp_download_error(
     download_path: Path,
     sanitized_id: str,
     exception: Exception,
-) -> Tuple[Any, int]:
+) -> tuple[Any, int]:
     """
     Cleanup partial files and map yt-dlp DownloadError into a Flask JSON response.
     """
@@ -882,7 +882,7 @@ def _handle_yt_dlp_download_error(
     )
 
 
-def handle_ytdlp_download(data: Dict[str, Any]) -> Any:
+def handle_ytdlp_download(data: dict[str, Any]) -> Any:
     """
     Handle video download requests using yt-dlp.
 
@@ -932,7 +932,7 @@ def handle_ytdlp_download(data: Dict[str, Any]) -> Any:
 
     try:
         # Prepare process tracking variable
-        current_process: Optional[psutil.Process] = None
+        current_process: psutil.Process | None = None
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:  # type: ignore[import-untyped]
             # Register the download process if the tracking is available
             if _process_tracking_available:

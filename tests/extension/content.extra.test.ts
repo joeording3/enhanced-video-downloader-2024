@@ -5,14 +5,17 @@ import {
   createOrUpdateButton,
 } from "../../extension/src/content";
 import * as ytEnhance from "../../extension/src/youtube_enhance";
-import { logger } from "../../extension/src/lib/utils";
+import { CentralizedLogger } from "../../extension/src/core/logger";
 
 describe("Content.ts additional branch coverage", () => {
+  let logger: CentralizedLogger;
+
   beforeEach(() => {
     document.body.innerHTML = "";
     jest.clearAllMocks();
     chrome.runtime.lastError = null;
-    jest.spyOn(logger, "error");
+    logger = CentralizedLogger.getInstance();
+    logger.clearLogs();
   });
 
   describe("getButtonState error handling", () => {
@@ -30,10 +33,12 @@ describe("Content.ts additional branch coverage", () => {
         y: 10,
         hidden: false,
       });
-      expect(logger.error).toHaveBeenCalledWith(
-        "Error getting button state from storage:",
-        "fail"
-      );
+      const logs = logger.getLogs();
+      expect(
+        logs.some((log) =>
+          log.message.includes("Error getting button state from storage")
+        )
+      ).toBe(true);
     });
 
     it("returns default on exception", async () => {
@@ -47,10 +52,12 @@ describe("Content.ts additional branch coverage", () => {
         y: 10,
         hidden: false,
       });
-      expect(logger.error).toHaveBeenCalledWith(
-        "Error getting button state from storage:",
-        "boom"
-      );
+      const logs = logger.getLogs();
+      expect(
+        logs.some((log) =>
+          log.message.includes("Error getting button state from storage")
+        )
+      ).toBe(true);
     });
   });
 
@@ -65,10 +72,12 @@ describe("Content.ts additional branch coverage", () => {
         y: 5,
         hidden: true,
       });
-      expect(logger.error).toHaveBeenCalledWith(
-        "Error saving button state to storage:",
-        "savefail"
-      );
+      const logs = logger.getLogs();
+      expect(
+        logs.some((log) =>
+          log.message.includes("Error saving button state to storage")
+        )
+      ).toBe(true);
     });
   });
 

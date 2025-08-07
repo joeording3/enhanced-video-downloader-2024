@@ -1,7 +1,7 @@
 import logging
 import subprocess
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 from pytest import LogCaptureFixture, MonkeyPatch
@@ -13,7 +13,7 @@ from server.constants import get_server_port
 class DummyConfig:
     """Simple stub for Config.get_value."""
 
-    def __init__(self, values: Dict[str, Any]) -> None:
+    def __init__(self, values: dict[str, Any]) -> None:
         self._values = values
 
     def get_value(self, key: str, default: Any = None) -> Any:
@@ -28,7 +28,7 @@ def test_derive_server_settings_overrides(tmp_path: Path, caplog: LogCaptureFixt
     :param caplog: pytest LogCaptureFixture for capturing log messages.
     :returns: None
     """
-    values: Dict[str, Any] = {
+    values: dict[str, Any] = {
         "server_host": "0.0.0.0",
         "server_port": get_server_port(),
         "download_dir": str(tmp_path / "dl"),
@@ -56,7 +56,7 @@ def test_derive_server_settings_defaults(tmp_path: Path, monkeypatch: MonkeyPatc
     monkeypatch.setattr("sys.argv", ["python", "test_script.py"])
     monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
 
-    values: Dict[str, Any] = {}
+    values: dict[str, Any] = {}
     cfg = DummyConfig(values)
     project_root = tmp_path
     logger = logging.getLogger("test")

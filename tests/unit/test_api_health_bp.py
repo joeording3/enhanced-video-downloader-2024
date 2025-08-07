@@ -77,9 +77,11 @@ class TestHealthBlueprint:
         with app.test_client() as client:
             response = client.get("/health")
 
-            # Should return 204 No Content with empty body
-            assert response.status_code == 204
-            assert response.get_data(as_text=True) == ""
+            # Should return 200 OK with JSON body
+            assert response.status_code == 200
+            data = response.get_json()
+            assert data["app_name"] == "Enhanced Video Downloader"
+            assert data["status"] == "healthy"
 
     def test_health_endpoint_content_type(self):
         """Test that health endpoint returns correct content type."""
@@ -89,8 +91,9 @@ class TestHealthBlueprint:
         with app.test_client() as client:
             response = client.get("/health")
 
-            # 204 No Content typically doesn't have a content type
-            assert response.status_code == 204
+            # Should return 200 OK with JSON content type
+            assert response.status_code == 200
+            assert response.content_type == "application/json"
 
     def test_health_endpoint_cors_headers(self):
         """Test that health endpoint includes appropriate CORS headers."""
@@ -100,9 +103,10 @@ class TestHealthBlueprint:
         with app.test_client() as client:
             response = client.get("/health")
 
+            # Should return 200 OK
+            assert response.status_code == 200
             # Check for common CORS headers (if implemented)
             # This test documents the current behavior
-            assert response.status_code == 204
 
     def test_health_function_direct_call(self):
         """Test health function when called directly."""
@@ -116,10 +120,12 @@ class TestHealthBlueprint:
             assert len(response) == 2
 
             response_obj, status_code = response
-            assert status_code == 204
+            assert status_code == 200
 
-            # Verify response is empty string
-            assert response_obj == ""
+            # Verify response is JSON dict
+            assert isinstance(response_obj, dict)
+            assert response_obj["app_name"] == "Enhanced Video Downloader"
+            assert response_obj["status"] == "healthy"
 
     def test_health_endpoint_with_different_app_names(self):
         """Test health endpoint behavior with different app configurations."""
@@ -129,9 +135,11 @@ class TestHealthBlueprint:
         with app.test_client() as client:
             response = client.get("/health")
 
-            # Should return 204 No Content regardless of Flask app configuration
-            assert response.status_code == 204
-            assert response.get_data(as_text=True) == ""
+            # Should return 200 OK with JSON regardless of Flask app configuration
+            assert response.status_code == 200
+            data = response.get_json()
+            assert data["app_name"] == "Enhanced Video Downloader"
+            assert data["status"] == "healthy"
 
     def test_health_endpoint_performance(self):
         """Test that health endpoint responds quickly."""
@@ -148,7 +156,7 @@ class TestHealthBlueprint:
 
             # Health endpoint should respond very quickly (< 100ms)
             assert response_time < 0.1
-            assert response.status_code == 204
+            assert response.status_code == 200
 
     def test_health_endpoint_error_handling(self):
         """Test health endpoint error handling."""
@@ -159,9 +167,11 @@ class TestHealthBlueprint:
             # Test with malformed request (should still work)
             response = client.get("/health", headers={"Invalid-Header": "invalid"})
 
-            # Should still return 204 No Content
-            assert response.status_code == 204
-            assert response.get_data(as_text=True) == ""
+            # Should still return 200 OK with JSON
+            assert response.status_code == 200
+            data = response.get_json()
+            assert data["app_name"] == "Enhanced Video Downloader"
+            assert data["status"] == "healthy"
 
     def test_health_endpoint_with_query_parameters(self):
         """Test health endpoint with query parameters (should be ignored)."""
@@ -171,6 +181,8 @@ class TestHealthBlueprint:
         with app.test_client() as client:
             response = client.get("/health?param1=value1&param2=value2")
 
-            # Should still return 204 No Content
-            assert response.status_code == 204
-            assert response.get_data(as_text=True) == ""
+            # Should still return 200 OK with JSON
+            assert response.status_code == 200
+            data = response.get_json()
+            assert data["app_name"] == "Enhanced Video Downloader"
+            assert data["status"] == "healthy"

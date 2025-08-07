@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from flask.testing import FlaskClient
@@ -56,7 +56,7 @@ def test_logs_endpoint_variants(
     query: str,
     stub_missing: bool,
     expected_status: int,
-    expected_contains: Optional[str],
+    expected_contains: str | None,
 ) -> None:
     """Test various /logs endpoint variants using parameterization."""
     if stub_missing:
@@ -87,7 +87,7 @@ def test_logs_line_queries(
     client: FlaskClient,
     query: str,
     expected_status: int,
-    expected_contains: Optional[str],
+    expected_contains: str | None,
 ) -> None:
     """GET /logs?lines=<n> returns expected status and content."""
     resp = client.get(f"/logs?{query}")

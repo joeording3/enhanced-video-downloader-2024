@@ -7,7 +7,7 @@ This module provides functions to load and save extraction rule definitions from
 import contextlib
 import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 # Update the rules file path to use the config directory
 CONFIG_DIR = Path(__file__).parent / "config"
@@ -15,7 +15,7 @@ CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 RULES_PATH = CONFIG_DIR / "extraction_rules.json"
 
 
-def load_extraction_rules() -> List[Dict[str, Any]]:
+def load_extraction_rules() -> list[dict[str, Any]]:
     """
     Load extraction rules from storage file.
 
@@ -35,7 +35,7 @@ def load_extraction_rules() -> List[Dict[str, Any]]:
         return []
 
 
-def save_extraction_rules(rules: List[Dict[str, Any]]) -> bool:
+def save_extraction_rules(rules: list[dict[str, Any]]) -> bool:
     """
     Save extraction rules to storage file atomically.
 

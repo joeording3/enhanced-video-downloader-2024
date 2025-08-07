@@ -18,8 +18,9 @@ import sys
 import tempfile
 import threading
 import time
+from collections.abc import Callable  # Added Any, Callable, Tuple
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union  # Added Any, Callable, Tuple
+from typing import Any
 
 import click
 import gunicorn.app.base  # type: ignore[import-untyped]
@@ -54,7 +55,7 @@ LOG_FILE = Path(os.getenv("LOG_FILE", Path(__file__).parent.parent / "server.log
 helper_log = logging.getLogger(__name__)
 
 
-def get_lock_pid_port_cli(lock_file_path: Path) -> Optional[Tuple[int, int]]:
+def get_lock_pid_port_cli(lock_file_path: Path) -> tuple[int, int] | None:
     """Get PID and port tuple from a lock file."""
     return _get_lock_pid_port(lock_file_path)
 
@@ -76,7 +77,7 @@ def is_port_in_use(port: int, host: str = "127.0.0.1") -> bool:
             return True  # Port is in use
 
 
-def find_video_downloader_agents_cli() -> List[Path]:
+def find_video_downloader_agents_cli() -> list[Path]:
     """Find video downloader LaunchAgents on the system."""
     agents = find_video_downloader_agents()
     return [Path(agent) for agent in agents]
@@ -86,7 +87,7 @@ def find_video_downloader_agents_cli() -> List[Path]:
 disable_agents_cli = _disable_agents
 
 
-def kill_processes_cli(processes: List[psutil.Process]) -> None:
+def kill_processes_cli(processes: list[psutil.Process]) -> None:
     """Terminate and forcefully kill processes if they do not exit gracefully."""
     for proc in processes:
         try:
@@ -156,7 +157,7 @@ def create_lock_file(port: int) -> None:
     _create_lock_file(LOCK_FILE, port)
 
 
-def get_lock_pid() -> Optional[int]:
+def get_lock_pid() -> int | None:
     """
     Read PID from lock file.
 
@@ -239,7 +240,7 @@ def stop_process_by_pid(pid: int) -> None:
     os.kill(pid, signal.SIGTERM)
 
 
-def find_server_processes_cli() -> List[Dict[str, Optional[Union[int, str]]]]:
+def find_server_processes_cli() -> list[dict[str, int | str | None]]:
     """
     List running server processes by reading lock file.
 
@@ -251,7 +252,7 @@ def find_server_processes_cli() -> List[Dict[str, Optional[Union[int, str]]]]:
     List[Dict[str, Optional[Union[int, str]]]]
         List of dictionaries each containing 'pid', 'port', and 'uptime'.
     """
-    procs: List[Dict[str, Optional[Union[int, str]]]] = []
+    procs: list[dict[str, int | str | None]] = []
     if not LOCK_FILE.exists():
         return procs
 
@@ -279,14 +280,14 @@ def find_server_processes_cli() -> List[Dict[str, Optional[Union[int, str]]]]:
 
 
 def resume_failed_downloads(
-    download_ids: List[str],
+    download_ids: list[str],
     download_dir: Path,
-    build_opts_func: Callable[[str, str, Optional[Dict[str, Any]]], Dict[str, Any]],
-    logger: Optional[logging.Logger] = None,
+    build_opts_func: Callable[[str, str, dict[str, Any] | None], dict[str, Any]],
+    logger: logging.Logger | None = None,
     order: str = "oldest",
-    priority: Optional[int] = None,
+    priority: int | None = None,
     max_concurrent: int = 3,
-    progress_callback: Optional[Callable[[int, int, str], None]] = None,
+    progress_callback: Callable[[int, int, str], None] | None = None,
 ) -> None:
     """
     Resume failed downloads with enhanced prioritization and progress reporting.
@@ -363,7 +364,7 @@ def resume_failed_downloads(
     _report_failed_summary(resumed, failed, non_resumable, logger)
 
 
-def _reorder_by_priority(download_ids: List[str], history_items: List[Dict[str, Any]]) -> List[str]:
+def _reorder_by_priority(download_ids: list[str], history_items: list[dict[str, Any]]) -> list[str]:
     """Reorder downloads by priority (highest priority first)."""
     # Create a mapping of download_id to priority
     priority_map = {}
@@ -379,17 +380,17 @@ def _reorder_by_priority(download_ids: List[str], history_items: List[Dict[str, 
 
 
 def _process_resume_batch(
-    batch: List[str],
+    batch: list[str],
     download_dir: Path,
-    build_opts_func: Callable[[str, str, Optional[Dict[str, Any]]], Dict[str, Any]],
+    build_opts_func: Callable[[str, str, dict[str, Any] | None], dict[str, Any]],
     logger: logging.Logger,
-    priority: Optional[int],
-) -> Dict[str, Any]:
+    priority: int | None,
+) -> dict[str, Any]:
     """Process a batch of downloads concurrently."""
-    results: Dict[str, Any] = {"resumed": 0, "failed": 0, "non_resumable": []}
+    results: dict[str, Any] = {"resumed": 0, "failed": 0, "non_resumable": []}
     results_lock = threading.Lock()
 
-    def process_single_download(download_id: str) -> Dict[str, Any]:
+    def process_single_download(download_id: str) -> dict[str, Any]:
         try:
             # Find the download in history
             history_items = load_history()
@@ -450,12 +451,12 @@ def _process_resume_batch(
 
 def resume_incomplete_downloads(
     download_dir: Path,  # Base download directory from config
-    scan_dir_override: Optional[Path] = None,  # Specific directory to scan if different from download_dir
-    logger: Optional[logging.Logger] = None,
-    priority: Optional[int] = None,
+    scan_dir_override: Path | None = None,  # Specific directory to scan if different from download_dir
+    logger: logging.Logger | None = None,
+    priority: int | None = None,
     max_concurrent: int = 3,
     verify_integrity: bool = True,
-    progress_callback: Optional[Callable[[int, int, str], None]] = None,
+    progress_callback: Callable[[int, int, str], None] | None = None,
 ) -> None:
     """
     Resume incomplete downloads with enhanced detection and verification.
@@ -523,13 +524,13 @@ def resume_incomplete_downloads(
 
 
 def _process_incomplete_batch(
-    batch: List[Path], download_dir: Path, logger: logging.Logger, priority: Optional[int], verify_integrity: bool
-) -> Dict[str, Any]:
+    batch: list[Path], download_dir: Path, logger: logging.Logger, priority: int | None, verify_integrity: bool
+) -> dict[str, Any]:
     """Process a batch of incomplete files concurrently."""
-    results: Dict[str, Any] = {"resumed": 0, "errors": 0, "non_resumable": []}
+    results: dict[str, Any] = {"resumed": 0, "errors": 0, "non_resumable": []}
     results_lock = threading.Lock()
 
-    def process_single_file(part_file: Path) -> Dict[str, Any]:
+    def process_single_file(part_file: Path) -> dict[str, Any]:
         try:
             # Verify file integrity if requested
             if verify_integrity and not _verify_file_integrity(part_file, logger):
@@ -623,7 +624,7 @@ def _verify_file_integrity(part_file: Path, logger: logging.Logger) -> bool:
         return False
 
 
-def _determine_downloader_and_url(part_file: Path, logger: logging.Logger) -> Tuple[str, Optional[str]]:
+def _determine_downloader_and_url(part_file: Path, logger: logging.Logger) -> tuple[str, str | None]:
     """Determine downloader type and recover original URL from partial file."""
     try:
         # Check for yt-dlp metadata files
@@ -676,7 +677,7 @@ def _determine_downloader_and_url(part_file: Path, logger: logging.Logger) -> Tu
         return "unknown", None
 
 
-def _extract_url_from_file(file_path: Path, logger: logging.Logger) -> Optional[str]:
+def _extract_url_from_file(file_path: Path, logger: logging.Logger) -> str | None:
     """Extract URL from various file types."""
     try:
         if file_path.suffix == ".info.json":
@@ -697,9 +698,7 @@ def _extract_url_from_file(file_path: Path, logger: logging.Logger) -> Optional[
         return None
 
 
-def _build_resume_options(
-    downloader_type: str, url: str, download_dir: Path, priority: Optional[int]
-) -> Dict[str, Any]:
+def _build_resume_options(downloader_type: str, url: str, download_dir: Path, priority: int | None) -> dict[str, Any]:
     """Build appropriate options for resuming with the specified downloader."""
     if downloader_type == "yt-dlp":
         output_template = str(download_dir / "%(title)s.%(ext)s")
@@ -734,7 +733,7 @@ def _build_resume_options(
 
 
 def _resume_with_downloader(
-    downloader_type: str, url: str, opts: Dict[str, Any], _part_file: Path, logger: logging.Logger
+    downloader_type: str, url: str, opts: dict[str, Any], _part_file: Path, logger: logging.Logger
 ) -> bool:
     """Resume download using the specified downloader."""
     try:
@@ -844,7 +843,7 @@ def wait_for_server_start_cli(port: int, host: str = "127.0.0.1", timeout: int =
 # Helper functions remain for use by the main CLI
 
 
-def _cli_build_opts(url: str, output_template: str, extra_params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def _cli_build_opts(url: str, output_template: str, extra_params: dict[str, Any] | None = None) -> dict[str, Any]:
     """
     Build download options for CLI operations.
 
@@ -857,7 +856,7 @@ def _cli_build_opts(url: str, output_template: str, extra_params: Optional[Dict[
         cfg = Config.load()
 
         # Robust to test mocks: use get_download_options if available, else fallback
-        def _get_config_options(cfg: Any) -> Dict[str, Any]:
+        def _get_config_options(cfg: Any) -> dict[str, Any]:
             """Get download options from config."""
 
             def _raise_invalid_config():
@@ -923,7 +922,7 @@ def is_server_running() -> bool:
 
 
 # New function needed by serve.py
-def read_lock_file() -> Dict[str, Any]:
+def read_lock_file() -> dict[str, Any]:
     """
     Read and parse the lock file contents.
 
@@ -961,9 +960,9 @@ def _match_server_process(proc: psutil.Process) -> bool:
     )
 
 
-def _read_locked_processes() -> List[psutil.Process]:
+def _read_locked_processes() -> list[psutil.Process]:
     """Read the lock file and return any matching server process."""
-    procs: List[psutil.Process] = []
+    procs: list[psutil.Process] = []
     if LOCK_FILE.exists():
         try:
             pid_str, _ = LOCK_FILE.read_text().split(":", 1)
@@ -977,9 +976,9 @@ def _read_locked_processes() -> List[psutil.Process]:
     return procs
 
 
-def _scan_server_processes() -> List[psutil.Process]:
+def _scan_server_processes() -> list[psutil.Process]:
     """Scan all processes and return those matching server invocation patterns."""
-    procs: List[psutil.Process] = []
+    procs: list[psutil.Process] = []
     for proc in psutil.process_iter(["pid", "cmdline"]):
         try:
             if _match_server_process(proc):
@@ -989,7 +988,7 @@ def _scan_server_processes() -> List[psutil.Process]:
     return procs
 
 
-def find_server_processes() -> List[psutil.Process]:
+def find_server_processes() -> list[psutil.Process]:
     """
     Find all running server processes.
 
@@ -1063,7 +1062,7 @@ def run_gunicorn_server(port: int, workers: int, daemon: bool) -> None:
     try:
 
         class GunicornApp(gunicorn.app.base.BaseApplication):
-            def __init__(self, app: Any, options: Optional[Dict[str, Any]] = None) -> None:
+            def __init__(self, app: Any, options: dict[str, Any] | None = None) -> None:
                 self.options = options or {}
                 self.application = app
                 super().__init__()
@@ -1137,10 +1136,10 @@ def set_config_value(key: str, value: Any) -> None:
 
 
 def _compute_failed_download_ids(
-    download_ids: List[str],
-    history_items: List[Dict[str, Any]],
+    download_ids: list[str],
+    history_items: list[dict[str, Any]],
     log: logging.Logger,
-) -> List[str]:
+) -> list[str]:
     """Compute list of failed download IDs to resume."""
     if not download_ids:
         computed = [
@@ -1152,12 +1151,12 @@ def _compute_failed_download_ids(
     return download_ids
 
 
-def _reorder_download_ids(download_ids: List[str], order: str) -> List[str]:
+def _reorder_download_ids(download_ids: list[str], order: str) -> list[str]:
     """Reorder download IDs based on the specified order."""
     return list(download_ids)[::-1] if order == "newest" else download_ids
 
 
-def _report_failed_summary(resumed: int, failed: int, non_resumable: List[str], log: logging.Logger) -> None:
+def _report_failed_summary(resumed: int, failed: int, non_resumable: list[str], log: logging.Logger) -> None:
     """Log a summary of resumed vs failed downloads."""
     log.info(f"Finished attempting to resume failed downloads. Resumed: {resumed}, Failed: {failed}.")
     if non_resumable:
@@ -1167,19 +1166,19 @@ def _report_failed_summary(resumed: int, failed: int, non_resumable: List[str], 
 # Helpers extracted from resume_incomplete_downloads to reduce cyclomatic complexity
 
 
-def _determine_scan_target(download_dir: Path, scan_dir_override: Optional[Path]) -> Path:
+def _determine_scan_target(download_dir: Path, scan_dir_override: Path | None) -> Path:
     """Return the directory to scan for incomplete downloads."""
     return scan_dir_override if scan_dir_override else download_dir
 
 
-def _filter_incomplete_files(scan_dir: Path, log: logging.Logger) -> List[Path]:
+def _filter_incomplete_files(scan_dir: Path, log: logging.Logger) -> list[Path]:
     """Validate scan directory and return list of part files to process."""
     if not validate_scan_directory(scan_dir, log):
         return []
     return get_part_files(scan_dir)
 
 
-def _report_incomplete_summary(resumed: int, errors: int, non_resumable: List[str], log: logging.Logger) -> None:
+def _report_incomplete_summary(resumed: int, errors: int, non_resumable: list[str], log: logging.Logger) -> None:
     """Log summary of resume operations for incomplete downloads."""
     log.info(f"Finished scanning for incomplete downloads. Resumed: {resumed}, Errors/Skipped: {errors}.")
     if non_resumable:
@@ -1208,24 +1207,26 @@ def configure_console_logging(verbose: bool, log: logging.Logger) -> None:
 
     Sets DEBUG if verbose, INFO otherwise.
     """
+    from server.logging_setup import setup_logging
+
     if verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
+        setup_logging(log_level="DEBUG")
         log.setLevel(logging.DEBUG)
         log.info("Verbose logging enabled")
     else:
-        logging.getLogger().setLevel(logging.INFO)
+        setup_logging(log_level="INFO")
         log.setLevel(logging.INFO)
         log.info("Console logging set to warnings and errors only")
 
 
 def derive_server_settings(
     cfg: Config,
-    host: Optional[str],
-    port: Optional[int],
-    download_dir: Optional[str],
+    host: str | None,
+    port: int | None,
+    download_dir: str | None,
     project_root: Path,
     log: logging.Logger,
-) -> Tuple[str, int, str]:
+) -> tuple[str, int, str]:
     """
     Derive effective server settings from config and CLI arguments.
 
@@ -1327,7 +1328,7 @@ def handle_existing_instance(
 
 
 # Maintenance subtask helpers
-def _maintenance_resume_incomplete(download_dir: Optional[Path], log: logging.Logger) -> None:
+def _maintenance_resume_incomplete(download_dir: Path | None, log: logging.Logger) -> None:
     """Attempt to resume incomplete downloads as part of maintenance."""
     log.info("Attempting to resume incomplete downloads as part of maintenance...")
     if download_dir is None:
@@ -1339,7 +1340,7 @@ def _maintenance_resume_incomplete(download_dir: Optional[Path], log: logging.Lo
         log.exception("Maintenance Error: Could not resume incomplete downloads")
 
 
-def _maintenance_resume_failed(download_dir: Optional[Path], log: logging.Logger) -> None:
+def _maintenance_resume_failed(download_dir: Path | None, log: logging.Logger) -> None:
     """Attempt to resume failed downloads from history as part of maintenance."""
     log.info("Attempting to resume failed downloads from history as part of maintenance...")
     if download_dir is None:
@@ -1364,7 +1365,7 @@ def _maintenance_clear_history(log: logging.Logger) -> None:
         log.exception("Error clearing download history")
 
 
-def _maintenance_clear_cache(download_dir: Optional[Path], log: logging.Logger) -> None:
+def _maintenance_clear_cache(download_dir: Path | None, log: logging.Logger) -> None:
     """Clear temporary cache files (.part and .ytdl) from download directory."""
     log.info("Attempting to clear temporary cache files...")
     count_part, count_ytdl = 0, 0
@@ -1385,7 +1386,7 @@ def _maintenance_clear_cache(download_dir: Optional[Path], log: logging.Logger) 
 
 
 def perform_system_maintenance(
-    download_dir: Optional[Path],
+    download_dir: Path | None,
     resume_incomplete: bool,
     resume_failed: bool,
     clear_history_flag: bool,

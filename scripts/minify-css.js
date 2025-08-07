@@ -1,43 +1,47 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
 // Simple CSS minification function
 function minifyCSS(css) {
-    return css
-        .replace(/\/\*[\s\S]*?\*\//g, '') // Remove comments
-        .replace(/\s+/g, ' ') // Replace multiple spaces with single space
-        .replace(/\s*{\s*/g, '{') // Remove spaces around braces
-        .replace(/\s*}\s*/g, '}') // Remove spaces around braces
-        .replace(/\s*:\s*/g, ':') // Remove spaces around colons
-        .replace(/\s*;\s*/g, ';') // Remove spaces around semicolons
-        .replace(/\s*,\s*/g, ',') // Remove spaces around commas
-        .replace(/;\s*}/g, '}') // Remove semicolons before closing braces
-        .trim();
+  return css
+    .replace(/\/\*[\s\S]*?\*\//g, "") // Remove comments
+    .replace(/\s+/g, " ") // Replace multiple spaces with single space
+    .replace(/\s*{\s*/g, "{") // Remove spaces around braces
+    .replace(/\s*}\s*/g, "}") // Remove spaces around braces
+    .replace(/\s*:\s*/g, ":") // Remove spaces around colons
+    .replace(/\s*;\s*/g, ";") // Remove spaces around semicolons
+    .replace(/\s*,\s*/g, ",") // Remove spaces around commas
+    .replace(/;\s*}/g, "}") // Remove semicolons before closing braces
+    .trim();
 }
 
 // Process all CSS files in optimized directory
-const optimizedDir = path.join(__dirname, '../extension/ui/optimized');
-const minifiedDir = path.join(__dirname, '../extension/ui/minified');
+const optimizedDir = path.join(__dirname, "../extension/ui/optimized");
+const minifiedDir = path.join(__dirname, "../extension/ui/minified");
 
 // Create minified directory if it doesn't exist
 if (!fs.existsSync(minifiedDir)) {
-    fs.mkdirSync(minifiedDir, { recursive: true });
+  fs.mkdirSync(minifiedDir, { recursive: true });
 }
 
 // Read and minify each CSS file
-const files = fs.readdirSync(optimizedDir).filter(file => file.endsWith('.css'));
+const files = fs
+  .readdirSync(optimizedDir)
+  .filter((file) => file.endsWith(".css"));
 
-files.forEach(file => {
-    const inputPath = path.join(optimizedDir, file);
-    const outputPath = path.join(minifiedDir, file);
+files.forEach((file) => {
+  const inputPath = path.join(optimizedDir, file);
+  const outputPath = path.join(minifiedDir, file);
 
-    const css = fs.readFileSync(inputPath, 'utf8');
-    const minified = minifyCSS(css);
+  const css = fs.readFileSync(inputPath, "utf8");
+  const minified = minifyCSS(css);
 
-    fs.writeFileSync(outputPath, minified);
-    console.log(`Minified ${file}: ${css.length} -> ${minified.length} characters`);
+  fs.writeFileSync(outputPath, minified);
+  console.log(
+    `Minified ${file}: ${css.length} -> ${minified.length} characters`
+  );
 });
 
-console.log('CSS minification complete!');
+console.log("CSS minification complete!");

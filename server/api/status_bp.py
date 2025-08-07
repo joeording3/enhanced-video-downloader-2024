@@ -5,7 +5,7 @@ This module defines the `/status` route for retrieving current download progress
 """
 
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any
 
 from flask import Blueprint, jsonify, request
 from flask.wrappers import Response
@@ -38,7 +38,7 @@ def _format_bytes(bytes_value: float) -> str:
     return f"{bytes_value:.1f}PB"
 
 
-def _analyze_progress_trend(history: List[Dict[str, Any]]) -> Dict[str, Any]:
+def _analyze_progress_trend(history: list[dict[str, Any]]) -> dict[str, Any]:
     """Analyze progress trend from history data."""
     if len(history) < 2:
         return {"trend": "insufficient_data"}
@@ -84,7 +84,7 @@ def _analyze_progress_trend(history: List[Dict[str, Any]]) -> Dict[str, Any]:
         return {"trend": "error_analyzing"}
 
 
-def _enhance_status_data(status: Dict[str, Any]) -> Dict[str, Any]:
+def _enhance_status_data(status: dict[str, Any]) -> dict[str, Any]:
     """Enhance status data with computed fields and analysis."""
     enhanced_status = dict(status)
 
@@ -160,7 +160,7 @@ def get_all_status() -> Response:
 
 
 @status_bp.route("/status/<download_id>", methods=["GET"])
-def get_status_by_id(download_id: str) -> Union[Response, Tuple[Response, int]]:
+def get_status_by_id(download_id: str) -> Response | tuple[Response, int]:
     """Return detailed status for a specific download."""
     with progress_lock:
         status = progress_data.get(download_id)
@@ -168,7 +168,7 @@ def get_status_by_id(download_id: str) -> Union[Response, Tuple[Response, int]]:
         if not status and not error:
             return jsonify({"status": "error", "message": "Download not found"}), 404
 
-        response_data: Dict[str, Any] = {}
+        response_data: dict[str, Any] = {}
 
         if status:
             response_data = _enhance_status_data(status)
@@ -183,7 +183,7 @@ def get_status_by_id(download_id: str) -> Union[Response, Tuple[Response, int]]:
 
 
 @status_bp.route("/status/<download_id>", methods=["DELETE"])
-def clear_status_by_id(download_id: str) -> Union[Response, Tuple[Response, int]]:
+def clear_status_by_id(download_id: str) -> Response | tuple[Response, int]:
     """Clear status for a specific download."""
     with progress_lock:
         cleared = False
@@ -199,7 +199,7 @@ def clear_status_by_id(download_id: str) -> Union[Response, Tuple[Response, int]
 
 
 @status_bp.route("/status", methods=["DELETE"])
-def clear_status_bulk() -> Union[Response, Tuple[Response, int]]:
+def clear_status_bulk() -> Response | tuple[Response, int]:
     """Clear statuses in bulk based on a filter."""
     # Bulk clear based on status and/or age (in seconds)
     status_filter = request.args.get("status")

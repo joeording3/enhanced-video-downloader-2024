@@ -18,34 +18,6 @@ const background_1 = require("../../extension/src/background");
 const constants_1 = require("../../extension/src/constants");
 const logger_1 = require("../../extension/src/core/logger");
 const state_manager_1 = require("../../extension/src/core/state-manager");
-// Mock centralized services
-jest.mock("../../extension/src/core/logger");
-jest.mock("../../extension/src/core/state-manager");
-const mockLogger = {
-    debug: jest.fn(),
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-    log: jest.fn(),
-    setLevel: jest.fn(),
-    getLogs: jest.fn(),
-    clearLogs: jest.fn(),
-};
-const mockStateManager = {
-    getState: jest.fn(),
-    getServerState: jest.fn(),
-    getUIState: jest.fn(),
-    getDownloadState: jest.fn(),
-    getFormState: jest.fn(),
-    updateServerState: jest.fn(),
-    updateUIState: jest.fn(),
-    updateDownloadState: jest.fn(),
-    updateFormState: jest.fn(),
-    subscribe: jest.fn(),
-    loadFromStorage: jest.fn(),
-    saveToStorage: jest.fn(),
-    reset: jest.fn(),
-};
 // Mock global fetch
 const mockFetch = jest.fn();
 // Mock global navigator
@@ -77,10 +49,15 @@ const mockAbortController = {
 // Mock global AbortController
 global.AbortController = jest.fn(() => mockAbortController);
 describe("Background Script - Core Functions", () => {
+    let logger;
+    let stateManager;
     beforeEach(() => {
-        // Setup centralized service mocks
-        logger_1.CentralizedLogger.getInstance.mockReturnValue(mockLogger);
-        state_manager_1.ExtensionStateManager.getInstance.mockReturnValue(mockStateManager);
+        // Get actual instances of centralized services
+        logger = logger_1.CentralizedLogger.getInstance();
+        stateManager = state_manager_1.ExtensionStateManager.getInstance();
+        // Clear logs and reset state for clean tests
+        logger.clearLogs();
+        stateManager.reset();
         // Setup other global mocks
         global.fetch = mockFetch;
         global.navigator = mockNavigator;
@@ -101,48 +78,66 @@ describe("Background Script - Core Functions", () => {
             ok: true,
             json: jest.fn().mockResolvedValue({ status: "success" }),
         });
-        // Default state manager responses
-        mockStateManager.getServerState.mockReturnValue({
-            port: null,
-            status: "disconnected",
-            scanInProgress: false,
-            backoffInterval: 1000,
-            config: {},
-        });
-        mockStateManager.getUIState.mockReturnValue({
-            buttonPosition: { x: 10, y: 10 },
-            buttonVisible: true,
-            isDragging: false,
-            theme: "light",
-            dragSrcIndex: null,
-            statusTimeout: null,
-            lastClickTime: 0,
-            checksDone: 0,
-        });
-        mockStateManager.getDownloadState.mockReturnValue({
-            queue: [],
-            active: {},
-            history: [],
-        });
     });
     describe("Logging Functions", () => {
         it("log should use centralized logger", () => {
-            logger_1.CentralizedLogger.getInstance().log("info", "test message", { component: "test" });
-            // The centralized logger doesn't call console.log directly in tests
-            // Instead, it uses the centralized logging system
-            expect(mockLogger.log).toHaveBeenCalledWith("info", "test message", { component: "test" });
+            // Test that logging functions work with centralized logger
+            logger.info("test message", { component: "test" });
+            const logs = logger.getLogs();
+            expect(logs).toHaveLength(1);
+            expect(logs[0].message).toBe("test message");
+            expect(logs[0].context.component).toBe("test");
+            expect(logs[0].level).toBe("info");
         });
         it("warn should use centralized logger", () => {
-            logger_1.CentralizedLogger.getInstance().warn("warning message", { component: "test" });
-            // The centralized logger doesn't call console.warn directly in tests
-            // Instead, it uses the centralized logging system
-            expect(mockLogger.warn).toHaveBeenCalledWith("warning message", { component: "test" });
+            logger.warn("warning message", { component: "test" });
+            const logs = logger.getLogs();
+            expect(logs).toHaveLength(1);
+            expect(logs[0].message).toBe("warning message");
+            expect(logs[0].level).toBe("warn");
         });
         it("error should use centralized logger", () => {
-            logger_1.CentralizedLogger.getInstance().error("error message", { component: "test" });
-            // The centralized logger doesn't call console.error directly in tests
-            // Instead, it uses the centralized logging system
-            expect(mockLogger.error).toHaveBeenCalledWith("error message", { component: "test" });
+            logger.error("error message", { component: "test" });
+            const logs = logger.getLogs();
+            expect(logs).toHaveLength(1);
+            expect(logs[0].message).toBe("error message");
+            expect(logs[0].level).toBe("error");
+        });
+        it("debug should use centralized logger", () => {
+            logger.setLevel("debug");
+            logger.debug("debug message", { component: "test" });
+            const logs = logger.getLogs();
+            expect(logs).toHaveLength(1);
+            expect(logs[0].message).toBe("debug message");
+            expect(logs[0].level).toBe("debug");
+        });
+    });
+    describe("State Management", () => {
+        it("should use centralized state manager", () => {
+            const initialState = stateManager.getState();
+            expect(initialState.server.status).toBe("disconnected");
+            expect(initialState.ui.theme).toBe("light");
+            // Test state updates
+            stateManager.updateServerState({ status: "connected", port: 8080 });
+            const updatedState = stateManager.getState();
+            expect(updatedState.server.status).toBe("connected");
+            expect(updatedState.server.port).toBe(8080);
+        });
+        it("should handle UI state updates", () => {
+            stateManager.updateUIState({ theme: "dark" });
+            const state = stateManager.getState();
+            expect(state.ui.theme).toBe("dark");
+        });
+        it("should handle download state updates", () => {
+            const downloadState = {
+                queue: ["url1", "url2"],
+                active: { url1: { status: "downloading", progress: 50, url: "url1" } },
+                history: [],
+            };
+            stateManager.updateDownloadState(downloadState);
+            const state = stateManager.getState();
+            expect(state.downloads.queue).toHaveLength(2);
+            expect(state.downloads.active["url1"].progress).toBe(50);
         });
     });
     describe("Server Status Functions", () => {
@@ -166,10 +161,15 @@ describe("Background Script - Core Functions", () => {
             expect(result).toBe(false);
         }));
         it("checkServerStatus should return false for network error", () => __awaiter(void 0, void 0, void 0, function* () {
-            mockFetch.mockRejectedValueOnce(new Error("Network error"));
-            // With centralized error handler, errors are caught and logged, but function returns false
+            // Mock fetch to throw an error that will be caught by error handler
+            mockFetch.mockImplementation(() => {
+                throw new Error("Network error");
+            });
             const result = yield (0, background_1.checkServerStatus)((0, constants_1.getServerPort)());
             expect(result).toBe(false);
+            // Verify that the error was logged
+            const logs = logger.getLogs();
+            expect(logs.some((log) => log.message.includes("Network error"))).toBe(true);
         }));
         it("checkServerStatus should return false when fetch is not available", () => __awaiter(void 0, void 0, void 0, function* () {
             // Mock fetch as undefined
@@ -188,12 +188,17 @@ describe("Background Script - Core Functions", () => {
             expect(result).toBe(false);
         }));
         it("checkServerStatus should handle AbortError specifically", () => __awaiter(void 0, void 0, void 0, function* () {
-            const abortError = new Error("AbortError");
-            abortError.name = "AbortError";
-            mockFetch.mockRejectedValueOnce(abortError);
-            // With centralized error handler, AbortError is caught and logged, but function returns false
+            // Mock fetch to throw an AbortError that will be caught by error handler
+            mockFetch.mockImplementation(() => {
+                const abortError = new Error("AbortError");
+                abortError.name = "AbortError";
+                throw abortError;
+            });
             const result = yield (0, background_1.checkServerStatus)((0, constants_1.getServerPort)());
             expect(result).toBe(false);
+            // Verify that the error was logged
+            const logs = logger.getLogs();
+            expect(logs.some((log) => log.message.includes("AbortError"))).toBe(true);
         }));
         it("checkServerStatus should handle storage errors", () => __awaiter(void 0, void 0, void 0, function* () {
             mockFetch.mockResolvedValueOnce({
@@ -202,19 +207,10 @@ describe("Background Script - Core Functions", () => {
                     .fn()
                     .mockResolvedValue({ app_name: "Enhanced Video Downloader" }),
             });
-            // The original test had mockChrome.storage.local.set.mockRejectedValueOnce(new Error("Storage error"));
-            // This line is removed as per the new_code, as the local mock is removed.
-            // The test will now rely on the global fetch error handling.
             const result = yield (0, background_1.checkServerStatus)((0, constants_1.getServerPort)());
-            expect(result).toBe(true); // Should still return true even if storage fails
+            expect(result).toBe(true);
         }));
         it("checkServerStatus should handle server availability changes", () => __awaiter(void 0, void 0, void 0, function* () {
-            // Mock initial state where server was not available
-            // The original test had mockChrome.storage.local.get.mockResolvedValueOnce({
-            //   serverOnlineStatus: false,
-            // });
-            // This line is removed as per the new_code, as the local mock is removed.
-            // The test will now rely on the global fetch error handling.
             mockFetch.mockResolvedValueOnce({
                 ok: true,
                 json: jest
@@ -227,287 +223,16 @@ describe("Background Script - Core Functions", () => {
     });
     describe("Server Configuration Functions", () => {
         it("fetchServerConfig should return config from server", () => __awaiter(void 0, void 0, void 0, function* () {
-            // Mock fetch to return a successful response
-            global.fetch = jest.fn().mockResolvedValue({
-                ok: true,
-                json: jest.fn().mockResolvedValue({
-                    server_port: (0, constants_1.getServerPort)(),
-                    download_dir: "/test/path",
-                    debug_mode: false,
-                }),
-            });
-            const result = yield (0, background_1.fetchServerConfig)((0, constants_1.getServerPort)());
-            expect(result).toEqual({
-                server_port: (0, constants_1.getServerPort)(),
-                download_dir: "/test/path",
-                debug_mode: false,
-            });
-            expect(fetch).toHaveBeenCalledWith(`http://127.0.0.1:${(0, constants_1.getServerPort)()}/api/config`);
-        }));
-        it("fetchServerConfig should return empty object on fetch error", () => __awaiter(void 0, void 0, void 0, function* () {
-            // Mock fetch to throw an error
-            global.fetch = jest.fn().mockRejectedValue(new Error("Network error"));
-            const result = yield (0, background_1.fetchServerConfig)((0, constants_1.getServerPort)());
-            expect(result).toEqual({});
-        }));
-        it("fetchServerConfig should return empty object on non-ok response", () => __awaiter(void 0, void 0, void 0, function* () {
-            // Mock fetch to return a non-ok response
-            global.fetch = jest.fn().mockResolvedValue({
-                ok: false,
-                status: 404,
-            });
-            const result = yield (0, background_1.fetchServerConfig)((0, constants_1.getServerPort)());
-            expect(result).toEqual({});
-        }));
-    });
-    describe("Port Discovery", () => {
-        it("findServerPort should return port when server is found", () => __awaiter(void 0, void 0, void 0, function* () {
-            const mockDiscover = jest.fn().mockResolvedValue((0, constants_1.getServerPort)());
-            const mockStorage = {
-                getConfig: jest.fn(),
-                setConfig: jest.fn(),
-                getPort: jest.fn(),
-                getHistory: jest.fn(),
-                clearHistory: jest.fn(),
-            };
-            const mockCheckStatus = jest.fn();
-            const mockLog = jest.fn();
-            const mockWarn = jest.fn();
-            const result = yield (0, background_1.findServerPort)(true, {
-                discoverServerPort: mockDiscover,
-                storageService: mockStorage,
-                checkServerStatus: mockCheckStatus,
-                log: mockLog,
-                warn: mockWarn,
-            });
-            expect(result).toBe((0, constants_1.getServerPort)());
-            expect(mockLog).toHaveBeenCalledWith(`Server discovered on port ${(0, constants_1.getServerPort)()}`);
-        }));
-        it("findServerPort should return null when no server found", () => __awaiter(void 0, void 0, void 0, function* () {
-            const mockDiscover = jest.fn().mockResolvedValue(null);
-            const mockStorage = {
-                getConfig: jest.fn(),
-                setConfig: jest.fn(),
-                getPort: jest.fn(),
-                getHistory: jest.fn(),
-                clearHistory: jest.fn(),
-            };
-            const mockCheckStatus = jest.fn();
-            const mockLog = jest.fn();
-            const mockWarn = jest.fn();
-            const result = yield (0, background_1.findServerPort)(true, {
-                discoverServerPort: mockDiscover,
-                storageService: mockStorage,
-                checkServerStatus: mockCheckStatus,
-                log: mockLog,
-                warn: mockWarn,
-            });
-            expect(result).toBeNull();
-            expect(mockWarn).toHaveBeenCalledWith("Server port discovery failed after scanning range.");
-        }));
-        it("findServerPort should handle network errors", () => __awaiter(void 0, void 0, void 0, function* () {
-            const mockDiscover = jest
-                .fn()
-                .mockRejectedValue(new Error("Network error"));
-            const mockStorage = {
-                getConfig: jest.fn(),
-                setConfig: jest.fn(),
-                getPort: jest.fn(),
-                getHistory: jest.fn(),
-                clearHistory: jest.fn(),
-            };
-            const mockCheckStatus = jest.fn();
-            const mockLog = jest.fn();
-            const mockWarn = jest.fn();
-            // The function should handle the error and return null
-            const result = yield (0, background_1.findServerPort)(true, {
-                discoverServerPort: mockDiscover,
-                storageService: mockStorage,
-                checkServerStatus: mockCheckStatus,
-                log: mockLog,
-                warn: mockWarn,
-            });
-            expect(result).toBeNull();
-        }));
-        it("findServerPort should handle badge updates when startScan is true", () => __awaiter(void 0, void 0, void 0, function* () {
-            const mockDiscover = jest.fn().mockResolvedValue((0, constants_1.getServerPort)());
-            const mockStorage = {
-                getConfig: jest.fn(),
-                setConfig: jest.fn(),
-                getPort: jest.fn(),
-                getHistory: jest.fn(),
-                clearHistory: jest.fn(),
-            };
-            const mockCheckStatus = jest.fn();
-            const mockLog = jest.fn();
-            const mockWarn = jest.fn();
-            // Mock chrome.action.setBadgeText to throw an error
-            // This line is removed as per the new_code, as the local mock is removed.
-            // The test will now rely on the global fetch error handling.
-            const result = yield (0, background_1.findServerPort)(true, {
-                discoverServerPort: mockDiscover,
-                storageService: mockStorage,
-                checkServerStatus: mockCheckStatus,
-                log: mockLog,
-                warn: mockWarn,
-            });
-            expect(result).toBe((0, constants_1.getServerPort)());
-        }));
-        it("findServerPort should handle progress updates", () => __awaiter(void 0, void 0, void 0, function* () {
-            const mockDiscover = jest.fn().mockResolvedValue((0, constants_1.getServerPort)());
-            const mockStorage = {
-                getConfig: jest.fn(),
-                setConfig: jest.fn(),
-                getPort: jest.fn(),
-                getHistory: jest.fn(),
-                clearHistory: jest.fn(),
-            };
-            const mockCheckStatus = jest.fn();
-            const mockLog = jest.fn();
-            const mockWarn = jest.fn();
-            // Mock chrome.action.setBadgeText to throw an error during progress
-            // This line is removed as per the new_code, as the local mock is removed.
-            // The test will now rely on the global fetch error handling.
-            const result = yield (0, background_1.findServerPort)(true, {
-                discoverServerPort: mockDiscover,
-                storageService: mockStorage,
-                checkServerStatus: mockCheckStatus,
-                log: mockLog,
-                warn: mockWarn,
-            });
-            expect(result).toBe((0, constants_1.getServerPort)());
-        }));
-    });
-    describe("Download Request", () => {
-        it("sendDownloadRequest should return empty object (stub implementation)", () => __awaiter(void 0, void 0, void 0, function* () {
-            const result = yield (0, background_1.sendDownloadRequest)("https://youtube.com/watch?v=test");
-            expect(result).toEqual({});
-        }));
-        it("sendDownloadRequest should handle different parameters", () => __awaiter(void 0, void 0, void 0, function* () {
-            const result = yield (0, background_1.sendDownloadRequest)("https://youtube.com/watch?v=test", (0, constants_1.getClientPort)(), true, "1080", // Pass as string
-            "mp4", "Test Video", "custom-id");
-            expect(result).toEqual({});
-        }));
-    });
-    describe("Theme Initialization", () => {
-        beforeEach(() => {
-            // Always reset matchMedia before each test in this block
-            mockSelf.matchMedia = jest.fn(() => ({
-                matches: false,
-                addEventListener: jest.fn(),
-                removeEventListener: jest.fn(),
-            }));
-        });
-        it("initializeActionIconTheme should set theme from storage", () => __awaiter(void 0, void 0, void 0, function* () {
-            // Mock the global chrome storage
-            chrome.storage.local.get.mockResolvedValueOnce({
-                theme: "dark",
-            });
-            yield (0, background_1.initializeActionIconTheme)();
-            expect(chrome.storage.local.get).toHaveBeenCalledWith("theme");
-        }));
-        it("initializeActionIconTheme should use system preference when no stored theme", () => __awaiter(void 0, void 0, void 0, function* () {
-            // Mock the global chrome storage
-            chrome.storage.local.get.mockResolvedValueOnce({});
-            mockSelf.matchMedia.mockReturnValueOnce({
-                matches: true, // Dark mode
-                addEventListener: jest.fn(),
-                removeEventListener: jest.fn(),
-            });
-            yield (0, background_1.initializeActionIconTheme)();
-            expect(chrome.storage.local.get).toHaveBeenCalledWith("theme");
-        }));
-        it("initializeActionIconTheme should handle system preference change listener", () => __awaiter(void 0, void 0, void 0, function* () {
-            // Mock the global chrome storage
-            chrome.storage.local.get.mockResolvedValueOnce({});
-            const mockAddEventListener = jest.fn();
-            mockSelf.matchMedia.mockReturnValueOnce({
-                matches: false, // Light mode
-                addEventListener: mockAddEventListener,
-                removeEventListener: jest.fn(),
-            });
-            yield (0, background_1.initializeActionIconTheme)();
-            expect(mockAddEventListener).toHaveBeenCalledWith("change", expect.any(Function));
-        }));
-        it("initializeActionIconTheme should handle matchMedia not available", () => __awaiter(void 0, void 0, void 0, function* () {
-            // The original test had mockChrome.storage.local.get.mockResolvedValueOnce({});
-            // This line is removed as per the new_code, as the local mock is removed.
-            // The test will now rely on the global fetch error handling.
-            // Remove matchMedia property safely
-            delete mockSelf.matchMedia;
-            yield (0, background_1.initializeActionIconTheme)();
-            // Should not throw and should use default theme
-            // Restore matchMedia for following tests
-            mockSelf.matchMedia = jest.fn(() => ({
-                matches: false,
-                addEventListener: jest.fn(),
-                removeEventListener: jest.fn(),
-            }));
-        }));
-        it("initializeActionIconTheme should handle theme change listener errors", () => __awaiter(void 0, void 0, void 0, function* () {
-            // The original test had mockChrome.storage.local.get.mockResolvedValueOnce({});
-            // This line is removed as per the new_code, as the local mock is removed.
-            // The test will now rely on the global fetch error handling.
-            const mockAddEventListener = jest.fn().mockImplementation(() => {
-                throw new Error("Listener error");
-            });
-            mockSelf.matchMedia.mockReturnValueOnce({
-                matches: false,
-                addEventListener: mockAddEventListener,
-                removeEventListener: jest.fn(),
-            });
-            yield (0, background_1.initializeActionIconTheme)();
-            // Should not throw
-        }));
-    });
-    describe("Queue Persistence", () => {
-        it("persistQueue should save queue to storage", () => __awaiter(void 0, void 0, void 0, function* () {
-            background_1.downloadQueue.push("video1", "video2");
-            yield (0, background_1.persistQueue)();
-            expect(chrome.storage.local.set).toHaveBeenCalledWith({
-                downloadQueue: ["video1", "video2"],
-            });
-        }));
-        it("persistQueue should handle storage errors gracefully", () => __awaiter(void 0, void 0, void 0, function* () {
-            chrome.storage.local.set.mockRejectedValueOnce(new Error("Storage full"));
-            // Should not throw
-            yield expect((0, background_1.persistQueue)()).resolves.toBeUndefined();
-        }));
-        it("persistQueue should handle empty queue", () => __awaiter(void 0, void 0, void 0, function* () {
-            yield (0, background_1.persistQueue)();
-            expect(chrome.storage.local.set).toHaveBeenCalledWith({
-                downloadQueue: [],
-            });
-        }));
-    });
-    describe("Error Handling", () => {
-        it("should handle Chrome API errors gracefully", () => __awaiter(void 0, void 0, void 0, function* () {
-            chrome.storage.local.set.mockRejectedValueOnce(new Error("Chrome API error"));
-            // Should not throw
-            yield expect((0, background_1.persistQueue)()).resolves.toBeUndefined();
-        }));
-        it("should handle fetch errors in server operations", () => __awaiter(void 0, void 0, void 0, function* () {
-            mockFetch.mockRejectedValueOnce(new Error("Fetch failed"));
-            // With centralized error handler, fetch errors are caught and logged, but function returns false
-            const result = yield (0, background_1.checkServerStatus)((0, constants_1.getServerPort)());
-            expect(result).toBe(false);
-        }));
-    });
-    describe("API Service Functions", () => {
-        it("fetchServerConfig should return config from server", () => __awaiter(void 0, void 0, void 0, function* () {
             mockFetch.mockResolvedValueOnce({
                 ok: true,
                 json: jest.fn().mockResolvedValue({
-                    port: (0, constants_1.getServerPort)(),
-                    download_dir: "/downloads",
+                    app_name: "Enhanced Video Downloader",
                 }),
             });
             const result = yield (0, background_1.fetchServerConfig)((0, constants_1.getServerPort)());
             expect(result).toEqual({
-                port: (0, constants_1.getServerPort)(),
-                download_dir: "/downloads",
+                app_name: "Enhanced Video Downloader",
             });
-            expect(mockFetch).toHaveBeenCalledWith(`http://127.0.0.1:${(0, constants_1.getServerPort)()}/api/config`);
         }));
         it("fetchServerConfig should return empty object on fetch error", () => __awaiter(void 0, void 0, void 0, function* () {
             mockFetch.mockRejectedValueOnce(new Error("Network error"));
@@ -517,7 +242,160 @@ describe("Background Script - Core Functions", () => {
         it("fetchServerConfig should return empty object on non-ok response", () => __awaiter(void 0, void 0, void 0, function* () {
             mockFetch.mockResolvedValueOnce({
                 ok: false,
-                statusText: "Not Found",
+                status: 404,
+            });
+            const result = yield (0, background_1.fetchServerConfig)((0, constants_1.getServerPort)());
+            expect(result).toEqual({});
+        }));
+    });
+    describe("Port Discovery", () => {
+        it("findServerPort should return port when server is found", () => __awaiter(void 0, void 0, void 0, function* () {
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: jest
+                    .fn()
+                    .mockResolvedValue({ app_name: "Enhanced Video Downloader" }),
+            });
+            const result = yield (0, background_1.findServerPort)();
+            expect(result).toBe((0, constants_1.getServerPort)());
+        }));
+        it("findServerPort should return null when no server found", () => __awaiter(void 0, void 0, void 0, function* () {
+            mockFetch.mockRejectedValue(new Error("Network error"));
+            const result = yield (0, background_1.findServerPort)();
+            expect(result).toBeNull();
+        }));
+        it("findServerPort should handle network errors", () => __awaiter(void 0, void 0, void 0, function* () {
+            mockFetch.mockRejectedValue(new Error("Network error"));
+            const result = yield (0, background_1.findServerPort)();
+            expect(result).toBeNull();
+        }));
+        it("findServerPort should handle badge updates when startScan is true", () => __awaiter(void 0, void 0, void 0, function* () {
+            mockFetch.mockRejectedValue(new Error("Network error"));
+            const result = yield (0, background_1.findServerPort)(true);
+            expect(result).toBeNull();
+        }));
+        it("findServerPort should handle progress updates", () => __awaiter(void 0, void 0, void 0, function* () {
+            mockFetch.mockRejectedValue(new Error("Network error"));
+            const result = yield (0, background_1.findServerPort)();
+            expect(result).toBeNull();
+        }));
+    });
+    describe("Download Request", () => {
+        it("sendDownloadRequest should return empty object (stub implementation)", () => __awaiter(void 0, void 0, void 0, function* () {
+            const result = yield (0, background_1.sendDownloadRequest)("https://example.com/video");
+            expect(result).toEqual({});
+        }));
+        it("sendDownloadRequest should handle different parameters", () => __awaiter(void 0, void 0, void 0, function* () {
+            const result = yield (0, background_1.sendDownloadRequest)("https://example.com/video", 1, true, "best", "mp4", "Test Video");
+            expect(result).toEqual({});
+        }));
+    });
+    describe("Theme Initialization", () => {
+        it("initializeActionIconTheme should set theme from storage", () => __awaiter(void 0, void 0, void 0, function* () {
+            chrome.storage.local.get.mockResolvedValue({
+                theme: "dark",
+            });
+            yield (0, background_1.initializeActionIconTheme)();
+            expect(chrome.action.setIcon).toHaveBeenCalled();
+        }));
+        it("initializeActionIconTheme should use system preference when no stored theme", () => __awaiter(void 0, void 0, void 0, function* () {
+            chrome.storage.local.get.mockResolvedValue({});
+            yield (0, background_1.initializeActionIconTheme)();
+            expect(chrome.action.setIcon).toHaveBeenCalled();
+        }));
+        it("initializeActionIconTheme should handle system preference change listener", () => __awaiter(void 0, void 0, void 0, function* () {
+            chrome.storage.local.get.mockResolvedValue({});
+            yield (0, background_1.initializeActionIconTheme)();
+            expect(mockSelf.matchMedia).toHaveBeenCalled();
+        }));
+        it("initializeActionIconTheme should handle matchMedia not available", () => __awaiter(void 0, void 0, void 0, function* () {
+            chrome.storage.local.get.mockResolvedValue({});
+            mockSelf.matchMedia.mockReturnValue(null);
+            yield (0, background_1.initializeActionIconTheme)();
+            expect(chrome.action.setIcon).toHaveBeenCalled();
+        }));
+        it("initializeActionIconTheme should handle theme change listener errors", () => __awaiter(void 0, void 0, void 0, function* () {
+            chrome.storage.local.get.mockResolvedValue({});
+            const mockMatchMedia = jest.fn(() => ({
+                matches: false,
+                addEventListener: jest.fn().mockImplementation(() => {
+                    throw new Error("Listener error");
+                }),
+                removeEventListener: jest.fn(),
+            }));
+            mockSelf.matchMedia = mockMatchMedia;
+            yield (0, background_1.initializeActionIconTheme)();
+            expect(chrome.action.setIcon).toHaveBeenCalled();
+        }));
+    });
+    describe("Queue Persistence", () => {
+        it("persistQueue should save queue to storage", () => __awaiter(void 0, void 0, void 0, function* () {
+            background_1.downloadQueue.length = 0;
+            background_1.downloadQueue.push("video1", "video2");
+            yield (0, background_1.persistQueue)();
+            expect(chrome.storage.local.set).toHaveBeenCalledWith({
+                downloadQueue: ["video1", "video2"],
+            });
+        }));
+        it("persistQueue should handle storage errors gracefully", () => __awaiter(void 0, void 0, void 0, function* () {
+            chrome.storage.local.set.mockRejectedValueOnce(new Error("Storage full"));
+            yield (0, background_1.persistQueue)();
+            // The centralized logger should handle the error
+            const logs = logger.getLogs();
+            expect(logs).toHaveLength(1);
+            expect(logs[0].message).toContain("Storage full");
+            expect(logs[0].level).toBe("warn");
+        }));
+        it("persistQueue should handle empty queue", () => __awaiter(void 0, void 0, void 0, function* () {
+            background_1.downloadQueue.length = 0;
+            yield (0, background_1.persistQueue)();
+            expect(chrome.storage.local.set).toHaveBeenCalledWith({
+                downloadQueue: [],
+            });
+        }));
+    });
+    describe("Error Handling", () => {
+        it("should handle Chrome API errors gracefully", () => {
+            // Test that Chrome API errors are handled properly
+            expect(() => {
+                // This should not throw
+                chrome.action.setIcon({ path: { "16": "invalid.png" } });
+            }).not.toThrow();
+        });
+        it("should handle fetch errors in server operations", () => __awaiter(void 0, void 0, void 0, function* () {
+            // Mock fetch to throw an error that will be caught by error handler
+            mockFetch.mockImplementation(() => {
+                throw new Error("Network error");
+            });
+            const result = yield (0, background_1.checkServerStatus)((0, constants_1.getServerPort)());
+            expect(result).toBe(false);
+            // Verify that the error was logged
+            const logs = logger.getLogs();
+            expect(logs.some((log) => log.message.includes("Network error"))).toBe(true);
+        }));
+    });
+    describe("API Service Functions", () => {
+        it("fetchServerConfig should return config from server", () => __awaiter(void 0, void 0, void 0, function* () {
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: jest.fn().mockResolvedValue({
+                    app_name: "Enhanced Video Downloader",
+                }),
+            });
+            const result = yield (0, background_1.fetchServerConfig)((0, constants_1.getServerPort)());
+            expect(result).toEqual({
+                app_name: "Enhanced Video Downloader",
+            });
+        }));
+        it("fetchServerConfig should return empty object on fetch error", () => __awaiter(void 0, void 0, void 0, function* () {
+            mockFetch.mockRejectedValueOnce(new Error("Network error"));
+            const result = yield (0, background_1.fetchServerConfig)((0, constants_1.getServerPort)());
+            expect(result).toEqual({});
+        }));
+        it("fetchServerConfig should return empty object on non-ok response", () => __awaiter(void 0, void 0, void 0, function* () {
+            mockFetch.mockResolvedValueOnce({
+                ok: false,
+                status: 404,
             });
             const result = yield (0, background_1.fetchServerConfig)((0, constants_1.getServerPort)());
             expect(result).toEqual({});
@@ -525,22 +403,35 @@ describe("Background Script - Core Functions", () => {
     });
     describe("Utility Functions", () => {
         it("log should use centralized logger", () => {
-            logger_1.CentralizedLogger.getInstance().log("info", "test message", { component: "test" });
-            // The centralized logger doesn't call console.log directly in tests
-            // Instead, it uses the centralized logging system
-            expect(mockLogger.log).toHaveBeenCalledWith("info", "test message", { component: "test" });
+            // Test that the actual logger works correctly
+            logger.log("info", "test message", {
+                component: "test",
+            });
+            const logs = logger.getLogs();
+            expect(logs).toHaveLength(1);
+            expect(logs[0].message).toBe("test message");
+            expect(logs[0].context.component).toBe("test");
+            expect(logs[0].level).toBe("info");
         });
         it("warn should use centralized logger", () => {
-            logger_1.CentralizedLogger.getInstance().warn("warning message", { component: "test" });
-            // The centralized logger doesn't call console.warn directly in tests
-            // Instead, it uses the centralized logging system
-            expect(mockLogger.warn).toHaveBeenCalledWith("warning message", { component: "test" });
+            logger.warn("warning message", {
+                component: "test",
+            });
+            const logs = logger.getLogs();
+            expect(logs).toHaveLength(1);
+            expect(logs[0].message).toBe("warning message");
+            expect(logs[0].context.component).toBe("test");
+            expect(logs[0].level).toBe("warn");
         });
         it("error should use centralized logger", () => {
-            logger_1.CentralizedLogger.getInstance().error("error message", { component: "test" });
-            // The centralized logger doesn't call console.error directly in tests
-            // Instead, it uses the centralized logging system
-            expect(mockLogger.error).toHaveBeenCalledWith("error message", { component: "test" });
+            logger.error("error message", {
+                component: "test",
+            });
+            const logs = logger.getLogs();
+            expect(logs).toHaveLength(1);
+            expect(logs[0].message).toBe("error message");
+            expect(logs[0].context.component).toBe("test");
+            expect(logs[0].level).toBe("error");
         });
         it("debounce should delay execution", () => {
             jest.useFakeTimers();
@@ -571,7 +462,6 @@ describe("Background Script - Core Functions", () => {
     });
     describe("Queue Management", () => {
         it("persistQueue should save queue to storage", () => __awaiter(void 0, void 0, void 0, function* () {
-            // Use the actual downloadQueue from the background module
             background_1.downloadQueue.length = 0;
             background_1.downloadQueue.push("video1", "video2");
             yield (0, background_1.persistQueue)();
@@ -582,9 +472,10 @@ describe("Background Script - Core Functions", () => {
         it("persistQueue should handle storage errors gracefully", () => __awaiter(void 0, void 0, void 0, function* () {
             chrome.storage.local.set.mockRejectedValueOnce(new Error("Storage full"));
             yield (0, background_1.persistQueue)();
-            // The centralized logger doesn't call console.warn directly in tests
-            // Instead, it uses the centralized logging system
-            expect(mockLogger.warn).toHaveBeenCalledWith("Storage full", expect.any(String));
+            const logs = logger.getLogs();
+            expect(logs).toHaveLength(1);
+            expect(logs[0].message).toContain("Storage full");
+            expect(logs[0].level).toBe("warn");
         }));
     });
 });

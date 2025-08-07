@@ -10,10 +10,9 @@ It can check Python files, markdown files, and other text files.
 import re
 import sys
 from pathlib import Path
-from typing import List, Optional, Tuple
 
 
-def find_emojis_in_text(text: str) -> List[Tuple[int, str, str]]:
+def find_emojis_in_text(text: str) -> list[tuple[int, str, str]]:
     """
     Find emoji usage in text.
 
@@ -47,7 +46,7 @@ def find_emojis_in_text(text: str) -> List[Tuple[int, str, str]]:
         re.UNICODE,
     )
 
-    emojis_found: List[Tuple[int, str, str]] = []
+    emojis_found: list[tuple[int, str, str]] = []
     lines = text.split("\n")
 
     for line_num, line in enumerate(lines, 1):
@@ -110,7 +109,7 @@ def should_skip_directory(path: Path) -> bool:
     return any(part in skip_dirs for part in path.parts)
 
 
-def read_file_safely(file_path: Path) -> Optional[str]:
+def read_file_safely(file_path: Path) -> str | None:
     """
     Safely read a file and return its content.
 
@@ -130,8 +129,8 @@ def read_file_safely(file_path: Path) -> Optional[str]:
 
 
 def scan_files(
-    directory: str = ".", file_types: Optional[List[str]] = None
-) -> List[Tuple[Path, List[Tuple[int, str, str]]]]:
+    directory: str = ".", file_types: list[str] | None = None
+) -> list[tuple[Path, list[tuple[int, str, str]]]]:
     """
     Scan files in the directory for emoji usage.
 
@@ -155,7 +154,7 @@ def scan_files(
     if not files_to_scan:
         return []
 
-    files_with_emojis: List[Tuple[Path, List[Tuple[int, str, str]]]] = []
+    files_with_emojis: list[tuple[Path, list[tuple[int, str, str]]]] = []
 
     for file_path in files_to_scan:
         content = read_file_safely(file_path)
@@ -167,7 +166,7 @@ def scan_files(
     return files_with_emojis
 
 
-def print_results(files_with_emojis: List[Tuple[Path, List[Tuple[int, str, str]]]]) -> None:
+def print_results(files_with_emojis: list[tuple[Path, list[tuple[int, str, str]]]]) -> None:
     """
     Print emoji detection results in a readable format.
 

@@ -8,7 +8,7 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import click
 import yaml
@@ -21,7 +21,7 @@ update_config = Config.update_config
 
 
 # Helper functions for logs and cleanup
-def get_log_files() -> List[str]:
+def get_log_files() -> list[str]:
     """Return list of log file paths."""
     logs_dir = Path(__file__).parent.parent.resolve() / "logs"
     if not logs_dir.exists():
@@ -29,7 +29,7 @@ def get_log_files() -> List[str]:
     return [str(p) for p in logs_dir.glob("*.log") if p.is_file()]
 
 
-def read_log_file(path: str, lines: int = 50, filter_text: Optional[str] = None) -> List[str]:
+def read_log_file(path: str, lines: int = 50, filter_text: str | None = None) -> list[str]:
     """Read specified lines from a log file, optionally filtering text."""
     try:
         with Path(path).open() as f:
@@ -54,7 +54,7 @@ def clean_log_files() -> int:
     return count
 
 
-def run_cleanup() -> Dict[str, Any]:
+def run_cleanup() -> dict[str, Any]:
     """Clean up temporary files and partial downloads; return summary dict."""
     # Default stub: return empty cleanup results. Override in tests via patch.
     return {}
@@ -92,7 +92,7 @@ def config_group(ctx: click.Context) -> None:
     is_flag=True,
     help="Show detailed explanations for configuration options.",
 )
-def config_show_command(format: str, filter_keys: Tuple[str, ...], section: str, verbose: bool) -> None:
+def config_show_command(format: str, filter_keys: tuple[str, ...], section: str, verbose: bool) -> None:
     """
     Display current server configuration with enhanced formatting and filtering.
 
@@ -125,7 +125,7 @@ def config_show_command(format: str, filter_keys: Tuple[str, ...], section: str,
         sys.exit(1)
 
 
-def _filter_by_section(config_dict: Dict[str, Any], section: str) -> Dict[str, Any]:
+def _filter_by_section(config_dict: dict[str, Any], section: str) -> dict[str, Any]:
     """Filter configuration by section."""
     section_mappings = {
         "server": ["server_host", "server_port"],
@@ -142,7 +142,7 @@ def _filter_by_section(config_dict: Dict[str, Any], section: str) -> Dict[str, A
     return {k: v for k, v in config_dict.items() if k in filtered_keys}
 
 
-def _display_json(config_dict: Dict[str, Any], verbose: bool) -> None:
+def _display_json(config_dict: dict[str, Any], verbose: bool) -> None:
     """Display configuration in JSON format."""
     if verbose:
         # Add explanatory comments as JSON comments (not standard but readable)
@@ -153,7 +153,7 @@ def _display_json(config_dict: Dict[str, Any], verbose: bool) -> None:
     click.echo(json.dumps(config_dict, indent=2))
 
 
-def _display_yaml(config_dict: Dict[str, Any], verbose: bool) -> None:
+def _display_yaml(config_dict: dict[str, Any], verbose: bool) -> None:
     """Display configuration in YAML format."""
     if verbose:
         # Add explanatory comments
@@ -164,7 +164,7 @@ def _display_yaml(config_dict: Dict[str, Any], verbose: bool) -> None:
     click.echo(yaml.dump(config_dict, default_flow_style=False, sort_keys=False))
 
 
-def _display_table(config_dict: Dict[str, Any], verbose: bool) -> None:
+def _display_table(config_dict: dict[str, Any], verbose: bool) -> None:
     """Display configuration in formatted table."""
     if not config_dict:
         click.echo(" No configuration items found matching the specified filters.")
@@ -268,16 +268,16 @@ def _display_table(config_dict: Dict[str, Any], verbose: bool) -> None:
     help="Set multiple key-value pairs in format 'key=value' (can be specified multiple times).",
 )
 def config_set_command(
-    port: Optional[int],
-    download_dir: Optional[str],
-    debug_mode: Optional[bool],
-    enable_history: Optional[bool],
-    log_level: Optional[str],
-    console_log_level: Optional[str],
-    max_concurrent_downloads: Optional[int],
+    port: int | None,
+    download_dir: str | None,
+    debug_mode: bool | None,
+    enable_history: bool | None,
+    log_level: str | None,
+    console_log_level: str | None,
+    max_concurrent_downloads: int | None,
     backup: bool,
     test: bool,
-    key_value_pairs: Tuple[str, ...],
+    key_value_pairs: tuple[str, ...],
 ) -> None:
     """
     Set server configuration options with enhanced validation and backup.
@@ -289,7 +289,7 @@ def config_set_command(
     """
     try:
         # Prepare config updates
-        updates: Dict[str, Any] = {}
+        updates: dict[str, Any] = {}
 
         # Process individual options
         if port is not None:
@@ -402,7 +402,7 @@ def _validate_and_convert_value(key: str, value: str) -> Any:
         return value
 
 
-def _validate_updates(updates: Dict[str, Any], config_data: Config) -> List[str]:
+def _validate_updates(updates: dict[str, Any], config_data: Config) -> list[str]:
     """Validate configuration updates."""
     errors = []
 
@@ -476,7 +476,7 @@ def _create_config_backup(config_data: Config) -> None:
         click.echo(f"  Warning: Could not create backup: {e}", err=True)
 
 
-def _show_changes(config_data: Config, updates: Dict[str, Any]) -> None:
+def _show_changes(config_data: Config, updates: dict[str, Any]) -> None:
     """Show what changes would be made."""
     click.echo(" Configuration changes:")
 
@@ -493,7 +493,7 @@ def _show_changes(config_data: Config, updates: Dict[str, Any]) -> None:
     click.echo()
 
 
-def _requires_restart(updates: Dict[str, Any]) -> bool:
+def _requires_restart(updates: dict[str, Any]) -> bool:
     """Check if any updates require a server restart."""
     restart_keys = {
         "server_port",
@@ -528,12 +528,12 @@ def logs_group(ctx: click.Context) -> None:
 @click.option("--export", type=click.Path(), help="Export filtered logs to specified file.")
 def logs_view_command(
     lines: int,
-    filter_text: Optional[str],
+    filter_text: str | None,
     tail: bool,
-    level: Optional[str],
-    pattern: Optional[str],
+    level: str | None,
+    pattern: str | None,
     color: bool,
-    export: Optional[str],
+    export: str | None,
 ) -> None:
     """
     View server logs with enhanced filtering and formatting.
@@ -568,9 +568,9 @@ def logs_view_command(
 
     def matches_filters(
         line: str,
-        filter_text: Optional[str] = None,
-        level: Optional[str] = None,
-        pattern: Optional[str] = None,
+        filter_text: str | None = None,
+        level: str | None = None,
+        pattern: str | None = None,
     ) -> bool:
         """Check if line matches all specified filters."""
         line_lower = line.lower()

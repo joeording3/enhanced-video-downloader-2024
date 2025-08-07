@@ -3,7 +3,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any, ClassVar, List, Optional
+from typing import Any, ClassVar
 
 import pytest
 from pytest import LogCaptureFixture, MonkeyPatch
@@ -16,7 +16,7 @@ from server.cli_helpers import resume_incomplete_downloads
 class DummyConfig:
     """Dummy config object to satisfy Config.load() in resume_incomplete_downloads."""
 
-    def get_value(self, key: str, default: Optional[Any] = None) -> Optional[Any]:
+    def get_value(self, key: str, default: Any | None = None) -> Any | None:
         """Return default value for any key."""
         return default
 
@@ -47,8 +47,8 @@ def _dummy_config(monkeypatch: MonkeyPatch) -> None:
 class DummyYoutubeDL:
     """Dummy YoutubeDL class for testing."""
 
-    instances: ClassVar[List[Any]] = []
-    downloads: ClassVar[List[Any]] = []
+    instances: ClassVar[list[Any]] = []
+    downloads: ClassVar[list[Any]] = []
 
     def __init__(self, opts: Any) -> None:
         """Initialize dummy YoutubeDL with options."""
@@ -63,7 +63,7 @@ class DummyYoutubeDL:
         """Context manager exit."""
         return
 
-    def download(self, urls: List[str]) -> None:
+    def download(self, urls: list[str]) -> None:
         """Record download URLs for testing."""
         DummyYoutubeDL.downloads.append(urls)
 
@@ -83,7 +83,7 @@ def _dummy_yt_dlp(monkeypatch: MonkeyPatch) -> None:
     class MockYoutubeDL(DummyYoutubeDL):
         """Mock YoutubeDL that records calls but doesn't actually download."""
 
-        def download(self, urls: List[str]) -> None:
+        def download(self, urls: list[str]) -> None:
             """Record download URLs for testing without actually downloading."""
             DummyYoutubeDL.downloads.append(urls)
             # Don't actually download anything to avoid network calls

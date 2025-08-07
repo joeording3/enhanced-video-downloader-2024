@@ -8,7 +8,7 @@ Pydantic validation.
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import psutil
 from flask import Blueprint, jsonify, request
@@ -29,19 +29,19 @@ logger = logging.getLogger(__name__)
 
 
 # Helper functions for the /api/download endpoint
-def _parse_download_raw() -> Dict[str, Any]:
+def _parse_download_raw() -> dict[str, Any]:
     """Parse and return raw JSON payload from the request."""
     data = request.get_json(force=True)
     return data if isinstance(data, dict) else {}
 
 
-def _get_download_id(raw_data: Dict[str, Any]) -> str:
+def _get_download_id(raw_data: dict[str, Any]) -> str:
     """Extract the downloadId or use 'unknown' if missing."""
     download_id = raw_data.get("downloadId", "unknown")
     return str(download_id) if download_id is not None else "unknown"
 
 
-def _missing_url_response(download_id: str) -> Tuple[Response, int]:
+def _missing_url_response(download_id: str) -> tuple[Response, int]:
     """Return a Flask JSON error response for a missing URL in the request."""
     return (
         jsonify(
@@ -56,7 +56,7 @@ def _missing_url_response(download_id: str) -> Tuple[Response, int]:
     )
 
 
-def _maybe_handle_gallery(raw_data: Dict[str, Any]) -> Optional[Any]:
+def _maybe_handle_gallery(raw_data: dict[str, Any]) -> Any | None:
     """Handle GalleryDL flow if requested."""
     if raw_data.get("use_gallery_dl", False):
         validated = GalleryDLRequest(**raw_data).model_dump()
@@ -64,7 +64,7 @@ def _maybe_handle_gallery(raw_data: Dict[str, Any]) -> Optional[Any]:
     return None
 
 
-def _validation_error_response(e: ValidationError, download_id: str) -> Tuple[Response, int]:
+def _validation_error_response(e: ValidationError, download_id: str) -> tuple[Response, int]:
     """Return JSON response for Pydantic validation errors."""
     field_errors = []
     for error in e.errors():
@@ -85,7 +85,7 @@ def _validation_error_response(e: ValidationError, download_id: str) -> Tuple[Re
     )
 
 
-def _playlist_permission_response(validated_data: Dict[str, Any], download_id: str) -> Optional[Tuple[Response, int]]:
+def _playlist_permission_response(validated_data: dict[str, Any], download_id: str) -> tuple[Response, int] | None:
     """Check if playlist downloads are allowed in config."""
     if validated_data.get("download_playlist", False):
         config = Config.load()
@@ -106,7 +106,7 @@ def _playlist_permission_response(validated_data: Dict[str, Any], download_id: s
     return None
 
 
-def _log_validated_request(download_id: str, validated_data: Dict[str, Any]) -> None:
+def _log_validated_request(download_id: str, validated_data: dict[str, Any]) -> None:
     """Log a safe copy of the validated request for debugging."""
     safe_data = validated_data.copy()
     if "url" in safe_data:
@@ -115,7 +115,7 @@ def _log_validated_request(download_id: str, validated_data: Dict[str, Any]) -> 
     logger.debug(f"Processing validated download request [{download_id}]: {safe_data}")
 
 
-def _get_cancel_proc(download_id: str) -> Tuple[Optional[psutil.Process], Optional[Tuple[Response, int]]]:
+def _get_cancel_proc(download_id: str) -> tuple[psutil.Process | None, tuple[Response, int] | None]:
     """Retrieve process for cancellation or return error response."""
     proc = download_process_registry.get(download_id)
     if not proc:
@@ -132,7 +132,7 @@ def _get_cancel_proc(download_id: str) -> Tuple[Optional[psutil.Process], Option
     return proc, None
 
 
-def _terminate_proc(proc: psutil.Process, download_id: str) -> Tuple[None, Optional[Tuple[Response, int]]]:
+def _terminate_proc(proc: psutil.Process, download_id: str) -> tuple[None, tuple[Response, int] | None]:
     """Attempt graceful then forceful termination, or return error response."""
     try:
         proc.terminate()
@@ -169,7 +169,7 @@ def _cleanup_cancel_partfiles(download_id: str) -> None:
         pass
 
 
-def _download_error_response(message: str, error_type: str, download_id: str, status_code: int) -> Tuple[Response, int]:
+def _download_error_response(message: str, error_type: str, download_id: str, status_code: int) -> tuple[Response, int]:
     """Create standardized error response for download endpoint."""
     return (
         jsonify(
@@ -184,13 +184,13 @@ def _download_error_response(message: str, error_type: str, download_id: str, st
     )
 
 
-def _priority_response(status: str, message: str, download_id: str, status_code: int, **kwargs) -> Tuple[Response, int]:
+def _priority_response(status: str, message: str, download_id: str, status_code: int, **kwargs) -> tuple[Response, int]:
     """Create standardized response for priority endpoint."""
     response_data = {"status": status, "message": message, "downloadId": download_id, **kwargs}
     return jsonify(response_data), status_code
 
 
-def _process_download_request(raw_data: Dict[str, Any]) -> Tuple[Any, Optional[str]]:
+def _process_download_request(raw_data: dict[str, Any]) -> tuple[Any, str | None]:
     """Process download request and return response or None if validation fails."""
     download_id = _get_download_id(raw_data)
 
@@ -526,7 +526,7 @@ def resume_download(download_id: str) -> Any:
     )
 
 
-def _process_priority_request(download_id: str, data: Dict[str, Any]) -> Tuple[Response, int]:
+def _process_priority_request(download_id: str, data: dict[str, Any]) -> tuple[Response, int]:
     """Process priority request and return response."""
     try:
         pr = PriorityRequest(**data)

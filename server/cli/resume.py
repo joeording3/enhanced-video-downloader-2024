@@ -1,8 +1,8 @@
 """CLI commands for resuming downloads (incomplete and failed)."""
 
 import logging
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Optional, Tuple
 
 import click
 
@@ -47,8 +47,8 @@ def resume_group() -> None:
 @click.pass_context
 def cli_resume_incomplete(
     _ctx: click.Context,
-    scan_dir_str: Optional[str],
-    priority: Optional[int],
+    scan_dir_str: str | None,
+    priority: int | None,
     max_concurrent: int,
     no_verify: bool,
     progress: bool,
@@ -76,7 +76,7 @@ def cli_resume_incomplete(
     click.echo(" Resuming incomplete downloads with enhanced detection...")
 
     # Progress callback for detailed reporting
-    progress_callback: Optional[Callable[[int, int, str], None]] = None
+    progress_callback: Callable[[int, int, str], None] | None = None
     if progress:
 
         def incomplete_progress_callback(current: int, total: int, status: str) -> None:
@@ -124,9 +124,9 @@ def cli_resume_incomplete(
 @click.pass_context
 def resume_failed_cmd(
     _ctx: click.Context,
-    download_ids: Tuple[str, ...],
+    download_ids: tuple[str, ...],
     order: str,
-    priority: Optional[int],
+    priority: int | None,
     max_concurrent: int,
     progress: bool,
 ) -> None:
@@ -153,7 +153,7 @@ def resume_failed_cmd(
     click.echo(" Resuming failed downloads with enhanced prioritization...")
 
     # Progress callback for detailed reporting
-    failed_progress_callback: Optional[Callable[[int, int, str], None]] = None
+    failed_progress_callback: Callable[[int, int, str], None] | None = None
     if progress:
 
         def failed_callback_impl(current: int, total: int, status: str) -> None:

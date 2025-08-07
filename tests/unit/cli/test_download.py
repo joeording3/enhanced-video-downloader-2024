@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, List
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -30,7 +30,7 @@ from server.constants import get_server_port
         ),
     ],
 )
-def test_download_group_help(args: List[str], substrings: List[str]) -> None:
+def test_download_group_help(args: list[str], substrings: list[str]) -> None:
     """Test that download group shows all subcommands."""
     runner = CliRunner()
     result = runner.invoke(download_group, args)

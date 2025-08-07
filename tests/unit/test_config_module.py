@@ -27,7 +27,7 @@ def test_valid_keys_and_as_dict() -> None:
     assert isinstance(d, dict)
     assert d.get("server_port") == 8000
     # Path fields should be string in JSON mode
-    assert isinstance(d.get("download_dir"), (str,))
+    assert isinstance(d.get("download_dir"), str)
 
 
 def test_load_environment_only(monkeypatch: Any) -> None:

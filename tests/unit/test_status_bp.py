@@ -6,7 +6,7 @@ that may not be covered by integration tests.
 """
 
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List
+from typing import Any
 
 import pytest
 from flask import Flask
@@ -151,7 +151,7 @@ class TestStatusHelperFunctions:
             ),
         ],
     )
-    def test_analyze_progress_trend(self, history: List[Dict[str, Any]], expected_trend: Dict[str, Any]) -> None:
+    def test_analyze_progress_trend(self, history: list[dict[str, Any]], expected_trend: dict[str, Any]) -> None:
         """Test _analyze_progress_trend function with various history data.
 
         :param history: Progress history data.

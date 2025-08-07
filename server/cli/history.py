@@ -4,7 +4,7 @@ import json
 import sys
 import types
 from datetime import datetime
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import click
 import requests
@@ -122,9 +122,9 @@ def _get_server_port_or_exit() -> int:
     return int(port)
 
 
-def _fetch_history_entries(status: str, domain: str, port: int, limit: int) -> Tuple[List[Dict[str, Any]], int]:
+def _fetch_history_entries(status: str, domain: str, port: int, limit: int) -> tuple[list[dict[str, Any]], int]:
     """Fetch and filter history entries from server."""
-    params: Dict[str, str] = {}
+    params: dict[str, str] = {}
     if status != "all":
         params["status"] = status
     if domain:
@@ -149,9 +149,9 @@ def _fetch_history_entries(status: str, domain: str, port: int, limit: int) -> T
     return entries[:limit], len(entries)
 
 
-def _format_history_entry(entry: Dict[str, Any]) -> List[str]:
+def _format_history_entry(entry: dict[str, Any]) -> list[str]:
     """Return formatted lines for a history entry."""
-    lines: List[str] = []
+    lines: list[str] = []
     lines.append(f"ID: {entry.get('id', 'N/A')}")
     lines.append(f"Title: {entry.get('page_title', 'Unknown')}")
     lines.append(f"URL: {entry.get('url', 'N/A')}")

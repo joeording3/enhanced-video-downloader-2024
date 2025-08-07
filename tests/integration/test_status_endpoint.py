@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta, timezone
-from typing import Union
 
 import pytest
 from flask.testing import FlaskClient
@@ -85,7 +84,7 @@ def test_status_by_id_error_only(client: FlaskClient) -> None:
         progress_data.clear()
     download_errors_from_hooks.clear()
     # Seed error only
-    error_info: dict[str, Union[str, dict[str, str]]] = {
+    error_info: dict[str, str | dict[str, str]] = {
         "original_message": "fail",
         "parsed_type": "HOOK_ERROR",
         "source": "hook",

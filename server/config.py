@@ -6,7 +6,8 @@ saving server configuration with type validation and default handling.
 """
 
 import os  # Added os for the __main__ example
-from typing import Any, Callable, Dict, List, Tuple, Union
+from collections.abc import Callable
+from typing import Any
 
 from pydantic import ValidationError
 
@@ -31,7 +32,7 @@ class Config:
 
     # JSON config file support removed; configuration is derived solely from environment variables.
 
-    def __init__(self, config_data: Union[ServerConfig, Dict[str, Any]]) -> None:
+    def __init__(self, config_data: ServerConfig | dict[str, Any]) -> None:
         """
         Initialize Config instance with provided data.
 
@@ -100,7 +101,7 @@ class Config:
         pydantic_config = ServerConfig.model_validate(env_data)
         return cls(pydantic_config)
 
-    def update_config(self, update_payload: Dict[str, Any]) -> None:
+    def update_config(self, update_payload: dict[str, Any]) -> None:
         """
         Update configuration in memory and persist changes to the .env file and environment variables.
 
@@ -127,7 +128,7 @@ class Config:
             os.environ[env_var] = str(value)
 
     @classmethod
-    def valid_keys(cls) -> List[str]:
+    def valid_keys(cls) -> list[str]:
         """
         Get valid top-level configuration keys.
 
@@ -136,7 +137,7 @@ class Config:
         """
         return list(ServerConfig.model_fields.keys())
 
-    def as_dict(self) -> Dict[str, Any]:
+    def as_dict(self) -> dict[str, Any]:
         """
         Get configuration data as a plain dictionary.
 
@@ -164,7 +165,7 @@ if __name__ == "__main__":  # pragma: no cover
 
 
 # Mapping of environment variables to config keys and caster functions
-_ENV_VAR_MAPPINGS: List[Tuple[str, str, Callable[[str], Any]]] = [
+_ENV_VAR_MAPPINGS: list[tuple[str, str, Callable[[str], Any]]] = [
     ("SERVER_HOST", "server_host", lambda v: v),
     ("SERVER_PORT", "server_port", lambda v: int(v)),
     ("DOWNLOAD_DIR", "download_dir", lambda v: v),
@@ -183,14 +184,14 @@ _ENV_VAR_MAPPINGS: List[Tuple[str, str, Callable[[str], Any]]] = [
 ]
 
 
-def _collect_env_data() -> Dict[str, Any]:
+def _collect_env_data() -> dict[str, Any]:
     """
     Collect configuration overrides from environment variables.
 
     :returns: Environment configuration data as a dict.
     :rtype: Dict[str, Any]
     """
-    env_data: Dict[str, Any] = {}
+    env_data: dict[str, Any] = {}
     for env_var, key, caster in _ENV_VAR_MAPPINGS:
         v = os.getenv(env_var)
         if v is None:

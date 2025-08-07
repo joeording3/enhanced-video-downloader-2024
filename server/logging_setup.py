@@ -8,7 +8,7 @@ console and file logging based on application configuration.
 import logging
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     pass  # Import for type hinting
@@ -52,7 +52,7 @@ def ensure_log_file(path: str) -> bool:  # Added type hint for path
         return False
 
 
-def setup_logging(log_level: str = "INFO", log_file: Optional[str] = None) -> None:
+def setup_logging(log_level: str = "INFO", log_file: str | None = None) -> None:
     """Set up logging configuration for the application."""
     # Convert string log level to logging constant
     numeric_level = getattr(logging, log_level.upper(), logging.INFO)

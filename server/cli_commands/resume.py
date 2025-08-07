@@ -5,7 +5,6 @@ import os
 import sys
 import tempfile
 from pathlib import Path
-from typing import Optional, Tuple
 
 import click
 
@@ -42,7 +41,7 @@ def resume(ctx: click.Context) -> None:
     help="Directory to scan for incomplete downloads",
 )
 @click.pass_context
-def incomplete(_ctx: click.Context, scan_dir_override_str: Optional[str]) -> None:
+def incomplete(_ctx: click.Context, scan_dir_override_str: str | None) -> None:
     """
     Resume incomplete downloads.
 
@@ -84,7 +83,7 @@ def incomplete(_ctx: click.Context, scan_dir_override_str: Optional[str]) -> Non
 @resume.command("failed")
 @click.argument("download_ids", nargs=-1, required=True)
 @click.pass_context
-def failed(_ctx: click.Context, download_ids: Tuple[str, ...]) -> None:
+def failed(_ctx: click.Context, download_ids: tuple[str, ...]) -> None:
     """
     Resume failed downloads with given download IDs.
 

@@ -3,7 +3,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 
@@ -49,7 +49,7 @@ class TestResumeLogic:
         monkeypatch: Any,
         tmp_path: Path,
         caplog: Any,
-        derived_url: Optional[str],
+        derived_url: str | None,
         handler_behavior: str,
         expected_result: bool,
         log_level: int,

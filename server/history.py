@@ -8,7 +8,7 @@ entries stored in a JSON file.
 import contextlib
 import json
 from pathlib import Path
-from typing import Any, Dict, List, cast  # Added cast
+from typing import Any, cast  # Added cast
 
 # Update the history file path to use the data directory
 DATA_DIR = Path(__file__).parent / "data"
@@ -16,7 +16,7 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 HISTORY_PATH = DATA_DIR / "history.json"
 
 
-def load_history() -> List[Dict[str, Any]]:
+def load_history() -> list[dict[str, Any]]:
     """
     Load download history from the storage file.
 
@@ -31,13 +31,13 @@ def load_history() -> List[Dict[str, Any]]:
             if isinstance(data, list):
                 # We cast here because json.load returns List[Any]
                 # and we are asserting the structure of our history items.
-                return cast(List[Dict[str, Any]], data)
+                return cast(list[dict[str, Any]], data)
             return []  # Or handle error if not a list
     except (OSError, json.JSONDecodeError):
         return []
 
 
-def save_history(history: List[Dict[str, Any]]) -> bool:
+def save_history(history: list[dict[str, Any]]) -> bool:
     """
     Save download history to the storage file atomically.
 
@@ -65,7 +65,7 @@ def save_history(history: List[Dict[str, Any]]) -> bool:
         return True
 
 
-def append_history_entry(entry: Dict[str, Any]) -> None:
+def append_history_entry(entry: dict[str, Any]) -> None:
     """
     Append a new entry to the download history.
 

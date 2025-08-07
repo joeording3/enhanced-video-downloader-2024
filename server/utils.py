@@ -12,7 +12,6 @@ import socket
 import sys
 from contextlib import closing
 from pathlib import Path
-from typing import Optional
 from urllib.parse import urlparse
 
 # It's better to get the logger from the current Flask app context if used within
@@ -186,7 +185,7 @@ def is_safe_path(base_path: Path, target_path: Path) -> bool:
         return False
 
 
-def newest_file(folder: Path) -> Optional[Path]:
+def newest_file(folder: Path) -> Path | None:
     """
     Get the newest file in a directory.
 

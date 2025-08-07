@@ -6,7 +6,7 @@ entries via GET and POST requests.
 """
 
 import logging
-from typing import Any, Tuple, Union
+from typing import Any
 
 from flask import Blueprint, jsonify, request
 from flask.wrappers import Response
@@ -19,7 +19,7 @@ history_bp = Blueprint("history", __name__)
 
 
 # Helper functions for the /history endpoint
-def _history_get() -> Union[Response, Tuple[Response, int]]:
+def _history_get() -> Response | tuple[Response, int]:
     """Handle GET /history: load, filter, paginate, and return history."""
     try:
         history_data = load_history()
@@ -41,17 +41,17 @@ def _history_get() -> Union[Response, Tuple[Response, int]]:
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-def _error_response(message: str, status_code: int) -> Tuple[Response, int]:
+def _error_response(message: str, status_code: int) -> tuple[Response, int]:
     """Create error response."""
     return jsonify({"success": False, "error": message}), status_code
 
 
-def _success_response(message: str, status_code: int = 200) -> Tuple[Response, int]:
+def _success_response(message: str, status_code: int = 200) -> tuple[Response, int]:
     """Create success response."""
     return jsonify({"success": True, "message": message}), status_code
 
 
-def _handle_history_sync(data: list) -> Tuple[Response, int]:
+def _handle_history_sync(data: list) -> tuple[Response, int]:
     """Handle history synchronization."""
     try:
         success = save_history(data)
@@ -62,7 +62,7 @@ def _handle_history_sync(data: list) -> Tuple[Response, int]:
         return _error_response(f"Failed to sync history: {e}", 500)
 
 
-def _handle_history_clear() -> Tuple[Response, int]:
+def _handle_history_clear() -> tuple[Response, int]:
     """Handle history clearing."""
     try:
         success = clear_history()
@@ -73,7 +73,7 @@ def _handle_history_clear() -> Tuple[Response, int]:
         return _error_response(f"Failed to clear history: {e}", 500)
 
 
-def _handle_history_append(data: dict) -> Tuple[Response, int]:
+def _handle_history_append(data: dict) -> tuple[Response, int]:
     """Handle history entry append."""
     try:
         append_history_entry(data)
@@ -82,7 +82,7 @@ def _handle_history_append(data: dict) -> Tuple[Response, int]:
         return _error_response(str(e), 500)
 
 
-def _history_post(data: Any) -> Tuple[Response, int]:
+def _history_post(data: Any) -> tuple[Response, int]:
     """Handle POST /history: sync full history, clear, or append entry."""
     if isinstance(data, list):
         return _handle_history_sync(data)

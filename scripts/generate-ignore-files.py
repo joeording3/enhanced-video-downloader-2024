@@ -18,10 +18,10 @@ Usage:
 import json
 import re
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 
-def load_ignore_patterns() -> Dict[str, Any]:
+def load_ignore_patterns() -> dict[str, Any]:
     """Load the centralized ignore patterns configuration."""
     config_path = Path("config/ignore-patterns.json")
     if not config_path.exists():
@@ -32,7 +32,7 @@ def load_ignore_patterns() -> Dict[str, Any]:
         return data if isinstance(data, dict) else {}
 
 
-def get_patterns_for_tool(config: Dict[str, Any], tool_name: str) -> List[str]:
+def get_patterns_for_tool(config: dict[str, Any], tool_name: str) -> list[str]:
     """Get the patterns for a specific tool."""
     if tool_name not in config["tool_specific"]:
         raise ValueError("Unknown")
@@ -51,7 +51,7 @@ def get_patterns_for_tool(config: Dict[str, Any], tool_name: str) -> List[str]:
     return sorted(set(all_patterns))  # Remove duplicates and sort
 
 
-def generate_gitignore(patterns: List[str]) -> str:
+def generate_gitignore(patterns: list[str]) -> str:
     """Generate .gitignore content."""
     lines = [
         "# Generated from config/ignore-patterns.json - DO NOT EDIT DIRECTLY",
@@ -88,7 +88,7 @@ def generate_gitignore(patterns: List[str]) -> str:
     return "\n".join(lines)
 
 
-def generate_prettierignore(patterns: List[str]) -> str:
+def generate_prettierignore(patterns: list[str]) -> str:
     """Generate .prettierignore content."""
     lines = [
         "# Generated from config/ignore-patterns.json - DO NOT EDIT DIRECTLY",
@@ -99,7 +99,7 @@ def generate_prettierignore(patterns: List[str]) -> str:
     return "\n".join(lines)
 
 
-def generate_stylelintignore(patterns: List[str]) -> str:
+def generate_stylelintignore(patterns: list[str]) -> str:
     """Generate .stylelintignore content."""
     lines = [
         "# Generated from config/ignore-patterns.json - DO NOT EDIT DIRECTLY",
@@ -110,7 +110,7 @@ def generate_stylelintignore(patterns: List[str]) -> str:
     return "\n".join(lines)
 
 
-def update_jest_config(patterns: List[str]) -> None:
+def update_jest_config(patterns: list[str]) -> None:
     """Update jest.config.js with new ignore patterns."""
     config_path = Path("jest.config.js")
     if not config_path.exists():
@@ -141,7 +141,7 @@ def update_jest_config(patterns: List[str]) -> None:
         f.write(new_content)
 
 
-def update_eslint_config(patterns: List[str]) -> None:
+def update_eslint_config(patterns: list[str]) -> None:
     """Update eslint.config.cjs with new ignore patterns."""
     config_path = Path("eslint.config.cjs")
     if not config_path.exists():
@@ -176,7 +176,7 @@ def update_eslint_config(patterns: List[str]) -> None:
         f.write(new_content)
 
 
-def update_flake8_config(patterns: List[str]) -> None:
+def update_flake8_config(patterns: list[str]) -> None:
     """Update .flake8 with new exclude patterns."""
     config_path = Path(".flake8")
     if not config_path.exists():
@@ -210,7 +210,7 @@ def update_flake8_config(patterns: List[str]) -> None:
         f.write(new_content)
 
 
-def update_pyproject_toml(patterns: Dict[str, List[str]]) -> None:
+def update_pyproject_toml(patterns: dict[str, list[str]]) -> None:
     """Update pyproject.toml with new exclude patterns for all Python tools."""
     config_path = Path("pyproject.toml")
     if not config_path.exists():

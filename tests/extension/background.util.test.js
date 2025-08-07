@@ -3,6 +3,22 @@
 // Use the global chrome mock from jest.setup.js
 import * as bg from "extension/src/background";
 
+// Mock the centralized logger
+jest.mock("extension/src/core/logger", () => ({
+  logger: {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  },
+  CentralizedLogger: {
+    getInstance: jest.fn(() => ({
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+    })),
+  },
+}));
+
 describe("debounce", () => {
   jest.useFakeTimers();
   it("delays execution", () => {
@@ -16,22 +32,38 @@ describe("debounce", () => {
 });
 
 describe("log, warn, error", () => {
+  let logger;
+
   beforeEach(() => {
-    jest.spyOn(console, "log").mockImplementation(() => {});
-    jest.spyOn(console, "warn").mockImplementation(() => {});
-    jest.spyOn(console, "error").mockImplementation(() => {});
+    // Get the mocked logger
+    const { logger: mockLogger } = require("extension/src/core/logger");
+    logger = mockLogger;
+
+    // Clear all mocks
+    logger.info.mockClear();
+    logger.warn.mockClear();
+    logger.error.mockClear();
   });
-  it("log calls console.log with [BG] prefix", () => {
+
+  it("log calls logger.info with background component", () => {
     bg.log("hello");
-    expect(console.log).toHaveBeenCalledWith("[BG]", "hello");
+    expect(logger.info).toHaveBeenCalledWith("hello", {
+      component: "background",
+    });
   });
-  it("warn calls console.warn with [BG] prefix", () => {
+
+  it("warn calls logger.warn with background component", () => {
     bg.warn("warn");
-    expect(console.warn).toHaveBeenCalledWith("[BG Warning]", "warn");
+    expect(logger.warn).toHaveBeenCalledWith("warn", {
+      component: "background",
+    });
   });
-  it("error calls console.error with [BG] prefix", () => {
+
+  it("error calls logger.error with background component", () => {
     bg.error("oops");
-    expect(console.error).toHaveBeenCalledWith("[BG Error]", "oops");
+    expect(logger.error).toHaveBeenCalledWith("oops", {
+      component: "background",
+    });
   });
 });
 

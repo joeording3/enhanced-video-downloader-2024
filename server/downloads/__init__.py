@@ -6,7 +6,7 @@ It manages download progress tracking, resumption, and other download-related fu
 """
 
 import threading
-from typing import Any, Dict
+from typing import Any
 
-progress_data: Dict[str, Any] = {}
+progress_data: "dict[str, Any]" = {}
 progress_lock = threading.Lock()

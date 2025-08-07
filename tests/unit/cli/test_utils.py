@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, List
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -23,7 +23,7 @@ from server.constants import get_server_port
         ),
     ],
 )
-def test_utils_group_help(args: List[str], substrings: List[str]) -> None:
+def test_utils_group_help(args: list[str], substrings: list[str]) -> None:
     """Test that utils group shows all subcommands."""
     runner = CliRunner()
     result = runner.invoke(utils_group, args)
@@ -45,7 +45,7 @@ def test_utils_group_help(args: List[str], substrings: List[str]) -> None:
         ),
     ],
 )
-def test_config_group_help(args: List[str], substrings: List[str]) -> None:
+def test_config_group_help(args: list[str], substrings: list[str]) -> None:
     """Test that config group shows all subcommands."""
     runner = CliRunner()
     result = runner.invoke(config, args)
@@ -108,7 +108,7 @@ def test_config_set_command(mock_load_config: Any, mock_update_config: Any, tmp_
         ),
     ],
 )
-def test_logs_group_help(args: List[str], substrings: List[str]) -> None:
+def test_logs_group_help(args: list[str], substrings: list[str]) -> None:
     """Test that logs group shows all subcommands."""
     runner = CliRunner()
     result = runner.invoke(logs, args)

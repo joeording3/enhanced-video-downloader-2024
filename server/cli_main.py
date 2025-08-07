@@ -80,12 +80,15 @@ def _cli_load_config(_ctx: click.Context) -> Config:
 
 
 def _cli_set_logging(verbose: bool) -> None:
+    """Set up logging using central configuration."""
+    from server.logging_setup import setup_logging
+
     if verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
+        setup_logging(log_level="DEBUG")
         log.setLevel(logging.DEBUG)
         log.info("Verbose logging enabled")
     else:
-        logging.getLogger().setLevel(logging.INFO)
+        setup_logging(log_level="INFO")
         log.setLevel(logging.INFO)
         log.info("Console logging set to warnings and errors only")
 
@@ -154,7 +157,7 @@ def _resolve_start_params(
 
 
 # Helper to build the server start command
-def _cli_build_command(cfg: Config, host: str, port: int, gunicorn: bool, workers: int) -> list[str]:
+def _cli_build_command(_cfg: Config, host: str, port: int, gunicorn: bool, workers: int) -> list[str]:
     """Build the command list for starting the server."""
     if gunicorn:
         log.info("Starting server in production mode with Gunicorn on %s:%s", host, port)
@@ -759,12 +762,15 @@ def _cli_load_config(_ctx: click.Context) -> Config:
 
 
 def _cli_set_logging(verbose: bool) -> None:
+    """Set up logging using central configuration."""
+    from server.logging_setup import setup_logging
+
     if verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
+        setup_logging(log_level="DEBUG")
         log.setLevel(logging.DEBUG)
         log.info("Verbose logging enabled")
     else:
-        logging.getLogger().setLevel(logging.INFO)
+        setup_logging(log_level="INFO")
         log.setLevel(logging.INFO)
         log.info("Console logging set to warnings and errors only")
 
@@ -833,7 +839,7 @@ def _resolve_start_params(
 
 
 # Helper to build the server start command
-def _cli_build_command(cfg: Config, host: str, port: int, gunicorn: bool, workers: int) -> list[str]:
+def _cli_build_command(_cfg: Config, host: str, port: int, gunicorn: bool, workers: int) -> list[str]:
     """Build the command list for starting the server."""
     if gunicorn:
         log.info("Starting server in production mode with Gunicorn on %s:%s", host, port)
@@ -849,7 +855,7 @@ def _cli_build_command(cfg: Config, host: str, port: int, gunicorn: bool, worker
             "--log-level",
             "info",
         ]
-        if cfg.get_value("debug_mode", False):
+        if _cfg.get_value("debug_mode", False):
             cmd.append("--reload")
     else:
         log.info("Starting server in development mode with Flask on %s:%s", host, port)

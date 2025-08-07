@@ -7,7 +7,7 @@ and to handle API requests for resumption of all incomplete or failed downloads.
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, cast  # Added Dict, Any, List, cast
+from typing import Any, cast  # Added Dict, Any, List, cast
 
 from flask import current_app, jsonify
 
@@ -18,7 +18,7 @@ from server.history import load_history
 logger = logging.getLogger(__name__)
 
 
-def actual_resume_logic_for_file(part_file_path: str, _download_dir: str, _app_config: Dict[str, Any]) -> bool:
+def actual_resume_logic_for_file(part_file_path: str, _download_dir: str, _app_config: dict[str, Any]) -> bool:
     """
     Resume a single partial download file.
 
@@ -64,7 +64,7 @@ def actual_resume_logic_for_file(part_file_path: str, _download_dir: str, _app_c
         return True
 
 
-def resume_all_incomplete_downloads() -> Dict[str, Any]:
+def resume_all_incomplete_downloads() -> dict[str, Any]:
     """
     Resume all incomplete downloads in the download directory.
 
@@ -95,8 +95,8 @@ def resume_all_incomplete_downloads() -> Dict[str, Any]:
             "message": "App context not available for resume_all_incomplete_downloads",
         }
 
-    app_config: Dict[str, Any] = cast(Dict[str, Any], current_app.config)
-    download_dir: Optional[str] = cast(Optional[str], app_config.get("DOWNLOAD_DIR"))
+    app_config: dict[str, Any] = cast(dict[str, Any], current_app.config)
+    download_dir: str | None = cast(str | None, app_config.get("DOWNLOAD_DIR"))
 
     if not download_dir:  # This correctly checks for None or empty string
         logger.error("DOWNLOAD_DIR not configured. Cannot resume downloads.")
@@ -114,7 +114,7 @@ def resume_all_incomplete_downloads() -> Dict[str, Any]:
     # yt-dlp typically uses .part, but can also leave .ytdl files if interrupted early.
     # gallery-dl might use others, or just incomplete files.
     # For now, focusing on .part as it's explicitly mentioned.
-    part_files: List[str] = [str(p) for p in Path(download_dir).glob("*.part")]
+    part_files: list[str] = [str(p) for p in Path(download_dir).glob("*.part")]
 
     resumed_count = 0
     failed_to_resume_count = 0
@@ -151,7 +151,7 @@ def resume_all_incomplete_downloads() -> Dict[str, Any]:
 
 
 def handle_resume_download(
-    _data: Optional[Dict[str, Any]] = None,
+    _data: dict[str, Any] | None = None,
 ) -> Any:
     """
     Process API request to resume downloads.
@@ -170,11 +170,11 @@ def handle_resume_download(
     """
     logger.info("API request received to resume downloads.")
     # This function is called within a request context, so current_app is available.
-    result: Dict[str, Any] = resume_all_incomplete_downloads()
+    result: dict[str, Any] = resume_all_incomplete_downloads()
     return jsonify(result)
 
 
-def find_downloads_to_resume() -> List[Dict[str, Any]]:
+def find_downloads_to_resume() -> list[dict[str, Any]]:
     """
     Find failed downloads in history eligible for resumption.
 
@@ -189,7 +189,7 @@ def find_downloads_to_resume() -> List[Dict[str, Any]]:
     try:
         # Look in the history file for failed downloads
         # Get history and filter for failed entries
-        history: List[Dict[str, Any]] = []
+        history: list[dict[str, Any]] = []
         try:
             history = load_history()  # This now correctly typed
         except Exception:
@@ -197,7 +197,7 @@ def find_downloads_to_resume() -> List[Dict[str, Any]]:
             return []
 
         # Filter for failed downloads
-        failed_downloads: List[Dict[str, Any]] = [entry for entry in history if entry.get("status") == "failed"]
+        failed_downloads: list[dict[str, Any]] = [entry for entry in history if entry.get("status") == "failed"]
 
         logger.info(f"Found {len(failed_downloads)} failed downloads in history")
     except Exception:

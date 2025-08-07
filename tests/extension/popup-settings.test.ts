@@ -1,4 +1,4 @@
-import "../../extension/dist/popup.js";
+import { initPopup } from "../../extension/src/popup";
 
 declare const global: any;
 
@@ -17,12 +17,15 @@ describe("popup settings button", () => {
         sendMessage: jest.fn(),
         onMessage: { addListener: jest.fn() },
       },
+      storage: {
+        local: {
+          get: jest.fn().mockResolvedValue({ theme: "light" }),
+          set: jest.fn().mockResolvedValue(undefined),
+        },
+      },
     };
-    // Import popup.js after DOM and mocks are set up
-    jest.resetModules();
-    require("../../extension/dist/popup.js");
-    // Trigger DOMContentLoaded event to initialize popup functionality
-    document.dispatchEvent(new Event("DOMContentLoaded"));
+    // Initialize popup functionality
+    initPopup();
   });
 
   afterEach(() => {

@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 from flask.testing import FlaskClient
@@ -6,7 +6,7 @@ from pytest import MonkeyPatch
 
 
 def test_download_success(
-    monkeypatch: MonkeyPatch, client: FlaskClient, sample_download_request: Dict[str, Any]
+    monkeypatch: MonkeyPatch, client: FlaskClient, sample_download_request: dict[str, Any]
 ) -> None:
     # Mock YTDLP download handler
     """
@@ -18,7 +18,7 @@ def test_download_success(
     :returns: None
     """
 
-    def fake_ytdlp(validated_data: Dict[str, Any]) -> tuple[Dict[str, Any], int]:
+    def fake_ytdlp(validated_data: dict[str, Any]) -> tuple[dict[str, Any], int]:
         return (
             {
                 "status": "success",
@@ -114,7 +114,7 @@ def test_download_validation_error(client: FlaskClient) -> None:
 
 
 def test_playlist_download_allowed(
-    monkeypatch: MonkeyPatch, client: FlaskClient, sample_download_request: Dict[str, Any]
+    monkeypatch: MonkeyPatch, client: FlaskClient, sample_download_request: dict[str, Any]
 ) -> None:
     # Allow playlist downloads when server config permits
     """
@@ -149,7 +149,7 @@ def test_playlist_download_allowed(
     monkeypatch.setattr("server.config.Config.load", stub_config)
 
     # Stub ytdlp download handler to return success
-    def fake_ytdlp_playlist(validated: Dict[str, Any]) -> tuple[Dict[str, Any], int]:
+    def fake_ytdlp_playlist(validated: dict[str, Any]) -> tuple[dict[str, Any], int]:
         """
         Stub handler returning success status for playlist downloads.
 

@@ -8,10 +8,10 @@ identifying patterns that can be consolidated or removed.
 
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 
-def find_test_files(test_dir: Path) -> Dict[str, List[Path]]:
+def find_test_files(test_dir: Path) -> dict[str, list[Path]]:
     """Find all test files and categorize them by pattern."""
     patterns = {
         "simple": [],
@@ -48,7 +48,7 @@ def find_test_files(test_dir: Path) -> Dict[str, List[Path]]:
     return patterns
 
 
-def analyze_test_content(file_path: Path) -> Dict[str, Any]:
+def analyze_test_content(file_path: Path) -> dict[str, Any]:
     """Analyze the content of a test file to understand its purpose."""
     try:
         content = file_path.read_text()
@@ -69,7 +69,7 @@ def analyze_test_content(file_path: Path) -> Dict[str, Any]:
         return {"error": str(e)}
 
 
-def find_potential_duplicates(patterns: Dict[str, List[Path]]) -> List[Tuple[Path, Path]]:
+def find_potential_duplicates(patterns: dict[str, list[Path]]) -> list[tuple[Path, Path]]:
     """Find potential duplicate test files based on naming patterns."""
     duplicates = []
 
@@ -92,7 +92,7 @@ def find_potential_duplicates(patterns: Dict[str, List[Path]]) -> List[Tuple[Pat
     return duplicates
 
 
-def generate_audit_report(patterns: Dict[str, List[Path]], duplicates: List[Tuple[Path, Path]]) -> str:
+def generate_audit_report(patterns: dict[str, list[Path]], duplicates: list[tuple[Path, Path]]) -> str:
     """Generate a comprehensive audit report."""
     report_lines = [
         "# Test Suite Redundancy Audit Report",

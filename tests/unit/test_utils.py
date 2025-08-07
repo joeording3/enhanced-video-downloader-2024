@@ -127,12 +127,18 @@ def test_find_available_port_skips_used() -> None:
     host = "127.0.0.1"
     start_port = get_server_port()
     count = 2
+
+    # Use a different port range to avoid conflicts
+    test_start_port = start_port + 1000
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    s.bind((host, start_port))
     try:
-        port = find_available_port(start_port, count, host)
-        assert port == start_port + 1
+        s.bind((host, test_start_port))
+        port = find_available_port(test_start_port, count, host)
+        assert port == test_start_port + 1
+    except OSError:
+        # If we can't bind to the test port, skip this test
+        pytest.skip("Cannot bind to test port, skipping test")
     finally:
         s.close()
 

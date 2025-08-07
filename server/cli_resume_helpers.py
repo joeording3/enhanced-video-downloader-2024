@@ -3,7 +3,6 @@
 import json
 import logging
 from pathlib import Path
-from typing import List, Optional
 
 
 def validate_scan_directory(scan_dir: Path, log: logging.Logger) -> bool:
@@ -16,17 +15,17 @@ def validate_scan_directory(scan_dir: Path, log: logging.Logger) -> bool:
     return True
 
 
-def get_part_files(scan_dir: Path) -> List[Path]:
+def get_part_files(scan_dir: Path) -> list[Path]:
     """Return a list of partial download files (e.g., .part, .ytdl, .download) found under scan_dir recursively."""
     patterns = ["*.part", "*.ytdl", "*.download"]
-    files: List[Path] = []
+    files: list[Path] = []
     for pattern in patterns:
         files.extend(scan_dir.rglob(pattern))
     # Remove duplicates and return
     return list({f.resolve(): f for f in files}.values())
 
 
-def derive_resume_url(part_file: Path, log: logging.Logger) -> Optional[str]:
+def derive_resume_url(part_file: Path, log: logging.Logger) -> str | None:
     """Extract URL to resume from .info.json or fallback, or return None."""
     base_stem = part_file.stem
     info_file = part_file.parent / f"{base_stem}.info.json"

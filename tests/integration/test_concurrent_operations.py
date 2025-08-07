@@ -1,7 +1,7 @@
 import logging
 import threading
 import time
-from typing import Generator, List
+from collections.abc import Generator
 
 import pytest
 import requests
@@ -67,7 +67,7 @@ class DummyProc:
     ],
 )
 def test_concurrent_operations(
-    live_server: str, operation: str, download_id: str, expected_results: List[int], expected_count: int
+    live_server: str, operation: str, download_id: str, expected_results: list[int], expected_count: int
 ) -> None:
     """Test concurrent pause and resume operations.
 
@@ -81,7 +81,7 @@ def test_concurrent_operations(
     download_process_registry[download_id] = DummyProc(operation)  # type: ignore[assignment]
 
     # Perform two concurrent requests
-    results: List[int] = []
+    results: list[int] = []
 
     def call_operation() -> None:
         resp = requests.post(f"{live_server}/api/download/{download_id}/{operation}")
@@ -115,7 +115,7 @@ def test_concurrent_cancel(monkeypatch: MonkeyPatch, live_server: str) -> None:
     monkeypatch.setattr(download_bp, "_terminate_proc", lambda proc, id: (None, None))  # type: ignore[attr-defined]
     monkeypatch.setattr(download_bp, "_cleanup_cancel_partfiles", lambda id: None)  # type: ignore[attr-defined]
 
-    results: List[int] = []
+    results: list[int] = []
 
     def call_cancel() -> None:
         resp = requests.post(f"{live_server}/api/download/{download_id}/cancel")

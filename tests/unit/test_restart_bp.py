@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any
 
 import pytest
 from flask.testing import FlaskClient
@@ -36,15 +36,15 @@ def test_restart_endpoint_variants(
     method: str,
     shutdown_func: Any,
     expected_status: int,
-    expected_key: Optional[str],
+    expected_key: str | None,
     expected_value: Any,
-    expected_contains: Optional[str],
+    expected_contains: str | None,
 ) -> None:
     """Test /restart endpoint for options, shutdown scenarios, and exception handling."""
     if method == "options":
         resp = client.options("/restart")
     else:
-        overrides: Dict[str, Any] = {}
+        overrides: dict[str, Any] = {}
         if shutdown_func is not None:
             overrides["werkzeug.server.shutdown"] = shutdown_func
         resp = client.post("/restart", environ_overrides=overrides)

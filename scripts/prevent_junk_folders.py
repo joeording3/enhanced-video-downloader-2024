@@ -8,17 +8,25 @@ patterns to limit scope and respect important directories.
 
 import logging
 import re
+import sys
 import time
 from pathlib import Path
-from typing import List, Set
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    handlers=[logging.FileHandler("logs/empty_folder_cleanup.log"), logging.StreamHandler()],
-)
-logger = logging.getLogger(__name__)
+
+def setup_script_logging():
+    """Set up logging for this script using central configuration."""
+    # Add project root to path for imports
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+
+    # Import and set up central logging
+    from server.logging_setup import setup_logging
+
+    setup_logging(log_level="INFO", log_file="logs/empty_folder_cleanup.log")
+    return logging.getLogger(__name__)
+
+
+# Set up logging
+logger = setup_script_logging()
 
 # Critical folders that should never be removed
 CRITICAL_FOLDERS = {
@@ -55,7 +63,7 @@ CRITICAL_FOLDERS = {
 }
 
 
-def load_gitignore_patterns() -> List[str]:
+def load_gitignore_patterns() -> list[str]:
     """
     Load patterns from .gitignore file.
 
@@ -80,7 +88,7 @@ def load_gitignore_patterns() -> List[str]:
     return patterns
 
 
-def should_ignore_folder(folder_name: str, gitignore_patterns: List[str]) -> bool:
+def should_ignore_folder(folder_name: str, gitignore_patterns: list[str]) -> bool:
     """
     Check if a folder should be ignored based on .gitignore patterns.
 
@@ -96,7 +104,7 @@ def should_ignore_folder(folder_name: str, gitignore_patterns: List[str]) -> boo
     return any(re.match(pattern, folder_name) for pattern in gitignore_patterns)
 
 
-def get_current_folders() -> Set[str]:
+def get_current_folders() -> set[str]:
     """
     Get the current list of folders in the root directory.
 

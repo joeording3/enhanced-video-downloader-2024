@@ -12,7 +12,7 @@ import time
 import types  # For FrameType
 from contextlib import closing
 from pathlib import Path
-from typing import List, Optional, Set, TextIO, Tuple
+from typing import TextIO
 
 import psutil  # Requires pip installation if not already available
 from flask import Flask
@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 # Flag to track graceful shutdown in progress
 _shutdown_in_progress = False
 # Track active download processes
-_active_download_processes: Set[psutil.Process] = set()
+_active_download_processes: set[psutil.Process] = set()
 # Lock for modifying the active processes set
 _process_lock = threading.Lock()
 
@@ -72,7 +72,7 @@ def unregister_download_process(process: psutil.Process) -> None:
         _active_download_processes.discard(process)
 
 
-def graceful_shutdown(sig: Optional[int] = None, _frame: Optional[types.FrameType] = None) -> None:
+def graceful_shutdown(sig: int | None = None, _frame: types.FrameType | None = None) -> None:
     """
     Handle graceful shutdown when receiving termination signals.
 
@@ -172,7 +172,7 @@ def cleanup_part_files() -> None:
         logger.exception("Error during .part file cleanup")
 
 
-def _remove_part_files(part_files: List[Path]) -> None:
+def _remove_part_files(part_files: list[Path]) -> None:
     """
     Remove a list of partial download files.
 
@@ -194,13 +194,13 @@ def _remove_part_files(part_files: List[Path]) -> None:
             logger.warning(f"Failed to remove {part_file}: {e}")
 
 
-def find_orphaned_processes(port: int) -> List[int]:
+def find_orphaned_processes(port: int) -> list[int]:
     """
     Find any process that might be using our target port.
 
     Returns a list of process IDs (PIDs) using the specified port.
     """
-    orphaned_pids: List[int] = []
+    orphaned_pids: list[int] = []
     try:
         for proc in psutil.process_iter(["pid", "name", "cmdline"]):
             try:
@@ -282,13 +282,13 @@ def kill_process(pid: int) -> bool:
 
 
 # Helpers to support terminate_active_downloads and reduce complexity
-def _get_active_download_processes() -> List[psutil.Process]:
+def _get_active_download_processes() -> list[psutil.Process]:
     """Return a list of currently registered active download processes."""
     with _process_lock:
         return list(_active_download_processes)
 
 
-def _terminate_download_processes_gracefully(procs: List[psutil.Process]) -> None:
+def _terminate_download_processes_gracefully(procs: list[psutil.Process]) -> None:
     """Send SIGTERM to active download processes."""
     for proc in procs:
         try:
@@ -299,7 +299,7 @@ def _terminate_download_processes_gracefully(procs: List[psutil.Process]) -> Non
             logger.debug(f"Error terminating process {proc.pid}: {e}")
 
 
-def _wait_for_processes_to_terminate(_procs: List[psutil.Process], interval: float = 0.1, retries: int = 20) -> None:
+def _wait_for_processes_to_terminate(_procs: list[psutil.Process], interval: float = 0.1, retries: int = 20) -> None:
     """Wait for up to retries*interval seconds for processes to stop."""
     for _ in range(retries):
         # Check shared set under lock to account for unregistering
@@ -309,7 +309,7 @@ def _wait_for_processes_to_terminate(_procs: List[psutil.Process], interval: flo
         time.sleep(interval)
 
 
-def _kill_download_processes(procs: List[psutil.Process]) -> None:
+def _kill_download_processes(procs: list[psutil.Process]) -> None:
     """Force kill any remaining active download processes."""
     for proc in procs:
         try:
@@ -362,7 +362,7 @@ def _cleanup_orphaned_processes(port: int) -> None:
         pass
 
 
-def _prepare_server_lock(cfg: Config, host: str, port: int) -> Tuple[TextIO, int]:
+def _prepare_server_lock(cfg: Config, host: str, port: int) -> tuple[TextIO, int]:
     """
     Check port availability, update config if changed, create lock file.
 
@@ -398,7 +398,7 @@ def _run_flask_server(cfg: Config, host: str, port: int, lock_handle: TextIO) ->
 # End of extracted helpers
 
 
-def main(production: bool = False) -> Optional[Flask]:
+def main(production: bool = False) -> Flask | None:
     """
     Run the Enhanced Video Downloader server.
 

@@ -1,6 +1,6 @@
 # tests/unit/test_ytdlp_helpers.py: file uses private functions and fixtures without annotations
 import logging
-from typing import Any, Dict
+from typing import Any
 
 from server.downloads.ytdlp import (
     _apply_custom_opts,
@@ -62,7 +62,7 @@ def test_assign_progress_hook_and_invoke() -> None:
 
     :returns: None
     """
-    opts: Dict[str, Any] = {}
+    opts: dict[str, Any] = {}
     _assign_progress_hook(opts, download_id="abc")
     assert "progress_hooks" in opts
     hooks = opts["progress_hooks"]
@@ -79,7 +79,7 @@ def test_handle_cookies_no_key() -> None:
 
     :returns: None
     """
-    opts: Dict[str, Any] = {}
+    opts: dict[str, Any] = {}
     # Should not raise or add cookiefile
     _handle_cookies(opts, download_id=None)
     assert "cookiefile" not in opts

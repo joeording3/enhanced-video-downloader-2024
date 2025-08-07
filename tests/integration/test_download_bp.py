@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 from flask.testing import FlaskClient
@@ -21,7 +21,7 @@ def test_missing_url(client: FlaskClient) -> None:
 
 
 def test_gallery_download_flow(
-    monkeypatch: MonkeyPatch, client: FlaskClient, sample_download_request: Dict[str, Any]
+    monkeypatch: MonkeyPatch, client: FlaskClient, sample_download_request: dict[str, Any]
 ) -> None:
     """Test gallery download flow with mocked handler.
 
@@ -31,7 +31,7 @@ def test_gallery_download_flow(
     """
 
     # Mock gallery handler to return custom response
-    def fake_gallery(validated_data: Dict[str, Any]) -> "tuple[Dict[str, Any], int]":
+    def fake_gallery(validated_data: dict[str, Any]) -> "tuple[dict[str, Any], int]":
         return ({"status": "success", "downloadId": "g123", "type": "gallery"}, 200)
 
     monkeypatch.setattr(
@@ -56,7 +56,7 @@ def test_resume_endpoint(monkeypatch: MonkeyPatch, client: FlaskClient) -> None:
     """
 
     # Mock resume handler
-    def fake_resume(request_data: Dict[str, Any]) -> Dict[str, Any]:
+    def fake_resume(request_data: dict[str, Any]) -> dict[str, Any]:
         return {"status": "success", "resumed": request_data.get("ids", [])}
 
     monkeypatch.setattr(
@@ -135,7 +135,7 @@ def test_gallery_dl_success(monkeypatch: MonkeyPatch, client: FlaskClient) -> No
     :param client: Flask test client fixture
     """
 
-    def fake_gallery(validated_data: Dict[str, Any]) -> "tuple[Dict[str, Any], int]":
+    def fake_gallery(validated_data: dict[str, Any]) -> "tuple[dict[str, Any], int]":
         return ({"status": "success", "downloadId": "g456"}, 200)
 
     monkeypatch.setattr(
@@ -336,7 +336,7 @@ def test_playlist_permission_enabled(monkeypatch: MonkeyPatch, client: FlaskClie
     monkeypatch.setattr("server.config.Config.load", mock_config)
 
     # Mock the download handler
-    def mock_download(validated_data: Dict[str, Any]) -> "tuple[Dict[str, Any], int]":
+    def mock_download(validated_data: dict[str, Any]) -> "tuple[dict[str, Any], int]":
         return ({"status": "success", "downloadId": validated_data.get("downloadId", "")}, 200)
 
     monkeypatch.setattr("server.api.download_bp.handle_ytdlp_download", mock_download)
@@ -360,7 +360,7 @@ def test_log_validated_request(monkeypatch: MonkeyPatch, client: FlaskClient) ->
     """
 
     # Mock the download handler
-    def mock_download(validated_data: Dict[str, Any]) -> "tuple[Dict[str, Any], int]":
+    def mock_download(validated_data: dict[str, Any]) -> "tuple[dict[str, Any], int]":
         return ({"status": "success", "downloadId": validated_data.get("downloadId", "")}, 200)
 
     monkeypatch.setattr("server.api.download_bp.handle_ytdlp_download", mock_download)

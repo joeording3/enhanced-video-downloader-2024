@@ -6,12 +6,11 @@ import json
 import subprocess
 import sys
 from pathlib import Path
-from typing import List, Tuple
 
 import jsonschema
 
 
-def run_command(cmd: List[str]) -> Tuple[int, str]:
+def run_command(cmd: list[str]) -> tuple[int, str]:
     """Run a command and return its exit code and output.
 
     Args:
@@ -27,7 +26,7 @@ def run_command(cmd: List[str]) -> Tuple[int, str]:
         return e.returncode, e.stdout + e.stderr
 
 
-def check_ignore_directives() -> Tuple[bool, List[str]]:
+def check_ignore_directives() -> tuple[bool, list[str]]:
     """Check for stale ignore directives.
 
     Returns:
@@ -47,7 +46,7 @@ def check_ignore_directives() -> Tuple[bool, List[str]]:
     return success, issues
 
 
-def check_docstrings() -> Tuple[bool, List[str]]:
+def check_docstrings() -> tuple[bool, list[str]]:
     """Check for missing or invalid docstrings.
 
     Returns:
@@ -73,7 +72,7 @@ def check_docstrings() -> Tuple[bool, List[str]]:
     return success, issues
 
 
-def check_json_schemas() -> Tuple[bool, List[str]]:
+def check_json_schemas() -> tuple[bool, list[str]]:
     """Check JSON schema validity.
 
     Returns:

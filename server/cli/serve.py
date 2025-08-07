@@ -5,7 +5,7 @@ import sys
 import time
 import types
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import click
 
@@ -90,9 +90,9 @@ app = _ServeApp()
 def start_command(
     _ctx: click.Context,
     daemon: bool,  # noqa: ARG001 - intentionally unused for now
-    host: Optional[str],
-    port: Optional[int],
-    download_dir: Optional[str],  # noqa: ARG001 - intentionally unused for now
+    host: str | None,
+    port: int | None,
+    download_dir: str | None,  # noqa: ARG001 - intentionally unused for now
     gunicorn: bool,  # noqa: ARG001 - intentionally unused for now
     workers: int,  # noqa: ARG001 - intentionally unused for now
     verbose: bool,  # noqa: ARG001 - intentionally unused for now

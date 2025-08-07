@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 from flask import Response, jsonify
@@ -43,7 +43,7 @@ def test_download_success(client: FlaskClient, monkeypatch: MonkeyPatch) -> None
     :returns: None
     """
 
-    def fake_handle(data: Dict[str, Any]) -> "tuple[Response, int]":
+    def fake_handle(data: dict[str, Any]) -> "tuple[Response, int]":
         """
         Stub handler to simulate successful download response.
 

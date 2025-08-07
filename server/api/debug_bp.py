@@ -7,7 +7,7 @@ Only used in development/debug mode.
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from flask import Blueprint, jsonify, request
 
@@ -27,7 +27,7 @@ def _get_project_root() -> Path:
     return Path(__file__).parent.parent.parent
 
 
-def _collect_log_paths(project_root: Path) -> List[Dict[str, Any]]:
+def _collect_log_paths(project_root: Path) -> list[dict[str, Any]]:
     """
     Collect log file info from various locations.
 
@@ -36,7 +36,7 @@ def _collect_log_paths(project_root: Path) -> List[Dict[str, Any]]:
     :returns: List of log file info dictionaries.
     :rtype: List[Dict[str, Any]]
     """
-    paths: List[Dict[str, Any]] = []
+    paths: list[dict[str, Any]] = []
 
     # Helper to append log info
     def _append(path: Path) -> None:
@@ -65,7 +65,7 @@ def _collect_log_paths(project_root: Path) -> List[Dict[str, Any]]:
     return paths
 
 
-def _perform_test_write(project_root: Path) -> Dict[str, Any]:
+def _perform_test_write(project_root: Path) -> dict[str, Any]:
     """
     Attempt to create a test log file and report success.
 
@@ -109,7 +109,7 @@ def debug_paths() -> Any:
     except Exception as e:
         config_content = {"error": str(e)}
 
-    logging_info: Dict[str, Any] = {"root_level": logging.getLogger().level}
+    logging_info: dict[str, Any] = {"root_level": logging.getLogger().level}
 
     # Debug request info
     logger.debug(

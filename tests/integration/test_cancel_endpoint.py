@@ -1,6 +1,7 @@
 import logging
+from collections.abc import Generator
 from pathlib import Path
-from typing import Any, Generator, Optional
+from typing import Any
 
 import pytest
 from flask.testing import FlaskClient
@@ -35,7 +36,7 @@ class DummyProcess:
         """Mark process as terminated."""
         self.terminated = True
 
-    def wait(self, timeout: Optional[int] = None) -> None:
+    def wait(self, timeout: int | None = None) -> None:
         """Mock wait method."""
         return
 

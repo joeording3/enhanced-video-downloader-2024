@@ -9,20 +9,16 @@ import logging
 import os
 import subprocess
 from pathlib import Path
-from typing import List, Optional
 
-# Configure logging
+# Import central logging setup
+from server.logging_setup import setup_logging
+
+# Set up logging using central configuration
+setup_logging(log_level="INFO")
 log = logging.getLogger(__name__)
 
-# Add structured logging with timestamps and levels
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
 
-
-def find_video_downloader_agents(include_system: bool = False) -> List[str]:
+def find_video_downloader_agents(include_system: bool = False) -> list[str]:
     """Find all LaunchAgent plist files related to the video downloader.
 
     Args:
@@ -31,7 +27,7 @@ def find_video_downloader_agents(include_system: bool = False) -> List[str]:
     Returns:
         List[str]: Paths to LaunchAgent plist files as strings
     """
-    agents: List[str] = []
+    agents: list[str] = []
 
     # Common locations for LaunchAgents
     locations = [str(Path("~/Library/LaunchAgents").expanduser())]
@@ -66,7 +62,7 @@ def find_video_downloader_agents(include_system: bool = False) -> List[str]:
 
 
 # Helper to retrieve LaunchAgent label from plist file
-def get_agent_label(agent_path: str) -> Optional[str]:
+def get_agent_label(agent_path: str) -> str | None:
     """Retrieve the LaunchAgent label from a plist file.
 
     Args:
@@ -128,7 +124,7 @@ def rename_agent(agent_path: str) -> None:
         log.exception("   Error disabling agent {agent_path}")
 
 
-def disable_agents(agents: List[str]) -> None:
+def disable_agents(agents: list[str]) -> None:
     """Permanently disable the identified LaunchAgents.
 
     Args:
@@ -161,11 +157,7 @@ def disable_agents(agents: List[str]) -> None:
 
 def main() -> None:
     """Disable video downloader LaunchAgents."""
-    # Configure logging for the main function
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(message)s",
-    )
+    # Logging is already configured at module level
 
     # Find all relevant agents
     agents = find_video_downloader_agents(include_system=True)

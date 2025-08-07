@@ -7,7 +7,7 @@ history queries, logging queries, and command-line options using Pydantic.
 
 import os
 from pathlib import Path  # Corrected: Ensure this is the Path being used
-from typing import Any, Dict, List, Optional  # Removed Literal import
+from typing import Any  # Removed Literal import
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -46,7 +46,7 @@ class YTDLPOptions(BaseModel):
         description="Enable verbose console output from yt-dlp for debugging.",
     )
     noprogress: bool = Field(default=False, description="Suppress the progress bar display from yt-dlp.")
-    outtmpl: Dict[str, str] = Field(
+    outtmpl: dict[str, str] = Field(
         default_factory=lambda: {"default": "%(title)s [%(id)s].%(ext)s"},
         description="Output filename template for yt-dlp. See yt-dlp documentation for template options.",
     )
@@ -96,7 +96,7 @@ class ServerConfig(BaseModel):
         ge=0,
         description="Maximum number of entries to keep in download history (0 for unlimited).",
     )
-    allowed_domains: List[str] = Field(
+    allowed_domains: list[str] = Field(
         default_factory=list,
         description="List of domains from which downloads are permitted. Empty list means all allowed.",
     )
@@ -109,7 +109,7 @@ class ServerConfig(BaseModel):
             "'info' or 'debug' for more verbose output."
         ),
     )
-    log_path: Optional[Path] = Field(
+    log_path: Path | None = Field(
         default=None,
         description="Path to the server log file. If None, defaults to server_output.log in project root.",
     )
@@ -120,7 +120,7 @@ class ServerConfig(BaseModel):
         description="Interval in milliseconds for scanning incomplete downloads (min 1000ms).",
     )
     show_download_button: bool = Field(default=True, description="Whether the download button is injected by default.")
-    button_position_memory: Dict[str, Dict[str, Any]] = Field(
+    button_position_memory: dict[str, dict[str, Any]] = Field(
         default_factory=dict,
         description="Stores last known button position and state per domain.",
     )
@@ -206,12 +206,12 @@ class DownloadRequest(BaseModel):
     """
 
     url: str = Field(..., description="URL of the video to download")
-    download_id: Optional[str] = Field(None, description="Client-provided unique ID for the download")
+    download_id: str | None = Field(None, description="Client-provided unique ID for the download")
     user_agent: str = Field(default="chrome", description="User agent to use for the download")
-    referrer: Optional[str] = Field(None, description="Referrer URL")
-    format: Optional[str] = Field(None, description="Video format specification")
+    referrer: str | None = Field(None, description="Referrer URL")
+    format: str | None = Field(None, description="Video format specification")
     download_playlist: bool = Field(False, description="Whether to download a playlist")
-    page_title: Optional[str] = Field(None, description="Page title for naming the output file")
+    page_title: str | None = Field(None, description="Page title for naming the output file")
 
     @field_validator("url")
     @classmethod
@@ -234,7 +234,7 @@ class DownloadRequest(BaseModel):
 
     @field_validator("download_id")
     @classmethod
-    def validate_download_id(cls, v: Optional[str]) -> Optional[str]:
+    def validate_download_id(cls, v: str | None) -> str | None:
         """Validate download_id format if provided."""
         if v is None:
             return v
@@ -254,7 +254,7 @@ class DownloadRequest(BaseModel):
 
     @field_validator("page_title")
     @classmethod
-    def validate_page_title(cls, v: Optional[str]) -> Optional[str]:
+    def validate_page_title(cls, v: str | None) -> str | None:
         """Validate page_title if provided."""
         if v is None or not v.strip():
             return None
@@ -273,34 +273,34 @@ class ConfigUpdate(BaseModel):
     Validates API request payloads to update server configuration settings.
     """
 
-    server_port: Optional[int] = Field(
+    server_port: int | None = Field(
         None,
         ge=1024,
         le=65535,
         description="Server port (Caution: changing this can affect server accessibility)",
     )
-    download_dir: Optional[str] = Field(None, description="Download directory path. Must be absolute or use ~.")
-    debug_mode: Optional[bool] = Field(None, description="Debug mode")
-    enable_history: Optional[bool] = Field(None, description="Enable download history")
-    log_level: Optional[str] = Field(None, description="Logging level")
-    console_log_level: Optional[str] = Field(
+    download_dir: str | None = Field(None, description="Download directory path. Must be absolute or use ~.")
+    debug_mode: bool | None = Field(None, description="Debug mode")
+    enable_history: bool | None = Field(None, description="Enable download history")
+    log_level: str | None = Field(None, description="Logging level")
+    console_log_level: str | None = Field(
         None,
         description=(
             "Console logging level (warning for minimal output, info for regular output, debug for verbose output)"
         ),
     )
 
-    max_concurrent_downloads: Optional[int] = Field(None, ge=1, description="Maximum number of concurrent downloads.")
-    download_history_limit: Optional[int] = Field(
+    max_concurrent_downloads: int | None = Field(None, ge=1, description="Maximum number of concurrent downloads.")
+    download_history_limit: int | None = Field(
         None, ge=0, description="Maximum number of entries in download history."
     )
-    allowed_domains: Optional[List[str]] = Field(
+    allowed_domains: list[str] | None = Field(
         None, description="List of allowed domains for downloads (empty means all)."
     )
-    ffmpeg_path: Optional[str] = Field(None, description="Path to the ffmpeg executable.")
-    scan_interval_ms: Optional[int] = Field(None, ge=1000, description="Scan interval in milliseconds.")
-    allow_playlists: Optional[bool] = Field(None, description="Allow or disallow downloading entire playlists.")
-    yt_dlp_options: Optional[Dict[str, Any]] = Field(
+    ffmpeg_path: str | None = Field(None, description="Path to the ffmpeg executable.")
+    scan_interval_ms: int | None = Field(None, ge=1000, description="Scan interval in milliseconds.")
+    allow_playlists: bool | None = Field(None, description="Allow or disallow downloading entire playlists.")
+    yt_dlp_options: dict[str, Any] | None = Field(
         default=None,
         alias="ytdlp_options",
         description=("Specific options for yt-dlp. Values provided will be merged with existing yt-dlp options."),
@@ -308,7 +308,7 @@ class ConfigUpdate(BaseModel):
 
     @field_validator("download_dir")  # This is for ConfigUpdate, not ServerConfig
     @classmethod
-    def validate_download_dir_format(cls, v: Optional[str]) -> Optional[str]:
+    def validate_download_dir_format(cls, v: str | None) -> str | None:
         if v is not None:
             path = Path(v)  # Use pathlib.Path
             if str(path).startswith("~"):
@@ -332,7 +332,7 @@ class GalleryDLRequest(BaseModel):
     """
 
     url: str = Field(..., description="URL of the gallery to download")
-    download_id: Optional[str] = Field(
+    download_id: str | None = Field(
         None, description="Client-provided unique ID for the download"
     )  # Added download_id
     download_type: str = Field(default="gallery", description="Type of download (gallery or media)")
@@ -345,7 +345,7 @@ class ResumeRequest(BaseModel):
     Validates incoming request payloads to resume downloads by ID.
     """
 
-    ids: List[str] = Field(..., description="List of download IDs to resume")
+    ids: list[str] = Field(..., description="List of download IDs to resume")
 
 
 class PriorityRequest(BaseModel):
@@ -363,9 +363,9 @@ class HistoryQuery(BaseModel):
     Validates filtering and pagination options for history retrieval endpoint.
     """
 
-    limit: Optional[int] = Field(None, ge=1, description="Maximum number of entries to return")
-    status: Optional[str] = Field(None, description="Filter by status (completed, failed)")
-    domain: Optional[str] = Field(None, description="Filter by domain")
+    limit: int | None = Field(None, ge=1, description="Maximum number of entries to return")
+    status: str | None = Field(None, description="Filter by status (completed, failed)")
+    domain: str | None = Field(None, description="Filter by domain")
 
 
 class LogsQuery(BaseModel):
@@ -375,5 +375,5 @@ class LogsQuery(BaseModel):
     Validates optional parameters such as line count and ordering for log endpoint.
     """
 
-    lines: Optional[int] = Field(None, ge=1, description="Number of lines to return")
-    recent: Optional[bool] = Field(None, description="Whether to return most recent lines first")
+    lines: int | None = Field(None, ge=1, description="Number of lines to return")
+    recent: bool | None = Field(None, description="Whether to return most recent lines first")

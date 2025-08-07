@@ -3,7 +3,7 @@
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 from flask import Flask
 
@@ -75,7 +75,7 @@ def test_resume_all_with_partials(app: Flask, tmp_path: Path, monkeypatch: Any) 
         app.config["DOWNLOAD_DIR"] = str(tmp_dir)
         # Monkeypatch actual_resume_logic_for_file to return True for one, False for other
 
-        def fake_resume(path: str, dir_: str, cfg: Dict[str, Any]) -> bool:
+        def fake_resume(path: str, dir_: str, cfg: dict[str, Any]) -> bool:
             return os.path.basename(path).startswith("one")
 
         monkeypatch.setattr(mod, "actual_resume_logic_for_file", fake_resume)
@@ -109,7 +109,7 @@ def test_resume_failed_downloads_auto_populate(monkeypatch: Any, caplog: Any) ->
     monkeypatch.setattr("server.cli_helpers.load_history", lambda: history)
 
     class DummyCfg:
-        def get_value(self, key: str, default: Optional[Any] = None) -> Any:
+        def get_value(self, key: str, default: Any | None = None) -> Any:
             return "localhost" if key == "server_host" else get_server_port() if key == "server_port" else default
 
     monkeypatch.setattr("server.config.Config.load", staticmethod(lambda: DummyCfg()))
@@ -139,7 +139,7 @@ def test_resume_failed_downloads_by_id(monkeypatch: Any, caplog: Any) -> None:
     monkeypatch.setattr("server.cli_helpers.load_history", lambda: history)
 
     class DummyCfg2:
-        def get_value(self, key: str, default: Optional[Any] = None) -> Any:
+        def get_value(self, key: str, default: Any | None = None) -> Any:
             if key == "server_host":
                 return "host"
             if key == "server_port":
@@ -172,7 +172,7 @@ def test_resume_failed_downloads_progress(monkeypatch: Any, caplog: Any) -> None
     monkeypatch.setattr("server.cli_helpers.load_history", lambda: history)
 
     class DummyCfg3:
-        def get_value(self, key: str, default: Optional[Any] = None) -> Any:
+        def get_value(self, key: str, default: Any | None = None) -> Any:
             if key == "server_host":
                 return "host"
             if key == "server_port":

@@ -5,7 +5,7 @@ These tests use property-based testing to verify that functions maintain
 invariants and handle edge cases correctly across a wide range of inputs.
 """
 
-from typing import Any, Dict, List, Tuple
+from typing import Any
 from urllib.parse import urlparse
 
 import pytest
@@ -107,7 +107,7 @@ def config_keys(draw: st.DrawFn) -> str:
 
 
 @st.composite
-def config_values(draw: st.DrawFn) -> Tuple[str, str]:
+def config_values(draw: st.DrawFn) -> tuple[str, str]:
     """Generate valid configuration key-value pairs."""
     key = draw(config_keys())
 
@@ -132,7 +132,7 @@ def config_values(draw: st.DrawFn) -> Tuple[str, str]:
 
 
 @st.composite
-def invalid_config_values(draw: st.DrawFn) -> Tuple[str, str]:
+def invalid_config_values(draw: st.DrawFn) -> tuple[str, str]:
     """Generate invalid configuration key-value pairs."""
     key = draw(config_keys())
 
@@ -237,7 +237,7 @@ class TestConfigurationValidation:
     """Property-based tests for configuration validation functions."""
 
     @given(config_values())
-    def test_validate_and_convert_value_valid(self, key_value: Tuple[str, str]) -> None:
+    def test_validate_and_convert_value_valid(self, key_value: tuple[str, str]) -> None:
         """Test that _validate_and_convert_value works correctly for valid inputs."""
         key, value = key_value
         result = _validate_and_convert_value(key, value)
@@ -254,7 +254,7 @@ class TestConfigurationValidation:
             assert isinstance(result, str)
 
     @given(invalid_config_values())
-    def test_validate_and_convert_value_invalid(self, key_value: Tuple[str, str]) -> None:
+    def test_validate_and_convert_value_invalid(self, key_value: tuple[str, str]) -> None:
         """Test that _validate_and_convert_value handles invalid inputs gracefully."""
         key, value = key_value
         result = _validate_and_convert_value(key, value)
@@ -262,10 +262,10 @@ class TestConfigurationValidation:
         # Property: Should handle invalid inputs gracefully
         # Note: Some "invalid" values like "0" for server_port are actually valid integers
         # The function may return None or a converted value depending on the specific case
-        assert result is None or isinstance(result, (int, bool, str))
+        assert result is None or isinstance(result, int | bool | str)
 
     @given(st.lists(config_values(), min_size=1, max_size=10))
-    def test_validate_updates_valid(self, updates_list: List[Tuple[str, str]]) -> None:
+    def test_validate_updates_valid(self, updates_list: list[tuple[str, str]]) -> None:
         """Test that _validate_updates works correctly for valid update lists."""
         # Convert to dict format expected by _validate_updates
         updates = {}
@@ -285,7 +285,7 @@ class TestConfigurationValidation:
             # (This is implicit in the test not failing)
 
     @given(st.dictionaries(st.text(), st.one_of(st.integers(), st.text(), st.booleans())))
-    def test_validate_updates_arbitrary_dict(self, updates: Dict[str, Any]) -> None:
+    def test_validate_updates_arbitrary_dict(self, updates: dict[str, Any]) -> None:
         """Test that _validate_updates handles arbitrary dictionaries gracefully."""
         config_data = Config.load()
         errors = _validate_updates(updates, config_data)
@@ -346,7 +346,7 @@ class TestDataTransformation:
         assert text.lower().lower() == text.lower()
 
     @given(st.lists(st.text(), min_size=1))
-    def test_list_operations(self, items: List[str]) -> None:
+    def test_list_operations(self, items: list[str]) -> None:
         """Test that list operations maintain properties."""
         # Property: List length should be preserved
         assert len(items) == len(items)
@@ -404,7 +404,7 @@ class TestComplexProperties:
         assert extracted_domain in url
 
     @given(st.lists(valid_urls(), min_size=1, max_size=5))
-    def test_batch_url_processing(self, urls: List[str]) -> None:
+    def test_batch_url_processing(self, urls: list[str]) -> None:
         """Test that batch URL processing maintains properties."""
         # Property: All URLs should be valid
         for url in urls:
@@ -417,7 +417,7 @@ class TestComplexProperties:
 
     @given(st.dictionaries(config_keys(), config_values(), min_size=1, max_size=5))
     @settings(deadline=None)  # Remove deadline constraint to avoid flaky timeouts
-    def test_config_validation_consistency(self, config_dict: Dict[str, Tuple[str, str]]) -> None:
+    def test_config_validation_consistency(self, config_dict: dict[str, tuple[str, str]]) -> None:
         """Test that configuration validation is consistent."""
         # Convert to proper format
         updates = {}
@@ -440,7 +440,7 @@ class TestPerformanceProperties:
     """Property-based tests for performance characteristics."""
 
     @given(st.lists(valid_urls(), min_size=1, max_size=100))
-    def test_url_processing_performance(self, urls: List[str]) -> None:
+    def test_url_processing_performance(self, urls: list[str]) -> None:
         """Test that URL processing scales reasonably."""
         # Property: Processing time should be linear with input size
         domains = [extract_domain(url) for url in urls]
@@ -452,7 +452,7 @@ class TestPerformanceProperties:
         assert all(domain != "" for domain in domains)
 
     @given(st.lists(config_values(), min_size=1, max_size=50))
-    def test_config_processing_performance(self, config_list: List[Tuple[str, str]]) -> None:
+    def test_config_processing_performance(self, config_list: list[tuple[str, str]]) -> None:
         """Test that configuration processing scales reasonably."""
         # Property: Processing time should be linear with input size
         valid_configs = []
@@ -502,14 +502,14 @@ class TestEdgeCases:
         assert isinstance(domain, str)
 
     @given(st.lists(st.text(), min_size=0, max_size=0))
-    def test_empty_list_processing(self, empty_list: List[str]) -> None:
+    def test_empty_list_processing(self, empty_list: list[str]) -> None:
         """Test behavior with empty lists."""
         # Property: Empty lists should be handled gracefully
         domains = [extract_domain(item) for item in empty_list]
         assert len(domains) == 0
 
     @given(st.dictionaries(st.text(), st.text(), min_size=0, max_size=0))
-    def test_empty_dict_processing(self, empty_dict: Dict[str, str]) -> None:
+    def test_empty_dict_processing(self, empty_dict: dict[str, str]) -> None:
         """Test behavior with empty dictionaries."""
         # Property: Empty dictionaries should be handled gracefully
         config_data = Config.load()

@@ -8,7 +8,7 @@ containing process and port information.
 import fcntl
 import os
 from pathlib import Path
-from typing import Optional, TextIO, Tuple  # Add TextIO
+from typing import TextIO  # Add TextIO
 
 
 # Update the default lock file path to use the data directory
@@ -85,7 +85,7 @@ def cleanup_lock_file(fh: TextIO) -> None:
         pass
 
 
-def get_lock_pid(lock_path: Path) -> Optional[int]:
+def get_lock_pid(lock_path: Path) -> int | None:
     """
     Read PID from lock file.
 
@@ -115,7 +115,7 @@ def get_lock_pid(lock_path: Path) -> Optional[int]:
     return None
 
 
-def get_lock_pid_port(lock_path: Path) -> Optional[Tuple[int, int]]:
+def get_lock_pid_port(lock_path: Path) -> tuple[int, int] | None:
     """
     Read PID and port from lock file.
 
@@ -141,7 +141,7 @@ def get_lock_pid_port(lock_path: Path) -> Optional[Tuple[int, int]]:
     return None
 
 
-def remove_lock_file(lock_path: Optional[Path] = None) -> None:
+def remove_lock_file(lock_path: Path | None = None) -> None:
     """
     Remove the lock file if it exists.
 

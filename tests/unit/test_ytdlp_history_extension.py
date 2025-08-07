@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 from pytest import MonkeyPatch
 
@@ -19,7 +19,7 @@ def test_progress_finished_appends_history(tmp_path: Path, monkeypatch: MonkeyPa
     # Prepare dummy filename and corresponding info.json
     filename = tmp_path / "video123.mp4"
     info_json_path = tmp_path / "video123.mp4.info.json"
-    info_data: Dict[str, str] = {"id": "test-id", "url": "https://example.com"}
+    info_data: dict[str, str] = {"id": "test-id", "url": "https://example.com"}
 
     # Ensure directory exists
     os.makedirs(tmp_path, exist_ok=True)

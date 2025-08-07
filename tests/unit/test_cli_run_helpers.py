@@ -1,6 +1,6 @@
 import importlib.util
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 # Dynamically load the server/cli_main.py module to access helper functions
 _cli_file_path = str(Path(__file__).parent.parent.parent / "server" / "cli_main.py")
@@ -17,7 +17,7 @@ class DummyCtx:
 
 def test_run_start_server_daemon(monkeypatch: Any) -> None:
     """Test server start in daemon mode with proper function calls and parameter passing."""
-    calls: Dict[str, Any] = {}
+    calls: dict[str, Any] = {}
     monkeypatch.setattr(cli_module, "_cli_load_config", lambda ctx: "cfg_obj")
     monkeypatch.setattr(cli_module, "_cli_set_logging", lambda verbose: calls.setdefault("logging", verbose))
     monkeypatch.setattr(
@@ -50,7 +50,7 @@ def test_run_start_server_daemon(monkeypatch: Any) -> None:
 
 def test_run_start_server_foreground(monkeypatch: Any) -> None:
     """Test server start in foreground mode with proper function calls and parameter passing."""
-    calls: Dict[str, Any] = {}
+    calls: dict[str, Any] = {}
     monkeypatch.setattr(cli_module, "_cli_load_config", lambda ctx: None)
     monkeypatch.setattr(cli_module, "_cli_set_logging", lambda verbose: calls.setdefault("logging", verbose))
     monkeypatch.setattr(
@@ -83,7 +83,7 @@ def test_run_start_server_foreground(monkeypatch: Any) -> None:
 
 def test_run_stop_server_no_entities(monkeypatch: Any) -> None:
     """Test server stop when no entities are found to terminate."""
-    calls: Dict[str, Any] = {}
+    calls: dict[str, Any] = {}
     monkeypatch.setattr(cli_module, "_cli_stop_pre_checks", list)
     monkeypatch.setattr(
         cli_module,
@@ -99,7 +99,7 @@ def test_run_stop_server_no_entities(monkeypatch: Any) -> None:
 
 def test_run_stop_server_with_entities(monkeypatch: Any) -> None:
     """Test server stop when entities are found and termination/cleanup is performed."""
-    calls: Dict[str, Any] = {}
+    calls: dict[str, Any] = {}
     monkeypatch.setattr(cli_module, "_cli_stop_pre_checks", lambda: ["proc1", "proc2"])
     monkeypatch.setattr(
         cli_module,

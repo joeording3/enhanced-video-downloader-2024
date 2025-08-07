@@ -13,7 +13,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 _SCRIPT_ROOT = Path(__file__).resolve().parent
 PROJECT_ROOT = _SCRIPT_ROOT.parent  # Use project root for test execution
@@ -129,7 +129,7 @@ def run_frontend_coverage() -> float:
     pf_cov = _SCRIPT_ROOT / "coverage" / "frontend" / "playwright-coverage.json"
     jf_cov = _SCRIPT_ROOT / "coverage" / "frontend" / "coverage-final.json"
 
-    def load_cov(path: Path) -> Dict[str, Any]:
+    def load_cov(path: Path) -> dict[str, Any]:
         try:
             data = json.loads(path.read_text())
             return data if isinstance(data, dict) else {}

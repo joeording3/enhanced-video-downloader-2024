@@ -6,7 +6,6 @@ import os
 import socket
 import time
 from pathlib import Path
-from typing import Optional
 
 import pytest
 from _pytest.capture import CaptureFixture
@@ -47,7 +46,7 @@ def test_check_port_available_and_unavailable() -> None:
     ],
 )
 def test_get_lock_pid_various_cases(
-    tmp_path: Path, monkeypatch: MonkeyPatch, lock_content: Optional[str], expected_pid: Optional[int], description: str
+    tmp_path: Path, monkeypatch: MonkeyPatch, lock_content: str | None, expected_pid: int | None, description: str
 ) -> None:
     """
     Test get_lock_pid for various lock file contents using parameterization.
@@ -75,7 +74,7 @@ def test_get_lock_pid_various_cases(
     ],
 )
 def test_find_server_processes_various_cases(
-    tmp_path: Path, monkeypatch: MonkeyPatch, lock_content: Optional[str], expected_result: bool, description: str
+    tmp_path: Path, monkeypatch: MonkeyPatch, lock_content: str | None, expected_result: bool, description: str
 ) -> None:
     """
     Test find_server_processes_cli for various lock file scenarios using parameterization.

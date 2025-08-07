@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 from pytest import MonkeyPatch
 
@@ -9,7 +9,7 @@ from server.downloads.ytdlp import build_opts
 class DummyConfig:
     """Stub config object returning predefined yt_dlp_options for testing."""
 
-    def __init__(self, options: Dict[str, Any]) -> None:
+    def __init__(self, options: dict[str, Any]) -> None:
         """
         Initialize dummy config with provided options.
 

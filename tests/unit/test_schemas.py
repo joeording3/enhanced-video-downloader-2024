@@ -4,7 +4,7 @@ Tests for the schemas module.
 These tests verify that the Pydantic models and validators are working correctly.
 """
 
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 from pydantic import ValidationError
@@ -92,7 +92,7 @@ class TestConfigUpdateValidation:
             ),
         ],
     )
-    def test_config_update_valid_configs(self, config_data: Dict[str, Any], description: str) -> None:
+    def test_config_update_valid_configs(self, config_data: dict[str, Any], description: str) -> None:
         """Test that ConfigUpdate accepts valid configuration data.
 
         :param config_data: Configuration data to test
@@ -113,7 +113,7 @@ class TestConfigUpdateValidation:
             ({"server_port": -1}, "greater than or equal to 1024"),
         ],
     )
-    def test_config_update_invalid_configs(self, config_data: Dict[str, Any], expected_error: str) -> None:
+    def test_config_update_invalid_configs(self, config_data: dict[str, Any], expected_error: str) -> None:
         """Test that ConfigUpdate rejects invalid configuration data.
 
         :param config_data: Invalid configuration data to test
@@ -130,7 +130,7 @@ class TestConfigUpdateValidation:
             ({}, {}),
         ],
     )
-    def test_config_update_ytdlp_options(self, ytdlp_options: Dict[str, Any], expected_value: Dict[str, Any]) -> None:
+    def test_config_update_ytdlp_options(self, ytdlp_options: dict[str, Any], expected_value: dict[str, Any]) -> None:
         """Test that ConfigUpdate properly handles yt-dlp options via both alias and field name.
 
         :param ytdlp_options: yt-dlp options to test

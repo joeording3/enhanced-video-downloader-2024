@@ -1,0 +1,31 @@
+{
+  "timestamp": "2025-08-07T01:51:11.926Z",
+  "totalSize": 192454,
+  "totalFiles": 21,
+  "largeFiles": [
+    {
+      "path": "background.js",
+      "size": 33830
+    },
+    {
+      "path": "options.js",
+      "size": 33266
+    },
+    {
+      "path": "content.js",
+      "size": 20357
+    },
+    {
+      "path": "popup.js",
+      "size": 19742
+    },
+    {
+      "path": "history.js",
+      "size": 13348
+    }
+  ],
+  "recommendations": [
+    "Split background script into smaller modules",
+    "Use dynamic imports for options page"
+  ]
+}

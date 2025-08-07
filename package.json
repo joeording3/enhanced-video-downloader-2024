@@ -15,7 +15,11 @@
     "css:purge": "purgecss --css extension/ui/*.css --content extension/ui/*.html extension/src/**/*.ts extension/src/**/*.js --output extension/ui/optimized/",
     "css:minify": "node scripts/minify-css.js",
     "css:optimize": "npm run css:purge && npm run css:minify && npm run css:analyze",
-    "css:analyze": "find extension/ui/minified -name '*.css' -exec wc -l {} + | sort -n"
+    "css:analyze": "find extension/ui/minified -name '*.css' -exec wc -l {} + | sort -n",
+    "analyze:bundle": "node scripts/analyze_bundle_size.js",
+    "optimize:tree-shaking": "node scripts/optimize_tree_shaking.js",
+    "profile:performance": "node scripts/profile_performance.js",
+    "optimize:all": "npm run analyze:bundle && npm run optimize:tree-shaking && npm run profile:performance"
   },
   "repository": {
     "type": "git",

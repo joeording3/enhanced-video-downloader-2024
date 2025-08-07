@@ -3,7 +3,7 @@ import signal
 import types
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any, List
+from typing import Any
 
 from pytest import MonkeyPatch
 
@@ -29,11 +29,11 @@ def test_is_potential_server_process_and_uses_port() -> None:
             self.laddr = types.SimpleNamespace(port=port)
 
     class DummyProc:
-        def __init__(self, name: str, cmdline: List[str], conns: List[DummyConn]) -> None:
+        def __init__(self, name: str, cmdline: list[str], conns: list[DummyConn]) -> None:
             self.info = {"name": name, "cmdline": cmdline}
             self._conns = conns
 
-        def net_connections(self, kind: str) -> List[DummyConn]:
+        def net_connections(self, kind: str) -> list[DummyConn]:
             return self._conns
 
     # Not a python process
@@ -73,7 +73,7 @@ def test_cleanup_orphaned_processes(monkeypatch: MonkeyPatch) -> None:
     """Test cleanup of orphaned processes by killing non-current PIDs."""
     fake_pids = [1, os.getpid(), 3]
     monkeypatch.setattr(main_mod, "find_orphaned_processes", lambda port: fake_pids)
-    calls: List[int] = []
+    calls: list[int] = []
 
     def fake_kill_process(pid: int) -> bool:
         calls.append(pid)
@@ -122,7 +122,7 @@ def test_prepare_server_lock(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
 
 def test_run_flask_server(monkeypatch: MonkeyPatch) -> None:
     """Test running Flask server and lock cleanup logic."""
-    calls: List[Any] = []
+    calls: list[Any] = []
 
     class DummyApp:
         def run(self, host: str, port: int, debug: bool, use_reloader: bool) -> None:

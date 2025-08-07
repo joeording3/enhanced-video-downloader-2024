@@ -8,7 +8,7 @@ gallery-dl command-line tool, integrating with the server configuration.
 import logging
 import subprocess
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from flask import jsonify
 
@@ -18,7 +18,7 @@ from server.config import Config
 logger = logging.getLogger(__name__)
 
 
-def handle_gallery_dl_download(data: Dict[str, Any]) -> Any:
+def handle_gallery_dl_download(data: dict[str, Any]) -> Any:
     """
     Handle gallery download requests.
 
@@ -45,7 +45,7 @@ def handle_gallery_dl_download(data: Dict[str, Any]) -> Any:
 
 
 # Helper to initialize gallery-dl download and prepare directory
-def _init_gallery_dl(data: Dict[str, Any]) -> Tuple[Optional[str], str, str, Dict[str, Any], Optional[Tuple[Any, int]]]:
+def _init_gallery_dl(data: dict[str, Any]) -> tuple[str | None, str, str, dict[str, Any], tuple[Any, int] | None]:
     """
     Validate URL and prepare download directory for gallery-dl or return error.
 
@@ -110,15 +110,15 @@ def _init_gallery_dl(data: Dict[str, Any]) -> Tuple[Optional[str], str, str, Dic
 
 
 # Helper to build the gallery-dl command based on options and URL
-def _build_gallery_command(options: Dict[str, Any], url: str) -> List[str]:
+def _build_gallery_command(options: dict[str, Any], url: str) -> list[str]:
     """Construct the gallery-dl command list from options and URL."""
-    cmd: List[str] = ["gallery-dl"]
+    cmd: list[str] = ["gallery-dl"]
     for key, value in options.items():
         key_str = str(key)
         if isinstance(value, bool):
             if value:
                 cmd.append(f"--{key_str}")
-        elif isinstance(value, (str, int, float)):
+        elif isinstance(value, str | int | float):
             cmd.extend([f"--{key_str}", str(value)])
         else:
             for item in value:
@@ -129,8 +129,8 @@ def _build_gallery_command(options: Dict[str, Any], url: str) -> List[str]:
 
 # Helper to execute gallery-dl and return Flask JSON response
 def _execute_gallery_download(
-    cmd: List[str], download_path: Optional[str], download_id: str, url: str
-) -> Tuple[Any, int]:
+    cmd: list[str], download_path: str | None, download_id: str, url: str
+) -> tuple[Any, int]:
     """Run gallery-dl subprocess and handle its output and errors."""
     if download_path is None:
         logger.error(f"[{download_id}] Download path is None")

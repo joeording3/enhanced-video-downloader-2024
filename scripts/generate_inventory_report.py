@@ -24,8 +24,10 @@ import re
 import shutil
 import subprocess
 import tempfile
+from collections.abc import Generator
 from pathlib import Path
-from typing import Any, Dict, Generator, List, Optional, Pattern, Tuple, Union
+from re import Pattern
+from typing import Any
 
 # Configuration
 EXCLUDE_DIRS = {
@@ -38,7 +40,7 @@ EXCLUDE_DIRS = {
     "coverage",
 }
 FILE_EXTS = (".py", ".js", ".ts", ".tsx", ".json")
-IGNORE_PATTERNS: Dict[str, Pattern[str]] = {
+IGNORE_PATTERNS: dict[str, Pattern[str]] = {
     "type_ignore": re.compile(r"# type: ignore\b"),
     "noqa": re.compile(r"# noqa\b"),
     "eslint_disable": re.compile(r"// eslint-disable"),
@@ -47,7 +49,7 @@ IGNORE_PATTERNS: Dict[str, Pattern[str]] = {
     "mypy_ignore": re.compile(r"# mypy: ignore"),
     "ignore_patterns_config": re.compile(r'"ignores"\s*:\s*\[.+?\]'),
 }
-DOCSTRING_PATTERNS: Dict[str, Pattern[str]] = {
+DOCSTRING_PATTERNS: dict[str, Pattern[str]] = {
     "python_docstring": re.compile(r'"""(?!!"")(?:.|\n)*?"""'),
     "jsdoc_block": re.compile(r"/\*\*(?:\s*\*.*\n)+\s*\*/"),
     "json_schema_desc": re.compile(r'"description"\s*:\s*".+?"'),
@@ -58,7 +60,7 @@ ROOT = Path(__file__).parent.parent
 Path("tmp").mkdir(exist_ok=True)
 
 
-def walk_files(root: Union[Path, str]) -> Generator[Path, None, None]:
+def walk_files(root: Path | str) -> Generator[Path, None, None]:
     """
     Yield Path objects for files with supported extensions under a root directory.
 
@@ -79,7 +81,7 @@ def walk_files(root: Union[Path, str]) -> Generator[Path, None, None]:
                 yield Path(dirpath) / fname
 
 
-def get_context(lines: List[str], idx: int, context: int = 3) -> str:
+def get_context(lines: list[str], idx: int, context: int = 3) -> str:
     """
     Get context lines around a given index.
 
@@ -102,7 +104,7 @@ def get_context(lines: List[str], idx: int, context: int = 3) -> str:
     return "".join(lines[start:end])
 
 
-def run_command(cmd: List[str]) -> Tuple[Optional[int], str]:
+def run_command(cmd: list[str]) -> tuple[int | None, str]:
     """
     Execute a command and capture its output.
 
@@ -123,7 +125,7 @@ def run_command(cmd: List[str]) -> Tuple[Optional[int], str]:
         return None, f"Command not found: {cmd[0]}"
 
 
-def scan_ignore_entries(path: Path) -> List[Dict[str, Any]]:
+def scan_ignore_entries(path: Path) -> list[dict[str, Any]]:
     """
     Scan a file for configured ignore directive patterns.
 
@@ -158,7 +160,7 @@ def scan_ignore_entries(path: Path) -> List[Dict[str, Any]]:
     return entries
 
 
-def test_ignore(entry: Dict[str, Any]) -> Optional[str]:
+def test_ignore(entry: dict[str, Any]) -> str | None:
     """
     Test whether removing an ignore directive resurfaces a linter/type error.
 
@@ -194,7 +196,7 @@ def test_ignore(entry: Dict[str, Any]) -> Optional[str]:
     return "unknown" if code is None else "justified" if code != 0 else "stale"
 
 
-def scan_docstring_entries(path: Path) -> List[Dict[str, Any]]:
+def scan_docstring_entries(path: Path) -> list[dict[str, Any]]:
     """
     Scan a file for docstring or JSDoc block patterns.
 
@@ -225,7 +227,7 @@ def scan_docstring_entries(path: Path) -> List[Dict[str, Any]]:
     return entries
 
 
-def test_docstrings_py(path: Path) -> Tuple[Optional[int], str]:
+def test_docstrings_py(path: Path) -> tuple[int | None, str]:
     """
     Run pydocstyle on a Python file to check NumPy-style docstrings.
 
@@ -244,7 +246,7 @@ def test_docstrings_py(path: Path) -> Tuple[Optional[int], str]:
     return code, out
 
 
-def test_docstrings_js(path: Path) -> Tuple[Optional[int], str]:
+def test_docstrings_js(path: Path) -> tuple[int | None, str]:
     """
     Run ESLint to check JSDoc/TSDoc compliance in JS/TS files.
 
@@ -263,7 +265,7 @@ def test_docstrings_js(path: Path) -> Tuple[Optional[int], str]:
     return code, out
 
 
-def test_json_schema(path: Path) -> Tuple[bool, str]:
+def test_json_schema(path: Path) -> tuple[bool, str]:
     """
     Validate that JSON schema objects include a 'description'.
 
@@ -283,7 +285,7 @@ def test_json_schema(path: Path) -> Tuple[bool, str]:
         return False, str(e)
 
     # check every dict with $schema has description
-    def recurse(obj: Any) -> List[bool]:
+    def recurse(obj: Any) -> list[bool]:
         results = []
         if isinstance(obj, dict):
             if "$schema" in obj:

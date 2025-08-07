@@ -1,7 +1,7 @@
 import builtins
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 import pytest
 from flask.testing import FlaskClient
@@ -27,7 +27,7 @@ def stub_logs_manage(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
             return instance
 
         def __init__(self) -> None:
-            self._data: Dict[str, Any] = {}
+            self._data: dict[str, Any] = {}
 
         def get_value(self, key: str) -> Any:
             return self._data.get(key)
@@ -81,7 +81,7 @@ def test_clear_logs_endpoint_variants(
     move_raises: bool,
     custom_config: bool,
     expected_status: int,
-    expected_contains: Optional[str],
+    expected_contains: str | None,
 ) -> None:
     """Test POST /logs/clear for various scenarios including missing file, exceptions, and custom paths."""
 
@@ -128,7 +128,7 @@ def test_clear_logs_endpoint_variants(
                 return instance
 
             def __init__(self) -> None:
-                self._data: Dict[str, Any] = {}
+                self._data: dict[str, Any] = {}
 
             def get_value(self, key: str) -> Any:
                 return self._data.get(key)
