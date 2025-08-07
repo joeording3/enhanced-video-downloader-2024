@@ -268,7 +268,7 @@ def find_server_processes_cli() -> list[dict[str, int | str | None]]:
     except (psutil.NoSuchProcess, psutil.AccessDenied) as e_psutil:
         helper_log.warning(
             f"Could not get process info for PID {pid} from lock file "
-            f"(psutil error: {e_psutil}). Process might have exited or check permissions."
+            + f"(psutil error: {e_psutil}). Process might have exited or check permissions."
         )
         return procs
     except Exception as e_uptime:

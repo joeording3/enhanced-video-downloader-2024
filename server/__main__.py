@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 # Flag to track graceful shutdown in progress
 _shutdown_in_progress = False
 # Track active download processes
-_active_download_processes: set[psutil.Process] = set()
+_active_download_processes: "set[psutil.Process]" = set()
 # Lock for modifying the active processes set
 _process_lock = threading.Lock()
 
@@ -172,7 +172,7 @@ def cleanup_part_files() -> None:
         logger.exception("Error during .part file cleanup")
 
 
-def _remove_part_files(part_files: list[Path]) -> None:
+def _remove_part_files(part_files: "list[Path]") -> None:
     """
     Remove a list of partial download files.
 
@@ -194,7 +194,7 @@ def _remove_part_files(part_files: list[Path]) -> None:
             logger.warning(f"Failed to remove {part_file}: {e}")
 
 
-def find_orphaned_processes(port: int) -> list[int]:
+def find_orphaned_processes(port: int) -> "list[int]":
     """
     Find any process that might be using our target port.
 
@@ -282,13 +282,13 @@ def kill_process(pid: int) -> bool:
 
 
 # Helpers to support terminate_active_downloads and reduce complexity
-def _get_active_download_processes() -> list[psutil.Process]:
+def _get_active_download_processes() -> "list[psutil.Process]":
     """Return a list of currently registered active download processes."""
     with _process_lock:
         return list(_active_download_processes)
 
 
-def _terminate_download_processes_gracefully(procs: list[psutil.Process]) -> None:
+def _terminate_download_processes_gracefully(procs: "list[psutil.Process]") -> None:
     """Send SIGTERM to active download processes."""
     for proc in procs:
         try:
@@ -299,7 +299,7 @@ def _terminate_download_processes_gracefully(procs: list[psutil.Process]) -> Non
             logger.debug(f"Error terminating process {proc.pid}: {e}")
 
 
-def _wait_for_processes_to_terminate(_procs: list[psutil.Process], interval: float = 0.1, retries: int = 20) -> None:
+def _wait_for_processes_to_terminate(_procs: "list[psutil.Process]", interval: float = 0.1, retries: int = 20) -> None:
     """Wait for up to retries*interval seconds for processes to stop."""
     for _ in range(retries):
         # Check shared set under lock to account for unregistering
@@ -309,7 +309,7 @@ def _wait_for_processes_to_terminate(_procs: list[psutil.Process], interval: flo
         time.sleep(interval)
 
 
-def _kill_download_processes(procs: list[psutil.Process]) -> None:
+def _kill_download_processes(procs: "list[psutil.Process]") -> None:
     """Force kill any remaining active download processes."""
     for proc in procs:
         try:
@@ -362,7 +362,7 @@ def _cleanup_orphaned_processes(port: int) -> None:
         pass
 
 
-def _prepare_server_lock(cfg: Config, host: str, port: int) -> tuple[TextIO, int]:
+def _prepare_server_lock(cfg: Config, host: str, port: int) -> "tuple[TextIO, int]":
     """
     Check port availability, update config if changed, create lock file.
 

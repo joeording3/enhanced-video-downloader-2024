@@ -12,10 +12,7 @@
       "type": "synchronous_operation",
       "description": "Synchronous operations can block the main thread",
       "count": 2,
-      "examples": [
-        "JSON.stringify",
-        "JSON.stringify"
-      ]
+      "examples": ["JSON.stringify", "JSON.stringify"]
     },
     {
       "file": "background.ts",
@@ -48,11 +45,7 @@
       "type": "expensive_dom_operations",
       "description": "Multiple DOM operations can cause performance issues",
       "count": 7,
-      "examples": [
-        "querySelector",
-        "querySelector",
-        "querySelector"
-      ]
+      "examples": ["querySelector", "querySelector", "querySelector"]
     },
     {
       "file": "history.ts",
@@ -72,21 +65,14 @@
       "type": "synchronous_operation",
       "description": "Synchronous operations can block the main thread",
       "count": 2,
-      "examples": [
-        "JSON.stringify",
-        "JSON.parse"
-      ]
+      "examples": ["JSON.stringify", "JSON.parse"]
     },
     {
       "file": "options.ts",
       "type": "expensive_dom_operations",
       "description": "Multiple DOM operations can cause performance issues",
       "count": 55,
-      "examples": [
-        "getElementById",
-        "getElementById",
-        "getElementById"
-      ]
+      "examples": ["getElementById", "getElementById", "getElementById"]
     },
     {
       "file": "options.ts",
@@ -106,11 +92,7 @@
       "type": "expensive_dom_operations",
       "description": "Multiple DOM operations can cause performance issues",
       "count": 14,
-      "examples": [
-        "getElementById",
-        "querySelector",
-        "getElementById"
-      ]
+      "examples": ["getElementById", "querySelector", "getElementById"]
     },
     {
       "file": "popup.ts",
@@ -727,8 +709,6 @@
       "frequent_api_calls",
       "expensive_dom_operations"
     ],
-    "hotPathTypes": [
-      "frequently_called"
-    ]
+    "hotPathTypes": ["frequently_called"]
   }
 }

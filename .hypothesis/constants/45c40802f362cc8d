@@ -1,0 +1,4 @@
+# file: /Users/josephording/myscripts/Enhanced Video Downloader/server/lock.py
+# hypothesis_version: 6.137.1
+
+[':', 'data', 'server.lock', 'w']

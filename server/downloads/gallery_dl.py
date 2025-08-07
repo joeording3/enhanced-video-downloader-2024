@@ -128,9 +128,7 @@ def _build_gallery_command(options: dict[str, Any], url: str) -> list[str]:
 
 
 # Helper to execute gallery-dl and return Flask JSON response
-def _execute_gallery_download(
-    cmd: list[str], download_path: str | None, download_id: str, url: str
-) -> tuple[Any, int]:
+def _execute_gallery_download(cmd: list[str], download_path: str | None, download_id: str, url: str) -> tuple[Any, int]:
     """Run gallery-dl subprocess and handle its output and errors."""
     if download_path is None:
         logger.error(f"[{download_id}] Download path is None")

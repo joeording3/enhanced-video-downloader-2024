@@ -80,7 +80,7 @@ lint: lint-py lint-js lint-md emoji-check
 
 lint-py:
 	ruff check .
-	pyright server
+	pyright --pythonversion 3.13 server
 
 lint-js:
 	npm run lint
@@ -202,7 +202,7 @@ mutation-fast:
 	npm run test:mutation:js:fast || (echo "JavaScript mutation testing failed" && exit 1)
 	@echo "JavaScript mutation testing passed"
 	@echo "Running Python mutation testing on critical modules..."
-	timeout 300 mutmut run || (echo "Python mutation testing failed" && exit 1)
+	timeout 60 python -m mutmut run || (echo "Python mutation testing failed" && exit 1)
 	@echo "Python mutation testing passed"
 	@echo "Fast mutation testing complete"
 

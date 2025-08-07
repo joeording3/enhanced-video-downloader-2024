@@ -29,6 +29,52 @@ These components communicate over HTTP (localhost) and via Chrome messaging APIs
   - Stryker (JS/TS mutation testing)
   - Mutmut (Python mutation testing)
 
+## Code Quality Standards
+
+### Type Safety
+
+The project maintains excellent type safety with comprehensive static analysis:
+
+- **Pyright Configuration**: Python 3.13 compatibility with modern union syntax support
+- **Type Coverage**: 0 pyright errors, 143 warnings (down from 368 total issues)
+- **Type Ignore Management**: 32 instances, all legitimate and well-documented
+- **Type Stubs**: Automatic handling of third-party library limitations
+
+**Type Ignore Categories**:
+
+- **Third-party libraries** (yt-dlp, browser_cookie3, gunicorn): 15 instances
+- **Test-specific mocking**: 17 instances for legitimate test scenarios
+- **Dynamic system access**: Process management and Click command access
+
+### Documentation Standards
+
+The project enforces comprehensive documentation standards:
+
+- **Test Docstring Coverage**: 100% across all test categories
+- **Format Standards**:
+  - Python: Sphinx/REST style with `:param:`, `:returns:` directives
+  - TypeScript: JSDoc format with parameter and return documentation
+- **Quality Requirements**:
+  - One-line summary starting with imperative verb
+  - Complete parameter documentation with types
+  - Return value documentation
+  - No emojis in documentation (project rule)
+
+**Documentation Compliance**:
+
+- **Unit Tests**: All 15+ files have proper Sphinx-style docstrings
+- **Integration Tests**: All 8 files have comprehensive docstrings
+- **Extension Tests**: All TypeScript test files have standardized JSDoc format
+- **New Files**: All new test files maintain excellent docstring coverage
+
+### Quality Assurance
+
+- **Linting**: 100% compliance with ESLint (JS/TS) and Ruff (Python)
+- **Formatting**: Automated with Prettier and Black
+- **Testing**: Comprehensive unit, integration, and E2E test coverage
+- **Mutation Testing**: Stryker for JS/TS (98.85% score), Mutmut for Python
+- **Coverage**: Target 80% coverage across all modules
+
 ## Current Project Status
 
 ### Test Quality Metrics

@@ -1,0 +1,4 @@
+# file: /Users/josephording/myscripts/Enhanced Video Downloader/server/utils.py
+# hypothesis_version: 6.137.1
+
+[200, '.', '..', '/', '127.0.0.1', '[<>:"|?*\\x00-\\x1F]', '\\', '_', '_*', '_+', 'darwin', 'default_filename', 'default_video_title', 'linux', 'win32']

@@ -59,9 +59,9 @@ def _analyze_progress_trend(history: list[dict[str, Any]]) -> dict[str, Any]:
             return {"trend": "insufficient_data"}
 
         # Calculate trend
-        recent_percent = percents[-1]
-        earlier_percent = percents[0]
-        progress_made = recent_percent - earlier_percent
+        recent_percent: float = percents[-1]
+        earlier_percent: float = percents[0]
+        progress_made: float = recent_percent - earlier_percent
 
         if progress_made > 5:
             trend = "improving"

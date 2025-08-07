@@ -80,7 +80,7 @@ class Config:
             return getattr(self._pydantic_config, name)
         raise AttributeError("Missing")
 
-    def get_download_options(self) -> dict:
+    def get_download_options(self) -> dict[str, Any]:
         """
         Return yt-dlp options as a dictionary.
 

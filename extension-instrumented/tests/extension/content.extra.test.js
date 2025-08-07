@@ -44,13 +44,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const content_1 = require("../../extension/src/content");
 const ytEnhance = __importStar(require("../../extension/src/youtube_enhance"));
-const utils_1 = require("../../extension/src/lib/utils");
+const logger_1 = require("../../extension/src/core/logger");
 describe("Content.ts additional branch coverage", () => {
+    let logger;
     beforeEach(() => {
         document.body.innerHTML = "";
         jest.clearAllMocks();
         chrome.runtime.lastError = null;
-        jest.spyOn(utils_1.logger, "error");
+        logger = logger_1.CentralizedLogger.getInstance();
+        logger.clearLogs();
     });
     describe("getButtonState error handling", () => {
         it("returns default on storage lastError", () => __awaiter(void 0, void 0, void 0, function* () {
@@ -67,7 +69,8 @@ describe("Content.ts additional branch coverage", () => {
                 y: 10,
                 hidden: false,
             });
-            expect(utils_1.logger.error).toHaveBeenCalledWith("Error getting button state from storage:", "fail");
+            const logs = logger.getLogs();
+            expect(logs.some((log) => log.message.includes("Error getting button state from storage"))).toBe(true);
         }));
         it("returns default on exception", () => __awaiter(void 0, void 0, void 0, function* () {
             // Throw an exception in storage.get
@@ -80,7 +83,8 @@ describe("Content.ts additional branch coverage", () => {
                 y: 10,
                 hidden: false,
             });
-            expect(utils_1.logger.error).toHaveBeenCalledWith("Error getting button state from storage:", "boom");
+            const logs = logger.getLogs();
+            expect(logs.some((log) => log.message.includes("Error getting button state from storage"))).toBe(true);
         }));
     });
     describe("saveButtonState error handling", () => {
@@ -94,7 +98,8 @@ describe("Content.ts additional branch coverage", () => {
                 y: 5,
                 hidden: true,
             });
-            expect(utils_1.logger.error).toHaveBeenCalledWith("Error saving button state to storage:", "savefail");
+            const logs = logger.getLogs();
+            expect(logs.some((log) => log.message.includes("Error saving button state to storage"))).toBe(true);
         }));
     });
     describe("ensureDownloadButtonStyle adjustments", () => {

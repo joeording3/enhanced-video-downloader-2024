@@ -114,7 +114,7 @@ def debug_paths() -> Any:
     # Debug request info
     logger.debug(
         f"Request from {request.remote_addr} - Headers: {dict(request.headers)}, "
-        f"Cookies: {request.cookies}, Params: {request.args}, Data: {request.get_data()!r}"
+        + f"Cookies: {request.cookies}, Params: {request.args}, Data: {request.get_data()!r}"
     )
 
     # Perform test write

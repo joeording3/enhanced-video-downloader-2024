@@ -10,7 +10,7 @@ const path = require("path");
 
 function findUnusedExports() {
   const srcPath = path.join(__dirname, "../extension/src");
-  const distPath = path.join(__dirname, "../extension/dist");
+  const _distPath = path.join(__dirname, "../extension/dist");
 
   // Get all TypeScript files
   const tsFiles = [];
@@ -228,7 +228,7 @@ ${coreFiles.map((file) => `export * from './${file}';`).join("\n")}
 
   // Create optimized constants export
   const constantsPath = path.join(__dirname, "../extension/src/constants.ts");
-  const constantsContent = fs.readFileSync(constantsPath, "utf8");
+  const _constantsContent = fs.readFileSync(constantsPath, "utf8");
 
   // Extract only used constants
   const usedConstants = [
@@ -245,8 +245,8 @@ ${coreFiles.map((file) => `export * from './${file}';`).join("\n")}
  */
 
 ${usedConstants
-      .map((constant) => `export { ${constant} } from './constants';`)
-      .join("\n")}
+  .map((constant) => `export { ${constant} } from './constants';`)
+  .join("\n")}
 `;
 
   const optimizedConstantsPath = path.join(

@@ -269,9 +269,9 @@ test.describe("Chrome Extension E2E Tests", () => {
       const isDisabled = await downloadButton.getAttribute("disabled");
       expect(isDisabled).toBeNull();
 
-      // Test button text content
+      // Test button text content (trim whitespace from padding)
       const buttonText = await downloadButton.textContent();
-      expect(buttonText).toBe("DOWNLOAD");
+      expect(buttonText?.trim()).toBe("DOWNLOAD");
 
       // Test page title and meta information
       const title = await page.title();
@@ -417,9 +417,9 @@ test.describe("Chrome Extension E2E Tests", () => {
       expect(downloadButton).not.toBeNull();
       if (!downloadButton) throw new Error("Download button not found");
 
-      // Test button text content
+      // Test button text content (trim whitespace from padding)
       const buttonText = await downloadButton.textContent();
-      expect(buttonText).toBe("DOWNLOAD");
+      expect(buttonText?.trim()).toBe("DOWNLOAD");
 
       // Test button state
       const isDisabled = await downloadButton.getAttribute("disabled");

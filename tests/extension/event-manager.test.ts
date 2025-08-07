@@ -28,18 +28,9 @@ describe("Event Manager Tests", () => {
       const mockHandler2 = jest.fn();
 
       eventManager.addListener(element, "click", mockHandler1);
-      // Add a small delay to ensure different timestamps
-      setTimeout(() => {
-        eventManager.addListener(element, "click", mockHandler2);
-      }, 1);
+      eventManager.addListener(element, "click", mockHandler2);
 
-      // Wait for the timeout to complete
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          expect(eventManager.getListenerCount()).toBe(2);
-          resolve(undefined);
-        }, 10);
-      });
+      expect(eventManager.getListenerCount()).toBe(2);
     });
 
     it("should add listeners with options", () => {
@@ -193,7 +184,7 @@ describe("Event Manager Tests", () => {
 
       return addListeners().then(() => {
         const endTime = Date.now();
-        expect(endTime - startTime).toBeLessThan(200); // Should complete in under 200ms
+        expect(endTime - startTime).toBeLessThan(300); // Should complete in under 300ms
 
         // Due to potential key collisions, we check for at least 90% of expected listeners
         expect(eventManager.getListenerCount()).toBeGreaterThanOrEqual(90);

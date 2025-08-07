@@ -51,7 +51,7 @@ def _success_response(message: str, status_code: int = 200) -> tuple[Response, i
     return jsonify({"success": True, "message": message}), status_code
 
 
-def _handle_history_sync(data: list) -> tuple[Response, int]:
+def _handle_history_sync(data: list[dict[str, Any]]) -> tuple[Response, int]:
     """Handle history synchronization."""
     try:
         success = save_history(data)
@@ -73,7 +73,7 @@ def _handle_history_clear() -> tuple[Response, int]:
         return _error_response(f"Failed to clear history: {e}", 500)
 
 
-def _handle_history_append(data: dict) -> tuple[Response, int]:
+def _handle_history_append(data: dict[str, Any]) -> tuple[Response, int]:
     """Handle history entry append."""
     try:
         append_history_entry(data)

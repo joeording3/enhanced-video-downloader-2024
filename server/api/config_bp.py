@@ -42,7 +42,7 @@ def _handle_get_config(cfg: Config) -> tuple[Response, int]:
         return jsonify({"success": False, "error": "Error retrieving configuration."}), 500
 
 
-def _validate_post_data() -> tuple[dict, tuple[Response, int] | None]:
+def _validate_post_data() -> tuple[dict[str, Any], tuple[Response, int] | None]:
     """Validate POST request data and return (data, error_response) or (data, None)."""
     if not request.is_json:
         return {}, (jsonify({"success": False, "error": "Content-Type must be application/json"}), 415)

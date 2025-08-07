@@ -1,0 +1,4 @@
+# file: /Users/josephording/myscripts/Enhanced Video Downloader/server/cli_commands/resume.py
+# hypothesis_version: 6.137.1
+
+['--scan-dir', 'PYTEST_CURRENT_TEST', 'download_dir', 'download_ids', 'failed', 'incomplete', 'pytest', 'resume', 'test_resume_']

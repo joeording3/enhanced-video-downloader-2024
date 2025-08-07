@@ -368,7 +368,7 @@ def config_set_command(
 def _validate_and_convert_value(key: str, value: str) -> Any:
     """Validate and convert a configuration value."""
     # Type mappings for validation
-    type_mappings = {
+    type_mappings: dict[str, type] = {
         "server_port": int,
         "max_concurrent_downloads": int,
         "download_history_limit": int,
@@ -648,7 +648,7 @@ def logs_view_command(
                 else:
                     click.echo(f" {log_file}:")
                     for line in filtered_lines:
-                        colored_line = colorize_line(line, color)
+                        colored_line: str = colorize_line(line, color)
                         click.echo(colored_line)
                     click.echo()
 

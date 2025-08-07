@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 # Helper functions for the /api/download endpoint
 def _parse_download_raw() -> dict[str, Any]:
     """Parse and return raw JSON payload from the request."""
-    data = request.get_json(force=True)
+    data: Any = request.get_json(force=True)
     return data if isinstance(data, dict) else {}
 
 

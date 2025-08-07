@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-require("../../extension/dist/popup.js");
+const popup_1 = require("../../extension/src/popup");
 describe("popup settings button", () => {
     let originalChrome;
     beforeEach(() => {
@@ -15,12 +15,15 @@ describe("popup settings button", () => {
                 sendMessage: jest.fn(),
                 onMessage: { addListener: jest.fn() },
             },
+            storage: {
+                local: {
+                    get: jest.fn().mockResolvedValue({ theme: "light" }),
+                    set: jest.fn().mockResolvedValue(undefined),
+                },
+            },
         };
-        // Import popup.js after DOM and mocks are set up
-        jest.resetModules();
-        require("../../extension/dist/popup.js");
-        // Trigger DOMContentLoaded event to initialize popup functionality
-        document.dispatchEvent(new Event("DOMContentLoaded"));
+        // Initialize popup functionality
+        (0, popup_1.initPopup)();
     });
     afterEach(() => {
         global.chrome = originalChrome;

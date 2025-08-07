@@ -156,6 +156,15 @@ def _resolve_start_params(
     return effective_host, effective_port, effective_download_dir_str
 
 
+# Pre-start checks helper for start_server
+def _cli_pre_start_checks(host: str, port: int, force: bool) -> None:
+    """Perform pre-start lock and port conflict checks by delegating to helpers."""
+    pid_port, port_in_use = _cli_get_existing_server_status(host, port)
+    _cli_assert_no_port_conflict(pid_port, port_in_use, host, port)
+    if pid_port:
+        _cli_handle_existing_server(pid_port, port_in_use, host, port, force)
+
+
 # Helper to build the server start command
 def _cli_build_command(_cfg: Config, host: str, port: int, gunicorn: bool, workers: int) -> list[str]:
     """Build the command list for starting the server."""
@@ -227,9 +236,9 @@ def _run_start_server(
     log = logging.getLogger("server.cli")
     log.info(
         f"_run_start_server called with: daemon={daemon}, host={host}, port={port}, "
-        f"download_dir={download_dir}, gunicorn={gunicorn}, workers={workers}, "
-        f"verbose={verbose}, force={force}, timeout={timeout}, "
-        f"retry_attempts={retry_attempts}, auto_port={auto_port}"
+        + f"download_dir={download_dir}, gunicorn={gunicorn}, workers={workers}, "
+        + f"verbose={verbose}, force={force}, timeout={timeout}, "
+        + f"retry_attempts={retry_attempts}, auto_port={auto_port}"
     )
 
     # Call the actual helper functions that are mocked in tests
@@ -756,122 +765,6 @@ if __name__ == "__main__":
     cli()
 
 
-# Helpers for start_server to reduce complexity
-def _cli_load_config(_ctx: click.Context) -> Config:
-    return Config.load()
-
-
-def _cli_set_logging(verbose: bool) -> None:
-    """Set up logging using central configuration."""
-    from server.logging_setup import setup_logging
-
-    if verbose:
-        setup_logging(log_level="DEBUG")
-        log.setLevel(logging.DEBUG)
-        log.info("Verbose logging enabled")
-    else:
-        setup_logging(log_level="INFO")
-        log.setLevel(logging.INFO)
-        log.info("Console logging set to warnings and errors only")
-
-
-# Helper to resolve download directory for start_server
-def _resolve_download_dir(cfg: Config, download_dir: str | None) -> str:
-    """Determine the effective download directory."""
-    current_config_download_dir = cfg.get_value("download_dir")
-    # CLI override
-    if download_dir is not None:
-        cli_download_path = Path(download_dir).expanduser().resolve()
-        try:
-            cli_download_path.mkdir(parents=True, exist_ok=True)
-            return str(cli_download_path)
-        except Exception:
-            log.exception("Failed to set or create CLI-provided download directory")
-            sys.exit(1)
-    # Config value
-    if current_config_download_dir is not None:
-        return current_config_download_dir
-    # Default location
-    default_dl_path = PROJECT_ROOT / "user_downloads"
-    try:
-        default_dl_path.mkdir(parents=True, exist_ok=True)
-        log.info(f"Download directory not specified, defaulting to '{default_dl_path}'")
-    except Exception as e:
-        log.warning(f"Could not create default download directory '{default_dl_path}': {e}.")
-    return str(default_dl_path)
-
-
-def _cli_get_existing_server_status(host: str, port: int) -> tuple[tuple[int, int] | None, bool]:
-    """Retrieve server lock PID/port and port-in-use status."""
-    pid_port = get_lock_pid_port_cli(LOCK_PATH)
-    port_in_use = is_port_in_use(port, host)
-    return pid_port, port_in_use
-
-
-def _resolve_start_params(
-    cfg: Config, host: str | None, port: int | None, download_dir: str | None
-) -> tuple[str, int, str]:
-    """Determine effective host, port, and download directory."""
-    # Host resolution
-    current_config_host = cfg.get_value("server_host")
-    if host is not None:
-        effective_host = host
-    elif current_config_host is not None:
-        effective_host = current_config_host
-    else:
-        effective_host = "127.0.0.1"
-
-    # Port resolution
-    current_config_port = cfg.get_value("server_port")
-    if port is not None:
-        effective_port = port
-    elif current_config_port is not None:
-        effective_port = current_config_port
-    else:
-        from server.constants import get_server_port
-
-        effective_port = get_server_port()
-
-    # Download directory resolution
-    effective_download_dir_str = _resolve_download_dir(cfg, download_dir)
-
-    return effective_host, effective_port, effective_download_dir_str
-
-
-# Helper to build the server start command
-def _cli_build_command(_cfg: Config, host: str, port: int, gunicorn: bool, workers: int) -> list[str]:
-    """Build the command list for starting the server."""
-    if gunicorn:
-        log.info("Starting server in production mode with Gunicorn on %s:%s", host, port)
-        cmd = [
-            "gunicorn",
-            f"--workers={workers}",
-            f"--bind={host}:{port}",
-            "server.wsgi:app",
-            "--access-logfile",
-            "-",
-            "--error-logfile",
-            "-",
-            "--log-level",
-            "info",
-        ]
-        if _cfg.get_value("debug_mode", False):
-            cmd.append("--reload")
-    else:
-        log.info("Starting server in development mode with Flask on %s:%s", host, port)
-        cmd = [sys.executable, str(SERVER_MAIN_SCRIPT)]
-    return cmd
-
-
-# Pre-start checks helper for start_server
-def _cli_pre_start_checks(host: str, port: int, force: bool) -> None:
-    """Perform pre-start lock and port conflict checks by delegating to helpers."""
-    pid_port, port_in_use = _cli_get_existing_server_status(host, port)
-    _cli_assert_no_port_conflict(pid_port, port_in_use, host, port)
-    if pid_port:
-        _cli_handle_existing_server(pid_port, port_in_use, host, port, force)
-
-
 # Helper: no-lock port conflict
 def _cli_assert_no_port_conflict(pid_port: tuple[int, int] | None, port_in_use: bool, host: str, port: int) -> None:
     if port_in_use and not pid_port:
@@ -906,7 +799,7 @@ def _cli_handle_existing_server(
     elif port_in_use:
         log.warning(
             f"Server running on port {existing_port} (PID: {existing_pid}), "
-            f"port {port} also in use by another application"
+            + f"port {port} also in use by another application"
         )
         if force:
             log.warning("--force flag only stops our server, but port is used by a different application")
@@ -1332,7 +1225,7 @@ def _run_server_status_enhanced(ctx: click.Context, detailed: bool, json_output:
             click.echo(f"   Memory Usage: {mem_info.rss / 1024 / 1024:.1f} MB")
             click.echo(
                 f"   Disk I/O: {disk_io.read_bytes / 1024 / 1024:.1f} MB read, "
-                f"{disk_io.write_bytes / 1024 / 1024:.1f} MB written"
+                + f"{disk_io.write_bytes / 1024 / 1024:.1f} MB written"
             )
 
 

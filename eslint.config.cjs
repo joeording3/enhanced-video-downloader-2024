@@ -33,6 +33,7 @@ module.exports = defineConfig([
       "**/extension-instrumented/**",
       "**/extension/dist/**",
       "**/htmlcov/**",
+      "**/coverage_html/**",
       "**/jest.config.js",
       "**/logs/**",
       "**/mutants/**",

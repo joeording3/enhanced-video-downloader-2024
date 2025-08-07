@@ -211,7 +211,7 @@ PORT_CONFIG = {
 
 
 # Legacy functions for backward compatibility
-def get_port_config(environment: str = "development") -> dict:
+def get_port_config(environment: str = "development") -> dict[str, Any]:
     """
     Get port configuration for the specified environment.
 

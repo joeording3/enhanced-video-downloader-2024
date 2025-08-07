@@ -291,9 +291,7 @@ class ConfigUpdate(BaseModel):
     )
 
     max_concurrent_downloads: int | None = Field(None, ge=1, description="Maximum number of concurrent downloads.")
-    download_history_limit: int | None = Field(
-        None, ge=0, description="Maximum number of entries in download history."
-    )
+    download_history_limit: int | None = Field(None, ge=0, description="Maximum number of entries in download history.")
     allowed_domains: list[str] | None = Field(
         None, description="List of allowed domains for downloads (empty means all)."
     )
@@ -332,9 +330,7 @@ class GalleryDLRequest(BaseModel):
     """
 
     url: str = Field(..., description="URL of the gallery to download")
-    download_id: str | None = Field(
-        None, description="Client-provided unique ID for the download"
-    )  # Added download_id
+    download_id: str | None = Field(None, description="Client-provided unique ID for the download")  # Added download_id
     download_type: str = Field(default="gallery", description="Type of download (gallery or media)")
 
 

@@ -26,7 +26,7 @@ def load_extraction_rules() -> list[dict[str, Any]]:
     """
     try:
         with RULES_PATH.open(encoding="utf-8") as f:
-            data = json.load(f)
+            data: Any = json.load(f)
             # Ensure the loaded data is a list of dictionaries
             if isinstance(data, list) and all(isinstance(item, dict) for item in data):
                 return data

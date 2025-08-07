@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 
-def find_emojis_in_text(text: str) -> list[tuple[int, str, str]]:
+def find_emojis_in_text(text: str) -> "list[tuple[int, str, str]]":
     """
     Find emoji usage in text.
 
@@ -71,6 +71,8 @@ def should_skip_directory(path: Path) -> bool:
         "node_modules",
         ".git",
         ".venv",
+        "venv",
+        "scripts/venv",
         "__pycache__",
         ".pytest_cache",
         "coverage",
@@ -109,7 +111,7 @@ def should_skip_directory(path: Path) -> bool:
     return any(part in skip_dirs for part in path.parts)
 
 
-def read_file_safely(file_path: Path) -> str | None:
+def read_file_safely(file_path: Path) -> "str | None":
     """
     Safely read a file and return its content.
 
@@ -129,8 +131,8 @@ def read_file_safely(file_path: Path) -> str | None:
 
 
 def scan_files(
-    directory: str = ".", file_types: list[str] | None = None
-) -> list[tuple[Path, list[tuple[int, str, str]]]]:
+    directory: str = ".", file_types: "list[str] | None" = None
+) -> "list[tuple[Path, list[tuple[int, str, str]]]]":
     """
     Scan files in the directory for emoji usage.
 
@@ -166,7 +168,7 @@ def scan_files(
     return files_with_emojis
 
 
-def print_results(files_with_emojis: list[tuple[Path, list[tuple[int, str, str]]]]) -> None:
+def print_results(files_with_emojis: "list[tuple[Path, list[tuple[int, str, str]]]]") -> None:
     """
     Print emoji detection results in a readable format.
 

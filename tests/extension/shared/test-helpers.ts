@@ -148,7 +148,7 @@ export function waitForAsync(ms: number = 0): Promise<void> {
 export function waitForDOMUpdate(): Promise<void> {
   return new Promise((resolve) => {
     requestAnimationFrame(() => {
-      requestAnimationFrame(resolve);
+      requestAnimationFrame(() => resolve());
     });
   });
 }

@@ -47,7 +47,7 @@ describe("discoverServerPort", () => {
         };
         const checkStatus = jest.fn().mockImplementation((port) => {
             calls.push(port);
-            return Promise.resolve(statuses[port]);
+            return Promise.resolve(statuses[port] || false);
         });
         const port = yield (0, background_logic_1.discoverServerPort)(storageService, checkStatus, defaultPort, maxPort, false);
         expect(port).toBe(discoveredPort);
@@ -71,7 +71,7 @@ describe("discoverServerPort", () => {
         };
         const checkStatus = jest
             .fn()
-            .mockImplementation((port) => Promise.resolve(statuses[port]));
+            .mockImplementation((port) => Promise.resolve(statuses[port] || false));
         const port = yield (0, background_logic_1.discoverServerPort)(storageService, checkStatus, defaultPort, maxPort, false);
         expect(port).toBe(discoveredPort);
         expect(storageService.setPort).toHaveBeenCalledWith(discoveredPort);
@@ -87,7 +87,7 @@ describe("discoverServerPort", () => {
         };
         const checkStatus = jest.fn().mockImplementation((port) => {
             calls.push(port);
-            return Promise.resolve(statuses[port]);
+            return Promise.resolve(statuses[port] || false);
         });
         const port = yield (0, background_logic_1.discoverServerPort)(storageService, checkStatus, defaultPort, maxPort, true);
         expect(port).toBe(discoveredPort);

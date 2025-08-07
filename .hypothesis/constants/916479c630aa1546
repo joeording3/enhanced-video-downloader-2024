@@ -1,0 +1,4 @@
+# file: /Users/josephording/myscripts/Enhanced Video Downloader/server/__main__.py
+# hypothesis_version: 6.137.1
+
+[0.1, '*.part', 'SIGINT (Ctrl+C)', 'SIGTERM', 'UNKNOWN', '__main__', 'cmdline', 'download_dir', 'inet', 'list[Path]', 'list[int]', 'list[psutil.Process]', 'name', 'pid', 'python', 'server', 'server_port', 'set[psutil.Process]', 'tuple[TextIO, int]']

@@ -80,7 +80,7 @@ def _download_single_url(
         sys.exit(1)
 
     # Build download options
-    download_options = {
+    download_options: dict[str, Any] = {
         "url": url,
         "format": format,
         "is_playlist": is_playlist,
@@ -166,7 +166,7 @@ def _download_batch_from_file(
         for i, url in enumerate(urls):
             try:
                 # Build download options
-                download_options = {
+                download_options: dict[str, Any] = {
                     "url": url,
                     "format": format,
                     "is_playlist": False,  # Assume single videos for batch
@@ -380,7 +380,7 @@ def list_command(active_only: bool, failed_only: bool, format: str) -> None:
         sys.exit(1)
 
 
-def _display_downloads_table(downloads: list[dict[str, Any]]) -> None:
+def _display_downloads_table(downloads: "list[dict[str, Any]]") -> None:
     """Display downloads in a formatted table."""
     if not downloads:
         click.echo(" No downloads found.")

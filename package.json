@@ -9,6 +9,8 @@
     "test:coverage": "jest --coverage",
     "lint": "eslint . --ext .js,.ts",
     "lint:fix": "eslint . --ext .js,.ts --fix",
+    "format:check": "prettier --check \"**/*.{js,ts,json,md}\" --ignore-path .prettierignore",
+    "format": "prettier --write \"**/*.{js,ts,json,md}\"",
     "build": "npm run build:css && npm run build:ts",
     "build:css": "npm run css:purge && npm run css:minify",
     "build:ts": "tsc",
@@ -19,7 +21,8 @@
     "analyze:bundle": "node scripts/analyze_bundle_size.js",
     "optimize:tree-shaking": "node scripts/optimize_tree_shaking.js",
     "profile:performance": "node scripts/profile_performance.js",
-    "optimize:all": "npm run analyze:bundle && npm run optimize:tree-shaking && npm run profile:performance"
+    "optimize:all": "npm run analyze:bundle && npm run optimize:tree-shaking && npm run profile:performance",
+    "test:mutation:js:fast": "stryker run"
   },
   "repository": {
     "type": "git",
@@ -42,6 +45,7 @@
     "@stryker-mutator/jest-runner": "^9.0.1",
     "@stryker-mutator/typescript-checker": "^9.0.1",
     "@testing-library/jest-dom": "^6.6.3",
+    "@types/chrome": "^0.1.1",
     "@types/jest": "^29.5.14",
     "@typescript-eslint/eslint-plugin": "^8.32.1",
     "@typescript-eslint/parser": "^8.32.1",

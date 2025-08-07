@@ -4,6 +4,8 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 const options_1 = require("extension/src/options");
+// Mock the constants to return a wider port range for testing
+jest.mock("../../extension/src/constants", () => (Object.assign(Object.assign({}, jest.requireActual("../../extension/src/constants")), { getPortRange: jest.fn(() => [5001, 9099]) })));
 describe("Options UI Logic Tests", () => {
     beforeEach(() => {
         // Set up DOM elements needed for tests
@@ -22,6 +24,11 @@ describe("Options UI Logic Tests", () => {
                 '<div class="section-content">Download settings content</div>' +
                 "</section>" +
                 "</div>";
+        // Verify validation elements exist
+        expect(document.getElementById("port-validation")).toBeTruthy();
+        expect(document.getElementById("folder-validation")).toBeTruthy();
+        expect(document.getElementById("log-level-validation")).toBeTruthy();
+        expect(document.getElementById("format-validation")).toBeTruthy();
     });
     afterEach(() => {
         document.body.innerHTML = "";
@@ -60,6 +67,14 @@ describe("Options UI Logic Tests", () => {
         it("validates common port with warning", () => {
             const input = document.createElement("input");
             input.value = "8080";
+            // Ensure validation element exists
+            let validationElement = document.getElementById("port-validation");
+            if (!validationElement) {
+                validationElement = document.createElement("div");
+                validationElement.id = "port-validation";
+                validationElement.className = "validation-message";
+                document.body.appendChild(validationElement);
+            }
             const result = (0, options_1.validatePort)(input);
             // Port 8080 is within the allowed range (5001-9099), so it should be valid
             expect(result).toBe(true);
@@ -69,6 +84,14 @@ describe("Options UI Logic Tests", () => {
         it("validates valid port with success", () => {
             const input = document.createElement("input");
             input.value = "5001";
+            // Ensure validation element exists
+            let validationElement = document.getElementById("port-validation");
+            if (!validationElement) {
+                validationElement = document.createElement("div");
+                validationElement.id = "port-validation";
+                validationElement.className = "validation-message";
+                document.body.appendChild(validationElement);
+            }
             const result = (0, options_1.validatePort)(input);
             expect(result).toBe(true);
             expect(input.classList.contains("valid")).toBe(true);

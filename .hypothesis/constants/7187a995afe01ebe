@@ -1,0 +1,4 @@
+# file: /Users/josephording/myscripts/Enhanced Video Downloader/server/api/status_bp.py
+# hypothesis_version: 6.137.1
+
+[1024.0, 400, 404, 3600, '%', '/api', '/status', '0%', 'B', 'DELETE', 'Download not found', 'GB', 'GET', 'KB', 'MB', 'Status cleared', 'TB', 'age', 'average_speed_bytes', 'average_speed_human', 'cleared_count', 'cleared_ids', 'data_points', 'earlier_percent', 'elapsed_time', 'error', 'error_analyzing', 'history', 'history_count', 'improving', 'insufficient_data', 'last_progress_update', 'last_update', 'message', 'original_message', 'percent', 'progress_made', 'progress_trend', 'recent_percent', 'recent_speeds', 'regressing', 'slow_progress', 'speed_count', 'speeds', 'stalled', 'start_time', 'status', 'success', 'timestamp', 'trend', 'troubleshooting', 'unknown']

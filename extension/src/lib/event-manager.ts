@@ -8,6 +8,7 @@ export class EventManager {
     string,
     { element: Element; type: string; handler: EventListener }
   > = new Map();
+  private counter = 0;
 
   addListener(
     element: Element,
@@ -15,7 +16,7 @@ export class EventManager {
     handler: EventListener,
     options?: AddEventListenerOptions
   ): void {
-    const key = `${element.tagName}-${type}-${Date.now()}`;
+    const key = `${element.tagName}-${type}-${Date.now()}-${++this.counter}`;
     this.listeners.set(key, { element, type, handler });
     element.addEventListener(type, handler, options);
   }

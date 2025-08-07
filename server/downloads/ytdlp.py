@@ -698,7 +698,7 @@ def _prepare_download_metadata(
     output_template = str(download_path / f"{safe_title}_{sanitized_id}.%(ext)s")
     logger.info(
         f"[{download_id}] Output template set to: '{output_template}' "
-        f"(title: '{safe_title}', id_comp: '{sanitized_id}')"
+        + f"(title: '{safe_title}', id_comp: '{sanitized_id}')"
     )
     return safe_title, sanitized_id, prefix, output_template
 

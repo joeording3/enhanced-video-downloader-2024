@@ -18,7 +18,11 @@ const isCoverage = process.env.PLAYWRIGHT_COVERAGE === "true";
 const v8toIstanbul = require("v8-to-istanbul");
 const { createCoverageMap } = require("istanbul-lib-coverage");
 // Import centralized port configuration
-const { getServerPort, getClientPort, getPortRange } = require("../extension/src/constants");
+const {
+  getServerPort,
+  getClientPort,
+  getPortRange,
+} = require("../extension/src/constants");
 
 // Increase default Jest timeout and declare dynamic server port
 jest.setTimeout(120000);
@@ -58,7 +62,7 @@ describe("Chrome Extension UI E2E", () => {
         // Fallback to assigned port if available
         try {
           serverPort = srv.address().port;
-        } catch { }
+        } catch {}
         UI_BASE = `http://127.0.0.1:${serverPort}/ui`;
         resolve();
       });
@@ -178,7 +182,10 @@ describe("Chrome Extension UI E2E", () => {
               if (msg.type === "getAppStatus") {
                 cb({
                   status: "success",
-                  serverConfig: { server_port: getServerPort(), debug_mode: false },
+                  serverConfig: {
+                    server_port: getServerPort(),
+                    debug_mode: false,
+                  },
                 });
               } else if (msg.type === "proxyDownload") {
                 cb({ status: "success", message: "Download started." });
@@ -186,7 +193,7 @@ describe("Chrome Extension UI E2E", () => {
                 cb({});
               }
             },
-            onMessage: { addListener: (_fn) => { } },
+            onMessage: { addListener: (_fn) => {} },
           },
           tabs: {
             query: () =>
@@ -218,7 +225,7 @@ describe("Chrome Extension UI E2E", () => {
             lastError: undefined,
             // Listeners registered via onMessage.addListener
             _listeners: [],
-            addListener: function (fn) { },
+            addListener: function (fn) {},
             onMessage: {
               _listeners: [],
               addListener(fn) {
@@ -441,13 +448,16 @@ describe("Chrome Extension UI E2E", () => {
               if (msg.type === "getAppStatus") {
                 cb({
                   status: "success",
-                  serverConfig: { server_port: getServerPort(), debug_mode: false },
+                  serverConfig: {
+                    server_port: getServerPort(),
+                    debug_mode: false,
+                  },
                 });
               } else {
                 cb({});
               }
             },
-            onMessage: { addListener: (_fn) => { } },
+            onMessage: { addListener: (_fn) => {} },
           },
           storage: {
             local: {
@@ -514,7 +524,10 @@ describe("Chrome Extension UI E2E", () => {
             lastError: undefined,
             sendMessage: (msg, cb) => {
               if (msg.type === "getAppStatus") {
-                cb({ status: "success", serverConfig: { server_port: getServerPort() } });
+                cb({
+                  status: "success",
+                  serverConfig: { server_port: getServerPort() },
+                });
               } else if (msg.type === "saveSettings") {
                 cb({ status: "success" });
               } else {
@@ -558,13 +571,16 @@ describe("Chrome Extension UI E2E", () => {
               if (msg.type === "getAppStatus") {
                 cb({
                   status: "success",
-                  serverConfig: { server_port: getServerPort(), debug_mode: true },
+                  serverConfig: {
+                    server_port: getServerPort(),
+                    debug_mode: true,
+                  },
                 });
               } else {
                 cb({});
               }
             },
-            onMessage: { addListener: (_fn) => { } },
+            onMessage: { addListener: (_fn) => {} },
           },
           storage: {
             local: {
@@ -636,13 +652,16 @@ describe("Chrome Extension UI E2E", () => {
               if (msg.type === "getAppStatus") {
                 cb({
                   status: "success",
-                  serverConfig: { server_port: getServerPort(), debug_mode: false },
+                  serverConfig: {
+                    server_port: getServerPort(),
+                    debug_mode: false,
+                  },
                 });
               } else {
                 cb && cb();
               }
             },
-            onMessage: { addListener: (_fn) => { } },
+            onMessage: { addListener: (_fn) => {} },
           },
           tabs: {
             query: () =>
@@ -734,7 +753,10 @@ describe("Chrome Extension UI E2E", () => {
               if (msg.type === "getAppStatus") {
                 cb({
                   status: "success",
-                  serverConfig: { server_port: getServerPort(), debug_mode: false },
+                  serverConfig: {
+                    server_port: getServerPort(),
+                    debug_mode: false,
+                  },
                 });
               } else if (msg.type === "getActiveDownloads") {
                 // Return active download with error for testing error UI
@@ -901,7 +923,10 @@ describe("Chrome Extension UI E2E", () => {
               if (msg.type === "getAppStatus") {
                 cb({
                   status: "success",
-                  serverConfig: { server_port: getServerPort(), debug_mode: true },
+                  serverConfig: {
+                    server_port: getServerPort(),
+                    debug_mode: true,
+                  },
                 });
               } else if (msg.type === "saveSettings") {
                 cb({ status: "success" });
@@ -909,7 +934,7 @@ describe("Chrome Extension UI E2E", () => {
                 cb({});
               }
             },
-            onMessage: { addListener: (_fn) => { } },
+            onMessage: { addListener: (_fn) => {} },
           },
           storage: {
             local: {
@@ -1132,7 +1157,7 @@ describe("Chrome Extension UI E2E", () => {
           runtime: {
             sendMessage: (_msg, cb) => cb && cb(),
             lastError: undefined,
-            onMessage: { addListener: () => { } },
+            onMessage: { addListener: () => {} },
           },
           tabs: {
             query: () => Promise.resolve([]),

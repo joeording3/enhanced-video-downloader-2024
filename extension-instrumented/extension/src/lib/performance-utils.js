@@ -62,7 +62,7 @@ class DOMBatcher {
         }
     }
     flush() {
-        this.operations.forEach(op => op());
+        this.operations.forEach((op) => op());
         this.operations = [];
         this.scheduled = false;
     }
