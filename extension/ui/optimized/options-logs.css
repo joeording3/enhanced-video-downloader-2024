@@ -1,0 +1,31 @@
+/* Enhanced Video Downloader - Options Logs Styles */
+
+/* Import shared styles */
+@import url("./variables.css");
+@import url("./components.css");
+@import url("./base.css");
+@import url("./themes.css");
+
+/* Log option styles */
+
+/* Use .btn component class instead of custom button styles */
+.button-style-checkbox {
+  composes: btn btn--secondary btn--small;
+}
+
+/* Log message styles */
+
+/* Log viewer textarea */
+#logViewerTextarea {
+  width: 100%;
+  height: 300px;
+  font-family: monospace;
+  font-size: var(--font-size-sm);
+  padding: var(--space-sm);
+  background-color: var(--bg-quaternary-light);
+  border: 1px solid var(--border-secondary);
+  border-radius: var(--radius-sm);
+  margin-top: var(--space-sm);
+  resize: vertical;
+  overflow-y: auto;
+}

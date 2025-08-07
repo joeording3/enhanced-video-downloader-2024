@@ -6,7 +6,7 @@ used throughout the application to ensure consistency and easy maintenance.
 """
 
 import os
-from typing import Any, Dict
+from typing import Any
 
 
 # Environment detection
@@ -26,10 +26,10 @@ def get_environment() -> str:
 # This is the single source of truth for all port numbers across the entire codebase
 CENTRAL_PORT_CONFIG = {
     "development": {
-        "server_port": 5013,
+        "server_port": 9090,
         "client_port": 5001,
-        "port_range_start": 5001,
-        "port_range_end": 9099,
+        "port_range_start": 9090,
+        "port_range_end": 9090,
         "docker_port": 5010,
         "test_server_port": 5006,
         "test_client_port": 5002,
@@ -78,7 +78,7 @@ CURRENT_ENVIRONMENT = get_environment()
 
 
 # Get current port configuration
-def get_current_port_config() -> Dict[str, Any]:
+def get_current_port_config() -> dict[str, Any]:
     """
     Get the port configuration for the current environment.
 

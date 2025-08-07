@@ -503,15 +503,14 @@ npm run test:extension:ts
 npm run test:extension:coverage
 
 # Optimized mutation testing
-make mutation-py              # Full optimized mutation testing
-make mutation-py-fast         # Fast testing (critical modules only)
-make mutation-py-minimal      # Minimal testing (fastest)
-make mutation-py-quick        # Quick testing (single module)
-make mutation-py-single MODULE=server/config.py  # Test specific module
-make mutation-py-analyze      # Analysis and reporting
-npm run test:mutation:py      # Standard mutation testing
-npm run test:mutation:py:fast # Fast testing
-npm run test:mutation:py:analyze # Analysis and reporting
+make mutation-py              # Full mutation testing (timeout: 10min)
+make mutation-py-fast         # Fast testing (timeout: 5min)
+make mutation-py-minimal      # Minimal testing (timeout: 3min)
+make mutation-py-quick        # Quick testing (timeout: 3min)
+make mutation-py-analyze      # View results and analysis
+mutmut run                    # Direct mutmut command
+mutmut results                # View mutation results
+mutmut show <mutant_name>     # View specific mutant details
 ```
 
 ### Building

@@ -144,12 +144,12 @@ export function renderHistoryItems(
     actionsWrapper.className = "history-actions";
 
     const retryButton = document.createElement("button");
-    retryButton.className = "history-action-btn retry-btn";
+    retryButton.className = "btn btn--secondary retry-btn";
     retryButton.textContent = "Retry";
     retryButton.title = "Retry download";
     retryButton.addEventListener("click", (e) => {
       e.stopPropagation(); // Prevent li click if any
-      console.log("[EVD][HISTORY] Retry clicked for:", item);
+      // Retry clicked for item
       chrome.runtime.sendMessage(
         {
           type: "downloadVideo", // Changed action to type
@@ -165,7 +165,7 @@ export function renderHistoryItems(
               chrome.runtime.lastError.message
             );
           } else {
-            console.log("[EVD][HISTORY] Retry download initiated:", response);
+            // Retry download initiated
             // Optionally, provide feedback to the user in the popup
           }
         }
@@ -173,13 +173,13 @@ export function renderHistoryItems(
     });
 
     const deleteButton = document.createElement("button");
-    deleteButton.className = "history-action-btn delete-btn";
+    deleteButton.className = "btn btn--secondary delete-btn";
     deleteButton.textContent = "Delete";
     deleteButton.title = "Remove from history";
     deleteButton.addEventListener("click", async (e) => {
       e.stopPropagation();
       if (!item.id) return;
-      console.log("[EVD][HISTORY] Delete clicked for:", item.id);
+      // Delete clicked for item
       try {
         await removeHistoryItemAndNotify(item.id);
         // The historyUpdated message from removeHistoryItemAndNotify will trigger a re-render
@@ -300,7 +300,7 @@ export async function addToHistory(entry: HistoryEntry): Promise<void> {
           resolve();
           return;
         }
-        console.log("[EVD][HISTORY] Added to history:", newEntry);
+        // Added to history
         resolve();
       });
     });
@@ -321,7 +321,7 @@ export async function clearHistory(): Promise<void> {
         );
         reject(new Error(chrome.runtime.lastError.message));
       } else {
-        console.log("[EVD][HISTORY] History cleared.");
+        // History cleared
         resolve();
       }
     });
@@ -370,7 +370,7 @@ export async function removeHistoryItem(
           );
           return reject(new Error(chrome.runtime.lastError.message));
         }
-        console.log("[EVD][HISTORY] Removed item " + itemId + " from history.");
+        // Removed item from history
         resolve();
       });
     });

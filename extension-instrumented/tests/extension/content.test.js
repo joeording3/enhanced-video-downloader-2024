@@ -22,6 +22,8 @@ const content_1 = require("../../extension/src/content");
 describe("Content Script Tests", () => {
     beforeEach(() => {
         document.body.innerHTML = "";
+        // Reset centralized state for each test
+        (0, content_1._resetStateForTesting)();
         // Mock storage and runtime APIs
         global.chrome = {
             storage: {
@@ -66,8 +68,9 @@ describe("Content Script Tests", () => {
     describe("resetButtonPosition", () => {
         it("should reset the button position to the default", () => __awaiter(void 0, void 0, void 0, function* () {
             const button = yield (0, content_1.createOrUpdateButton)();
+            // Set initial position to something other than default
             button.style.left = "100px";
-            button.style.top = "10px";
+            button.style.top = "50px";
             yield (0, content_1.resetButtonPosition)();
             expect(button.style.left).toBe("10px");
             expect(button.style.top).toBe("10px");
@@ -93,11 +96,14 @@ describe("Content Script Tests", () => {
     describe("setButtonHiddenState", () => {
         it("should hide the button when hidden is true", () => __awaiter(void 0, void 0, void 0, function* () {
             const button = yield (0, content_1.createOrUpdateButton)();
+            // Ensure button is visible initially
+            button.style.display = "block";
             yield (0, content_1.setButtonHiddenState)(true);
             expect(button.style.display).toBe("none");
         }));
         it("should show the button when hidden is false", () => __awaiter(void 0, void 0, void 0, function* () {
             const button = yield (0, content_1.createOrUpdateButton)();
+            // Ensure button is hidden initially
             button.style.display = "none";
             yield (0, content_1.setButtonHiddenState)(false);
             expect(button.style.display).toBe("block");
@@ -240,7 +246,6 @@ describe("Content Script Tests", () => {
                     callback({ status: "success" });
                 }
             });
-            btn.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
             btn.click();
             // Check for the success class after the async operation completes
             yield new Promise((resolve) => setTimeout(resolve, 10));
@@ -254,8 +259,9 @@ describe("Content Script Tests", () => {
                     callback({ status: "error" });
                 }
             });
-            btn.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
             btn.click();
+            // Wait for the async callback to complete
+            yield new Promise((resolve) => setTimeout(resolve, 10));
             expect(btn.classList.contains("download-error")).toBe(true);
         }));
         it("handles retry/warning download response", () => __awaiter(void 0, void 0, void 0, function* () {
@@ -266,8 +272,9 @@ describe("Content Script Tests", () => {
                     callback({ status: "retry" });
                 }
             });
-            btn.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
             btn.click();
+            // Wait for the async callback to complete
+            yield new Promise((resolve) => setTimeout(resolve, 10));
             // All non-success statuses are treated as error (red)
             expect(btn.classList.contains("download-error")).toBe(true);
         }));
@@ -279,8 +286,9 @@ describe("Content Script Tests", () => {
                     callback({ status: "unknown" });
                 }
             });
-            btn.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
             btn.click();
+            // Wait for the async callback to complete
+            yield new Promise((resolve) => setTimeout(resolve, 10));
             // All non-success statuses are treated as error (red)
             expect(btn.classList.contains("download-error")).toBe(true);
         }));
@@ -293,8 +301,9 @@ describe("Content Script Tests", () => {
                     callback({});
                 }
             });
-            btn.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
             btn.click();
+            // Wait for the async callback to complete
+            yield new Promise((resolve) => setTimeout(resolve, 10));
             expect(btn.classList.contains("download-error")).toBe(true);
         }));
     });

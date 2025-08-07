@@ -1,0 +1,135 @@
+/* Enhanced Video Downloader - Optimized Base Styles */
+
+/* Import variables and components */
+@import url("./variables.css");
+@import url("./components.css");
+
+/* ===== BASE ELEMENT STYLES ===== */
+
+html {
+  box-sizing: border-box;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--background-color);
+  color: var(--text-color);
+  margin: 0;
+  padding: 0;
+  line-height: 1.6;
+  transition: var(--transition-normal);
+}
+
+/* ===== TYPOGRAPHY ===== */
+
+h1,
+h2,
+h3 {
+  margin: 0 0 var(--space-md);
+  font-weight: var(--font-weight-bold);
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: var(--font-size-2xl);
+}
+h2 {
+  font-size: var(--font-size-xl);
+}
+h3 {
+  font-size: var(--font-size-lg);
+}
+
+p {
+  margin: 0 0 var(--space-md);
+}
+
+a {
+  color: var(--link-color);
+  text-decoration: none;
+  transition: var(--transition-normal);
+}
+
+a:hover {
+  color: var(--link-hover-color);
+}
+
+/* ===== LISTS ===== */
+
+ul {
+  margin: 0 0 var(--space-md);
+  padding-left: var(--space-lg);
+}
+
+/* ===== FORMS ===== */
+
+label {
+  display: block;
+  margin-bottom: var(--space-xs);
+  font-weight: var(--font-weight-bold);
+  color: var(--label-text);
+}
+
+/* Use .input component instead */
+
+/* ===== TABLES ===== */
+
+/* ===== UTILITY CLASSES ===== */
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* ===== RESPONSIVE CONTAINER SYSTEM ===== */
+
+.container {
+  width: 100%;
+  max-width: var(--breakpoint-xl);
+  margin: 0 auto;
+  padding: 0 var(--space-md);
+}
+
+/* ===== CSS GRID LAYOUT SYSTEM ===== */
+
+/* Grid Areas */
+
+/* Grid Items */
+
+/* ===== FLEXBOX UTILITIES ===== */
+
+/* ===== SPACING UTILITIES ===== */
+
+/* ===== RESPONSIVE UTILITIES ===== */
+
+@media (max-width: var(--breakpoint-sm)) {
+  .container {
+    padding: 0 var(--space-sm);
+  }
+}
+
+/* ===== HEADER & SEPARATOR ===== */
+
+.header {
+  background-color: var(--header-bg);
+  padding: var(--space-lg);
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: var(--space-lg);
+}
+
+/* ===== DARK THEME BASE OVERRIDES ===== */

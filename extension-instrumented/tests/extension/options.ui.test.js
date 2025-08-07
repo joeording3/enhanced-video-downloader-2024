@@ -61,10 +61,10 @@ describe("Options UI Logic Tests", () => {
             const input = document.createElement("input");
             input.value = "8080";
             const result = (0, options_1.validatePort)(input);
-            // Port 8080 is outside the allowed range (5001-5099), so it should be invalid
-            expect(result).toBe(false);
-            expect(input.classList.contains("valid")).toBe(false);
-            expect(input.classList.contains("invalid")).toBe(true);
+            // Port 8080 is within the allowed range (5001-9099), so it should be valid
+            expect(result).toBe(true);
+            expect(input.classList.contains("valid")).toBe(true);
+            expect(input.classList.contains("invalid")).toBe(false);
         });
         it("validates valid port with success", () => {
             const input = document.createElement("input");
@@ -244,106 +244,6 @@ describe("Options UI Logic Tests", () => {
             const result = (0, options_1.validateFormat)(select);
             expect(result).toBe(true);
             expect(select.classList.contains("valid")).toBe(true);
-        });
-    });
-    describe("Search Functionality", () => {
-        it("shows all sections when search query is empty", () => {
-            const sections = document.querySelectorAll(".settings-group");
-            (0, options_1.performSearch)("");
-            sections.forEach((section) => {
-                expect(section.classList.contains("hidden")).toBe(false);
-                expect(section.classList.contains("highlighted")).toBe(false);
-            });
-        });
-        it("hides non-matching sections and highlights matching ones", () => {
-            const sections = document.querySelectorAll(".settings-group");
-            (0, options_1.performSearch)("server");
-            const serverSection = document.querySelector('[data-category="server"]');
-            const downloadSection = document.querySelector('[data-category="download"]');
-            expect(serverSection === null || serverSection === void 0 ? void 0 : serverSection.classList.contains("hidden")).toBe(false);
-            expect(serverSection === null || serverSection === void 0 ? void 0 : serverSection.classList.contains("highlighted")).toBe(true);
-            expect(downloadSection === null || downloadSection === void 0 ? void 0 : downloadSection.classList.contains("hidden")).toBe(true);
-            expect(downloadSection === null || downloadSection === void 0 ? void 0 : downloadSection.classList.contains("highlighted")).toBe(false);
-        });
-        it("shows no results message when no sections match", () => {
-            (0, options_1.performSearch)("nonexistent");
-            const noResultsElement = document.getElementById("no-results-message");
-            expect(noResultsElement === null || noResultsElement === void 0 ? void 0 : noResultsElement.style.display).toBe("block");
-        });
-        it("hides no results message when sections match", () => {
-            var _a, _b;
-            // First show no results
-            (0, options_1.performSearch)("nonexistent");
-            expect((_a = document.getElementById("no-results-message")) === null || _a === void 0 ? void 0 : _a.style.display).toBe("block");
-            // Then search for something that matches
-            (0, options_1.performSearch)("server");
-            expect((_b = document.getElementById("no-results-message")) === null || _b === void 0 ? void 0 : _b.style.display).toBe("none");
-        });
-        it("handles multiple search terms", () => {
-            (0, options_1.performSearch)("server configuration");
-            const serverSection = document.querySelector('[data-category="server"]');
-            expect(serverSection === null || serverSection === void 0 ? void 0 : serverSection.classList.contains("hidden")).toBe(false);
-            expect(serverSection === null || serverSection === void 0 ? void 0 : serverSection.classList.contains("highlighted")).toBe(true);
-        });
-    });
-    describe("Text Highlighting", () => {
-        it("highlights matching text in section titles", () => {
-            const section = document.querySelector('[data-category="server"]');
-            const searchTerms = ["server"];
-            (0, options_1.highlightMatchingText)(section, searchTerms);
-            const titleElement = section.querySelector(".section-title");
-            expect(titleElement === null || titleElement === void 0 ? void 0 : titleElement.innerHTML).toContain('<mark class="search-highlight">Server</mark>');
-        });
-        it("removes existing highlights before adding new ones", () => {
-            var _a, _b, _c;
-            const section = document.querySelector('[data-category="server"]');
-            // Add initial highlight
-            (0, options_1.highlightMatchingText)(section, ["server"]);
-            expect((_a = section.querySelector(".section-title")) === null || _a === void 0 ? void 0 : _a.innerHTML).toContain('<mark class="search-highlight">Server</mark>');
-            // Add new highlight
-            (0, options_1.highlightMatchingText)(section, ["configuration"]);
-            expect((_b = section.querySelector(".section-title")) === null || _b === void 0 ? void 0 : _b.innerHTML).toContain('<mark class="search-highlight">Configuration</mark>');
-            expect((_c = section.querySelector(".section-title")) === null || _c === void 0 ? void 0 : _c.innerHTML).not.toContain('<mark class="search-highlight">Server</mark>');
-        });
-        it("handles case-insensitive highlighting", () => {
-            const section = document.querySelector('[data-category="server"]');
-            const searchTerms = ["SERVER"];
-            (0, options_1.highlightMatchingText)(section, searchTerms);
-            const titleElement = section.querySelector(".section-title");
-            expect(titleElement === null || titleElement === void 0 ? void 0 : titleElement.innerHTML).toContain('<mark class="search-highlight">Server</mark>');
-        });
-        it("does nothing when section has no title", () => {
-            const section = document.createElement("div");
-            const searchTerms = ["test"];
-            // Should not throw an error
-            expect(() => (0, options_1.highlightMatchingText)(section, searchTerms)).not.toThrow();
-        });
-    });
-    describe("No Results Message", () => {
-        it("creates and shows no results message when show is true", () => {
-            (0, options_1.showNoResultsMessage)(true);
-            const noResultsElement = document.getElementById("no-results-message");
-            expect(noResultsElement).toBeTruthy();
-            expect(noResultsElement === null || noResultsElement === void 0 ? void 0 : noResultsElement.style.display).toBe("block");
-            expect(noResultsElement === null || noResultsElement === void 0 ? void 0 : noResultsElement.className).toBe("no-results-message");
-        });
-        it("hides existing no results message when show is false", () => {
-            var _a, _b;
-            // First create the message
-            (0, options_1.showNoResultsMessage)(true);
-            expect((_a = document.getElementById("no-results-message")) === null || _a === void 0 ? void 0 : _a.style.display).toBe("block");
-            // Then hide it
-            (0, options_1.showNoResultsMessage)(false);
-            expect((_b = document.getElementById("no-results-message")) === null || _b === void 0 ? void 0 : _b.style.display).toBe("none");
-        });
-        it("reuses existing no results element", () => {
-            // Create message twice
-            (0, options_1.showNoResultsMessage)(true);
-            const firstElement = document.getElementById("no-results-message");
-            (0, options_1.showNoResultsMessage)(false);
-            (0, options_1.showNoResultsMessage)(true);
-            const secondElement = document.getElementById("no-results-message");
-            expect(firstElement).toBe(secondElement);
         });
     });
     describe("Validation Message Display", () => {

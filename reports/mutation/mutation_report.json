@@ -1,37 +1,16 @@
 {
-  "timestamp": "2025-08-05 14:22:31",
+  "timestamp": "2025-08-06 16:56:03",
   "project": "Enhanced Video Downloader",
   "analysis": {
-    "total_mutations": 6460,
-    "checked_mutations": 6460,
+    "total_mutations": 1,
+    "checked_mutations": 0,
     "survived_mutations": 0,
     "killed_mutations": 0,
     "timeout_mutations": 0,
-    "recommendations": [
-      "Found 6460 unchecked mutations. Run full mutation testing to complete analysis."
-    ],
+    "recommendations": [],
     "mutation_score": 0
   },
-  "recommendations": [
-    "Modules with low mutation scores (<80%): server,     server"
-  ],
+  "recommendations": [],
   "performance_metrics": {},
-  "module_coverage": {
-    "server": {
-      "total": 1,
-      "killed": 0,
-      "survived": 0,
-      "timeout": 0,
-      "not_checked": 1,
-      "mutation_score": 0
-    },
-    "    server": {
-      "total": 6459,
-      "killed": 0,
-      "survived": 0,
-      "timeout": 0,
-      "not_checked": 6459,
-      "mutation_score": 0
-    }
-  }
+  "module_coverage": {}
 }

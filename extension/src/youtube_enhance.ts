@@ -34,7 +34,7 @@ export function enhanceYouTubeButton(
     hostname.endsWith(".youtube.com");
 
   if (isYouTubeDomain) {
-    console.log("[EVD Content] Enhancing YouTube button visibility");
+    // Enhancing YouTube button visibility
 
     // Add CSS class for enhanced YouTube styling
     btn.classList.add("youtube-enhanced");

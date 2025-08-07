@@ -1,0 +1,121 @@
+/* Enhanced Video Downloader - Legacy Styles (Deprecated) */
+
+/* This file is deprecated and should be replaced with the new shared architecture:
+   - variables.css: All CSS variables
+   - components.css: Reusable components (buttons, inputs, etc.)
+   - base.css: Base styles (body, html, etc.)
+   - themes.css: Theme-specific overrides
+   
+   New files should import from these shared files instead of duplicating styles.
+*/
+
+/* Import shared styles for backward compatibility */
+@import url("./variables.css");
+@import url("./components.css");
+@import url("./base.css");
+@import url("./themes.css");
+
+/* Utility Classes - Now using shared classes from base.css */
+
+/* Spacing Utilities - Now using shared classes from components.css */
+
+/* Status Color Utilities */
+
+/* Status Indicator Components */
+
+/* Status Badge Components */
+
+/* Standardized Status Error Selectors */
+
+.status-message.error {
+  color: var(--status-error);
+}
+
+/* Standardized Status Success Selectors */
+
+.status-message.success {
+  color: var(--status-complete);
+}
+
+/* Standardized Status Warning Selectors */
+
+.status-message.warning {
+  color: var(--status-pending);
+}
+
+/* Text Color Utilities */
+
+/* Shared Dark Theme Overrides */
+
+/* Dark theme scrollbar overrides - Now using shared styles from themes.css */
+
+/* YouTube Enhanced Button Styling */
+
+/* Download Button Styling */
+.download-button {
+  cursor: pointer;
+  color: var(--text-inverse);
+  border: 1px solid var(--text-inverse);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
+  user-select: none;
+  background-color: var(--primary);
+  transition: var(--transition-normal);
+}
+
+.download-button:hover {
+  background-color: var(--primary-hover);
+}
+
+/* Download Button States */
+.download-sending {
+  background-color: var(--success) !important;
+  opacity: 0.7;
+}
+
+.download-success {
+  background-color: var(--success) !important;
+  opacity: 0.7;
+}
+
+.download-error {
+  background-color: var(--error) !important;
+  opacity: 0.7;
+}
+
+/* Shared Server Status Styles */
+.server-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-sm);
+  opacity: 0.9;
+  margin-left: auto;
+  margin-right: var(--space-md);
+}
+
+.server-status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--status-pending);
+  animation: pulse 2s infinite;
+}
+
+.server-status-indicator.connected {
+  background-color: var(--status-complete);
+  animation: none;
+}
+
+.server-status-indicator.disconnected {
+  background-color: var(--status-error);
+  animation: none;
+}
+
+/* Shared Pulse Animation - Now using shared animation from components.css */
+
+/* Shared Scrollbar Styles - Now using shared styles from components.css */
+
+/* Shared Input Component Styles - Now using .input component classes from components.css */
+
+/* Shared Button Component Styles - Now using .btn component classes from components.css */

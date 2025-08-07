@@ -13,6 +13,9 @@ all:
 	@echo "Running tests..."
 	@$(MAKE) test || (echo "Tests failed" && exit 1)
 	@echo "Tests passed"
+	@echo "Cleaning up junk folders..."
+	@$(MAKE) cleanup-junk-folders || (echo "Junk folder cleanup failed" && exit 1)
+	@echo "Junk folder cleanup completed"
 	@echo "Running mutation testing..."
 	@$(MAKE) mutation-fast || (echo "Mutation testing failed" && exit 1)
 	@echo "Mutation testing passed"
@@ -30,6 +33,8 @@ all-continue:
 	@$(MAKE) format-check && echo "Format check passed" || echo "Format check failed"
 	@echo "Running tests..."
 	@$(MAKE) test && echo "Tests passed" || echo "Tests failed"
+	@echo "Cleaning up junk folders..."
+	@$(MAKE) cleanup-junk-folders && echo "Junk folder cleanup completed" || echo "Junk folder cleanup failed"
 	@echo "Generating coverage..."
 	@$(MAKE) coverage && echo "Coverage generated" || echo "Coverage generation failed"
 	@echo "=== Quality Check Summary Complete ==="
@@ -46,6 +51,9 @@ check:
 	@echo "Running tests..."
 	@$(MAKE) test || (echo "Tests failed" && exit 1)
 	@echo "Tests passed"
+	@echo "Cleaning up junk folders..."
+	@$(MAKE) cleanup-junk-folders || (echo "Junk folder cleanup failed" && exit 1)
+	@echo "Junk folder cleanup completed"
 	@echo "Running fast mutation testing..."
 	@$(MAKE) mutation-fast || (echo "Mutation testing failed" && exit 1)
 	@echo "Mutation testing passed"
@@ -194,7 +202,7 @@ mutation-fast:
 	npm run test:mutation:js:fast || (echo "JavaScript mutation testing failed" && exit 1)
 	@echo "JavaScript mutation testing passed"
 	@echo "Running Python mutation testing on critical modules..."
-	npm run test:mutation:py:fast || (echo "Python mutation testing failed" && exit 1)
+	timeout 300 mutmut run || (echo "Python mutation testing failed" && exit 1)
 	@echo "Python mutation testing passed"
 	@echo "Fast mutation testing complete"
 
@@ -204,23 +212,21 @@ mutation-js:
 	@echo "Stryker mutation testing complete"
 
 mutation-py:
-	@echo "=== Running Optimized Mutmut Mutation Testing (Python) ==="
-	@echo "Running analysis and optimization..."
-	python scripts/optimize_mutmut.py --analyze --optimize
-	@echo "Running selective mutation testing on critical modules..."
-	python scripts/optimize_mutmut.py --run
-	@echo "Generating comprehensive mutation report..."
-	python scripts/optimize_mutmut.py --report
-	@echo "Optimized mutmut mutation testing complete"
+	@echo "=== Running Mutmut Mutation Testing (Python) ==="
+	@echo "Running mutation testing on critical modules..."
+	timeout 600 mutmut run
+	@echo "Generating mutation report..."
+	mutmut results
+	@echo "Mutmut mutation testing complete"
 
 mutation-py-fast:
 	@echo "=== Running Fast Mutmut Testing (Critical Modules Only) ==="
-	python scripts/fast_mutmut.py
+	timeout 300 mutmut run
 	@echo "Fast mutation testing complete"
 
 mutation-py-analyze:
 	@echo "=== Analyzing Mutmut Results ==="
-	python scripts/optimize_mutmut.py --analyze --report
+	mutmut results
 	@echo "Analysis complete"
 
 mutation-py-single:
@@ -229,17 +235,29 @@ mutation-py-single:
 		echo "Usage: make mutation-py-single MODULE=server/config.py"; \
 		exit 1; \
 	fi
-	python scripts/fast_mutmut.py --single $(MODULE)
+	@echo "Testing single module: $(MODULE)"
+	@echo "Note: Use setup.cfg to configure which modules to test"
 
 mutation-py-minimal:
 	@echo "=== Running Minimal Mutation Testing (Fastest) ==="
-	python scripts/minimal_mutmut.py --quick
+	timeout 180 mutmut run
 	@echo "Minimal mutation testing complete"
 
 mutation-py-quick:
 	@echo "=== Running Quick Mutation Testing ==="
-	python scripts/minimal_mutmut.py --quick
+	timeout 180 mutmut run
 	@echo "Quick mutation testing complete" 
+
+mutmut-quick:
+	@echo "=== Running Quick Mutmut Testing (Critical Modules Only) ==="
+	timeout 300 mutmut run
+	@echo "Quick mutmut testing complete"
+
+mutmut: mutmut-quick
+	@echo "=== Running Full Mutmut Testing ==="
+	timeout 600 mutmut run
+	mutmut results
+	@echo "Full mutmut mutation testing complete"
 
 check-junk-folders:
 	@echo "Checking for junk folders in root..."

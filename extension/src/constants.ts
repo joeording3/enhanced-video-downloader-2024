@@ -17,10 +17,10 @@ function getEnvironment(): string {
 // This is the single source of truth for all port numbers across the entire codebase
 const CENTRAL_PORT_CONFIG = {
   development: {
-    server_port: 5013,
+    server_port: 9090,
     client_port: 5001,
-    port_range_start: 5001,
-    port_range_end: 9099,
+    port_range_start: 9090,
+    port_range_end: 9090,
     docker_port: 5010,
     test_server_port: 5006,
     test_client_port: 5002,

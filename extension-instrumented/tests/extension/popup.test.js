@@ -73,8 +73,8 @@ describe("Popup UI Tests", () => {
                     dispatchEvent: globals_1.jest.fn(),
                 })),
             });
-            (0, popup_1.applyPopupTheme)(true);
-            expect(document.documentElement.classList.contains("dark-theme")).toBe(true);
+            (0, popup_1.applyPopupTheme)("dark");
+            expect(document.body.classList.contains("dark-theme")).toBe(true);
         });
         it("applies light theme when prefers-color-scheme is light", () => {
             Object.defineProperty(window, "matchMedia", {
@@ -90,36 +90,36 @@ describe("Popup UI Tests", () => {
                     dispatchEvent: globals_1.jest.fn(),
                 })),
             });
-            (0, popup_1.applyPopupTheme)(false);
-            expect(document.documentElement.classList.contains("dark-theme")).toBe(false);
+            (0, popup_1.applyPopupTheme)("light");
+            expect(document.body.classList.contains("dark-theme")).toBe(false);
         });
         it("updates logo for dark theme", () => {
             const logoElement = document.getElementById("header-logo");
             logoElement.src = "icon48.png";
-            (0, popup_1.applyPopupTheme)(true);
+            (0, popup_1.applyPopupTheme)("dark");
             expect(logoElement.src).toContain("darkicon48.png");
         });
         it("updates logo for light theme", () => {
             const logoElement = document.getElementById("header-logo");
             logoElement.src = "darkicon48.png";
-            (0, popup_1.applyPopupTheme)(false);
+            (0, popup_1.applyPopupTheme)("light");
             expect(logoElement.src).toContain("icon48.png");
         });
         it("handles missing logo element gracefully", () => {
             var _a;
             (_a = document.getElementById("header-logo")) === null || _a === void 0 ? void 0 : _a.remove();
             // Should not throw
-            expect(() => (0, popup_1.applyPopupTheme)(true)).not.toThrow();
-            expect(() => (0, popup_1.applyPopupTheme)(false)).not.toThrow();
+            expect(() => (0, popup_1.applyPopupTheme)("dark")).not.toThrow();
+            expect(() => (0, popup_1.applyPopupTheme)("light")).not.toThrow();
         });
         it("handles logo with different src patterns", () => {
             const logoElement = document.getElementById("header-logo");
             logoElement.src = "some-other-icon.png";
             // Should change "icon" to "darkicon" when applying dark theme
-            (0, popup_1.applyPopupTheme)(true);
+            (0, popup_1.applyPopupTheme)("dark");
             expect(logoElement.src).toContain("some-other-darkicon.png");
             // Should change "darkicon" back to "icon" when applying light theme
-            (0, popup_1.applyPopupTheme)(false);
+            (0, popup_1.applyPopupTheme)("light");
             expect(logoElement.src).toContain("some-other-icon.png");
         });
     });

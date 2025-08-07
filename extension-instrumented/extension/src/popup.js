@@ -72,25 +72,39 @@ function setStatus(message, isError = false, duration = 3000) {
 }
 /**
  * Applies the appropriate theme (light/dark) to the popup UI.
- * Detects the browser's theme setting and applies the corresponding
- * CSS classes to the popup document.
+ * Uses the stored theme preference from chrome.storage or falls back to system preference.
  *
- * @param forceDark - Optional boolean to force dark mode (useful for testing)
+ * @param forceTheme - Optional theme to force (light/dark)
  */
-function applyPopupTheme(forceDark) {
-    const isDark = forceDark !== undefined
-        ? forceDark
-        : window.matchMedia("(prefers-color-scheme: dark)").matches;
-    document.documentElement.classList.toggle("dark-theme", isDark);
-    // Update logo src based on theme
-    const logo = document.querySelector("img[src*='icon']");
-    if (logo) {
-        const currentSrc = logo.src;
-        const isCurrentlyDark = currentSrc.includes("darkicon");
-        if (isDark !== isCurrentlyDark) {
-            logo.src = currentSrc.replace(isCurrentlyDark ? "darkicon" : "icon", isDark ? "darkicon" : "icon");
+function applyPopupTheme(forceTheme) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let isDark;
+        if (forceTheme) {
+            isDark = forceTheme === "dark";
         }
-    }
+        else {
+            // Get stored theme preference
+            const result = yield chrome.storage.local.get("theme");
+            const storedTheme = result.theme;
+            if (storedTheme) {
+                isDark = storedTheme === "dark";
+            }
+            else {
+                // Fallback to system preference
+                isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+            }
+        }
+        document.body.classList.toggle("dark-theme", isDark);
+        // Update logo src based on theme
+        const logo = document.querySelector("img[src*='icon']");
+        if (logo) {
+            const currentSrc = logo.src;
+            const isCurrentlyDark = currentSrc.includes("darkicon");
+            if (isDark !== isCurrentlyDark) {
+                logo.src = currentSrc.replace(isCurrentlyDark ? "darkicon" : "icon", isDark ? "darkicon" : "icon");
+            }
+        }
+    });
 }
 /**
  * Updates the toggle button state and text based on the provided parameters.
@@ -504,29 +518,37 @@ function updatePopupServerStatus(status) {
  * This function should be called when the DOM is ready.
  */
 function initPopup() {
-    // Set up settings button click handler
-    const settingsButton = document.getElementById("open-settings");
-    if (settingsButton) {
-        settingsButton.addEventListener("click", () => {
-            chrome.runtime.openOptionsPage();
+    return __awaiter(this, void 0, void 0, function* () {
+        // Initialize theme
+        yield applyPopupTheme();
+        // Set up settings button click handler
+        const settingsButton = document.getElementById("open-settings");
+        if (settingsButton) {
+            settingsButton.addEventListener("click", () => {
+                chrome.runtime.openOptionsPage();
+            });
+        }
+        // Initialize download status
+        chrome.runtime.sendMessage({ type: "getQueue" }, (response) => {
+            renderDownloadStatus(response || { active: {}, queue: [] });
         });
-    }
-    // Initialize download status
-    chrome.runtime.sendMessage({ type: "getActiveDownloads" }, (response) => {
-        renderDownloadStatus(response || { active: {}, queue: [] });
-    });
-    // Set up message listeners
-    chrome.runtime.onMessage.addListener((msg) => {
-        if (msg.type === "downloadStatusUpdate") {
-            renderDownloadStatus(msg.data);
-        }
-        else if (msg.type === "queueUpdated") {
-            renderDownloadStatus({ active: msg.active, queue: msg.queue });
-        }
-        else if (msg.type === "serverStatusUpdate") {
-            updatePopupServerStatus(msg.status);
-        }
+        // Set up message listeners
+        chrome.runtime.onMessage.addListener((msg) => {
+            if (msg.type === "downloadStatusUpdate") {
+                renderDownloadStatus(msg.data);
+            }
+            else if (msg.type === "queueUpdated") {
+                renderDownloadStatus({ active: msg.active, queue: msg.queue });
+            }
+            else if (msg.type === "serverStatusUpdate") {
+                updatePopupServerStatus(msg.status);
+            }
+        });
     });
 }
 // Initialize popup when DOM is ready
-document.addEventListener("DOMContentLoaded", initPopup);
+document.addEventListener("DOMContentLoaded", () => {
+    initPopup().catch((error) => {
+        console.error("Error initializing popup:", error);
+    });
+});

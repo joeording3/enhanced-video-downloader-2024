@@ -25,6 +25,9 @@ exports._resetStateForTesting = _resetStateForTesting;
 const utils_1 = require("./lib/utils");
 Object.defineProperty(exports, "debounce", { enumerable: true, get: function () { return utils_1.debounce; } });
 const youtube_enhance_1 = require("./youtube_enhance");
+const state_manager_1 = require("./core/state-manager");
+const logger_1 = require("./core/logger");
+const constants_1 = require("./core/constants");
 // Skip location redefinition in test environment
 if (!(typeof process !== "undefined" && process.env.JEST_WORKER_ID)) {
     try {
@@ -45,13 +48,13 @@ if (!(typeof process !== "undefined" && process.env.JEST_WORKER_ID)) {
         // no-op if unable to redefine location
     }
 }
-// Constants for configuration and state management
-const BUTTON_ID_PREFIX = "evd-download-button-";
-const DRAG_HANDLE_CLASS = "evd-drag-handle";
-const BUTTON_TEXT = "DOWNLOAD";
-const CHECK_INTERVAL = 2000; // Interval for checking for new videos
-const MAX_CHECKS = 5; // Maximum number of checks if no videos are found initially
-const VIDEO_SELECTOR = 'video, iframe[src*="youtube.com"], iframe[src*="vimeo.com"], iframe[src*="dailymotion.com"], iframe[src*="twitch.tv"]';
+// Constants for configuration and state management - now using centralized constants
+const BUTTON_ID_PREFIX = constants_1.UI_CONSTANTS.BUTTON_ID_PREFIX;
+const DRAG_HANDLE_CLASS = constants_1.UI_CONSTANTS.DRAG_HANDLE_CLASS;
+const BUTTON_TEXT = constants_1.UI_CONSTANTS.BUTTON_TEXT;
+const CHECK_INTERVAL = constants_1.UI_CONSTANTS.VIDEO_CHECK_INTERVAL;
+const MAX_CHECKS = constants_1.UI_CONSTANTS.MAX_VIDEO_CHECKS;
+const VIDEO_SELECTOR = constants_1.DOM_SELECTORS.VIDEO_SELECTORS;
 // Style guideline constants for the download button
 const EVD_BUTTON_GUIDELINE_STYLES = {
     padding: "4px 8px",
@@ -69,21 +72,17 @@ const EVD_BUTTON_TEMPORARY_BACKGROUNDS = [
     "rgba(255, 165, 0, 0.7)", // RETRY/WARNING
     "rgb(255, 165, 0)", // RETRY/WARNING - sometimes computed as rgb
 ];
-// Global state variables
-let downloadButton = null;
-let dragOffsetX = 0;
-let dragOffsetY = 0;
-let isDragging = false;
-let lastClickTime = 0; // Used to distinguish single click from drag
-const CLICK_THRESHOLD = 200; // Max time in ms to be considered a click
-let checksDone = 0;
+// Global state variables - now managed by centralized state manager
+const CLICK_THRESHOLD = constants_1.UI_CONSTANTS.CLICK_THRESHOLD;
 let checkIntervalId = null;
 let buttonObserver = null; // MutationObserver to watch for button removal
 const injectedButtons = new Map(); // Map to store buttons injected for specific videos
-// Utility functions
-const log = (...args) => utils_1.logger.log(...args);
-const _warn = (...args) => utils_1.logger.warn(...args);
-const error = (...args) => utils_1.logger.error(...args);
+// State managed by centralized state manager
+let downloadButton = null;
+// Utility functions - now using centralized logger
+const log = (...args) => logger_1.logger.info(args.join(" "), { component: "content" });
+const _warn = (...args) => logger_1.logger.warn(args.join(" "), { component: "content" });
+const error = (...args) => logger_1.logger.error(args.join(" "), { component: "content" });
 // Detect if running under Jest tests (skip async observers/logs in test environment)
 const isJest = typeof process !== "undefined" &&
     process.env &&
@@ -238,10 +237,14 @@ function createOrUpdateButton() {
         btn.addEventListener("mousedown", (e) => {
             if (e.button !== 0)
                 return; // Only left mouse button
-            lastClickTime = Date.now();
-            isDragging = true;
-            dragOffsetX = e.clientX - btn.getBoundingClientRect().left;
-            dragOffsetY = e.clientY - btn.getBoundingClientRect().top;
+            const rect = btn.getBoundingClientRect();
+            state_manager_1.stateManager.updateUIState({
+                isDragging: true,
+                buttonPosition: {
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top,
+                },
+            });
             // Add document-level listeners
             document.addEventListener("mousemove", onDrag);
             document.addEventListener("mouseup", onDragEnd);
@@ -251,7 +254,12 @@ function createOrUpdateButton() {
         // Add click listener for download action
         btn.addEventListener("click", (e) => __awaiter(this, void 0, void 0, function* () {
             // Only handle as click if not dragged significantly
-            if (Date.now() - lastClickTime < CLICK_THRESHOLD) {
+            const currentState = state_manager_1.stateManager.getUIState();
+            const now = Date.now();
+            const timeSinceLastClick = now - currentState.lastClickTime;
+            if (!currentState.isDragging && timeSinceLastClick > CLICK_THRESHOLD) {
+                // Update last click time
+                state_manager_1.stateManager.updateUIState({ lastClickTime: now });
                 e.preventDefault();
                 e.stopPropagation();
                 // Add visual feedback
@@ -308,6 +316,8 @@ function createOrUpdateButton() {
             injectedButtons.set(videoElement, btn);
         }
         else {
+            // Store in centralized state and assign to global button
+            state_manager_1.stateManager.updateUIState({ buttonPosition: { x: 10, y: 10 } });
             downloadButton = btn;
         }
         // Apply hidden state if needed
@@ -343,12 +353,13 @@ function createOrUpdateButton() {
  * @param event - The mouse move event
  */
 function onDrag(event) {
-    if (!isDragging || !downloadButton)
+    const uiState = state_manager_1.stateManager.getUIState();
+    if (!uiState.isDragging || !downloadButton)
         return;
     event.preventDefault();
-    // Calculate new position
-    const x = event.clientX - dragOffsetX;
-    const y = event.clientY - dragOffsetY;
+    // Calculate new position using centralized state
+    const x = event.clientX - uiState.buttonPosition.x;
+    const y = event.clientY - uiState.buttonPosition.y;
     // Update button position
     downloadButton.style.left = String(x) + "px";
     downloadButton.style.top = String(y) + "px";
@@ -358,9 +369,11 @@ function onDrag(event) {
  */
 function onDragEnd() {
     return __awaiter(this, void 0, void 0, function* () {
-        if (!isDragging || !downloadButton)
+        const uiState = state_manager_1.stateManager.getUIState();
+        if (!uiState.isDragging || !downloadButton)
             return;
-        isDragging = false;
+        // Update centralized state
+        state_manager_1.stateManager.updateUIState({ isDragging: false });
         // Remove document-level listeners
         document.removeEventListener("mousemove", onDrag);
         document.removeEventListener("mouseup", onDragEnd);
@@ -368,6 +381,11 @@ function onDragEnd() {
         const rect = downloadButton.getBoundingClientRect();
         const x = rect.left;
         const y = rect.top;
+        // Update centralized state with new position
+        state_manager_1.stateManager.updateUIState({
+            buttonPosition: { x, y },
+            isDragging: false,
+        });
         // Get current hidden state (shouldn't change during drag)
         const state = yield getButtonState();
         // Save new position
@@ -457,7 +475,8 @@ function findVideosAndInjectButtons() {
         // Create global button if not already present
         if (!downloadButton) {
             downloadButton = yield createOrUpdateButton();
-            checksDone++; // Count the initial injection
+            const currentState = state_manager_1.stateManager.getUIState();
+            state_manager_1.stateManager.updateUIState({ checksDone: currentState.checksDone + 1 });
         }
         // Find all video elements and significant iframes
         const videos = document.querySelectorAll(VIDEO_SELECTOR);
@@ -482,7 +501,10 @@ function findVideosAndInjectButtons() {
             }
         }
         // If we've checked MAX_CHECKS times and found no videos, clear the interval
-        if (!foundSignificantVideo && checksDone >= MAX_CHECKS && checkIntervalId) {
+        const currentState = state_manager_1.stateManager.getUIState();
+        if (!foundSignificantVideo &&
+            currentState.checksDone >= MAX_CHECKS &&
+            checkIntervalId) {
             clearInterval(checkIntervalId);
             checkIntervalId = null;
         }
@@ -523,10 +545,7 @@ function init() {
  * @private
  */
 function _resetStateForTesting() {
-    isDragging = false;
-    dragOffsetX = 0;
-    dragOffsetY = 0;
-    lastClickTime = 0;
+    state_manager_1.stateManager.reset();
     downloadButton = null;
     injectedButtons.clear();
     if (buttonObserver) {
@@ -537,7 +556,8 @@ function _resetStateForTesting() {
 // Global listeners - initialize once
 if (typeof window !== "undefined") {
     document.addEventListener("dragover", (event) => {
-        if (isDragging) {
+        const uiState = state_manager_1.stateManager.getUIState();
+        if (uiState.isDragging) {
             event.preventDefault();
         }
     });

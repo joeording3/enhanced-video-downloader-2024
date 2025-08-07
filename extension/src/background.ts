@@ -20,32 +20,59 @@ import {
   discoverServerPort,
 } from "./background-logic";
 import { getServerPort, getPortRange } from "./constants";
+import { stateManager } from "./core/state-manager";
+import { validationService } from "./core/validation-service";
+import { errorHandler, CentralizedErrorHandler } from "./core/error-handler";
+import { logger, CentralizedLogger } from "./core/logger";
+import {
+  STORAGE_KEYS,
+  NETWORK_CONSTANTS,
+  CONFIG_CONSTANTS,
+  MESSAGE_TYPES,
+  STATUS_CONSTANTS,
+  THEME_CONSTANTS,
+  ERROR_MESSAGES,
+  SUCCESS_MESSAGES,
+  NOTIFICATION_MESSAGES,
+  getNotificationMessage,
+} from "./core/constants";
 
 // --- START CONSTANTS AND STORAGE KEYS ---
-const _historyStorageKey = "downloadHistory";
-const _portStorageKey = "serverPort";
-const _configStorageKey = "serverConfig";
-const serverStatusKey = "serverOnlineStatus";
-const _historyEnabledKey = "isHistoryEnabled"; // For toggling history
-const networkStatusKey = "networkOnlineStatus";
-const _queueStorageKey = "downloadQueue";
+// Use centralized constants instead of local duplicates
+const _configStorageKey = STORAGE_KEYS.SERVER_CONFIG;
+const _portStorageKey = STORAGE_KEYS.SERVER_PORT;
+const _historyStorageKey = STORAGE_KEYS.DOWNLOAD_HISTORY;
+const serverStatusKey = STORAGE_KEYS.SERVER_STATUS;
+const networkStatusKey = STORAGE_KEYS.NETWORK_STATUS;
+const _queueStorageKey = STORAGE_KEYS.DOWNLOAD_QUEUE;
 
 // Use centralized port configuration
 const _defaultServerPort = getServerPort();
 const _maxPortScan = getPortRange()[1]; // Use the end of the port range
-const _serverCheckInterval = 5000; // ms, for periodic server status checks
+const _serverCheckInterval = NETWORK_CONSTANTS.SERVER_CHECK_INTERVAL;
 
 // Expected application name for server identification (from manifest)
 const expectedAppName =
   (chrome.runtime && chrome.runtime.getManifest
     ? chrome.runtime.getManifest().name
     : null) || "Enhanced Video Downloader";
+
+// Initialize background script when loaded (skip in Jest)
+const isTestEnvironment =
+  typeof process !== "undefined" &&
+  (process.env.JEST_WORKER_ID || process.env.NODE_ENV === "test");
 // --- END CONSTANTS AND STORAGE KEYS ---
 
-// Utility logging functions
-const log = (...args: any[]): void => console.log("[BG]", ...args);
-const warn = (...args: any[]): void => console.warn("[BG Warning]", ...args);
-const error = (...args: any[]): void => console.error("[BG Error]", ...args);
+// Utility logging functions - now using centralized logger
+const log = (...args: any[]): void => {
+  logger.info(args.join(" "), { component: "background" });
+};
+const warn = (...args: any[]): void => {
+  logger.warn(args.join(" "), { component: "background" });
+};
+const error = (...args: any[]): void => {
+  logger.error(args.join(" "), { component: "background" });
+};
 
 // --- START SERVICE IMPLEMENTATIONS ---
 
@@ -125,7 +152,7 @@ const handleNetworkChange = async (online: boolean): Promise<void> => {
       if ((chrome.action as any)?.setBadgeText) {
         try {
           (chrome.action as any).setBadgeBackgroundColor({
-            color: "var(--color-warning)",
+            color: "#ffc107",
           });
           (chrome.action as any).setBadgeText({ text: "SCAN" }); // Use plain ASCII string
         } catch (e) {
@@ -179,20 +206,22 @@ const handleNetworkChange = async (online: boolean): Promise<void> => {
   }
 };
 // Initialize network status in storage
-chrome.storage.local.get(networkStatusKey, (res) => {
-  const current =
-    typeof res[networkStatusKey] === "boolean"
-      ? res[networkStatusKey]
-      : navigator.onLine;
-  handleNetworkChange(current);
-});
-// Listen for browser online/offline events
-try {
-  self.addEventListener("online", () => handleNetworkChange(true));
-  self.addEventListener("offline", () => handleNetworkChange(false));
-  log("Registered network connectivity listeners");
-} catch (e) {
-  warn("Could not register network status listeners:", e);
+if (!isTestEnvironment) {
+  chrome.storage.local.get(networkStatusKey, (res) => {
+    const current =
+      typeof res[networkStatusKey] === "boolean"
+        ? res[networkStatusKey]
+        : navigator.onLine;
+    handleNetworkChange(current);
+  });
+  // Listen for browser online/offline events
+  try {
+    self.addEventListener("online", () => handleNetworkChange(true));
+    self.addEventListener("offline", () => handleNetworkChange(false));
+    log("Registered network connectivity listeners");
+  } catch (e) {
+    warn("Could not register network status listeners:", e);
+  }
 }
 // --- END NETWORK STATUS MONITORING ---
 
@@ -325,25 +354,20 @@ const showNotification = (
   }
 };
 
-// Server state variables
-const _currentPort: number | null = null;
-let serverAvailable = false;
-// Track previous server availability for notifications
-const _prevServerAvailable = serverAvailable;
-let _portScanInProgress = false;
-const _initialScanDone = false;
+// Server state variables - now managed by centralized state manager
+const PORT_CHECK_TIMEOUT = NETWORK_CONSTANTS.SERVER_CHECK_TIMEOUT;
+const _configRefreshIntervalCount =
+  CONFIG_CONSTANTS.CONFIG_REFRESH_INTERVAL_COUNT;
+const _maxPortBackoffInterval = NETWORK_CONSTANTS.MAX_PORT_BACKOFF_INTERVAL;
 
-const _lastKnownConfig: Partial<ServerConfig> = {};
-const _configRefreshCounter = 0; // Counter for periodic config refresh
-const _configRefreshIntervalCount = 6; // Refresh config every 6 * 5s = 30s
-
-// Exponential backoff settings for server discovery retries
-const initialPortBackoffInterval = 1000; // Start with 1 second
-let _portBackoffInterval = initialPortBackoffInterval;
-const _maxPortBackoffInterval = 60000; // Cap at 1 minute
-
-// Timeout for individual port status checks (ms)
-const PORT_CHECK_TIMEOUT = 2000;
+// Reset function for testing
+const resetServerState = (): void => {
+  stateManager.updateServerState({
+    status: "disconnected",
+    scanInProgress: false,
+    backoffInterval: 1000,
+  });
+};
 
 // Server Communication
 const getServerStatus = async (): Promise<
@@ -409,31 +433,33 @@ const broadcastServerStatus = async (): Promise<void> => {
     });
 };
 
-const checkServerStatus = async (port: number): Promise<boolean> => {
-  const oldAvailable = serverAvailable;
-  // Skip server status checks when fetch API is unavailable (e.g., non-browser or test env)
-  if (typeof fetch !== "function") {
-    return false;
-  }
-  if (!port) {
-    serverAvailable = false;
-    try {
-      await chrome.storage.local.set({ [serverStatusKey]: false });
-    } catch (storageErr) {
-      warn("Failed to update server status in storage:", storageErr);
-    }
-    updateIcon();
-    // Notify if availability changed
-    if (serverAvailable !== oldAvailable) {
-      showNotification(
-        "Server Disconnected",
-        "The Enhanced Video Downloader server is not available. Downloads won't work until it's reconnected."
-      );
-    }
-    return false;
-  }
+const checkServerStatus = async (port: number): Promise<boolean> =>
+  errorHandler.wrap(async () => {
+    const serverState = stateManager.getServerState();
+    const oldAvailable = serverState.status === "connected";
 
-  try {
+    // Skip server status checks when fetch API is unavailable (e.g., non-browser or test env)
+    if (typeof fetch !== "function") {
+      return false;
+    }
+
+    if (!port) {
+      stateManager.updateServerState({ status: "disconnected" });
+      await errorHandler.handle(
+        () => chrome.storage.local.set({ [serverStatusKey]: false }),
+        CentralizedErrorHandler.contexts.background.serverCheck(port)
+      );
+      updateIcon();
+      // Notify if availability changed
+      if (oldAvailable) {
+        showNotification(
+          "Server Disconnected",
+          "The Enhanced Video Downloader server is not available. Downloads won't work until it's reconnected."
+        );
+      }
+      return false;
+    }
+
     // Fetch server status with timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), PORT_CHECK_TIMEOUT);
@@ -450,58 +476,64 @@ const checkServerStatus = async (port: number): Promise<boolean> => {
       const data = await response.json();
       // Verify the server is our app by checking app_name
       if (data.app_name === expectedAppName) {
-        serverAvailable = true;
+        stateManager.updateServerState({ status: "connected" });
         // If server just came online, refresh config
         if (!oldAvailable) {
-          log("Server now available on port " + port + ", refreshing config"); // No emoji, just text
+          logger.info(
+            "Server now available on port " + port + ", refreshing config",
+            CentralizedLogger.contexts.background.serverCheck(port)
+          );
           await fetchServerConfig(port);
         }
       } else {
-        warn("Wrong server on port " + port + ": " + data.app_name);
-        serverAvailable = false;
+        logger.warn(
+          "Wrong server on port " + port + ": " + data.app_name,
+          CentralizedLogger.contexts.background.serverCheck(port)
+        );
+        stateManager.updateServerState({ status: "disconnected" });
       }
     } else {
-      warn("Server check failed on port " + port + ": " + response.status);
-      serverAvailable = false;
-    }
-  } catch (e: any) {
-    if (e.name === "AbortError") {
-      warn("Server check timeout on port " + port);
-    } else {
-      warn("Error checking server on port " + port + ":", e);
-    }
-    serverAvailable = false;
-  }
-
-  // Update storage
-  try {
-    await chrome.storage.local.set({ [serverStatusKey]: serverAvailable });
-  } catch (storageErr) {
-    warn("Failed to update server status in storage:", storageErr);
-  }
-
-  // Update badge/icon to reflect server status
-  updateIcon();
-
-  // If server availability changed, show notification
-  if (serverAvailable !== oldAvailable) {
-    if (serverAvailable) {
-      showNotification(
-        "Server Connected",
-        "Enhanced Video Downloader server is now online on port " + port + "."
+      logger.warn(
+        "Server check failed on port " + port + ": " + response.status,
+        CentralizedLogger.contexts.background.serverCheck(port)
       );
-      // Reset backoff interval when server is found
-      _portBackoffInterval = initialPortBackoffInterval;
-    } else {
-      showNotification(
-        "Server Disconnected",
-        "The Enhanced Video Downloader server is not available. Downloads won't work until it's reconnected."
-      );
+      stateManager.updateServerState({ status: "disconnected" });
     }
-  }
 
-  return serverAvailable;
-};
+    // Update storage
+    const currentState = stateManager.getServerState();
+    await errorHandler.handle(
+      () =>
+        chrome.storage.local.set({
+          [serverStatusKey]: currentState.status === "connected",
+        }),
+      CentralizedErrorHandler.contexts.background.serverCheck(port)
+    );
+
+    // Update badge/icon to reflect server status
+    updateIcon();
+
+    // If server availability changed, show notification
+    const currentAvailable = currentState.status === "connected";
+
+    if (currentAvailable !== oldAvailable) {
+      if (currentAvailable) {
+        showNotification(
+          "Server Connected",
+          "Enhanced Video Downloader server is now online on port " + port + "."
+        );
+        // Reset backoff interval when server is found
+        stateManager.updateServerState({ backoffInterval: 1000 });
+      } else {
+        showNotification(
+          "Server Disconnected",
+          "The Enhanced Video Downloader server is not available. Downloads won't work until it's reconnected."
+        );
+      }
+    }
+
+    return currentAvailable;
+  }, CentralizedErrorHandler.contexts.background.serverCheck(port));
 
 // Additional functions (stub implementations to be completed)
 const fetchServerConfig = async (
@@ -571,7 +603,7 @@ const findServerPort = async (
   if (startScan && (chrome.action as any)?.setBadgeText) {
     try {
       (chrome.action as any).setBadgeBackgroundColor({
-        color: "var(--color-warning)",
+        color: "#ffc107",
       });
       (chrome.action as any).setBadgeText({ text: "SCAN" }); // Use plain ASCII string
     } catch (e) {
@@ -580,7 +612,7 @@ const findServerPort = async (
   }
 
   // Set scanning state
-  _portScanInProgress = true;
+  stateManager.updateServerState({ scanInProgress: true });
 
   try {
     // Progress callback for user feedback
@@ -611,7 +643,7 @@ const findServerPort = async (
     if (port !== null) {
       logFn("Server discovered on port " + port);
       // Reset backoff interval when server is found
-      _portBackoffInterval = initialPortBackoffInterval;
+      stateManager.updateServerState({ backoffInterval: 1000 });
 
       // Notify options page about server discovery
       try {
@@ -636,10 +668,12 @@ const findServerPort = async (
     } else {
       warnFn("Server port discovery failed after scanning range."); // No emoji, just text
       // Increase backoff interval for next attempt
-      _portBackoffInterval = Math.min(
-        _portBackoffInterval * 2,
+      const currentState = stateManager.getServerState();
+      const newBackoffInterval = Math.min(
+        currentState.backoffInterval * 2,
         _maxPortBackoffInterval
       );
+      stateManager.updateServerState({ backoffInterval: newBackoffInterval });
     }
 
     return port;
@@ -647,10 +681,12 @@ const findServerPort = async (
     // Handle any errors from the discover function
     warnFn("Error during server port discovery:", e); // No emoji, just text
     // Increase backoff interval for next attempt
-    _portBackoffInterval = Math.min(
-      _portBackoffInterval * 2,
+    const currentState = stateManager.getServerState();
+    const newBackoffInterval = Math.min(
+      currentState.backoffInterval * 2,
       _maxPortBackoffInterval
     );
+    stateManager.updateServerState({ backoffInterval: newBackoffInterval });
     return null;
   } finally {
     // Clear badge after scanning
@@ -663,7 +699,7 @@ const findServerPort = async (
     }
 
     // Clear scanning state
-    _portScanInProgress = false;
+    stateManager.updateServerState({ scanInProgress: false });
   }
 };
 
@@ -693,9 +729,9 @@ const clearDownloadHistory = async (): Promise<void> => {
 
 const toggleHistorySetting = async (): Promise<void> => {
   try {
-    const result = await chrome.storage.local.get(_historyEnabledKey);
-    const enabled = result[_historyEnabledKey] as boolean;
-    await chrome.storage.local.set({ [_historyEnabledKey]: !enabled });
+    const result = await chrome.storage.local.get("isHistoryEnabled");
+    const enabled = result.isHistoryEnabled as boolean;
+    await chrome.storage.local.set({ isHistoryEnabled: !enabled });
   } catch (e) {
     warn("Failed to toggle history setting:", e);
   }
@@ -712,6 +748,45 @@ const sendDownloadRequest = async (
 ): Promise<any> =>
   // Implementation details
   ({});
+
+// Consolidated initialization function
+const initializeExtension = async (): Promise<void> => {
+  // Prevent multiple simultaneous initializations
+  const serverState = stateManager.getServerState();
+  if (serverState.scanInProgress) {
+    log("Initialization already in progress, skipping...");
+    return;
+  }
+
+  stateManager.updateServerState({ scanInProgress: true });
+
+  try {
+    // Initialize action icon theme
+    await initializeActionIconTheme();
+
+    // Perform initial server discovery
+    const port = await findServerPort(true);
+    if (port !== null) {
+      log("Discovered server on port " + port);
+      // Broadcast server status after discovery
+      await broadcastServerStatus();
+    } else {
+      warn("Server port discovery failed after scanning range.");
+      // Broadcast disconnected status
+      await broadcastServerStatus();
+    }
+
+    // Set up periodic server status checks
+    setInterval(broadcastServerStatus, _serverCheckInterval);
+
+    // Initial server status check
+    await broadcastServerStatus();
+  } catch (err: unknown) {
+    error("Error during extension initialization:", err);
+  } finally {
+    stateManager.updateServerState({ scanInProgress: false });
+  }
+};
 
 // Message handling for background script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -777,10 +852,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             const config = await fetchServerConfig(port);
             sendResponse({ status: "success", data: config });
           } else {
+            const serverState = stateManager.getServerState();
             sendResponse({
               status: "error",
               message: "Server not available",
-              data: _lastKnownConfig,
+              data: serverState.config,
             });
           }
           break;
@@ -916,59 +992,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true;
 });
 
-// Initialize background script when loaded (skip in Jest)
-const isTestEnvironment =
-  typeof process !== "undefined" &&
-  (process.env.JEST_WORKER_ID || process.env.NODE_ENV === "test");
-
-// Debug logging
-if (typeof process !== "undefined") {
-  console.log("Background script initialization debug:");
-  console.log("process.env.JEST_WORKER_ID:", process.env.JEST_WORKER_ID);
-  console.log("process.env.NODE_ENV:", process.env.NODE_ENV);
-  console.log("isTestEnvironment:", isTestEnvironment);
-}
-
 if (!isTestEnvironment) {
   // Set up initialization on service worker lifecycle events
   chrome.runtime.onInstalled.addListener(() => {
-    initializeActionIconTheme();
-    findServerPort(true).then((port) => {
-      if (port !== null) {
-        log("Discovered server on port " + port);
-        // Broadcast server status after discovery
-        broadcastServerStatus();
-      } else {
-        warn("Server port discovery failed after scanning range.");
-        // Broadcast disconnected status
-        broadcastServerStatus();
-      }
-    });
-
-    // Set up periodic server status checks
-    setInterval(broadcastServerStatus, _serverCheckInterval);
-
-    // Initial server status check
-    broadcastServerStatus();
+    initializeExtension();
   });
+
   chrome.runtime.onStartup.addListener(() => {
-    findServerPort(true).then((port) => {
-      if (port !== null) {
-        log("Discovered server on port " + port);
-        // Broadcast server status after discovery
-        broadcastServerStatus();
-      } else {
-        warn("Server port discovery failed after scanning range.");
-        // Broadcast disconnected status
-        broadcastServerStatus();
-      }
-    });
-
-    // Set up periodic server status checks
-    setInterval(broadcastServerStatus, _serverCheckInterval);
-
-    // Initial server status check
-    broadcastServerStatus();
+    initializeExtension();
   });
 }
 
@@ -985,6 +1016,8 @@ export {
   debounce,
   applyThemeToActionIcon,
   actionIconPaths,
+  resetServerState,
+  expectedAppName,
 };
 
 /**

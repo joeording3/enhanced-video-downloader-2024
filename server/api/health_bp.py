@@ -19,6 +19,6 @@ def health() -> Any:
     Returns
     -------
     Any
-        Flask response with 204 No Content indicating server is healthy.
+        Flask response with JSON containing server identification.
     """
-    return "", 204
+    return {"app_name": "Enhanced Video Downloader", "status": "healthy"}, 200

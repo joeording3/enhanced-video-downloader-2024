@@ -78,7 +78,6 @@ export function initOptionsPage(): void {
 
   loadSettings();
   setupEventListeners();
-  setupSearchFunctionality();
   setupValidation();
   setupInfoMessages();
   setupTabNavigation();
@@ -172,6 +171,21 @@ export function populateFormFields(config: ServerConfig): void {
 
   // Trigger validation after populating
   validateAllFields();
+
+  // Update info messages to reflect current selections
+  const logLevelSelect = document.getElementById(
+    "settings-log-level"
+  ) as HTMLSelectElement;
+  const formatSelect = document.getElementById(
+    "settings-ytdlp-format"
+  ) as HTMLSelectElement;
+
+  if (logLevelSelect) {
+    updateLogLevelInfo(logLevelSelect);
+  }
+  if (formatSelect) {
+    updateFormatInfo(formatSelect);
+  }
 }
 
 /**
@@ -195,12 +209,8 @@ export function setupEventListeners(): void {
 
   // Theme toggle functionality
   const themeToggle = document.getElementById("theme-toggle");
-  console.log("Theme toggle element found:", themeToggle);
   if (themeToggle) {
     themeToggle.addEventListener("click", handleThemeToggle);
-    console.log("Theme toggle event listener added");
-  } else {
-    console.error("Theme toggle element not found!");
   }
 
   const clearHistoryButton = document.getElementById("settings-clear-history");
@@ -240,262 +250,6 @@ export function setupEventListeners(): void {
       });
     });
   }
-}
-
-/**
- * Sets up enhanced search functionality for filtering settings sections.
- */
-export function setupSearchFunctionality(): void {
-  const searchInput = document.getElementById(
-    "settings-search"
-  ) as HTMLInputElement;
-  if (!searchInput) return;
-
-  // Debounced search to improve performance
-  let searchTimeout: number;
-  searchInput.addEventListener("input", () => {
-    clearTimeout(searchTimeout);
-    searchTimeout = window.setTimeout(() => {
-      performSearch(searchInput.value.trim());
-    }, 300);
-  });
-
-  // Clear search on escape key
-  searchInput.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-      searchInput.value = "";
-      performSearch("");
-    }
-  });
-
-  // Add search suggestions
-  setupSearchSuggestions(searchInput);
-}
-
-/**
- * Performs the actual search and filtering of settings sections.
- */
-export function performSearch(query: string): void {
-  const sections = document.querySelectorAll(".settings-group");
-  const searchInput = document.getElementById(
-    "settings-search"
-  ) as HTMLInputElement;
-
-  if (!query) {
-    // Show all sections when search is empty
-    sections.forEach((section) => {
-      section.classList.remove("hidden", "highlighted");
-    });
-    return;
-  }
-
-  const searchTerms = query
-    .toLowerCase()
-    .split(" ")
-    .filter((term) => term.length > 0);
-  let hasVisibleSections = false;
-
-  sections.forEach((section) => {
-    const sectionTitle =
-      section.querySelector(".section-title")?.textContent?.toLowerCase() || "";
-    const sectionContent = section.textContent?.toLowerCase() || "";
-    const sectionCategory =
-      section.getAttribute("data-category")?.toLowerCase() || "";
-
-    // Check if any search term matches
-    const matches = searchTerms.some(
-      (term) =>
-        sectionTitle.includes(term) ||
-        sectionContent.includes(term) ||
-        sectionCategory.includes(term)
-    );
-
-    if (matches) {
-      section.classList.remove("hidden");
-      section.classList.add("highlighted");
-      hasVisibleSections = true;
-
-      // Highlight matching text in section titles
-      highlightMatchingText(section, searchTerms);
-    } else {
-      section.classList.add("hidden");
-      section.classList.remove("highlighted");
-    }
-  });
-
-  // Show "no results" message if no sections match
-  showNoResultsMessage(!hasVisibleSections);
-}
-
-/**
- * Highlights matching text in section titles.
- */
-export function highlightMatchingText(
-  section: Element,
-  searchTerms: string[]
-): void {
-  const titleElement = section.querySelector(".section-title");
-  if (!titleElement) return;
-
-  let titleText = titleElement.textContent || "";
-  const originalText = titleText;
-
-  // Remove existing highlights
-  titleText = titleText.replace(
-    /<mark class="search-highlight">(.*?)<\/mark>/g,
-    "$1"
-  );
-
-  // Add new highlights
-  searchTerms.forEach((term) => {
-    const regex = new RegExp("(" + term + ")", "gi");
-    titleText = titleText.replace(
-      regex,
-      '<mark class="search-highlight">$1</mark>'
-    );
-  });
-
-  if (titleText !== originalText) {
-    titleElement.innerHTML = titleText;
-  }
-}
-
-/**
- * Shows or hides the "no results" message.
- */
-export function showNoResultsMessage(show: boolean): void {
-  let noResultsElement = document.getElementById("no-results-message");
-
-  if (show) {
-    if (!noResultsElement) {
-      noResultsElement = document.createElement("div");
-      noResultsElement.id = "no-results-message";
-      noResultsElement.className = "no-results-message";
-      noResultsElement.innerHTML =
-        '<div class="no-results-content">' +
-        '<span class="no-results-icon">Search</span>' +
-        "<p>No settings found matching your search.</p>" +
-        "<p>Try different keywords or check the spelling.</p>" +
-        "</div>";
-
-      const container = document.querySelector(".settings-container");
-      if (container) {
-        container.appendChild(noResultsElement);
-      }
-    }
-    noResultsElement.style.display = "block";
-  } else if (noResultsElement) {
-    noResultsElement.style.display = "none";
-  }
-}
-
-/**
- * Sets up search suggestions for common settings.
- */
-function setupSearchSuggestions(searchInput: HTMLInputElement): void {
-  const suggestions = [
-    "port",
-    "server",
-    "download",
-    "folder",
-    "format",
-    "video",
-    "audio",
-    "playlist",
-    "history",
-    "debug",
-    "log",
-    "level",
-    "behavior",
-    "actions",
-    "resume",
-    "clear",
-    "restart",
-    "logs",
-    "errors",
-  ];
-
-  // Create suggestion dropdown
-  const suggestionDropdown = document.createElement("div");
-  suggestionDropdown.id = "search-suggestions";
-  suggestionDropdown.className = "search-suggestions";
-  searchInput.parentNode?.appendChild(suggestionDropdown);
-
-  searchInput.addEventListener("focus", () => {
-    if (searchInput.value.trim()) {
-      showSuggestions(
-        searchInput.value.trim(),
-        suggestions,
-        suggestionDropdown
-      );
-    }
-  });
-
-  searchInput.addEventListener("input", () => {
-    const query = searchInput.value.trim();
-    if (query.length > 0) {
-      showSuggestions(query, suggestions, suggestionDropdown);
-    } else {
-      suggestionDropdown.style.display = "none";
-    }
-  });
-
-  // Hide suggestions when clicking outside
-  document.addEventListener("click", (e) => {
-    if (
-      !searchInput.contains(e.target as Node) &&
-      !suggestionDropdown.contains(e.target as Node)
-    ) {
-      suggestionDropdown.style.display = "none";
-    }
-  });
-}
-
-/**
- * Shows search suggestions based on the current query.
- */
-function showSuggestions(
-  query: string,
-  suggestions: string[],
-  dropdown: HTMLElement
-): void {
-  const matchingSuggestions = suggestions
-    .filter((suggestion) =>
-      suggestion.toLowerCase().includes(query.toLowerCase())
-    )
-    .slice(0, 5); // Limit to 5 suggestions
-
-  if (matchingSuggestions.length === 0) {
-    dropdown.style.display = "none";
-    return;
-  }
-
-  dropdown.innerHTML = matchingSuggestions
-    .map(
-      (suggestion) =>
-        '<div class="suggestion-item" data-suggestion="' +
-        suggestion +
-        '">' +
-        suggestion +
-        "</div>"
-    )
-    .join("");
-
-  dropdown.style.display = "block";
-
-  // Add click handlers for suggestions
-  dropdown.querySelectorAll(".suggestion-item").forEach((item) => {
-    item.addEventListener("click", () => {
-      const searchInput = document.getElementById(
-        "settings-search"
-      ) as HTMLInputElement;
-      if (searchInput) {
-        searchInput.value = item.getAttribute("data-suggestion") || "";
-        performSearch(searchInput.value);
-        dropdown.style.display = "none";
-      }
-    });
-  });
 }
 
 /**
@@ -954,9 +708,9 @@ function updateLogLevelInfo(select: HTMLSelectElement): void {
   if (!infoText) return;
 
   const levelInfo: Record<string, string> = {
-    ERROR: "Only error messages will be logged",
-    INFO: "Normal level provides essential information",
-    DEBUG: "Verbose logging for troubleshooting",
+    error: "Only error messages will be logged",
+    info: "Normal level provides essential information",
+    debug: "Verbose logging for troubleshooting",
   };
 
   infoText.textContent = levelInfo[select.value] || "Select a log level";
@@ -1288,9 +1042,9 @@ export function applyOptionsTheme(forceTheme?: Theme): void {
     forceTheme === "dark" ||
     (!forceTheme && window.matchMedia("(prefers-color-scheme: dark)").matches);
 
-  console.log("Applying theme:", { forceTheme, isDark });
+  // Applying theme
 
-  document.documentElement.classList.toggle("dark-theme", isDark);
+  document.body.classList.toggle("dark-theme", isDark);
 
   // Update header icon based on theme
   const headerIcon = document.getElementById(
@@ -1299,14 +1053,14 @@ export function applyOptionsTheme(forceTheme?: Theme): void {
   if (headerIcon) {
     const currentSrc = headerIcon.src;
     const isCurrentlyDark = currentSrc.includes("darkicon");
-    console.log("Header icon update:", { currentSrc, isCurrentlyDark, isDark });
+    // Header icon update
 
     if (isDark !== isCurrentlyDark) {
       const newSrc = currentSrc.replace(
         isCurrentlyDark ? "darkicon48.png" : "icon48.png",
         isDark ? "darkicon48.png" : "icon48.png"
       );
-      console.log("Updating icon from", currentSrc, "to", newSrc);
+      // Updating icon
       headerIcon.src = newSrc;
     }
   }
@@ -1317,13 +1071,13 @@ export function applyOptionsTheme(forceTheme?: Theme): void {
  * Switches between light and dark themes and persists the preference.
  */
 export async function handleThemeToggle(): Promise<void> {
-  console.log("Theme toggle clicked!");
+  // Theme toggle clicked
 
   try {
     // Get current theme from storage
     const result = await chrome.storage.local.get("theme");
     const currentTheme = result.theme as Theme | undefined;
-    console.log("Current theme from storage:", currentTheme);
+    // Current theme from storage
 
     // Determine new theme
     let newTheme: Theme;
@@ -1339,7 +1093,7 @@ export async function handleThemeToggle(): Promise<void> {
       newTheme = systemPrefersDark ? "light" : "dark";
     }
 
-    console.log("New theme will be:", newTheme);
+    // New theme will be
 
     // Save new theme to storage
     await chrome.storage.local.set({ theme: newTheme });
@@ -1348,7 +1102,7 @@ export async function handleThemeToggle(): Promise<void> {
     applyOptionsTheme(newTheme);
 
     // Log the theme change
-    console.log(`Theme changed to: ${newTheme}`);
+    // Theme changed
   } catch (error) {
     console.error("Error toggling theme:", error);
   }

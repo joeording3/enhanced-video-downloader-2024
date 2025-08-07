@@ -33,15 +33,19 @@ class TestHealthEndpoint:
         """Test successful health check with GET method."""
         response = client.get("/health")
 
-        assert response.status_code == 204
-        assert response.get_data(as_text=True) == ""
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data["app_name"] == "Enhanced Video Downloader"
+        assert data["status"] == "healthy"
 
     def test_health_options_success(self, client: FlaskClient) -> None:
         """Test successful health check with OPTIONS method."""
         response = client.options("/health")
 
-        assert response.status_code == 204
-        assert response.get_data(as_text=True) == ""
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data["app_name"] == "Enhanced Video Downloader"
+        assert data["status"] == "healthy"
 
     def test_health_post_not_allowed(self, client: FlaskClient) -> None:
         """Test that POST method is not allowed."""

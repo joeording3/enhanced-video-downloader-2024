@@ -95,11 +95,9 @@ describe("Popup UI Tests", () => {
         })),
       });
 
-      applyPopupTheme(true);
+      applyPopupTheme("dark");
 
-      expect(document.documentElement.classList.contains("dark-theme")).toBe(
-        true
-      );
+      expect(document.body.classList.contains("dark-theme")).toBe(true);
     });
 
     it("applies light theme when prefers-color-scheme is light", () => {
@@ -117,11 +115,9 @@ describe("Popup UI Tests", () => {
         })),
       });
 
-      applyPopupTheme(false);
+      applyPopupTheme("light");
 
-      expect(document.documentElement.classList.contains("dark-theme")).toBe(
-        false
-      );
+      expect(document.body.classList.contains("dark-theme")).toBe(false);
     });
 
     it("updates logo for dark theme", () => {
@@ -130,7 +126,7 @@ describe("Popup UI Tests", () => {
       ) as HTMLImageElement;
       logoElement.src = "icon48.png";
 
-      applyPopupTheme(true);
+      applyPopupTheme("dark");
 
       expect(logoElement.src).toContain("darkicon48.png");
     });
@@ -141,7 +137,7 @@ describe("Popup UI Tests", () => {
       ) as HTMLImageElement;
       logoElement.src = "darkicon48.png";
 
-      applyPopupTheme(false);
+      applyPopupTheme("light");
 
       expect(logoElement.src).toContain("icon48.png");
     });
@@ -150,8 +146,8 @@ describe("Popup UI Tests", () => {
       document.getElementById("header-logo")?.remove();
 
       // Should not throw
-      expect(() => applyPopupTheme(true)).not.toThrow();
-      expect(() => applyPopupTheme(false)).not.toThrow();
+      expect(() => applyPopupTheme("dark")).not.toThrow();
+      expect(() => applyPopupTheme("light")).not.toThrow();
     });
 
     it("handles logo with different src patterns", () => {
@@ -161,11 +157,11 @@ describe("Popup UI Tests", () => {
       logoElement.src = "some-other-icon.png";
 
       // Should change "icon" to "darkicon" when applying dark theme
-      applyPopupTheme(true);
+      applyPopupTheme("dark");
       expect(logoElement.src).toContain("some-other-darkicon.png");
 
       // Should change "darkicon" back to "icon" when applying light theme
-      applyPopupTheme(false);
+      applyPopupTheme("light");
       expect(logoElement.src).toContain("some-other-icon.png");
     });
   });

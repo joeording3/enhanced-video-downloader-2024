@@ -9,24 +9,13 @@
   <body>
     <div class="container settings-container">
       <div
-        class="theme-toggle"
+        class="theme-toggle btn btn--secondary"
         id="theme-toggle"
         title="Toggle Dark/Light Mode"
         role="button"
         aria-label="Toggle Dark/Light Mode"
       >
-        Theme
-      </div>
-
-      <!-- Search Bar -->
-      <div class="search-container">
-        <input
-          type="text"
-          id="settings-search"
-          placeholder="Search settings..."
-          aria-label="Search settings"
-        />
-        <span class="search-icon">Search</span>
+        ☼ | ☾
       </div>
 
       <header class="options-header">
@@ -56,10 +45,7 @@
         <form id="settings-form" autocomplete="off">
           <!-- Server Configuration Section -->
           <section class="settings-group" data-category="server">
-            <h2 class="section-title">
-              <span class="section-icon">Display</span>
-              Server Configuration
-            </h2>
+            <h2 class="section-title">Server Configuration</h2>
             <div class="section-content">
               <fieldset>
                 <legend>Connection Settings</legend>
@@ -73,6 +59,7 @@
                       type="number"
                       id="settings-server-port"
                       name="server-port"
+                      class="input input--number"
                       min="1024"
                       max="65535"
                       placeholder="8080"
@@ -90,10 +77,7 @@
 
           <!-- Download Settings Section -->
           <section class="settings-group" data-category="download">
-            <h2 class="section-title">
-              <span class="section-icon">Folder</span>
-              Download Settings
-            </h2>
+            <h2 class="section-title">Download Settings</h2>
             <div class="section-content">
               <fieldset>
                 <legend>Storage & Format</legend>
@@ -107,6 +91,7 @@
                       type="text"
                       id="settings-download-dir"
                       name="download-dir"
+                      class="input input--text"
                       placeholder="/path/to/downloads"
                       required
                     />
@@ -114,7 +99,7 @@
                       type="button"
                       title="Choose folder"
                       aria-label="Choose Download Folder"
-                      class="folder-picker-btn"
+                      class="btn btn--primary"
                     >
                       Choose
                     </button>
@@ -181,10 +166,7 @@
 
           <!-- Behavior Settings Section -->
           <section class="settings-group" data-category="behavior">
-            <h2 class="section-title">
-              <span class="section-icon">Settings</span>
-              Behavior Settings
-            </h2>
+            <h2 class="section-title">Behavior Settings</h2>
             <div class="section-content">
               <fieldset>
                 <legend>General Options</legend>
@@ -239,16 +221,13 @@
 
           <!-- Actions Section -->
           <section class="settings-group" data-category="actions">
-            <h2 class="section-title">
-              <span class="section-icon">Tools</span>
-              Actions
-            </h2>
+            <h2 class="section-title">Actions</h2>
             <div class="section-content">
               <div class="settings-actions">
                 <button
                   type="button"
                   id="settings-resume-downloads"
-                  class="action-btn primary"
+                  class="btn btn--primary"
                 >
                   <span class="btn-icon">Play</span>
                   Resume Partial Downloads
@@ -256,7 +235,7 @@
                 <button
                   type="button"
                   id="settings-clear-history"
-                  class="action-btn secondary"
+                  class="btn btn--secondary"
                 >
                   <span class="btn-icon">Delete</span>
                   Clear History
@@ -264,7 +243,7 @@
                 <button
                   type="button"
                   id="restart-server"
-                  class="action-btn secondary"
+                  class="btn btn--secondary"
                 >
                   <span class="btn-icon">Restart</span>
                   Restart Server
@@ -275,7 +254,7 @@
 
           <!-- Save Button -->
           <div class="save-section">
-            <button type="submit" id="save-settings" class="save-btn">
+            <button type="submit" id="save-settings" class="btn btn--primary">
               <span class="btn-icon">Save</span>
               Save Settings
             </button>
@@ -290,16 +269,14 @@
           class="settings-group"
           data-category="logs"
         >
-          <h2 class="section-title">
-            <span class="section-icon">Logs</span>
-            Server Logs
-          </h2>
+          <h2 class="section-title">Server Logs</h2>
           <div class="section-content">
             <div id="log-header">
               <h3 id="log-title">Log Viewer</h3>
               <div id="log-controls">
                 <button
                   id="log-refresh"
+                  class="btn btn--secondary"
                   title="Refresh logs"
                   aria-label="Refresh Server Logs"
                 >
@@ -307,6 +284,7 @@
                 </button>
                 <button
                   id="log-clear"
+                  class="btn btn--secondary"
                   title="Clear logs"
                   aria-label="Clear Server Logs"
                 >
@@ -351,10 +329,7 @@
           class="settings-group"
           data-category="errors"
         >
-          <h2 class="section-title">
-            <span class="section-icon">Warning</span>
-            Download Error History
-          </h2>
+          <h2 class="section-title">Download Error History</h2>
           <div class="section-content">
             <h3 id="error-history-title">Recent Errors</h3>
             <ul id="error-history-list"></ul>

@@ -10,11 +10,42 @@ import {
   validateFolder,
   validateLogLevel,
   validateFormat,
-  performSearch,
-  highlightMatchingText,
-  showNoResultsMessage,
   showValidationMessage,
 } from "extension/src/options";
+import { CentralizedLogger } from "extension/src/core/logger";
+import { ExtensionStateManager } from "extension/src/core/state-manager";
+
+// Mock centralized services
+jest.mock("extension/src/core/logger");
+jest.mock("extension/src/core/state-manager");
+
+const mockLogger = {
+  debug: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
+  log: jest.fn(),
+  setLevel: jest.fn(),
+  getLogs: jest.fn(),
+  clearLogs: jest.fn(),
+};
+
+const mockStateManager = {
+  getState: jest.fn(),
+  getServerState: jest.fn(),
+  getUIState: jest.fn(),
+  getDownloadState: jest.fn(),
+  getFormState: jest.fn(),
+  updateServerState: jest.fn(),
+  updateUIState: jest.fn(),
+  updateDownloadState: jest.fn(),
+  updateFormState: jest.fn(),
+  subscribe: jest.fn(),
+  loadFromStorage: jest.fn(),
+  saveToStorage: jest.fn(),
+  reset: jest.fn(),
+};
+
 /* eslint-env jest */
 
 // Create a mock event that satisfies the properties used in the function
@@ -26,6 +57,10 @@ const createMockEvent = (target: HTMLFormElement): Event =>
 
 describe("Options Page Tests", () => {
   beforeEach(() => {
+    // Setup centralized service mocks
+    (CentralizedLogger.getInstance as jest.Mock).mockReturnValue(mockLogger);
+    (ExtensionStateManager.getInstance as jest.Mock).mockReturnValue(mockStateManager);
+
     // Set up a more complete DOM for each test
     document.body.innerHTML =
       '<div class="tabs">' +
@@ -522,43 +557,6 @@ describe("Options Page Tests", () => {
 
       const result = validateFormat(select);
       expect(result).toBe(true);
-    });
-  });
-
-  describe("Search Functionality", () => {
-    it("performSearch should highlight matching text", () => {
-      const section = document.createElement("div");
-      section.innerHTML = "<p>This is a test paragraph</p>";
-
-      performSearch("test");
-
-      // Check if search results are shown
-      const searchResults = document.querySelector(".search-results");
-      expect(searchResults).toBeTruthy();
-    });
-
-    it("highlightMatchingText should highlight matching terms", () => {
-      const section = document.createElement("div");
-      section.innerHTML = "<p>This is a test paragraph</p>";
-
-      // Test that the function doesn't throw and processes the section
-      expect(() => {
-        highlightMatchingText(section, ["test"]);
-      }).not.toThrow();
-
-      // Verify the section still exists
-      expect(section).toBeTruthy();
-    });
-
-    it("showNoResultsMessage should show/hide message", () => {
-      showNoResultsMessage(true);
-
-      const message = document.querySelector(".no-results-message");
-      expect(message).toBeTruthy();
-
-      showNoResultsMessage(false);
-      // Check if the element exists rather than specific style
-      expect(message).toBeTruthy();
     });
   });
 

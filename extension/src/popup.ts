@@ -66,17 +66,31 @@ export function setStatus(
 
 /**
  * Applies the appropriate theme (light/dark) to the popup UI.
- * Detects the browser's theme setting and applies the corresponding
- * CSS classes to the popup document.
+ * Uses the stored theme preference from chrome.storage or falls back to system preference.
  *
- * @param forceDark - Optional boolean to force dark mode (useful for testing)
+ * @param forceTheme - Optional theme to force (light/dark)
  */
-export function applyPopupTheme(forceDark?: boolean): void {
-  const isDark =
-    forceDark !== undefined
-      ? forceDark
-      : window.matchMedia("(prefers-color-scheme: dark)").matches;
-  document.documentElement.classList.toggle("dark-theme", isDark);
+export async function applyPopupTheme(
+  forceTheme?: "light" | "dark"
+): Promise<void> {
+  let isDark: boolean;
+
+  if (forceTheme) {
+    isDark = forceTheme === "dark";
+  } else {
+    // Get stored theme preference
+    const result = await chrome.storage.local.get("theme");
+    const storedTheme = result.theme as "light" | "dark" | undefined;
+
+    if (storedTheme) {
+      isDark = storedTheme === "dark";
+    } else {
+      // Fallback to system preference
+      isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    }
+  }
+
+  document.body.classList.toggle("dark-theme", isDark);
 
   // Update logo src based on theme
   const logo = document.querySelector("img[src*='icon']") as HTMLImageElement;
@@ -554,7 +568,10 @@ export function updatePopupServerStatus(
  * Initialize the popup UI and set up all event listeners and message handlers.
  * This function should be called when the DOM is ready.
  */
-export function initPopup(): void {
+export async function initPopup(): Promise<void> {
+  // Initialize theme
+  await applyPopupTheme();
+
   // Set up settings button click handler
   const settingsButton = document.getElementById("open-settings");
   if (settingsButton) {
@@ -564,12 +581,9 @@ export function initPopup(): void {
   }
 
   // Initialize download status
-  chrome.runtime.sendMessage(
-    { type: "getActiveDownloads" },
-    (response: any) => {
-      renderDownloadStatus(response || { active: {}, queue: [] });
-    }
-  );
+  chrome.runtime.sendMessage({ type: "getQueue" }, (response: any) => {
+    renderDownloadStatus(response || { active: {}, queue: [] });
+  });
 
   // Set up message listeners
   chrome.runtime.onMessage.addListener((msg: any) => {
@@ -584,4 +598,8 @@ export function initPopup(): void {
 }
 
 // Initialize popup when DOM is ready
-document.addEventListener("DOMContentLoaded", initPopup);
+document.addEventListener("DOMContentLoaded", () => {
+  initPopup().catch((error) => {
+    console.error("Error initializing popup:", error);
+  });
+});

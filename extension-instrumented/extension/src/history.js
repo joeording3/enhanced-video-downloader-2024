@@ -111,12 +111,12 @@ function renderHistoryItems(historyItems, page = 1, perPage = 25, totalItems = 0
         const actionsWrapper = document.createElement("div");
         actionsWrapper.className = "history-actions";
         const retryButton = document.createElement("button");
-        retryButton.className = "history-action-btn retry-btn";
+        retryButton.className = "btn btn--secondary retry-btn";
         retryButton.textContent = "Retry";
         retryButton.title = "Retry download";
         retryButton.addEventListener("click", (e) => {
             e.stopPropagation(); // Prevent li click if any
-            console.log("[EVD][HISTORY] Retry clicked for:", item);
+            // Retry clicked for item
             chrome.runtime.sendMessage({
                 type: "downloadVideo", // Changed action to type
                 url: item.url,
@@ -128,20 +128,20 @@ function renderHistoryItems(historyItems, page = 1, perPage = 25, totalItems = 0
                     console.warn("[EVD][HISTORY] Error sending retry message:", chrome.runtime.lastError.message);
                 }
                 else {
-                    console.log("[EVD][HISTORY] Retry download initiated:", response);
+                    // Retry download initiated
                     // Optionally, provide feedback to the user in the popup
                 }
             });
         });
         const deleteButton = document.createElement("button");
-        deleteButton.className = "history-action-btn delete-btn";
+        deleteButton.className = "btn btn--secondary delete-btn";
         deleteButton.textContent = "Delete";
         deleteButton.title = "Remove from history";
         deleteButton.addEventListener("click", (e) => __awaiter(this, void 0, void 0, function* () {
             e.stopPropagation();
             if (!item.id)
                 return;
-            console.log("[EVD][HISTORY] Delete clicked for:", item.id);
+            // Delete clicked for item
             try {
                 yield removeHistoryItemAndNotify(item.id);
                 // The historyUpdated message from removeHistoryItemAndNotify will trigger a re-render
@@ -239,7 +239,7 @@ function addToHistory(entry) {
                         resolve();
                         return;
                     }
-                    console.log("[EVD][HISTORY] Added to history:", newEntry);
+                    // Added to history
                     resolve();
                 });
             });
@@ -259,7 +259,7 @@ function clearHistory() {
                     reject(new Error(chrome.runtime.lastError.message));
                 }
                 else {
-                    console.log("[EVD][HISTORY] History cleared.");
+                    // History cleared
                     resolve();
                 }
             });
@@ -300,7 +300,7 @@ function removeHistoryItem(itemId) {
                         console.error("[EVD][HISTORY] Error removing item from history:", chrome.runtime.lastError.message);
                         return reject(new Error(chrome.runtime.lastError.message));
                     }
-                    console.log("[EVD][HISTORY] Removed item " + itemId + " from history.");
+                    // Removed item from history
                     resolve();
                 });
             });

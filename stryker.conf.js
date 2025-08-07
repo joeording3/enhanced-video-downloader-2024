@@ -16,8 +16,16 @@ module.exports = {
     projectType: "custom",
     enableFindRelatedTests: false,
   },
-  // Focus on just one file for faster testing
-  mutate: ["extension/src/background-logic.ts"],
+  // Comprehensive mutation testing for extension source files
+  mutate: [
+    "extension/src/**/*.ts",
+    "!extension/src/**/*.test.ts",
+    "!extension/src/**/*.spec.ts",
+    "!extension/src/**/__tests__/**",
+    "!extension/src/types/**",
+    "!extension/src/global.d.ts",
+    "!extension/src/extension-overview.md",
+  ],
   thresholds: {
     high: 80,
     low: 60,

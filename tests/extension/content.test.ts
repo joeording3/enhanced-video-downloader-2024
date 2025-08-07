@@ -23,6 +23,8 @@ import {
 describe("Content Script Tests", () => {
   beforeEach(() => {
     document.body.innerHTML = "";
+    // Reset centralized state for each test
+    _resetStateForTesting();
     // Mock storage and runtime APIs
     global.chrome = {
       storage: {
@@ -73,8 +75,9 @@ describe("Content Script Tests", () => {
   describe("resetButtonPosition", () => {
     it("should reset the button position to the default", async () => {
       const button = await createOrUpdateButton();
+      // Set initial position to something other than default
       button.style.left = "100px";
-      button.style.top = "10px";
+      button.style.top = "50px";
       await resetButtonPosition();
 
       expect(button.style.left).toBe("10px");
@@ -111,12 +114,15 @@ describe("Content Script Tests", () => {
   describe("setButtonHiddenState", () => {
     it("should hide the button when hidden is true", async () => {
       const button = await createOrUpdateButton();
+      // Ensure button is visible initially
+      button.style.display = "block";
       await setButtonHiddenState(true);
       expect(button.style.display).toBe("none");
     });
 
     it("should show the button when hidden is false", async () => {
       const button = await createOrUpdateButton();
+      // Ensure button is hidden initially
       button.style.display = "none";
       await setButtonHiddenState(false);
       expect(button.style.display).toBe("block");
@@ -278,7 +284,6 @@ describe("Content Script Tests", () => {
         }
       );
 
-      btn.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
       btn.click();
 
       // Check for the success class after the async operation completes
@@ -298,9 +303,10 @@ describe("Content Script Tests", () => {
         }
       );
 
-      btn.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
       btn.click();
 
+      // Wait for the async callback to complete
+      await new Promise((resolve) => setTimeout(resolve, 10));
       expect(btn.classList.contains("download-error")).toBe(true);
     });
 
@@ -316,9 +322,10 @@ describe("Content Script Tests", () => {
         }
       );
 
-      btn.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
       btn.click();
 
+      // Wait for the async callback to complete
+      await new Promise((resolve) => setTimeout(resolve, 10));
       // All non-success statuses are treated as error (red)
       expect(btn.classList.contains("download-error")).toBe(true);
     });
@@ -335,9 +342,10 @@ describe("Content Script Tests", () => {
         }
       );
 
-      btn.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
       btn.click();
 
+      // Wait for the async callback to complete
+      await new Promise((resolve) => setTimeout(resolve, 10));
       // All non-success statuses are treated as error (red)
       expect(btn.classList.contains("download-error")).toBe(true);
     });
@@ -355,9 +363,10 @@ describe("Content Script Tests", () => {
         }
       );
 
-      btn.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
       btn.click();
 
+      // Wait for the async callback to complete
+      await new Promise((resolve) => setTimeout(resolve, 10));
       expect(btn.classList.contains("download-error")).toBe(true);
     });
   });

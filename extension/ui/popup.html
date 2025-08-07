@@ -26,6 +26,7 @@
         <div class="header-actions">
           <button
             id="open-settings"
+            class="btn btn--secondary"
             title="Settings"
             aria-label="Open Settings"
           >
@@ -40,9 +41,18 @@
             Main Controls
           </h2>
           <!-- Visually hidden heading for section -->
-          <button id="enhanced-download-button">DOWNLOAD</button>
-          <button id="toggle-enhanced-download-button">HIDE</button>
-          <button id="reset-button-position">RESET</button>
+          <button id="enhanced-download-button" class="btn btn--primary">
+            DOWNLOAD
+          </button>
+          <button
+            id="toggle-enhanced-download-button"
+            class="btn btn--secondary"
+          >
+            HIDE
+          </button>
+          <button id="reset-button-position" class="btn btn--secondary">
+            RESET
+          </button>
         </section>
         <div class="spacing-md"></div>
         <div id="config-error-display" class="error-display"></div>
@@ -58,7 +68,12 @@
         <section id="history-section" aria-labelledby="history-heading">
           <h2 id="history-heading">History</h2>
           <div class="history-controls">
-            <button id="prev-page" disabled aria-label="Previous History Page">
+            <button
+              id="prev-page"
+              class="btn btn--secondary"
+              disabled
+              aria-label="Previous History Page"
+            >
               &laquo; Prev
             </button>
             <span class="history-controls-middle-group">
@@ -71,7 +86,12 @@
               </select>
               <span id="page-info" aria-live="polite">Page 1 of 1</span>
             </span>
-            <button id="next-page" disabled aria-label="Next History Page">
+            <button
+              id="next-page"
+              class="btn btn--secondary"
+              disabled
+              aria-label="Next History Page"
+            >
               Next &raquo;
             </button>
           </div>

@@ -7,7 +7,7 @@ name = "videodownloader-server"
 version = "1.0.0"
 description = "Enhanced Video Downloader server - Chrome extension companion"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 license = {text = "ISC"}
 authors = [
     {name = "Joseph Ording", email = "joe@example.com"}

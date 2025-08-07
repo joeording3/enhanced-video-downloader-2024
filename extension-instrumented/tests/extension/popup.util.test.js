@@ -41,11 +41,11 @@ describe("Popup Util Functions", () => {
             // The implementation now uses document.documentElement.classList.toggle
             // and looks for img[src*='icon'] instead of #header-logo
             headerLogo.src = "http://localhost/extension/icons/icon48.png";
-            (0, popup_1.applyPopupTheme)(true); // Switch to dark
-            expect(document.documentElement.classList.contains("dark-theme")).toBe(true);
+            (0, popup_1.applyPopupTheme)("dark"); // Switch to dark
+            expect(document.body.classList.contains("dark-theme")).toBe(true);
             expect(headerLogo.src).toMatch(/darkicons\/icon48\.png$/);
-            (0, popup_1.applyPopupTheme)(false); // Switch back to light
-            expect(document.documentElement.classList.contains("dark-theme")).toBe(false);
+            (0, popup_1.applyPopupTheme)("light"); // Switch back to light
+            expect(document.body.classList.contains("dark-theme")).toBe(false);
             expect(headerLogo.src).toMatch(/icon48\.png$/);
         });
     });

@@ -1,55 +1,41 @@
+/* Enhanced Video Downloader - Options Logs Styles */
+
+/* Import shared styles */
+@import url("./variables.css");
+@import url("./components.css");
+@import url("./base.css");
+@import url("./themes.css");
+
 /* Log option styles */
 .log-options {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  margin: var(--spacing-sm) 0;
-  padding: 0 var(--spacing-sm);
+  margin: var(--space-sm) 0;
+  padding: 0 var(--space-sm);
   font-size: 0.9em;
 }
 
+/* Use .btn component class instead of custom button styles */
 .button-style-checkbox {
-  display: inline-flex;
-  align-items: center;
-  background-color: var(--bg-quaternary-light);
-  border: 1px solid var(--border-secondary-light);
-  border-radius: var(--border-radius-sm);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  margin-left: var(--spacing-xs);
-  cursor: pointer;
-  font-size: 0.9em;
-  user-select: none;
-}
-
-body.dark-theme .button-style-checkbox {
-  background-color: var(--bg-quaternary-dark);
-  border-color: var(--border-secondary-dark);
-  color: var(--text-primary-dark);
-}
-
-.button-style-checkbox:hover {
-  background-color: var(--bg-tertiary-light);
-}
-
-body.dark-theme .button-style-checkbox:hover {
-  background-color: var(--bg-tertiary-dark);
+  composes: btn btn--secondary btn--small;
 }
 
 .log-options label {
   display: flex;
   align-items: center;
-  margin-left: var(--spacing-lg);
+  margin-left: var(--space-lg);
   cursor: pointer;
 }
 
 .log-options input[type="checkbox"] {
-  margin-right: var(--spacing-xs);
+  margin-right: var(--space-xs);
 }
 
 .log-options select {
-  margin-left: var(--spacing-xs);
-  padding: var(--border-radius-sm);
-  border-radius: var(--border-radius-sm);
+  margin-left: var(--space-xs);
+  padding: var(--radius-sm);
+  border-radius: var(--radius-sm);
 }
 
 body.dark-theme .log-options {
@@ -64,17 +50,17 @@ body.dark-theme .log-options select {
 
 /* Log message styles */
 .log-success {
-  color: var(--color-success);
+  color: var(--success);
   font-weight: var(--font-weight-bold);
 }
 
 .log-warning {
-  color: var(--color-warning);
+  color: var(--warning);
   font-weight: var(--font-weight-bold);
 }
 
 .log-error {
-  color: var(--color-error);
+  color: var(--error);
   font-weight: var(--font-weight-bold);
 }
 
@@ -83,12 +69,12 @@ body.dark-theme .log-options select {
   width: 100%;
   height: 300px;
   font-family: monospace;
-  font-size: var(--font-size-small);
-  padding: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  padding: var(--space-sm);
   background-color: var(--bg-quaternary-light);
-  border: 1px solid var(--border-secondary-light);
-  border-radius: var(--border-radius-sm);
-  margin-top: var(--spacing-sm);
+  border: 1px solid var(--border-secondary);
+  border-radius: var(--radius-sm);
+  margin-top: var(--space-sm);
   resize: vertical;
   overflow-y: auto;
 }
@@ -100,7 +86,7 @@ body.dark-theme #logViewerTextarea {
 }
 
 .log-empty {
-  color: var(--color-disabled);
+  color: var(--disabled);
   font-style: italic;
 }
 

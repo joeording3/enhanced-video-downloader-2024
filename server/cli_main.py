@@ -13,7 +13,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 # Third-party modules
 import click
@@ -72,6 +72,118 @@ SERVER_MAIN_SCRIPT = SCRIPT_DIR / "__main__.py"
 
 
 # --- Command Line Interface ---
+
+
+# Helper functions for CLI commands
+def _cli_load_config(_ctx: click.Context) -> Config:
+    return Config.load()
+
+
+def _cli_set_logging(verbose: bool) -> None:
+    if verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
+        log.setLevel(logging.DEBUG)
+        log.info("Verbose logging enabled")
+    else:
+        logging.getLogger().setLevel(logging.INFO)
+        log.setLevel(logging.INFO)
+        log.info("Console logging set to warnings and errors only")
+
+
+# Helper to resolve download directory for start_server
+def _resolve_download_dir(cfg: Config, download_dir: str | None) -> str:
+    """Determine the effective download directory."""
+    current_config_download_dir = cfg.get_value("download_dir")
+    # CLI override
+    if download_dir is not None:
+        cli_download_path = Path(download_dir).expanduser().resolve()
+        try:
+            cli_download_path.mkdir(parents=True, exist_ok=True)
+            return str(cli_download_path)
+        except Exception:
+            log.exception("Failed to set or create CLI-provided download directory")
+            sys.exit(1)
+    # Config value
+    if current_config_download_dir is not None:
+        return current_config_download_dir
+    # Default location
+    default_dl_path = PROJECT_ROOT / "user_downloads"
+    try:
+        default_dl_path.mkdir(parents=True, exist_ok=True)
+        log.info(f"Download directory not specified, defaulting to '{default_dl_path}'")
+    except Exception as e:
+        log.warning(f"Could not create default download directory '{default_dl_path}': {e}.")
+    return str(default_dl_path)
+
+
+def _cli_get_existing_server_status(host: str, port: int) -> tuple[tuple[int, int] | None, bool]:
+    """Retrieve server lock PID/port and port-in-use status."""
+    pid_port = get_lock_pid_port_cli(LOCK_PATH)
+    port_in_use = is_port_in_use(port, host)
+    return pid_port, port_in_use
+
+
+def _resolve_start_params(
+    cfg: Config, host: str | None, port: int | None, download_dir: str | None
+) -> tuple[str, int, str]:
+    """Determine effective host, port, and download directory."""
+    # Host resolution
+    current_config_host = cfg.get_value("server_host")
+    if host is not None:
+        effective_host = host
+    elif current_config_host is not None:
+        effective_host = current_config_host
+    else:
+        effective_host = "127.0.0.1"
+
+    # Port resolution
+    current_config_port = cfg.get_value("server_port")
+    if port is not None:
+        effective_port = port
+    elif current_config_port is not None:
+        effective_port = current_config_port
+    else:
+        from server.constants import get_server_port
+
+        effective_port = get_server_port()
+
+    # Download directory resolution
+    effective_download_dir_str = _resolve_download_dir(cfg, download_dir)
+
+    return effective_host, effective_port, effective_download_dir_str
+
+
+# Helper to build the server start command
+def _cli_build_command(cfg: Config, host: str, port: int, gunicorn: bool, workers: int) -> list[str]:
+    """Build the command list for starting the server."""
+    if gunicorn:
+        log.info("Starting server in production mode with Gunicorn on %s:%s", host, port)
+        cmd = [
+            "gunicorn",
+            f"--workers={workers}",
+            f"--bind={host}:{port}",
+            "server.wsgi:app",
+            "--access-logfile",
+            "-",
+            "--error-logfile",
+            "-",
+            "--log-level",
+            "info",
+        ]
+    else:
+        log.info("Starting server in development mode on %s:%s", host, port)
+        cmd = [
+            "python",
+            "-m",
+            "server.__main__",
+            "--host",
+            host,
+            "--port",
+            str(port),
+        ]
+    return cmd
+
+
 @click.group(invoke_without_command=True)
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose logging")
 @click.pass_context
@@ -97,9 +209,9 @@ def cli(ctx: click.Context, verbose: bool) -> None:
 def _run_start_server(
     ctx,
     daemon: bool,
-    host: Optional[str] = None,
-    port: Optional[int] = None,
-    download_dir: Optional[str] = None,
+    host: str | None = None,
+    port: int | None = None,
+    download_dir: str | None = None,
     gunicorn: bool = False,
     workers: int = 1,
     verbose: bool = False,
@@ -191,9 +303,9 @@ def start_server(
     ctx: click.Context,
     daemon: bool,
     fg: bool,
-    host: Optional[str],
-    port: Optional[int],
-    download_dir: Optional[str],
+    host: str | None,
+    port: int | None,
+    download_dir: str | None,
     gunicorn: bool,
     workers: int,
     verbose: bool,
@@ -341,10 +453,10 @@ def restart_server_command(
     ctx: click.Context,
     daemon: bool,
     fg: bool,
-    host: Optional[str],
-    port: Optional[int],
+    host: str | None,
+    port: int | None,
     gunicorn: bool,
-    workers: Optional[int],
+    workers: int | None,
     verbose: bool,
     force: bool,
     timeout: int,
@@ -658,7 +770,7 @@ def _cli_set_logging(verbose: bool) -> None:
 
 
 # Helper to resolve download directory for start_server
-def _resolve_download_dir(cfg: Config, download_dir: Optional[str]) -> str:
+def _resolve_download_dir(cfg: Config, download_dir: str | None) -> str:
     """Determine the effective download directory."""
     current_config_download_dir = cfg.get_value("download_dir")
     # CLI override
@@ -683,7 +795,7 @@ def _resolve_download_dir(cfg: Config, download_dir: Optional[str]) -> str:
     return str(default_dl_path)
 
 
-def _cli_get_existing_server_status(host: str, port: int) -> Tuple[Optional[Tuple[int, int]], bool]:
+def _cli_get_existing_server_status(host: str, port: int) -> tuple[tuple[int, int] | None, bool]:
     """Retrieve server lock PID/port and port-in-use status."""
     pid_port = get_lock_pid_port_cli(LOCK_PATH)
     port_in_use = is_port_in_use(port, host)
@@ -691,8 +803,8 @@ def _cli_get_existing_server_status(host: str, port: int) -> Tuple[Optional[Tupl
 
 
 def _resolve_start_params(
-    cfg: Config, host: Optional[str], port: Optional[int], download_dir: Optional[str]
-) -> Tuple[str, int, str]:
+    cfg: Config, host: str | None, port: int | None, download_dir: str | None
+) -> tuple[str, int, str]:
     """Determine effective host, port, and download directory."""
     # Host resolution
     current_config_host = cfg.get_value("server_host")
@@ -721,7 +833,7 @@ def _resolve_start_params(
 
 
 # Helper to build the server start command
-def _cli_build_command(cfg: Config, host: str, port: int, gunicorn: bool, workers: int) -> List[str]:
+def _cli_build_command(cfg: Config, host: str, port: int, gunicorn: bool, workers: int) -> list[str]:
     """Build the command list for starting the server."""
     if gunicorn:
         log.info("Starting server in production mode with Gunicorn on %s:%s", host, port)
@@ -755,7 +867,7 @@ def _cli_pre_start_checks(host: str, port: int, force: bool) -> None:
 
 
 # Helper: no-lock port conflict
-def _cli_assert_no_port_conflict(pid_port: Optional[Tuple[int, int]], port_in_use: bool, host: str, port: int) -> None:
+def _cli_assert_no_port_conflict(pid_port: tuple[int, int] | None, port_in_use: bool, host: str, port: int) -> None:
     if port_in_use and not pid_port:
         log.error(f"Port {host}:{port} is already in use by another application")
         sys.exit(1)
@@ -765,7 +877,7 @@ def _cli_assert_no_port_conflict(pid_port: Optional[Tuple[int, int]], port_in_us
 
 # Helper: handle existing server instance
 def _cli_handle_existing_server(
-    pid_port: Tuple[int, int], port_in_use: bool, host: str, port: int, force: bool
+    pid_port: tuple[int, int], port_in_use: bool, host: str, port: int, force: bool
 ) -> None:
     existing_pid, existing_port = pid_port
     try:
@@ -826,7 +938,7 @@ def _cli_error_already_running(pid: int, host: str, port: int) -> None:
 
 
 # Execution helpers for start_server
-def _cli_execute_daemon(cmd: List[str], host: str, port: int) -> None:
+def _cli_execute_daemon(cmd: list[str], host: str, port: int) -> None:
     """Execute server start in daemon mode."""
     try:
         process = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
@@ -838,7 +950,7 @@ def _cli_execute_daemon(cmd: List[str], host: str, port: int) -> None:
         log.exception("Failed to start server as daemon")
 
 
-def _cli_execute_foreground(cmd: List[str], _host: str, _port: int) -> None:
+def _cli_execute_foreground(cmd: list[str], _host: str, _port: int) -> None:
     """Execute server start in foreground mode."""
     try:
         command_str = " ".join(cmd)
@@ -855,11 +967,11 @@ def _cli_execute_foreground(cmd: List[str], _host: str, _port: int) -> None:
 
 
 # Helper functions for stop_server logic
-def _cli_stop_pre_checks() -> List[psutil.Process]:
+def _cli_stop_pre_checks() -> list[psutil.Process]:
     """Gather processes from scan and lock file, perform initial stale lock handling."""
     initial_procs = find_server_processes_cli()
     lock_info = get_lock_pid_port_cli(LOCK_PATH)
-    entities: List[psutil.Process] = []
+    entities: list[psutil.Process] = []
 
     # Convert process info to Process objects
     for proc_info in initial_procs:
@@ -906,9 +1018,9 @@ def _run_stop_server_enhanced(timeout: int, force: bool) -> None:
     click.echo(" Server stop sequence complete.")
 
 
-def _cli_stop_terminate_enhanced(entities: List[psutil.Process], timeout: int, force: bool) -> None:
+def _cli_stop_terminate_enhanced(entities: list[psutil.Process], timeout: int, force: bool) -> None:
     """Enhanced process termination with timeout and graceful shutdown."""
-    pid_map: Dict[int, psutil.Process] = {}
+    pid_map: dict[int, psutil.Process] = {}
 
     # Filter unique running processes
     for proc in entities:
@@ -935,7 +1047,7 @@ def _cli_stop_terminate_enhanced(entities: List[psutil.Process], timeout: int, f
     _verify_processes_stopped(procs)
 
 
-def _graceful_terminate_processes(procs: List[psutil.Process], timeout: int) -> None:
+def _graceful_terminate_processes(procs: list[psutil.Process], timeout: int) -> None:
     """Attempt graceful termination of processes with timeout."""
     log.info(f"Attempting graceful termination (timeout: {timeout}s)...")
 
@@ -960,7 +1072,7 @@ def _graceful_terminate_processes(procs: List[psutil.Process], timeout: int) -> 
     kill_processes_cli(procs)
 
 
-def _verify_processes_stopped(procs: List[psutil.Process]) -> None:
+def _verify_processes_stopped(procs: list[psutil.Process]) -> None:
     """Verify that all processes have been stopped."""
     still_running = [p for p in procs if p.is_running()]
     if still_running:
@@ -990,10 +1102,10 @@ def _cli_stop_cleanup_enhanced() -> None:
 def _run_restart_server_enhanced(
     ctx: click.Context,
     daemon: bool,
-    host: Optional[str],
-    port: Optional[int],
+    host: str | None,
+    port: int | None,
     gunicorn: bool,
-    workers: Optional[int],
+    workers: int | None,
     verbose: bool,
     force: bool,
     timeout: int,
@@ -1044,7 +1156,7 @@ def _run_restart_server_enhanced(
         click.echo("  Server restart completed, but verification failed.")
 
 
-def _preserve_server_state() -> Optional[Dict[str, Any]]:
+def _preserve_server_state() -> dict[str, Any] | None:
     """Preserve server state for restoration after restart."""
     try:
         state = {}
@@ -1066,7 +1178,7 @@ def _preserve_server_state() -> Optional[Dict[str, Any]]:
         return state if state else None
 
 
-def _restore_server_state(state: Dict[str, Any]) -> None:
+def _restore_server_state(state: dict[str, Any]) -> None:
     """Restore server state after restart."""
     try:
         # Restore download history
@@ -1083,7 +1195,7 @@ def _restore_server_state(state: Dict[str, Any]) -> None:
         log.warning(f"Failed to restore server state: {e}")
 
 
-def _verify_restart_success(host: Optional[str], port: Optional[int], timeout: int) -> bool:
+def _verify_restart_success(host: str | None, port: int | None, timeout: int) -> bool:
     """Verify that the restart was successful by checking server availability."""
     if not host or not port:
         # Use default values if not specified
@@ -1181,7 +1293,7 @@ def _run_server_status_enhanced(ctx: click.Context, detailed: bool, json_output:
 
     if json_output:
         # Convert to JSON format
-        status_dict: Dict[str, Any] = {
+        status_dict: dict[str, Any] = {
             "pid": pid_from_lock,
             "port": port_from_lock,
             "status": status,

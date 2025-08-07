@@ -1,0 +1,9 @@
+/* Enhanced Video Downloader - Content Script Styles */
+
+/* Import shared styles */
+@import url("./variables.css");
+@import url("./components.css");
+@import url("./base.css");
+@import url("./themes.css")
+
+/* Draggable Enhanced Video Downloader button */

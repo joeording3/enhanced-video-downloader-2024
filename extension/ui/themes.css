@@ -1,0 +1,142 @@
+/* Enhanced Video Downloader - Optimized Theme Overrides */
+
+/* Import variables and components */
+@import url("./variables.css");
+@import url("./components.css");
+
+/* ===== DARK THEME OVERRIDES ===== */
+
+body.dark-theme {
+  /* ===== THEME VARIABLES ===== */
+  --background-color: var(--bg-primary-dark);
+  --text-color: var(--text-primary-dark);
+  --container-bg: var(--bg-secondary-dark);
+  --border-color: var(--border-primary-dark);
+  --header-bg: var(--bg-tertiary-dark);
+  --button-bg: var(--primary);
+  --button-hover: var(--primary-hover);
+  --button-text: var(--text-inverse-dark);
+  --shadow-color: var(--shadow-md);
+  --success-color: var(--success);
+  --warning-color: var(--warning);
+  --error-color: var(--error);
+  --disabled-color: var(--disabled);
+  --input-bg: var(--bg-input-dark);
+  --input-text: var(--text-primary-dark);
+  --input-border: var(--border-secondary-dark);
+  --input-focus-border: var(--border-focus-dark);
+  --select-bg: var(--bg-input-dark);
+  --select-text: var(--text-primary-dark);
+  --select-border: var(--border-secondary-dark);
+  --label-text: var(--text-secondary-dark);
+  --link-color: var(--link-dark);
+  --link-hover-color: var(--link-hover-dark);
+  --separator-color: var(--border-secondary-dark);
+  --scrollbar-track-color: var(--scrollbar-track-dark);
+  --scrollbar-thumb-color: var(--scrollbar-thumb-dark);
+  --scrollbar-thumb-hover-color: var(--scrollbar-thumb-hover-dark);
+
+  /* ===== COMPONENT OVERRIDES ===== */
+
+  /* Button Overrides */
+  --btn-bg: var(--bg-button-dark);
+  --btn-color: var(--text-primary-dark);
+  --btn-hover: var(--bg-tertiary-dark);
+}
+
+/* ===== COMPONENT-SPECIFIC DARK THEME RULES ===== */
+
+body.dark-theme .btn--secondary {
+  --btn-bg: var(--bg-button-dark);
+  --btn-color: var(--text-primary-dark);
+  --btn-hover: var(--bg-tertiary-dark);
+  border-color: var(--border-secondary-dark);
+}
+
+body.dark-theme .btn--secondary:hover {
+  background-color: var(--bg-tertiary-dark);
+}
+
+body.dark-theme .input {
+  background-color: var(--bg-input-dark);
+  color: var(--text-primary-dark);
+  border-color: var(--border-secondary-dark);
+}
+
+body.dark-theme .input:focus {
+  border-color: var(--border-focus-dark);
+}
+
+body.dark-theme .input:invalid {
+  border-color: var(--error);
+}
+
+body.dark-theme .input:valid {
+  border-color: var(--success);
+}
+
+/* ===== TEXT UTILITY OVERRIDES ===== */
+
+body.dark-theme .text-secondary {
+  color: var(--text-secondary-dark);
+}
+
+body.dark-theme .text-muted {
+  color: var(--text-muted-dark);
+}
+
+body.dark-theme .text-inverse {
+  color: var(--text-inverse-dark);
+}
+
+/* ===== SCROLLBAR OVERRIDES ===== */
+
+body.dark-theme ::-webkit-scrollbar-track {
+  background: var(--scrollbar-track-dark);
+}
+
+body.dark-theme ::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb-dark);
+}
+
+body.dark-theme ::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover-dark);
+}
+
+/* ===== STATUS COMPONENT OVERRIDES ===== */
+
+body.dark-theme .status-indicator.pending::before {
+  background-color: var(--status-pending);
+}
+
+body.dark-theme .status-indicator.complete::before {
+  background-color: var(--status-complete);
+}
+
+body.dark-theme .status-indicator.error::before {
+  background-color: var(--status-error);
+}
+
+body.dark-theme .status-indicator.skipped::before {
+  background-color: var(--status-skipped);
+}
+
+body.dark-theme .status-badge.pending {
+  background-color: var(--status-pending);
+  color: var(--text-inverse-dark);
+}
+
+body.dark-theme .status-badge.complete {
+  background-color: var(--status-complete);
+  color: var(--text-inverse);
+}
+
+body.dark-theme .status-badge.error {
+  background-color: var(--status-error);
+  color: var(--text-inverse);
+}
+
+body.dark-theme .status-badge.skipped {
+  background-color: var(--status-skipped);
+  color: var(--text-inverse);
+}

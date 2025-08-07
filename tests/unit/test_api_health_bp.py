@@ -27,8 +27,10 @@ class TestHealthBlueprint:
         # Test that the endpoint is accessible
         with app.test_client() as client:
             response = client.get("/api/health")
-            assert response.status_code == 204
-            assert response.get_data(as_text=True) == ""
+            assert response.status_code == 200
+            data = response.get_json()
+            assert data["app_name"] == "Enhanced Video Downloader"
+            assert data["status"] == "healthy"
 
     def test_health_endpoint_get_method(self):
         """Test health endpoint with GET method."""
@@ -38,8 +40,10 @@ class TestHealthBlueprint:
         with app.test_client() as client:
             response = client.get("/health")
 
-            assert response.status_code == 204
-            assert response.get_data(as_text=True) == ""
+            assert response.status_code == 200
+            data = response.get_json()
+            assert data["app_name"] == "Enhanced Video Downloader"
+            assert data["status"] == "healthy"
 
     def test_health_endpoint_options_method(self):
         """Test health endpoint with OPTIONS method."""
@@ -49,8 +53,10 @@ class TestHealthBlueprint:
         with app.test_client() as client:
             response = client.options("/health")
 
-            assert response.status_code == 204
-            assert response.get_data(as_text=True) == ""
+            assert response.status_code == 200
+            data = response.get_json()
+            assert data["app_name"] == "Enhanced Video Downloader"
+            assert data["status"] == "healthy"
 
     def test_health_endpoint_unsupported_method(self):
         """Test health endpoint with unsupported method."""

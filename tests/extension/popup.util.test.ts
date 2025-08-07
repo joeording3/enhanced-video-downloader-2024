@@ -50,16 +50,12 @@ describe("Popup Util Functions", () => {
       // and looks for img[src*='icon'] instead of #header-logo
       headerLogo.src = "http://localhost/extension/icons/icon48.png";
 
-      applyPopupTheme(true); // Switch to dark
-      expect(document.documentElement.classList.contains("dark-theme")).toBe(
-        true
-      );
+      applyPopupTheme("dark"); // Switch to dark
+      expect(document.body.classList.contains("dark-theme")).toBe(true);
       expect(headerLogo.src).toMatch(/darkicons\/icon48\.png$/);
 
-      applyPopupTheme(false); // Switch back to light
-      expect(document.documentElement.classList.contains("dark-theme")).toBe(
-        false
-      );
+      applyPopupTheme("light"); // Switch back to light
+      expect(document.body.classList.contains("dark-theme")).toBe(false);
       expect(headerLogo.src).toMatch(/icon48\.png$/);
     });
   });

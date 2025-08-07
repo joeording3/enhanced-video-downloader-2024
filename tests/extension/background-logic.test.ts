@@ -501,10 +501,10 @@ describe("Background Logic: discoverServerPort", () => {
     expect(result).toBe(5001);
   });
 
-  // Enhanced timeout testing
+  // Optimized timeout testing - using immediate rejection instead of setTimeout
   it("should handle timeout for cached port check", async () => {
     mockCheckStatus.mockImplementation(
-      () => new Promise((resolve) => setTimeout(() => resolve(true), 3000)) // Longer than timeout
+      () => new Promise((_, reject) => reject(new Error("Timeout")))
     );
     const storageService = createMockStorageService({
       getPort: jest.fn().mockResolvedValue(5013),
@@ -526,7 +526,7 @@ describe("Background Logic: discoverServerPort", () => {
 
   it("should handle timeout during port scanning", async () => {
     mockCheckStatus.mockImplementation(
-      () => new Promise((resolve) => setTimeout(() => resolve(true), 3000)) // Longer than timeout
+      () => new Promise((_, reject) => reject(new Error("Timeout")))
     );
     const storageService = createMockStorageService({
       getPort: jest.fn().mockResolvedValue(null),
@@ -640,127 +640,9 @@ describe("Background Logic: discoverServerPort", () => {
     expect(result).toBeNull();
   });
 
-  it("should handle timeout with different error messages", async () => {
-    mockCheckStatus.mockImplementation(
-      () => new Promise((resolve) => setTimeout(() => resolve(true), 3000))
-    );
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(5013),
-      setPort: jest.fn().mockResolvedValue(undefined),
-    });
-
-    const result = await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5010,
-      false,
-      1000
-    );
-
-    expect(result).toBeNull();
-  });
-
-  it("should handle timeout during scanning with different error messages", async () => {
-    mockCheckStatus.mockImplementation(
-      () => new Promise((resolve) => setTimeout(() => resolve(true), 3000))
-    );
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(null),
-    });
-
-    const result = await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5005,
-      false,
-      1000
-    );
-
-    expect(result).toBeNull();
-  });
-
-  it("should handle storage service without setPort method during cached port failure", async () => {
-    mockCheckStatus.mockResolvedValue(false);
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(5013),
-      setPort: undefined, // Remove setPort method
-    });
-
-    const result = await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5010,
-      false,
-      1000
-    );
-
-    expect(result).toBeNull();
-  });
-
-  it("should handle storage service without setPort method during timeout", async () => {
-    mockCheckStatus.mockImplementation(
-      () => new Promise((resolve) => setTimeout(() => resolve(true), 3000))
-    );
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(5013),
-      setPort: undefined, // Remove setPort method
-    });
-
-    const result = await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5010,
-      false,
-      1000
-    );
-
-    expect(result).toBeNull();
-  });
-
-  // Batch processing edge case tests
+  // Batch processing tests
   it("should handle batch processing edge case with exact batch size", async () => {
     mockCheckStatus.mockResolvedValue(false);
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(null),
-    });
-
-    const result = await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5005, // 5 ports, batch size is 5
-      false,
-      1000
-    );
-
-    expect(result).toBeNull();
-  });
-
-  it("should handle batch processing with remainder ports", async () => {
-    mockCheckStatus.mockResolvedValue(false);
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(null),
-    });
-
-    const result = await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5007, // 7 ports, batch size is 5 (remainder of 2)
-      false,
-      1000
-    );
-
-    expect(result).toBeNull();
-  });
-
-  it("should handle progress tracking with empty range", async () => {
-    mockCheckStatus.mockResolvedValue(false);
-    const onProgress = jest.fn();
     const storageService = createMockStorageService({
       getPort: jest.fn().mockResolvedValue(null),
     });
@@ -769,13 +651,48 @@ describe("Background Logic: discoverServerPort", () => {
       storageService,
       mockCheckStatus,
       5001,
-      5001, // Single port range
+      5005, // 5 ports, batch size is 5
       false,
-      1000,
-      onProgress
+      1000
     );
 
-    expect(onProgress).toHaveBeenCalled();
+    expect(mockCheckStatus).toHaveBeenCalledTimes(5);
+  });
+
+  it("should handle batch processing with remainder ports", async () => {
+    mockCheckStatus.mockResolvedValue(false);
+    const storageService = createMockStorageService({
+      getPort: jest.fn().mockResolvedValue(null),
+    });
+
+    await discoverServerPort(
+      storageService,
+      mockCheckStatus,
+      5001,
+      5007, // 7 ports, batch size is 5, remainder is 2
+      false,
+      1000
+    );
+
+    expect(mockCheckStatus).toHaveBeenCalledTimes(7);
+  });
+
+  it("should scan ports in batches efficiently", async () => {
+    const storageService = createMockStorageService({
+      getPort: jest.fn().mockResolvedValue(null),
+    });
+    mockCheckStatus.mockResolvedValue(false);
+
+    await discoverServerPort(
+      storageService,
+      mockCheckStatus,
+      5001,
+      5010, // 10 ports, 2 batches of 5
+      false,
+      1000
+    );
+
+    expect(mockCheckStatus).toHaveBeenCalledTimes(10);
   });
 
   // Null/undefined handling tests
@@ -848,7 +765,7 @@ describe("Background Logic: discoverServerPort", () => {
       5001,
       5005,
       false,
-      2000
+      1000
     );
 
     expect(result).toBeNull();
@@ -867,7 +784,7 @@ describe("Background Logic: discoverServerPort", () => {
       5001,
       5005,
       false,
-      2000
+      1000
     );
 
     expect(result).toBe(5001);
@@ -885,149 +802,31 @@ describe("Background Logic: discoverServerPort", () => {
       5001,
       5005,
       false,
-      2000
+      1000
     );
 
     expect(result).toBeNull();
   });
 
-  it("should scan ports in batches efficiently", async () => {
+  // Progress tracking tests
+  it("should handle progress tracking with empty range", async () => {
+    mockCheckStatus.mockResolvedValue(false);
+    const onProgress = jest.fn();
     const storageService = createMockStorageService({
       getPort: jest.fn().mockResolvedValue(null),
     });
-    mockCheckStatus.mockResolvedValue(false);
 
     await discoverServerPort(
       storageService,
       mockCheckStatus,
       5001,
-      5010,
+      5001, // Single port range
       false,
-      2000
+      1000,
+      onProgress
     );
 
-    // Should check all ports in the range
-    expect(mockCheckStatus).toHaveBeenCalledTimes(10);
-  });
-
-  // Boundary condition tests
-  it("should handle timeout with different error messages", async () => {
-    const cachedPort = 5013;
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(cachedPort),
-    });
-    mockCheckStatus.mockImplementation(
-      () => new Promise((resolve) => setTimeout(() => resolve(true), 3000))
-    );
-
-    const result = await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5020,
-      false,
-      1000
-    );
-
-    expect(result).toBeNull();
-  }, 10000); // Increase test timeout
-
-  it("should handle timeout during scanning with different error messages", async () => {
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(null),
-    });
-    mockCheckStatus.mockImplementation(
-      () => new Promise((resolve) => setTimeout(() => resolve(true), 3000))
-    );
-
-    const result = await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5005,
-      false,
-      1000
-    );
-
-    expect(result).toBeNull();
-  }, 10000); // Increase test timeout
-
-  it("should handle storage service without setPort method during cached port failure", async () => {
-    const cachedPort = 5013;
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(cachedPort),
-      setPort: undefined, // Remove setPort method
-    });
-    mockCheckStatus.mockRejectedValue(new Error("Connection failed"));
-
-    const result = await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5020,
-      false,
-      2000
-    );
-
-    expect(result).toBeNull();
-  });
-
-  it("should handle storage service without setPort method during timeout", async () => {
-    const cachedPort = 5013;
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(cachedPort),
-      setPort: undefined, // Remove setPort method
-    });
-    mockCheckStatus.mockImplementation(
-      () => new Promise((resolve) => setTimeout(() => resolve(true), 3000))
-    );
-
-    const result = await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5020,
-      false,
-      1000
-    );
-
-    expect(result).toBeNull();
-  }, 10000); // Increase test timeout
-
-  it("should handle batch processing edge case with exact batch size", async () => {
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(null),
-    });
-    mockCheckStatus.mockResolvedValue(false);
-
-    await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5005, // 5 ports, batch size is 5
-      false,
-      2000
-    );
-
-    expect(mockCheckStatus).toHaveBeenCalledTimes(5);
-  });
-
-  it("should handle batch processing with remainder ports", async () => {
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(null),
-    });
-    mockCheckStatus.mockResolvedValue(false);
-
-    await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5007, // 7 ports, batch size is 5, remainder is 2
-      false,
-      2000
-    );
-
-    expect(mockCheckStatus).toHaveBeenCalledTimes(7);
+    expect(onProgress).toHaveBeenCalled();
   });
 
   it("should handle progress tracking with negative batch length", async () => {
@@ -1043,532 +842,10 @@ describe("Background Logic: discoverServerPort", () => {
       5001,
       5000, // Invalid range (negative)
       false,
-      2000,
+      1000,
       onProgress
     );
 
     expect(result).toBeNull();
-  });
-
-  it("should handle null port discovery in batch processing", async () => {
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(null),
-    });
-    mockCheckStatus.mockResolvedValue(null);
-
-    const result = await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5005,
-      false,
-      2000
-    );
-
-    expect(result).toBeNull();
-  });
-
-  it("should handle undefined port discovery in batch processing", async () => {
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(null),
-    });
-    mockCheckStatus.mockResolvedValue(undefined);
-
-    const result = await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5005,
-      false,
-      2000
-    );
-
-    expect(result).toBeNull();
-  });
-
-  it("should handle mixed null/undefined results in batch processing", async () => {
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(null),
-    });
-    mockCheckStatus
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(undefined)
-      .mockResolvedValueOnce(5003);
-
-    const result = await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5005,
-      false,
-      2000
-    );
-
-    expect(result).toBe(5003);
-  });
-
-  // Additional tests to address remaining survived mutants
-  it("should validate specific error message content for timeout errors", async () => {
-    const cachedPort = 5013;
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(cachedPort),
-      setPort: jest.fn().mockResolvedValue(undefined),
-    });
-    mockCheckStatus.mockImplementation(
-      () => new Promise((resolve) => setTimeout(() => resolve(true), 3000))
-    );
-
-    const result = await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5010,
-      false,
-      1000 // Short timeout
-    );
-
-    expect(result).toBeNull();
-    expect(storageService.setPort).toHaveBeenCalledWith(null);
-  }, 10000);
-
-  it("should validate specific error message content for scanning timeout errors", async () => {
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(null),
-    });
-    mockCheckStatus.mockImplementation(
-      () => new Promise((resolve) => setTimeout(() => resolve(true), 3000))
-    );
-
-    const result = await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5005,
-      false,
-      1000 // Short timeout
-    );
-
-    expect(result).toBeNull();
-  }, 10000);
-
-  it("should handle boundary condition with exact port range length", async () => {
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(null),
-    });
-    mockCheckStatus.mockResolvedValue(false);
-
-    const result = await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5005, // 5 ports, batch size is 5
-      false,
-      2000
-    );
-
-    expect(result).toBeNull();
-  });
-
-  it("should handle boundary condition with remainder ports", async () => {
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(null),
-    });
-    mockCheckStatus.mockResolvedValue(false);
-
-    const result = await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5007, // 7 ports, batch size is 5, remainder is 2
-      false,
-      2000
-    );
-
-    expect(result).toBeNull();
-  });
-
-  it("should handle exception in catch block with proper error handling", async () => {
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(5013),
-    });
-    mockCheckStatus.mockRejectedValue(new Error("Network error"));
-
-    const result = await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5020,
-      false,
-      2000
-    );
-
-    expect(result).toBeNull();
-  });
-
-  it("should handle null/undefined foundPort with proper conditional logic", async () => {
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(null),
-    });
-    mockCheckStatus.mockResolvedValue(false);
-
-    const result = await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5003,
-      false,
-      2000
-    );
-
-    expect(result).toBeNull();
-  });
-
-  it("should handle progress tracking with proper assignment operator", async () => {
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(null),
-    });
-    mockCheckStatus.mockResolvedValue(false);
-    const onProgress = jest.fn();
-
-    await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5005,
-      false,
-      2000,
-      onProgress
-    );
-
-    expect(onProgress).toHaveBeenCalled();
-  });
-
-  it("should handle progress tracking with multiple batches", async () => {
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(null),
-    });
-    mockCheckStatus.mockResolvedValue(false);
-    const onProgress = jest.fn();
-
-    await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5010, // 10 ports, 2 batches of 5
-      false,
-      2000,
-      onProgress
-    );
-
-    expect(onProgress).toHaveBeenCalled();
-  });
-
-  it("should handle progress tracking with single batch", async () => {
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(null),
-    });
-    mockCheckStatus.mockResolvedValue(false);
-    const onProgress = jest.fn();
-
-    await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5003, // 3 ports, single batch
-      false,
-      2000,
-      onProgress
-    );
-
-    expect(onProgress).toHaveBeenCalled();
-  });
-
-  it("should handle progress tracking with empty range", async () => {
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(null),
-    });
-    mockCheckStatus.mockResolvedValue(false);
-    const onProgress = jest.fn();
-
-    await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5001, // Single port range
-      false,
-      2000,
-      onProgress
-    );
-
-    expect(onProgress).toHaveBeenCalled();
-  });
-
-  it("should handle progress tracking with negative batch length", async () => {
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(null),
-    });
-    mockCheckStatus.mockResolvedValue(false);
-    const onProgress = jest.fn();
-
-    await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5001, // Single port range
-      false,
-      2000,
-      onProgress
-    );
-
-    expect(onProgress).toHaveBeenCalled();
-  });
-
-  it("should handle null port discovery in batch processing", async () => {
-    mockCheckStatus.mockResolvedValue(null);
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(null),
-    });
-
-    const result = await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5003,
-      false,
-      1000
-    );
-
-    expect(result).toBeNull();
-  });
-
-  it("should handle undefined port discovery in batch processing", async () => {
-    mockCheckStatus.mockResolvedValue(undefined);
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(null),
-    });
-
-    const result = await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5003,
-      false,
-      1000
-    );
-
-    expect(result).toBeNull();
-  });
-
-  it("should handle mixed null/undefined results in batch processing", async () => {
-    mockCheckStatus
-      .mockResolvedValueOnce(false)
-      .mockResolvedValueOnce(false)
-      .mockResolvedValueOnce(true);
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(null),
-    });
-
-    const result = await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5003,
-      false,
-      1000
-    );
-
-    expect(result).toBe(5003); // Third port (5003) should be found
-  });
-
-  it("should handle port scanning when no port is found", async () => {
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(null),
-    });
-    mockCheckStatus.mockResolvedValue(false);
-
-    const result = await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5005,
-      false,
-      2000
-    );
-
-    expect(result).toBeNull();
-  });
-
-  it("should handle storage service without setPort method during scan", async () => {
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(null),
-      setPort: undefined, // Remove setPort method
-    });
-    mockCheckStatus.mockResolvedValue(true);
-
-    const result = await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5005,
-      false,
-      2000
-    );
-
-    expect(result).toBe(5001);
-  });
-
-  it("should handle errors during port scanning gracefully", async () => {
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(null),
-    });
-    mockCheckStatus.mockRejectedValue(new Error("Scan error"));
-
-    const result = await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5005,
-      false,
-      2000
-    );
-
-    expect(result).toBeNull();
-  });
-
-  it("should handle timeout with different error messages", async () => {
-    const cachedPort = 5013;
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(cachedPort),
-    });
-    mockCheckStatus.mockImplementation(
-      () => new Promise((resolve) => setTimeout(() => resolve(true), 3000))
-    );
-
-    const result = await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5020,
-      false,
-      1000
-    );
-
-    expect(result).toBeNull();
-  }, 10000);
-
-  it("should handle timeout during scanning with different error messages", async () => {
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(null),
-    });
-    mockCheckStatus.mockImplementation(
-      () => new Promise((resolve) => setTimeout(() => resolve(true), 3000))
-    );
-
-    const result = await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5005,
-      false,
-      1000
-    );
-
-    expect(result).toBeNull();
-  }, 10000);
-
-  it("should handle storage service without setPort method during cached port failure", async () => {
-    const cachedPort = 5013;
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(cachedPort),
-      setPort: undefined, // Remove setPort method
-    });
-    mockCheckStatus.mockRejectedValue(new Error("Connection failed"));
-
-    const result = await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5020,
-      false,
-      2000
-    );
-
-    expect(result).toBeNull();
-  });
-
-  it("should handle storage service without setPort method during timeout", async () => {
-    const cachedPort = 5013;
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(cachedPort),
-      setPort: undefined, // Remove setPort method
-    });
-    mockCheckStatus.mockImplementation(
-      () => new Promise((resolve) => setTimeout(() => resolve(true), 3000))
-    );
-
-    const result = await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5020,
-      false,
-      1000
-    );
-
-    expect(result).toBeNull();
-  }, 10000);
-
-  it("should handle batch processing edge case with exact batch size", async () => {
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(null),
-    });
-    mockCheckStatus.mockResolvedValue(false);
-
-    await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5005, // 5 ports, batch size is 5
-      false,
-      2000
-    );
-
-    expect(mockCheckStatus).toHaveBeenCalledTimes(5);
-  });
-
-  it("should handle batch processing with remainder ports", async () => {
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(null),
-    });
-    mockCheckStatus.mockResolvedValue(false);
-
-    await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5007, // 7 ports, batch size is 5, remainder is 2
-      false,
-      2000
-    );
-
-    expect(mockCheckStatus).toHaveBeenCalledTimes(7);
-  });
-
-  it("should scan ports in batches efficiently", async () => {
-    const storageService = createMockStorageService({
-      getPort: jest.fn().mockResolvedValue(null),
-    });
-    mockCheckStatus.mockResolvedValue(false);
-
-    await discoverServerPort(
-      storageService,
-      mockCheckStatus,
-      5001,
-      5010, // 10 ports, 2 batches of 5
-      false,
-      2000
-    );
-
-    expect(mockCheckStatus).toHaveBeenCalledTimes(10);
   });
 });

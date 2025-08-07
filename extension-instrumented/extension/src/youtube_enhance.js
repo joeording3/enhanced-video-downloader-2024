@@ -28,7 +28,7 @@ function enhanceYouTubeButton(btn) {
         hostname === "music.youtube.com" ||
         hostname.endsWith(".youtube.com");
     if (isYouTubeDomain) {
-        console.log("[EVD Content] Enhancing YouTube button visibility");
+        // Enhancing YouTube button visibility
         // Add CSS class for enhanced YouTube styling
         btn.classList.add("youtube-enhanced");
         // Position in a more visible area for YouTube if not specifically placed by user
