@@ -12,9 +12,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Code Quality: Eliminated remaining pyright warnings by tightening types in `config_bp.py` and
   explicitly referencing nested Flask error handler in `__init__.py`. Fixed implicit string
   concatenation in `download_bp.py` and cleaned import ordering in CLI status command.
-- Frontend: Standardized API usage to current endpoints (`/api/health`, `/api/logs`, `/api/logs/clear`).
-  Updated tests to reflect non-throwing error handling and contrast-aware button styling. Removed legacy
-  log endpoint fallbacks and adjusted YouTube enhancement positioning expectations.
+- Frontend: Standardized API usage to current endpoints (`/api/health`, `/api/logs`,
+  `/api/logs/clear`). Updated tests to reflect non-throwing error handling and contrast-aware button
+  styling. Removed legacy log endpoint fallbacks and adjusted YouTube enhancement positioning
+  expectations.
+
+- Backend cleanup: Removed deprecated legacy modules and unified helpers
+
+  - Dropped `server/video_downloader_server.py` legacy shim (now raises ImportError); use
+    `python -m server` or `videodownloader-server` CLI
+  - Removed `server/cli_commands/lifecycle.py` shims (now raises ImportError); use consolidated
+    commands in `server/cli_main.py`
+  - Unified port discovery by delegating `server/cli_helpers.find_available_port` to
+    `server/utils.find_available_port`
 
 - CLI: `videodownloader-server stop` now terminates all running server instances discovered on the
   system, not just the one referenced by the lock file. This improves reliability when multiple

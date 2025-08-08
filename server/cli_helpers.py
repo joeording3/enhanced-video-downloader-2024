@@ -42,6 +42,7 @@ from server.lock import get_lock_file_path
 from server.lock import get_lock_pid as _get_lock_pid
 from server.lock import get_lock_pid_port as _get_lock_pid_port
 from server.lock import remove_lock_file as _remove_lock
+from server.utils import find_available_port as core_find_available_port
 
 # Alias derive_resume_url for backward compatibility and tests
 _derive_resume_url = derive_resume_url
@@ -116,26 +117,13 @@ def remove_lock_file_cli() -> None:
     remove_lock_file()
 
 
-def check_port_available(port: int) -> bool:
-    """
-    Check if a TCP port is available for binding.
+def _range_count(start_port: int, end_port: int) -> int:
+    """Compute inclusive port count from start to end."""
+    return max(0, (end_port - start_port) + 1)
 
-    Parameters
-    ----------
-    port : int
-        Port number to test.
 
-    Returns
-    -------
-    bool
-        True if the port can be bound (is free), False otherwise.
-    """
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind(("127.0.0.1", port))
-            return True
-    except OSError:
-        return False
+class InvalidPortRangeError(RuntimeError):
+    """Raised when an invalid port range is provided to discovery helpers."""
 
 
 def create_lock_file(port: int) -> None:
@@ -1049,10 +1037,6 @@ def find_server_processes() -> list[psutil.Process]:
 
 
 # New function needed by serve.py
-class NoAvailablePortError(RuntimeError):
-    """Raised when no available port is found in the specified range."""
-
-
 def find_available_port(start_port: int, end_port: int) -> int:
     """
     Find an available port in the specified range.
@@ -1074,11 +1058,12 @@ def find_available_port(start_port: int, end_port: int) -> int:
     RuntimeError
         If no available port is found in the range.
     """
-    for port in range(start_port, end_port + 1):
-        if check_port_available(port):
-            return port
-
-    raise NoAvailablePortError
+    count = _range_count(start_port, end_port)
+    if count <= 0:
+        # Invalid range, end must be >= start
+        raise InvalidPortRangeError
+    # Delegate to centralized implementation in server.utils for single source of truth
+    return core_find_available_port(start_port, count, host="127.0.0.1")
 
 
 # New function needed by serve.py

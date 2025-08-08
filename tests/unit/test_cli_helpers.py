@@ -285,16 +285,24 @@ class TestLifecycleCommand:
     """Test lifecycle CLI command functionality."""
 
     def test_lifecycle_command(self):
-        """Test lifecycle command functionality."""
-        from server.cli_commands.lifecycle import restart_command, stop_command
+        """Legacy lifecycle module removed; new commands live in consolidated CLI."""
+        import importlib
 
-        # Test legacy functions exist
-        assert callable(stop_command)
-        assert callable(restart_command)
+        import pytest
 
-        # These are legacy functions that don't take ctx
-        stop_command()
-        restart_command()
+        # Legacy module should no longer be importable
+        with pytest.raises(ImportError):
+            importlib.import_module("server.cli_commands.lifecycle")
+
+        # Verify consolidated CLI exposes lifecycle commands
+        from click.testing import CliRunner
+
+        from server.cli_main import cli
+
+        runner = CliRunner()
+        result = runner.invoke(cli, ["--help"])
+        assert result.exit_code == 0
+        assert "start" in result.output and "stop" in result.output and "restart" in result.output
 
 
 # ============================================================================

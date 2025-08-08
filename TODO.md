@@ -27,10 +27,11 @@ Legacy/Stub Cleanup:
       remove note
 - [/] Remove legacy port compatibility helpers in `server/constants.py` if unused (`LEGACY_PORTS`,
   `normalize_legacy_port`, `get_port_config`)
-- [/] Remove legacy frontend fallbacks for logs endpoints; standardize on `/api/logs` and `/api/logs/clear`
-- [ ] Audit `server/cli_commands/lifecycle.py` legacy shims; remove if not referenced
-- [ ] Review `server/video_downloader_server.py` compatibility shim; remove if WSGI entrypoints
-      cover all use cases
+- [/] Remove legacy frontend fallbacks for logs endpoints; standardize on `/api/logs` and
+  `/api/logs/clear`
+- [/] Audit `server/cli_commands/lifecycle.py` legacy shims; remove if not referenced
+- [/] Review `server/video_downloader_server.py` compatibility shim; remove if WSGI entrypoints
+  cover all use cases
 - [ ] Consider unifying `find_available_port` usage (prefer `server/utils.py`) and remove duplicates
 - [ ] identify legacy/backwards compatiblity code and refector/remove it
 
