@@ -235,8 +235,22 @@ export class ValidationService {
 
     // Build context for validation
     const context: any = {};
-    if (config.min !== undefined) context.min = config.min;
-    if (config.max !== undefined) context.max = config.max;
+    if (config.min !== undefined) {
+      // For text type, map min/max to minLength/maxLength
+      if (config.type === "text") {
+        context.minLength = config.min;
+      } else {
+        context.min = config.min;
+      }
+    }
+    if (config.max !== undefined) {
+      // For text type, map min/max to minLength/maxLength
+      if (config.type === "text") {
+        context.maxLength = config.max;
+      } else {
+        context.max = config.max;
+      }
+    }
     if (config.pattern) context.pattern = config.pattern;
 
     // Run validation
