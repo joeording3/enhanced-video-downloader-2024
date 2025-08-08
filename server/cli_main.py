@@ -1138,7 +1138,7 @@ def _verify_restart_success(host: str | None, port: int | None, timeout: int) ->
                 log.info("Restart verification successful.")
                 return True
         except Exception:
-            pass
+            log.debug("Verification loop encountered an error; will retry", exc_info=True)
         time.sleep(1)
 
     log.warning("Restart verification failed.")

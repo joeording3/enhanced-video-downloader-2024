@@ -668,11 +668,6 @@ def _process_priority_request(download_id: str, data: dict[str, Any]) -> tuple[R
         errors = [err.get("msg") for err in e.errors()]
         return _priority_response("error", f"Invalid priority value: {errors}", download_id, 400)
 
-    # Stub mode: if using legacy progress_data, update stub
-    if download_id in progress_data:
-        progress_data[download_id]["priority"] = pr.priority
-        return _priority_response("success", f"Priority for {download_id} set to {pr.priority}", download_id, 200)
-
     # Process mode: adjust OS process priority
     proc = download_process_registry.get(download_id)
     if not proc:

@@ -244,6 +244,43 @@ export function setupEventListeners(): void {
       });
     });
   }
+
+  // Clear all stored button positions across hosts
+  const clearPositionsButton = document.getElementById("settings-clear-positions");
+  if (clearPositionsButton) {
+    clearPositionsButton.addEventListener("click", async () => {
+      try {
+        // Fetch all storage, remove keys that look like hostnames (contain a dot) with x/y/hidden
+        const all = await chrome.storage.local.get(null as any);
+        const keysToRemove: string[] = [];
+        for (const [key, value] of Object.entries(all)) {
+          // Heuristic: hostname-like keys or keys with position schema
+          const looksLikeHost = key.includes(".");
+          const v: any = value;
+          const looksLikePosition =
+            v && typeof v === "object" && "x" in v && "y" in v && "hidden" in v;
+          if (looksLikeHost && looksLikePosition) {
+            keysToRemove.push(key);
+          }
+        }
+        if (keysToRemove.length === 0) {
+          setStatus("settings-status", "No stored button positions found to clear");
+          return;
+        }
+        await new Promise<void>(resolve =>
+          (chrome.storage.local as any).remove(keysToRemove, () => resolve())
+        );
+        setStatus(
+          "settings-status",
+          `Cleared ${keysToRemove.length} stored button position${
+            keysToRemove.length === 1 ? "" : "s"
+          }`
+        );
+      } catch (e) {
+        setStatus("settings-status", "Failed to clear button positions", true);
+      }
+    });
+  }
 }
 
 /**

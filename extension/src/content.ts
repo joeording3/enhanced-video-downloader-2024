@@ -485,6 +485,16 @@ async function onDragEnd(): Promise<void> {
     y,
     hidden: state.hidden,
   });
+
+  // Also persist under a stable per-host key to survive SPA navigations
+  try {
+    const host = getHostname();
+    await new Promise<void>(resolve => {
+      chrome.storage.local.set({ [host]: { x, y, hidden: state.hidden } }, () => resolve());
+    });
+  } catch {
+    // ignore
+  }
 }
 
 /**

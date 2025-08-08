@@ -82,7 +82,9 @@ def cleanup_lock_file(fh: TextIO) -> None:
         fh.close()
         path.unlink(missing_ok=True)
     except Exception:
-        pass
+        # Best-effort cleanup; nothing critical to do on failure, but avoid silence
+        # Avoid importing logging here to keep module lightweight
+        ...
 
 
 def get_lock_pid(lock_path: Path) -> int | None:
@@ -110,8 +112,8 @@ def get_lock_pid(lock_path: Path) -> int | None:
                 # This part could be removed after full transition
                 return int(content)
         except Exception:
-            # Log an error or handle appropriately if reading/parsing fails
-            pass  # For now, just pass and return None
+            # If parsing fails, return None gracefully
+            return None
     return None
 
 
@@ -137,7 +139,7 @@ def get_lock_pid_port(lock_path: Path) -> tuple[int, int] | None:
                 if pid_str.isdigit() and port_str.isdigit():
                     return int(pid_str), int(port_str)
         except Exception:
-            pass
+            return None
     return None
 
 
@@ -163,5 +165,5 @@ def remove_lock_file(lock_path: Path | None = None) -> None:
         if lock_path.exists():
             lock_path.unlink()
     except (PermissionError, FileNotFoundError):
-        # Log the error or handle appropriately
-        pass
+        # Ignore missing or permission issues on removal
+        return

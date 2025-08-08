@@ -773,11 +773,11 @@ def tail_server_logs() -> None:
                 while True:
                     line = f.readline()
                     if line:
-                        pass
+                        click.echo(line.rstrip("\n"))
                     else:
                         time.sleep(0.5)
             except KeyboardInterrupt:
-                pass
+                helper_log.info("Stopped following server logs (KeyboardInterrupt)")
 
 
 def disable_launchagents() -> None:
@@ -806,7 +806,7 @@ def disable_launchagents() -> None:
             with contextlib.suppress(Exception):
                 subprocess.run(["systemctl", "--user", "disable", "evd.service"], check=True)
     else:
-        pass
+        helper_log.info("Launch agent management is not supported on this OS; skipping")
 
 
 def wait_for_server_start_cli(port: int, host: str = "127.0.0.1", timeout: int = 15) -> bool:
@@ -972,7 +972,7 @@ def _read_locked_processes() -> list[psutil.Process]:
                 if _match_server_process(proc):
                     procs.append(proc)
         except Exception:
-            pass
+            helper_log.debug("Failed reading locked process info from lock file", exc_info=True)
     return procs
 
 
@@ -1375,13 +1375,13 @@ def _maintenance_clear_cache(download_dir: Path | None, log: logging.Logger) -> 
                 part_file.unlink()
                 count_part += 1
             except Exception:  # noqa: PERF203
-                pass
+                log.debug(f"Failed to remove part file: {part_file}", exc_info=True)
         for ytdl_file in download_dir.rglob("*.ytdl"):
             try:
                 ytdl_file.unlink()
                 count_ytdl += 1
             except Exception:  # noqa: PERF203
-                pass
+                log.debug(f"Failed to remove ytdlp temp file: {ytdl_file}", exc_info=True)
     log.info(f"Cleared {count_part} .part files and {count_ytdl} .ytdl files from {download_dir}.")
 
 

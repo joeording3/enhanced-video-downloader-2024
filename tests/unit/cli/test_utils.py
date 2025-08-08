@@ -412,8 +412,8 @@ class TestRunCleanup:
     """Tests for the run_cleanup helper used by the cleanup command."""
 
     def test_run_cleanup_removes_part_and_ytdl_files(self, tmp_path: Path, monkeypatch: Any) -> None:
-        from server.cli.utils import run_cleanup
         import server.cli.utils as utils_mod
+        from server.cli.utils import run_cleanup
 
         # Create temp download directory with files
         download_dir = tmp_path / "downloads"
@@ -439,8 +439,8 @@ class TestRunCleanup:
             assert not pf.exists()
 
     def test_run_cleanup_missing_or_invalid_dir(self, tmp_path: Path, monkeypatch: Any) -> None:
-        from server.cli.utils import run_cleanup
         import server.cli.utils as utils_mod
+        from server.cli.utils import run_cleanup
 
         nonexist = tmp_path / "missing"
 
