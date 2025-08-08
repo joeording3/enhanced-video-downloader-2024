@@ -1,38 +1,10 @@
 # Enhanced Video Downloader - TODO
 
-## CRITICAL TESTING WEAKNESSES - IMMEDIATE ACTION REQUIRED
+Urgent Tasks:
 
-### Executive Summary
-
-Analysis has identified **3 critical weaknesses** in the testing setup that require immediate
-attention:
-
-1. **Critically Low Mutation Testing Scores** (38.24% JS/TS, Python baseline not established)
-2. **Inconsistent Test Organization and Duplication** (121 test files, scattered locations)
-3. **Inadequate Integration and E2E Test Coverage** (45.34% overall coverage)
-
-### Priority 1: Fix Mutation Testing Scores [CRITICAL]
-
-**Current State**:
-
-- JavaScript/TypeScript: **85.46%** mutation score (target: 80%, minimum: 70%) - **TARGET
-  EXCEEDED!**
-- Python: **73%** test coverage for ytdlp module (target: 80%, gap: 7%) - **SIGNIFICANT
-  IMPROVEMENT**
-- **ALL JS/TS MODULES EXCEED TARGETS**: background-logic.ts (87.36%), validation-service.ts
-  (87.57%), background-helpers.ts (72.06%)
-- **PYTHON PROGRESS**: Added 15+ comprehensive test classes for ytdlp module (73% coverage)
-- **PYTHON PROGRESS**: Added 15+ comprehensive test classes for cli.utils module (64% coverage)
-
-#### 1.1 **Establish Python Mutation Testing Baseline** [WEEK 1] - **COMPLETED**
-
-- [x] Run initial `mutmut run` to establish baseline
-- [x] Analyze results and identify low-scoring modules
-- [x] Document baseline scores for all Python modules
-- [x] Set up CI enforcement for 80% mutation score threshold
-- [x] Create targeted improvement plan for Python modules below 80%
-
-**BASELINE ESTABLISHED**: 60.63% mutation score (target: 80%, gap: 19.37%)
+- [/] log viewer on options page not working - no logs displayed <!-- working-on: options logs viewer wired to background API -->
+- [ ] 'choose' button to set download directory not working - no response when clicked
+- [ ] nothing at all in browser console for options page or background service
 
 #### 1.2 **Fix Critical JavaScript/TypeScript Modules** [WEEK 1-2]
 
@@ -45,19 +17,6 @@ attention:
 - [x] Add integration tests for helper function usage (progress callbacks, storage service
       integration)
 - [x] Verify Chrome API interactions are properly mocked and tested
-
-**validation-service.ts (87.57% → EXCEEDED 70% target by 17%)**
-
-- [x] Add tests for validation edge cases and error conditions (boundary conditions, null/undefined
-      handling)
-- [x] Test custom validator functions with various inputs (success, failure with/without error
-      messages)
-- [x] Add tests for field registration and configuration (common fields, min/max mapping for text
-      types)
-- [x] Test validation result aggregation and error handling (multiple field validation, error
-      collection)
-- [x] Verify validation context and options handling (optional chaining, undefined properties)
-- [x] Add comprehensive tests for built-in validators (number, text, select with all edge cases)
 
 **background-helpers.ts (72.06% → target 70%)** **ALREADY ABOVE TARGET**
 
@@ -159,29 +118,6 @@ attention:
 - [ ] Add concurrent download testing
 - [ ] Test extension performance with large datasets
 - [ ] Add resource usage monitoring tests
-
-### Success Metrics and Targets
-
-#### Mutation Testing Targets
-
-- **JavaScript/TypeScript**: 38.24% → 80% (minimum 70%)
-- **Python**: Establish baseline → 80%
-- **Critical Modules**: All modules ≥70% mutation score
-
-#### Coverage Targets
-
-- **Overall Coverage**: 45.34% → 80%
-- **Frontend Coverage**: 64.08% → 80%
-- **Backend Coverage**: 83.0% → 80% (maintain)
-- **E2E Test Ratio**: Increase from 117 to 300+ E2E tests
-
-#### Quality Targets
-
-- **Test Execution Time**: <60 seconds for unit tests
-- **Test Reliability**: 0 flaky tests
-- **Test Maintainability**: Consistent patterns across all tests
-
-### Implementation Timeline
 
 #### Week 1: Foundation
 
@@ -318,10 +254,10 @@ attention:
 
 ### Frontend Development
 
-- [x] Eliminate redundancy and improve coverage in frontend test suite to 80%
-- [x] Fix older test files that need updates to align with the current implementation
-- [x] Create comprehensive test coverage for core modules
-- [x] Implement shared test utilities to reduce redundancy
+- [/] Eliminate redundancy and improve coverage in frontend test suite to 80%
+- [/] Fix older test files that need updates to align with the current implementation
+- [/] Create comprehensive test coverage for core modules
+- [/] Implement shared test utilities to reduce redundancy
 
 ### Backend Development
 
@@ -357,8 +293,8 @@ attention:
 
 ### Testing
 
-- [x] Frontend test suite optimization (COMPLETED)
-- [x] E2E test fixes and updates (COMPLETED)
+- [/] Frontend test suite optimization
+- [/] E2E test fixes and updates
 - [ ] Backend API testing
 - [ ] Integration testing
 - [ ] Performance testing

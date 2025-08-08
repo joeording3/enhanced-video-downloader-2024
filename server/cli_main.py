@@ -25,6 +25,7 @@ from server.cli_commands.system_maintenance import system_maintenance
 # Register scaffolded CLI subcommands
 from server.cli_helpers import (
     disable_agents_cli,
+    find_server_processes,
     find_server_processes_cli,
     find_video_downloader_agents_cli,
     get_lock_pid_port_cli,
@@ -868,36 +869,57 @@ def _cli_execute_foreground(cmd: list[str], _host: str, _port: int) -> None:
 # Helper functions for stop_server logic
 def _cli_stop_pre_checks() -> list[psutil.Process]:
     """Gather processes from scan and lock file, perform initial stale lock handling."""
-    initial_procs = find_server_processes_cli()
+    # Collect processes referenced by the lock file/CLI view
+    initial_procs_info = find_server_processes_cli()
     lock_info = get_lock_pid_port_cli(LOCK_PATH)
-    entities: list[psutil.Process] = []
 
-    # Convert process info to Process objects
-    for proc_info in initial_procs:
+    # Broad scan: find any matching server processes running on this system
+    scanned_processes = find_server_processes()
+
+    # Merge all discovered processes, keyed by PID to avoid duplicates
+    pid_to_process: dict[int, psutil.Process] = {}
+
+    # Add scanned processes first (already psutil.Process objects)
+    for proc in scanned_processes:
+        try:
+            if proc.is_running():
+                pid_to_process[proc.pid] = proc
+        except Exception:
+            continue
+
+    # Add processes from CLI lock-file info
+    for proc_info in initial_procs_info:
         pid = proc_info.get("pid")
-        if pid is not None and isinstance(pid, int):
-            try:
+        if pid is None or not isinstance(pid, int):
+            continue
+        try:
+            proc_obj = psutil.Process(pid)
+            if proc_obj.is_running():
+                pid_to_process.setdefault(pid, proc_obj)
+        except Exception:
+            log.warning(f"Cannot access process PID {pid}.")
+
+    # Add the lock file PID (if present)
+    if lock_info and lock_info[0]:
+        pid, _ = lock_info
+        try:
+            if psutil.pid_exists(pid):
                 proc_obj = psutil.Process(pid)
-                entities.append(proc_obj)
-            except Exception:
-                log.warning(f"Cannot access process PID {pid}.")
-    # Handle stale lock if no processes
-    if not initial_procs and not (lock_info and lock_info[0]):
-        log.info("No running server processes or lock file found. Nothing to stop.")
+                if proc_obj.is_running():
+                    pid_to_process.setdefault(pid, proc_obj)
+        except Exception:
+            log.warning(f"Cannot add process PID {pid} from lock file.")
+
+    entities: list[psutil.Process] = list(pid_to_process.values())
+
+    # Handle stale lock if nothing was found
+    if not entities:
+        log.info("No running server processes found. Nothing to stop.")
         if LOCK_PATH.exists():
             log.info(f"Removing stale lock file: {LOCK_PATH}")
             remove_lock_file_cli()
         return []
-    # Include lock file PID process
-    if lock_info and lock_info[0]:
-        pid, _ = lock_info
-        if psutil.pid_exists(pid):
-            try:
-                proc_obj = psutil.Process(pid)
-                if proc_obj not in entities:
-                    entities.append(proc_obj)
-            except Exception:
-                log.warning(f"Cannot add process PID {pid} from lock file.")
+
     return entities
 
 

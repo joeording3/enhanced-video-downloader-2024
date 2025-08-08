@@ -513,6 +513,19 @@ mutmut results                # View mutation results
 mutmut show <mutant_name>     # View specific mutant details
 ```
 
+#### Junk Folder Prevention (Hypothesis & Benchmarks)
+
+- Property-based tests using Hypothesis are configured to:
+  - Store examples in `.hypothesis/examples`.
+  - Confine any generated path values (e.g., `download_dir`, `log_file`) to
+    `tmp/hypothesis_download_dirs`.
+- Benchmark outputs (from `pytest-benchmark`) may create `.benchmarks/` at the repo root; this is
+  intentionally ignored by the junk-folder check.
+- Makefile helpers:
+  - `make check-junk-folders` – fails if unexpected empty directories are present at the repo root.
+  - `make cleanup-junk-folders` – removes empty, non-critical directories at the repo root.
+  - `make monitor-junk-folders` – background watcher to remove new empty junk directories.
+
 ### Building
 
 ```bash

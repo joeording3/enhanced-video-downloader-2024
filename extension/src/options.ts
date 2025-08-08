@@ -79,6 +79,7 @@ export function initOptionsPage(): void {
   setupInfoMessages();
   setupTabNavigation();
   setupMessageListener();
+  setupLogsUI();
   loadErrorHistory();
   logger.debug("Options page initialized");
 }
@@ -649,6 +650,98 @@ export function setupMessageListener(): void {
       updateOptionsServerStatus(message.status);
     }
   });
+}
+
+/**
+ * Wire up the logs viewer controls and initial load.
+ */
+export function setupLogsUI(): void {
+  const refreshBtn = document.getElementById("log-refresh");
+  const clearBtn = document.getElementById("log-clear");
+  const limitSelect = document.getElementById("log-limit") as HTMLSelectElement | null;
+  const recentFirstCheckbox = document.getElementById("log-recent-first") as HTMLInputElement | null;
+  const filterWerkzeugCheckbox = document.getElementById("log-filter-werkzeug") as HTMLInputElement | null;
+  const displayDiv = document.getElementById("log-display");
+  const textarea = document.getElementById("logViewerTextarea") as HTMLTextAreaElement | null;
+  const autoCheckbox = document.getElementById("log-toggle-auto") as HTMLInputElement | null;
+
+  if (!displayDiv && !textarea) {
+    return;
+  }
+
+  let autoTimer: number | null = null;
+
+  const applyFilters = (text: string): string => {
+    let t = text;
+    if (filterWerkzeugCheckbox?.checked) {
+      t = t
+        .split("\n")
+        .filter(line => !/werkzeug/i.test(line))
+        .join("\n");
+    }
+    return t;
+  };
+
+  const renderLogs = (text: string): void => {
+    const filtered = applyFilters(text);
+    if (textarea) {
+      textarea.value = filtered;
+    }
+    if (displayDiv) {
+      displayDiv.textContent = "";
+      const pre = document.createElement("pre");
+      pre.textContent = filtered || "(no logs)";
+      displayDiv.appendChild(pre);
+    }
+  };
+
+  const fetchAndRender = (): void => {
+    const lines = limitSelect ? parseInt(limitSelect.value, 10) : 500;
+    const recent = recentFirstCheckbox ? !!recentFirstCheckbox.checked : true;
+    chrome.runtime.sendMessage({ type: "getLogs", lines, recent }, (response: any) => {
+      if (chrome.runtime.lastError) {
+        renderLogs("Error: " + chrome.runtime.lastError.message);
+        return;
+      }
+      if (response && response.status === "success") {
+        renderLogs(response.data || "");
+      } else {
+        renderLogs("Error: " + (response?.message || "Failed to fetch logs"));
+      }
+    });
+  };
+
+  refreshBtn?.addEventListener("click", fetchAndRender);
+  limitSelect?.addEventListener("change", fetchAndRender);
+  recentFirstCheckbox?.addEventListener("change", fetchAndRender);
+  filterWerkzeugCheckbox?.addEventListener("change", fetchAndRender);
+
+  clearBtn?.addEventListener("click", () => {
+    chrome.runtime.sendMessage({ type: "clearLogs" }, (response: any) => {
+      if (chrome.runtime.lastError) {
+        renderLogs("Error: " + chrome.runtime.lastError.message);
+        return;
+      }
+      if (response && response.status === "success") {
+        fetchAndRender();
+      } else {
+        renderLogs("Error: " + (response?.message || "Failed to clear logs"));
+      }
+    });
+  });
+
+  autoCheckbox?.addEventListener("change", () => {
+    if (autoTimer) {
+      window.clearInterval(autoTimer);
+      autoTimer = null;
+    }
+    if (autoCheckbox.checked) {
+      autoTimer = window.setInterval(fetchAndRender, 3000);
+    }
+  });
+
+  // Initial load
+  fetchAndRender();
 }
 
 /**

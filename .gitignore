@@ -92,3 +92,4 @@ tmp/
 tmp_*/
 uv.lock
 venv/
+.hypothesis/*

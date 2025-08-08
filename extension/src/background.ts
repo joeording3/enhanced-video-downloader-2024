@@ -1021,6 +1021,53 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
         }
 
+        case "getLogs": {
+          if (!port) {
+            sendResponse({ status: "error", message: "Server not available" });
+            break;
+          }
+          try {
+            const params = new URLSearchParams();
+            if (typeof message.lines === "number" && message.lines >= 0) {
+              params.set("lines", String(message.lines));
+            }
+            if (typeof message.recent === "boolean") {
+              params.set("recent", message.recent ? "true" : "false");
+            }
+            const res = await fetch(
+              `http://127.0.0.1:${port}/logs${params.toString() ? `?${params.toString()}` : ""}`
+            );
+            if (!res.ok) {
+              sendResponse({ status: "error", message: "Failed to fetch logs: " + res.status });
+              break;
+            }
+            const text = await res.text();
+            sendResponse({ status: "success", data: text });
+          } catch (e) {
+            sendResponse({ status: "error", message: (e as Error).message });
+          }
+          break;
+        }
+
+        case "clearLogs": {
+          if (!port) {
+            sendResponse({ status: "error", message: "Server not available" });
+            break;
+          }
+          try {
+            const res = await fetch(`http://127.0.0.1:${port}/logs/clear`, { method: "POST" });
+            if (!res.ok) {
+              sendResponse({ status: "error", message: "Failed to clear logs: " + res.status });
+              break;
+            }
+            const json = await res.json();
+            sendResponse({ status: "success", data: json });
+          } catch (e) {
+            sendResponse({ status: "error", message: (e as Error).message });
+          }
+          break;
+        }
+
         case "resumeDownload": {
           if (port) {
             try {

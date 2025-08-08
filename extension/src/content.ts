@@ -184,6 +184,37 @@ function ensureDownloadButtonStyle(buttonElement: HTMLElement): void {
       }
     });
   }
+
+  // Phase 3: Keep button within viewport bounds (avoid off-screen positioning)
+  try {
+    const rect = buttonElement.getBoundingClientRect();
+    let clamped = false;
+    const margin = 16;
+    const maxLeft = Math.max(0, window.innerWidth - Math.max(rect.width, 100) - margin);
+    const maxTop = Math.max(0, window.innerHeight - Math.max(rect.height, 40) - margin);
+
+    const currentLeft = Math.max(0, parseInt(buttonElement.style.left || "0", 10) || 0);
+    const currentTop = Math.max(0, parseInt(buttonElement.style.top || "0", 10) || 0);
+
+    if (currentLeft > maxLeft) {
+      buttonElement.style.left = String(maxLeft) + "px";
+      clamped = true;
+    }
+    if (currentTop > maxTop) {
+      buttonElement.style.top = String(maxTop) + "px";
+      clamped = true;
+    }
+    if (currentTop < 0) {
+      buttonElement.style.top = "10px";
+      clamped = true;
+    }
+    if (clamped) {
+      _styleAdjusted = true;
+      log("EVD button position clamped to viewport bounds.");
+    }
+  } catch {
+    // Ignore positioning errors
+  }
 }
 
 /**
@@ -606,7 +637,16 @@ export {
   _resetStateForTesting,
 };
 
-// Initialize content script
-if (!(typeof process !== "undefined" && process.env.JEST_WORKER_ID)) {
+// Initialize content script (robust Jest detection to avoid runtime errors in browser)
+try {
+  const isJestEnv =
+    typeof process !== "undefined" &&
+    typeof (process as any).env !== "undefined" &&
+    typeof (process as any).env.JEST_WORKER_ID !== "undefined";
+  if (!isJestEnv) {
+    init();
+  }
+} catch {
+  // If any detection fails, default to initializing in browser
   init();
 }
