@@ -882,10 +882,11 @@ def _cli_stop_pre_checks() -> list[psutil.Process]:
     # Add scanned processes first (already psutil.Process objects)
     for proc in scanned_processes:
         try:
-            if proc.is_running():
-                pid_to_process[proc.pid] = proc
+            is_running = proc.is_running()
         except Exception:
-            continue
+            is_running = False
+        if is_running:
+            pid_to_process[proc.pid] = proc
 
     # Add processes from CLI lock-file info
     for proc_info in initial_procs_info:

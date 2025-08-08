@@ -158,17 +158,14 @@ function ensureDownloadButtonStyle(buttonElement: HTMLElement): void {
 
   // Utility: parse rgb/rgba string to [r,g,b]
   const parseColor = (color: string): [number, number, number] | null => {
-    const m = color
-      .replace(/\s+/g, "")
-      .match(/^rgba?\((\d+),(\d+),(\d+)(?:,([0-9.]+))?\)$/i);
+    const m = color.replace(/\s+/g, "").match(/^rgba?\((\d+),(\d+),(\d+)(?:,([0-9.]+))?\)$/i);
     if (!m) return null;
     return [parseInt(m[1], 10), parseInt(m[2], 10), parseInt(m[3], 10)];
   };
 
   // Utility: estimate luminance
-  const luminance = (rgb: [number, number, number]): number => {
-    return 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
-  };
+  const luminance = (rgb: [number, number, number]): number =>
+    0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
 
   // Phase 1: Ensure critical visibility (display, opacity) regardless of state
   if (computedStyle.display === "none") {
@@ -184,11 +181,9 @@ function ensureDownloadButtonStyle(buttonElement: HTMLElement): void {
 
   // Phase 2: Enforce guideline styles for the button's DEFAULT state
   const currentInlineBg = buttonElement.style.backgroundColor;
-  const isTemporaryFeedbackState = EVD_BUTTON_TEMPORARY_BACKGROUNDS.some(tmpBg => {
-    const normalizedInline = currentInlineBg.replace(/\s/g, "");
-    const normalizedTmp = tmpBg.replace(/\s/g, "");
-    return normalizedInline === normalizedTmp;
-  });
+  const isTemporaryFeedbackState = EVD_BUTTON_TEMPORARY_BACKGROUNDS.some(
+    tmpBg => currentInlineBg.replace(/\s/g, "") === tmpBg.replace(/\s/g, "")
+  );
 
   if (!isTemporaryFeedbackState) {
     // Apply guideline styles

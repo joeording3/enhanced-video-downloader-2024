@@ -79,7 +79,7 @@ def run_cleanup() -> dict[str, Any]:
         return {"temp_files": 0, "partial_downloads": 0}
 
     temp_files_removed = 0  # *.ytdl
-    partial_removed = 0     # *.part
+    partial_removed = 0  # *.part
 
     # Remove .part files (partial downloads)
     for part_file in base_dir.rglob("*.part"):

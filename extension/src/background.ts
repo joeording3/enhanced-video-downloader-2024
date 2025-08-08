@@ -457,7 +457,9 @@ const checkServerStatus = async (port: number): Promise<boolean> =>
     } catch {
       try {
         // Fallback to localhost
-        response = await fetch(`http://localhost:${port}/api/health`, { signal: controller.signal });
+        response = await fetch(`http://localhost:${port}/api/health`, {
+          signal: controller.signal,
+        });
       } catch {
         response = undefined;
       }
@@ -1053,8 +1055,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           }
           try {
             const params = new URLSearchParams();
-            if (typeof message.lines === "number" && message.lines >= 0) params.set("lines", String(message.lines));
-            if (typeof message.recent === "boolean") params.set("recent", message.recent ? "true" : "false");
+            if (typeof message.lines === "number" && message.lines >= 0)
+              params.set("lines", String(message.lines));
+            if (typeof message.recent === "boolean")
+              params.set("recent", message.recent ? "true" : "false");
 
             const qs = params.toString() ? `?${params.toString()}` : "";
             const candidates = [
@@ -1084,7 +1088,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             }
 
             if (text === null) {
-              sendResponse({ status: "error", message: "Failed to fetch logs: " + (lastStatus ?? "network error") });
+              sendResponse({
+                status: "error",
+                message: "Failed to fetch logs: " + (lastStatus ?? "network error"),
+              });
               break;
             }
             sendResponse({ status: "success", data: text });
@@ -1121,7 +1128,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               }
             }
             if (!ok) {
-              sendResponse({ status: "error", message: "Failed to clear logs: " + (lastStatus ?? "network error") });
+              sendResponse({
+                status: "error",
+                message: "Failed to clear logs: " + (lastStatus ?? "network error"),
+              });
               break;
             }
             sendResponse({ status: "success" });

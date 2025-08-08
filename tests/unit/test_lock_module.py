@@ -43,9 +43,9 @@ def test_get_lock_pid_and_port(tmp_path: Path) -> None:
     lockfile.write_text("notvalid")
     assert lockmod.get_lock_pid(lockfile) is None
     assert lockmod.get_lock_pid_port(lockfile) is None
-    # Valid PID-only (legacy)
+    # PID-only content is no longer supported; ensure it returns None
     lockfile.write_text("1234")
-    assert lockmod.get_lock_pid(lockfile) == 1234  # legacy PID-only format
+    assert lockmod.get_lock_pid(lockfile) is None
     assert lockmod.get_lock_pid_port(lockfile) is None
     # Valid PID:PORT
     lockfile.write_text("4321:8765")

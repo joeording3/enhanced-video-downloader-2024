@@ -685,6 +685,36 @@ class TestDownloadHelperFunctions:
         assert mock_exit.called
 
 
+def test_gallery_dl_resume_invocation(monkeypatch: Any, tmp_path: Path) -> None:
+    """Ensure gallery-dl resume builds expected command and handles success."""
+    from server.cli_helpers import _resume_with_downloader
+
+    captured: dict[str, Any] = {}
+
+    def fake_run(cmd: list[str], check: bool, capture_output: bool, text: bool):  # type: ignore[no-redef]
+        captured["cmd"] = cmd
+
+        class R:
+            returncode = 0
+            stdout = "ok"
+            stderr = ""
+        return R()
+
+    monkeypatch.setattr("server.cli_helpers.subprocess.run", fake_run)
+
+    url = "http://example.com/gallery"
+    opts = {"directory": str(tmp_path), "jobs": 2, "verbose": True, "cookies": ["a.txt", "b.txt"]}
+    ok = _resume_with_downloader("gallery-dl", url, opts, tmp_path / "file.part", logging.getLogger(__name__))
+
+    assert ok is True
+    assert captured["cmd"][0] == "gallery-dl"
+    assert "--directory" in captured["cmd"] and str(tmp_path) in captured["cmd"]
+    assert "--continue" in captured["cmd"]
+    assert "--jobs" in captured["cmd"] and "2" in captured["cmd"]
+    assert captured["cmd"].count("--cookies") == 2
+    assert captured["cmd"][-1] == url
+
+
 # ============================================================================
 # CLI Functions Tests
 # ============================================================================

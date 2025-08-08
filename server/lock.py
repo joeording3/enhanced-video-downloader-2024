@@ -108,9 +108,6 @@ def get_lock_pid(lock_path: Path) -> int | None:
                 pid_str, _ = content.split(":", 1)
                 if pid_str.isdigit():
                     return int(pid_str)
-            elif content.isdigit():  # Handle legacy PID-only format
-                # This part could be removed after full transition
-                return int(content)
         except Exception:
             # If parsing fails, return None gracefully
             return None

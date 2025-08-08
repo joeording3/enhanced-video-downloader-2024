@@ -741,9 +741,49 @@ def _resume_with_downloader(
             with yt_dlp.YoutubeDL(opts) as ydl:  # type: ignore[import-untyped]
                 ydl.download([url])
             return True
-        # Note: gallery-dl API usage may vary
-        # This is a simplified example
-        logger.info(f"Gallery-dl resume not fully implemented for: {url}")
+        if downloader_type == "gallery-dl":
+            # Build gallery-dl command from options
+            cmd: list[str] = ["gallery-dl"]
+            # Map opts to flags: bool -> --key, scalar -> --key value, list -> repeated
+
+            def _append_option(k: str, v: Any) -> None:
+                key = f"--{k}"
+                if isinstance(v, bool):
+                    if v:
+                        cmd.append(key)
+                elif isinstance(v, str | int | float):
+                    cmd.extend([key, str(v)])
+                elif isinstance(v, list | tuple):
+                    for item in v:
+                        cmd.extend([key, str(item)])
+                # ignore None/unknown types silently
+
+            # Ensure continuation is enabled by default
+            if not isinstance(opts.get("continue"), bool) or opts.get("continue") is not True:
+                opts = {**opts, "continue": True}
+
+            # Apply known options first for stable ordering
+            if "directory" in opts and opts["directory"] is not None:
+                _append_option("directory", opts["directory"])  # type: ignore[arg-type]
+            if "continue" in opts:
+                _append_option("continue", opts["continue"])  # type: ignore[arg-type]
+
+            # Append remaining options (excluding ones we already handled)
+            for k, v in opts.items():
+                if k in {"directory", "continue"}:
+                    continue
+                _append_option(str(k), v)
+
+            # Finally, the URL
+            cmd.append(url)
+
+            logger.info(f"Attempting gallery-dl resume for: {url}")
+            proc = subprocess.run(cmd, check=False, capture_output=True, text=True)
+            if proc.returncode == 0:
+                logger.debug(proc.stdout)
+                return True
+            logger.warning(f"gallery-dl resume failed (code {proc.returncode}): {proc.stderr.strip()}")
+            return False
     except Exception:
         logger.exception("Error resuming with {downloader_type}: {url}")
         return False

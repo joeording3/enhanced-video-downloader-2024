@@ -9,9 +9,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- CLI: `videodownloader-server stop` now terminates all running server instances discovered on the system, not just the one referenced by the lock file. This improves reliability when multiple instances are started (e.g., via foreground and daemon runs). Use `--force` to immediately kill if graceful termination times out.
+- CLI: `videodownloader-server stop` now terminates all running server instances discovered on the
+  system, not just the one referenced by the lock file. This improves reliability when multiple
+  instances are started (e.g., via foreground and daemon runs). Use `--force` to immediately kill if
+  graceful termination times out.
 
-- CLI Utils: Implemented `run_cleanup()` to remove `*.part` and `*.ytdl` artifacts using configured download directory. Added tests for normal and missing-dir cases. Minor logging tweaks in API cleanup paths to avoid silent failures.
+- CLI Utils: Implemented `run_cleanup()` to remove `*.part` and `*.ytdl` artifacts using configured
+  download directory. Added tests for normal and missing-dir cases. Minor logging tweaks in API
+  cleanup paths to avoid silent failures.
+
+- Resume: Implemented real `gallery-dl` resume path in CLI helpers. The resume logic now builds a
+  `gallery-dl` command from provided options (bool → `--flag`, scalar → `--flag value`, list →
+  repeated flags), forces `--continue` by default, respects `--directory`, and returns success based
+  on the subprocess exit code. Added a unit test to validate command construction and success
+  handling via subprocess mocking. README updated to describe gallery resume behavior.
 
 ### Testing & Tooling
 

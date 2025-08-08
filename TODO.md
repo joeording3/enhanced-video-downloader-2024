@@ -2,7 +2,8 @@
 
 Urgent Tasks:
 
-- [/] log viewer on options page not working - no logs displayed <!-- working-on: options logs viewer wired to background API -->
+- [/] log viewer on options page not working - no logs displayed
+  <!-- working-on: options logs viewer wired to background API -->
 - [ ] 'choose' button to set download directory not working - no response when clicked
 - [ ] nothing at all in browser console for options page or background service
 - [/] Implement `run_cleanup()` in `server/cli/utils.py` and add tests
@@ -16,13 +17,19 @@ Urgent Tasks:
 
 Legacy/Stub Cleanup:
 
-- [/] Remove legacy priority stub path from `server/api/download_bp.py`; update tests to process-based priority
-- [ ] Remove gallery-dl resume placeholder log in `server/cli_helpers.py` or implement actual resume via gallery-dl API
-- [ ] Drop legacy PID-only lock format handling in `server/lock.py:get_lock_pid` once migration confirmed; update callers
-- [ ] Replace "for now" comments in `server/__main__.py` (state save) with concrete persistence or remove note
-- [ ] Remove legacy port compatibility helpers in `server/constants.py` if unused (`LEGACY_PORTS`, `normalize_legacy_port`, `get_port_config`)
+- [/] Remove legacy priority stub path from `server/api/download_bp.py`; update tests to
+  process-based priority
+- [ ] Remove gallery-dl resume placeholder log in `server/cli_helpers.py` or implement actual resume
+      via gallery-dl API
+- [ ] Drop legacy PID-only lock format handling in `server/lock.py:get_lock_pid` once migration
+      confirmed; update callers
+- [ ] Replace "for now" comments in `server/__main__.py` (state save) with concrete persistence or
+      remove note
+- [ ] Remove legacy port compatibility helpers in `server/constants.py` if unused (`LEGACY_PORTS`,
+      `normalize_legacy_port`, `get_port_config`)
 - [ ] Audit `server/cli_commands/lifecycle.py` legacy shims; remove if not referenced
-- [ ] Review `server/video_downloader_server.py` compatibility shim; remove if WSGI entrypoints cover all use cases
+- [ ] Review `server/video_downloader_server.py` compatibility shim; remove if WSGI entrypoints
+      cover all use cases
 - [ ] Consider unifying `find_available_port` usage (prefer `server/utils.py`) and remove duplicates
 - [ ] identify legacy/backwards compatiblity code and refector/remove it
 
