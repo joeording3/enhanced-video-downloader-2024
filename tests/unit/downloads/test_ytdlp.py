@@ -317,3 +317,381 @@ class TestYtdlpIntegration:
             for field in test_case["expected_fields"]:
                 assert field in metadata
                 assert metadata[field] is not None
+
+
+class TestYtdlpProgressHooks:
+    """Test ytdlp progress hook functions."""
+
+    def test_progress_downloading_basic(self, monkeypatch):
+        """Test _progress_downloading with basic download data."""
+        from server.downloads.ytdlp import _progress_downloading
+
+        # Mock the progress_data and progress_lock
+        mock_progress_data = {}
+        mock_lock = type("MockLock", (), {"__enter__": lambda self: None, "__exit__": lambda self, *args: None})()
+
+        monkeypatch.setattr("server.downloads.ytdlp.progress_data", mock_progress_data)
+        monkeypatch.setattr("server.downloads.ytdlp.progress_lock", mock_lock)
+
+        download_id = "test123"
+        progress_data = {
+            "status": "downloading",
+            "_percent_str": "10.0%",
+            "_downloaded_bytes_str": "1.0MiB",
+            "_total_bytes_estimate_str": "10.0MiB",
+            "_speed_str": "1.0MiB/s",
+            "_eta_str": "9s",
+        }
+
+        _progress_downloading(progress_data, download_id)
+
+        assert download_id in mock_progress_data
+        assert mock_progress_data[download_id]["status"] == "downloading"
+        assert mock_progress_data[download_id]["downloaded"] == "1.0MiB"
+        assert mock_progress_data[download_id]["total"] == "10.0MiB"
+        assert mock_progress_data[download_id]["speed"] == "1.0MiB/s"
+        assert mock_progress_data[download_id]["eta"] == "9s"
+
+    def test_progress_downloading_no_total_bytes(self, monkeypatch):
+        """Test _progress_downloading when total_bytes is None."""
+        from server.downloads.ytdlp import _progress_downloading
+
+        mock_progress_data = {}
+        mock_lock = type("MockLock", (), {"__enter__": lambda self: None, "__exit__": lambda self, *args: None})()
+
+        monkeypatch.setattr("server.downloads.ytdlp.progress_data", mock_progress_data)
+        monkeypatch.setattr("server.downloads.ytdlp.progress_lock", mock_lock)
+
+        download_id = "test123"
+        progress_data = {
+            "status": "downloading",
+            "downloaded_bytes": 1024000,
+            "total_bytes": None,
+            "speed": 1024000,
+            "eta": None,
+            "_percent_str": "N/A%",
+            "_speed_str": "1.0MiB/s",
+            "_eta_str": "N/A",
+        }
+
+        _progress_downloading(progress_data, download_id)
+
+        assert download_id in mock_progress_data
+        assert mock_progress_data[download_id]["status"] == "downloading"
+        assert mock_progress_data[download_id]["total_bytes"] is None
+        assert mock_progress_data[download_id]["eta"] is None
+
+    def test_progress_finished_basic(self, monkeypatch):
+        """Test _progress_finished with basic completion data."""
+        from server.downloads.ytdlp import _progress_finished
+
+        mock_progress_data = {}
+        mock_lock = type("MockLock", (), {"__enter__": lambda self: None, "__exit__": lambda self, *args: None})()
+
+        monkeypatch.setattr("server.downloads.ytdlp.progress_data", mock_progress_data)
+        monkeypatch.setattr("server.downloads.ytdlp.progress_lock", mock_lock)
+
+        download_id = "test123"
+        progress_data = {
+            "status": "finished",
+            "downloaded_bytes": 10485760,
+            "total_bytes": 10485760,
+            "filename": "/tmp/test.mp4",
+        }
+
+        _progress_finished(progress_data, download_id)
+
+        assert download_id in mock_progress_data
+        assert mock_progress_data[download_id]["status"] == "finished"
+        assert mock_progress_data[download_id]["downloaded_bytes"] == 10485760
+        assert mock_progress_data[download_id]["filename"] == "/tmp/test.mp4"
+
+    def test_progress_error_basic(self, monkeypatch):
+        """Test _progress_error with basic error data."""
+        from server.downloads.ytdlp import _progress_error
+
+        mock_progress_data = {}
+        mock_lock = type("MockLock", (), {"__enter__": lambda self: None, "__exit__": lambda self, *args: None})()
+
+        monkeypatch.setattr("server.downloads.ytdlp.progress_data", mock_progress_data)
+        monkeypatch.setattr("server.downloads.ytdlp.progress_lock", mock_lock)
+
+        download_id = "test123"
+        progress_data = {
+            "status": "error",
+            "error": "Network error",
+        }
+
+        _progress_error(progress_data, download_id)
+
+        assert download_id in mock_progress_data
+        assert mock_progress_data[download_id]["status"] == "error"
+        assert mock_progress_data[download_id]["error"] == "Network error"
+
+    def test_progress_hooks_with_none_download_id(self, monkeypatch):
+        """Test progress hooks with None download_id."""
+        from server.downloads.ytdlp import _progress_downloading, _progress_error, _progress_finished
+
+        mock_progress_data = {}
+        mock_lock = type("MockLock", (), {"__enter__": lambda self: None, "__exit__": lambda self, *args: None})()
+
+        monkeypatch.setattr("server.downloads.ytdlp.progress_data", mock_progress_data)
+        monkeypatch.setattr("server.downloads.ytdlp.progress_lock", mock_lock)
+
+        progress_data = {"status": "downloading", "downloaded_bytes": 1024000}
+
+        # Should not raise exceptions with None download_id
+        _progress_downloading(progress_data, None)
+        _progress_finished(progress_data, None)
+        _progress_error(progress_data, None)
+
+        # Should not add anything to progress_data with None download_id
+        assert len(mock_progress_data) == 0
+
+
+class TestYtdlpErrorHandling:
+    """Test ytdlp error handling functions."""
+
+    def test_map_error_message_common_errors(self):
+        """Test map_error_message with common error patterns."""
+        # Test various error patterns that should be mapped
+        result1 = map_error_message("Video unavailable")
+        assert result1 == ("YT_DLP_VIDEO_UNAVAILABLE", 
+                          "This video is unavailable. It may have been removed or set to private.")
+        
+        result2 = map_error_message("private video")
+        assert result2 == ("YT_DLP_PRIVATE_VIDEO", 
+                          "This video is private and cannot be downloaded.")
+        
+        result3 = map_error_message("not available in your country")
+        assert result3 == ("YT_DLP_GEO_RESTRICTED", 
+                          "This video is not available in your country or region.")
+        
+        result4 = map_error_message("Video is protected by DRM")
+        assert result4 == ("YT_DLP_DRM_PROTECTED", 
+                          "This video is protected by DRM and cannot be downloaded.")
+
+    def test_map_error_message_unknown_error(self):
+        """Test map_error_message with unknown error."""
+        unknown_error = "Some random error message"
+        result = map_error_message(unknown_error)
+        assert result[0] == "Download failed"
+        assert result[1] == unknown_error
+
+    def test_map_error_message_empty_string(self):
+        """Test map_error_message with empty string."""
+        result = map_error_message("")
+        assert result[0] == "Download failed"
+        assert result[1] == ""
+
+    def test_map_error_message_none(self):
+        """Test map_error_message with None."""
+        result = map_error_message("None")
+        assert result[0] == "Download failed"
+        assert result[1] == "None"
+
+    def test_handle_yt_dlp_download_error_basic(self, monkeypatch):
+        """Test _handle_yt_dlp_download_error with basic error."""
+        from pathlib import Path
+
+        from server.downloads.ytdlp import _handle_yt_dlp_download_error
+
+        def mock_cleanup(*args):
+            return None
+
+        def mock_append_history(*args):
+            return None
+
+        monkeypatch.setattr("server.downloads.ytdlp._cleanup_partial_files", mock_cleanup)
+        monkeypatch.setattr("server.downloads.ytdlp.append_history_entry", mock_append_history)
+
+        download_id = "test123"
+        url = "https://example.com/video"
+        prefix = "test"
+        download_path = Path("/tmp")
+        sanitized_id = "test123"
+        exception = Exception("Test error")
+
+        result = _handle_yt_dlp_download_error(
+            download_id, url, prefix, download_path, sanitized_id, exception
+        )
+
+        assert result[1] == 500  # Should return 500 status code
+
+    def test_handle_yt_dlp_download_error_with_specific_exception(self, monkeypatch):
+        """Test _handle_yt_dlp_download_error with specific exception types."""
+        from pathlib import Path
+
+        from yt_dlp.utils import DownloadError
+
+        from server.downloads.ytdlp import _handle_yt_dlp_download_error
+
+        def mock_cleanup(*args):
+            return None
+
+        def mock_append_history(*args):
+            return None
+
+        monkeypatch.setattr("server.downloads.ytdlp._cleanup_partial_files", mock_cleanup)
+        monkeypatch.setattr("server.downloads.ytdlp.append_history_entry", mock_append_history)
+
+        download_id = "test123"
+        url = "https://example.com/video"
+        prefix = "test"
+        download_path = Path("/tmp")
+        sanitized_id = "test123"
+        exception = DownloadError("Video unavailable")
+
+        result = _handle_yt_dlp_download_error(
+            download_id, url, prefix, download_path, sanitized_id, exception
+        )
+
+        assert result[1] == 400  # Should return 400 for expected errors
+
+
+class TestYtdlpUtilityFunctions:
+    """Test ytdlp utility functions with edge cases."""
+
+    def test_parse_bytes_edge_cases(self):
+        """Test parse_bytes with edge cases."""
+        # Test various edge cases
+        assert parse_bytes("0B") == 0
+        assert parse_bytes("0KIB") == 0
+        assert parse_bytes("0MIB") == 0
+        assert parse_bytes("0GIB") == 0
+        assert parse_bytes("1.0B") == 1
+        assert parse_bytes("1.5KIB") == 1536
+        assert parse_bytes("2.5MIB") == 2621440
+        assert parse_bytes("1.25GIB") == 1342177280
+
+        # Test invalid cases
+        assert parse_bytes("invalid") is None
+        assert parse_bytes("") is None
+        assert parse_bytes("1.23.45") is None
+        assert parse_bytes("1KIBB") is None  # Invalid suffix
+        assert parse_bytes("1K") is None      # Missing IB suffix
+
+    def test_format_duration_edge_cases(self):
+        """Test _format_duration with edge cases."""
+        # Test zero and negative values
+        assert _format_duration(0) == "0s"
+        assert _format_duration(-1) == "0s"  # Should handle negative gracefully
+
+        # Test very large values
+        assert _format_duration(3661) == "1h1m"  # 1 hour 1 minute 1 second
+        assert _format_duration(3600) == "1h0m"  # Exactly 1 hour
+        assert _format_duration(3599) == "59m59s"  # Just under 1 hour
+
+        # Test fractional seconds
+        assert _format_duration(30.5) == "30s"
+        assert _format_duration(30.9) == "30s"
+        assert _format_duration(30.1) == "30s"
+
+    def test_calculate_eta_edge_cases(self):
+        """Test ETA calculation with edge cases."""
+        # Test with empty speeds list
+        assert _calculate_eta_from_speeds([], 1000000) == "N/A"
+
+        # Test with zero speeds
+        assert _calculate_eta_from_speeds([0, 0, 0], 1000000) == "N/A"
+
+        # Test with very small remaining bytes
+        assert _calculate_eta_from_speeds([1000000], 100) == "0s"
+
+        # Test with None values in speeds
+        assert _calculate_eta_from_speeds([None, 1000000], 1000000) == "1s"
+
+    def test_calculate_improved_eta_edge_cases(self):
+        """Test improved ETA calculation with edge cases."""
+        # Test with empty speeds
+        assert _calculate_improved_eta([], "1MB", "10MB") == "N/A"
+
+        # Test with invalid speed values
+        assert _calculate_improved_eta(["invalid", "1MB/s"], "1MB", "10MB") == "N/A"
+
+        # Test with zero downloaded
+        assert _calculate_improved_eta(["1MB/s"], "0MB", "10MB") == "10s"
+
+        # Test with None values
+        assert _calculate_improved_eta([None, "1MB/s"], "1MB", "10MB") == "9s"
+
+
+class TestYtdlpDownloadInitialization:
+    """Test ytdlp download initialization functions."""
+
+    def test_init_download_basic(self, monkeypatch):
+        """Test _init_download with basic data."""
+
+        from server.downloads.ytdlp import _init_download
+
+        # Mock dependencies
+        mock_assert_playlist = lambda *args: None
+        mock_prepare_metadata = lambda *args: ("title", "uploader", "duration", "description")
+
+        monkeypatch.setattr("server.downloads.ytdlp._assert_playlist_allowed", mock_assert_playlist)
+        monkeypatch.setattr("server.downloads.ytdlp._prepare_download_metadata", mock_prepare_metadata)
+
+        data = {
+            "url": "https://example.com/video",
+            "download_id": "test123",
+            "download_playlist": False,
+            "custom_opts": {},
+        }
+
+        result = _init_download(data)
+
+        assert result[0] is not None  # download_path
+        assert result[1] == "test123"  # download_id
+        assert result[2] == "title"    # title
+        assert result[3] == "uploader" # uploader
+        assert result[4] is False      # download_playlist
+
+    def test_init_download_with_playlist(self, monkeypatch):
+        """Test _init_download with playlist enabled."""
+        from server.downloads.ytdlp import _init_download
+
+        # Mock dependencies
+        mock_assert_playlist = lambda *args: None
+        mock_prepare_metadata = lambda *args: ("title", "uploader", "duration", "description")
+
+        monkeypatch.setattr("server.downloads.ytdlp._assert_playlist_allowed", mock_assert_playlist)
+        monkeypatch.setattr("server.downloads.ytdlp._prepare_download_metadata", mock_prepare_metadata)
+
+        data = {
+            "url": "https://example.com/playlist",
+            "download_id": "test123",
+            "download_playlist": True,
+            "custom_opts": {},
+        }
+
+        result = _init_download(data)
+
+        assert result[4] is True  # download_playlist should be True
+
+    def test_prepare_download_metadata_basic(self, monkeypatch):
+        """Test _prepare_download_metadata with basic data."""
+        from pathlib import Path
+
+        from server.downloads.ytdlp import _prepare_download_metadata
+
+        # Mock dependencies
+        mock_extract_metadata = lambda *args: {
+            "title": "Test Video",
+            "uploader": "Test Channel",
+            "duration": "2m30s",
+            "description": "Test description",
+        }
+
+        monkeypatch.setattr("server.downloads.ytdlp._extract_video_metadata", mock_extract_metadata)
+
+        url = "https://example.com/video"
+        page_title = "Test Video - Test Channel"
+        download_id = "test123"
+        download_path = Path("/tmp")
+
+        result = _prepare_download_metadata(url, page_title, download_id, download_path)
+
+        assert result[0] == "Test Video"      # title
+        assert result[1] == "Test Channel"    # uploader
+        assert result[2] == "2m30s"           # duration
+        assert result[3] == "Test description" # description
