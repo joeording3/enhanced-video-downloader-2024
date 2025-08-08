@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// @ts-nocheck
 
 /**
  * Bundle Size Analysis Script
@@ -23,7 +24,7 @@ function analyzeBundleSize() {
   // Get all JS files
   function getFiles(dir) {
     const items = fs.readdirSync(dir);
-    items.forEach((item) => {
+    items.forEach(item => {
       const fullPath = path.join(dir, item);
       const stat = fs.statSync(fullPath);
       if (stat.isDirectory()) {
@@ -50,7 +51,7 @@ function analyzeBundleSize() {
   console.log("==================");
 
   let totalSize = 0;
-  files.forEach((file) => {
+  files.forEach(file => {
     console.log(`${file.formattedSize.padEnd(10)} ${file.path}`);
     totalSize += file.size;
   });
@@ -61,10 +62,10 @@ function analyzeBundleSize() {
   console.log(`Number of files: ${files.length}`);
 
   // Identify large files (>10KB)
-  const largeFiles = files.filter((f) => f.size > 10 * 1024);
+  const largeFiles = files.filter(f => f.size > 10 * 1024);
   if (largeFiles.length > 0) {
     console.log("\nLarge files (>10KB):");
-    largeFiles.forEach((file) => {
+    largeFiles.forEach(file => {
       console.log(`  ${file.formattedSize.padEnd(10)} ${file.path}`);
     });
   }
@@ -73,11 +74,10 @@ function analyzeBundleSize() {
   console.log("\nOptimization Opportunities:");
   console.log("============================");
 
-  const backgroundSize =
-    files.find((f) => f.path === "background.js")?.size || 0;
-  const contentSize = files.find((f) => f.path === "content.js")?.size || 0;
-  const optionsSize = files.find((f) => f.path === "options.js")?.size || 0;
-  const popupSize = files.find((f) => f.path === "popup.js")?.size || 0;
+  const backgroundSize = files.find(f => f.path === "background.js")?.size || 0;
+  const contentSize = files.find(f => f.path === "content.js")?.size || 0;
+  const optionsSize = files.find(f => f.path === "options.js")?.size || 0;
+  const popupSize = files.find(f => f.path === "popup.js")?.size || 0;
 
   if (backgroundSize > 30 * 1024) {
     console.log("  • Background script is large - consider code splitting");
@@ -99,7 +99,7 @@ function analyzeBundleSize() {
   console.log("\nCode Analysis:");
   console.log("================");
 
-  const coreFiles = files.filter((f) => f.path.startsWith("core/"));
+  const coreFiles = files.filter(f => f.path.startsWith("core/"));
   const coreSize = coreFiles.reduce((sum, f) => sum + f.size, 0);
   console.log(`Core services size: ${formatBytes(coreSize)}`);
 
@@ -113,7 +113,7 @@ function analyzeBundleSize() {
     timestamp: new Date().toISOString(),
     totalSize,
     totalFiles: files.length,
-    largeFiles: largeFiles.map((f) => ({ path: f.path, size: f.size })),
+    largeFiles: largeFiles.map(f => ({ path: f.path, size: f.size })),
     recommendations: [],
   };
 
@@ -134,10 +134,7 @@ function analyzeBundleSize() {
   }
 
   // Save report
-  const reportPath = path.join(
-    __dirname,
-    "../reports/bundle_analysis_report.json"
-  );
+  const reportPath = path.join(__dirname, "../reports/bundle_analysis_report.json");
   fs.mkdirSync(path.dirname(reportPath), { recursive: true });
   fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
 

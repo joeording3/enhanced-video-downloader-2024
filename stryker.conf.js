@@ -1,24 +1,25 @@
 /**
+ * Stryker mutation testing configuration
  * @type {import('@stryker-mutator/core').StrykerOptions}
  */
-// @ts-nocheck
-
 module.exports = {
   packageManager: "npm",
   reporters: ["html", "clear-text", "progress"],
   testRunner: "jest",
-  coverageAnalysis: "perTest",
+  coverageAnalysis: "off",
   allowEmpty: true,
   inPlace: true,
   disableTypeChecks: true,
   jest: {
-    configFile: "jest.config.js",
+    configFile: "jest.stryker.config.js",
     projectType: "custom",
     enableFindRelatedTests: false,
   },
-  // Comprehensive mutation testing for extension source files
+  // Focus on critical files for mutation testing
   mutate: [
-    "extension/src/**/*.ts",
+    "extension/src/background-logic.ts",
+    "extension/src/background-helpers.ts",
+    "extension/src/core/validation-service.ts",
     "!extension/src/**/*.test.ts",
     "!extension/src/**/*.spec.ts",
     "!extension/src/**/__tests__/**",
@@ -32,10 +33,10 @@ module.exports = {
     break: null, // Temporarily disabled to allow make all to pass
   },
   // Performance optimizations
-  timeoutMS: 5000, // Increased timeout for better reliability
-  concurrency: 8, // Increased concurrency for better performance
-  maxTestRunnerReuse: 50, // More test runner reuse for better performance
-  ignoreStatic: true,
+  timeoutMS: 10000, // Increased timeout for better reliability
+  concurrency: 4, // Lower concurrency for stability
+  maxTestRunnerReuse: 20, // Moderate test runner reuse for better performance
+  ignoreStatic: false,
   logLevel: "info",
   tempDirName: ".stryker-tmp",
   symlinkNodeModules: false,

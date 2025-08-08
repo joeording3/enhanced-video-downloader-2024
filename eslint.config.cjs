@@ -1,3 +1,4 @@
+// @ts-nocheck
 // eslint.config.cjs
 const { defineConfig } = require("eslint/config");
 const js = require("@eslint/js");
@@ -57,8 +58,7 @@ module.exports = defineConfig([
       "**/reports/**",
       "**/server.lock",
       "**/stryker.conf.js",
-      "**/tests/extension/test_extension_ui_e2e.js",
-      "**/tests/extension/test_extension_ui_e2e.spec.ts",
+
       "**/tsconfig.json",
       "**/uv.lock",
       "**/venv/**",

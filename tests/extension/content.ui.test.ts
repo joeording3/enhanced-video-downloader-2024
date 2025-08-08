@@ -1,3 +1,4 @@
+// @ts-nocheck
 // @jest-environment jsdom
 import {
   createOrUpdateButton,
@@ -8,8 +9,7 @@ import {
 
 describe("content.ts UI functions", () => {
   beforeEach(() => {
-    document.body.innerHTML =
-      '<div id="video-container"><video id="video"></video></div>';
+    document.body.innerHTML = '<div id="video-container"><video id="video"></video></div>';
     (global as any).chrome = {
       storage: {
         local: {

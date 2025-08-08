@@ -20,9 +20,17 @@ try:
     load_dotenv()
 except ImportError:
     # Type stubs for when dotenv is not available
-    find_dotenv: Any = lambda: None  # type: ignore[assignment]
-    load_dotenv: Any = lambda: None  # type: ignore[assignment]
-    set_key: Any = lambda *args, **kwargs: None  # type: ignore[assignment]
+    def find_dotenv() -> str | None:  # type: ignore[assignment]
+        """Stub function when python-dotenv is not available."""
+        return None
+
+    def load_dotenv() -> bool:  # type: ignore[assignment]
+        """Stub function when python-dotenv is not available."""
+        return False
+
+    def set_key(*_args: Any, **_kwargs: Any) -> tuple[bool | None, str, str]:  # type: ignore[assignment]
+        """Stub function when python-dotenv is not available."""
+        return None, "", ""
 
 
 class Config:

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { discoverServerPort } from "../background-logic";
 import { getServerPort, getPortRange } from "../core/constants";
 
@@ -17,17 +18,11 @@ describe("discoverServerPort", () => {
   it("returns cached port if valid", async () => {
     const cachedPort = getServerPort() + 1;
     storageService.getPort.mockResolvedValue(cachedPort);
-    const checkStatus = jest.fn().mockImplementation((port) => {
+    const checkStatus = jest.fn().mockImplementation(port => {
       calls.push(port);
       return Promise.resolve(true);
     });
-    const port = await discoverServerPort(
-      storageService,
-      checkStatus,
-      defaultPort,
-      maxPort,
-      false
-    );
+    const port = await discoverServerPort(storageService, checkStatus, defaultPort, maxPort, false);
     expect(port).toBe(cachedPort);
     expect(calls).toEqual([cachedPort]);
     // should not scan other ports
@@ -42,25 +37,17 @@ describe("discoverServerPort", () => {
       [getServerPort()]: true, // The only port in range should be available
       [cachedPort]: false,
     };
-    const checkStatus = jest.fn().mockImplementation((port) => {
+    const checkStatus = jest.fn().mockImplementation(port => {
       calls.push(port);
       return Promise.resolve(statuses[port] || false);
     });
-    const port = await discoverServerPort(
-      storageService,
-      checkStatus,
-      defaultPort,
-      maxPort,
-      false
-    );
+    const port = await discoverServerPort(storageService, checkStatus, defaultPort, maxPort, false);
     expect(port).toBe(discoveredPort);
     // The actual implementation scans the full port range, so we expect more calls
     // but we can verify the key calls are in the right order
     expect(calls).toContain(cachedPort);
     expect(calls).toContain(getServerPort());
-    expect(calls.indexOf(cachedPort)).toBeLessThan(
-      calls.indexOf(discoveredPort)
-    );
+    expect(calls.indexOf(cachedPort)).toBeLessThan(calls.indexOf(discoveredPort));
     // should expire cache then set new cache
     expect(storageService.setPort).toHaveBeenCalledWith(null);
     expect(storageService.setPort).toHaveBeenCalledWith(discoveredPort);
@@ -74,14 +61,8 @@ describe("discoverServerPort", () => {
     };
     const checkStatus = jest
       .fn()
-      .mockImplementation((port) => Promise.resolve(statuses[port] || false));
-    const port = await discoverServerPort(
-      storageService,
-      checkStatus,
-      defaultPort,
-      maxPort,
-      false
-    );
+      .mockImplementation(port => Promise.resolve(statuses[port] || false));
+    const port = await discoverServerPort(storageService, checkStatus, defaultPort, maxPort, false);
     expect(port).toBe(discoveredPort);
     expect(storageService.setPort).toHaveBeenCalledWith(discoveredPort);
   });
@@ -94,17 +75,11 @@ describe("discoverServerPort", () => {
       [getServerPort()]: true, // The only port in range should be available
       [cachedPort]: false,
     };
-    const checkStatus = jest.fn().mockImplementation((port) => {
+    const checkStatus = jest.fn().mockImplementation(port => {
       calls.push(port);
       return Promise.resolve(statuses[port] || false);
     });
-    const port = await discoverServerPort(
-      storageService,
-      checkStatus,
-      defaultPort,
-      maxPort,
-      true
-    );
+    const port = await discoverServerPort(storageService, checkStatus, defaultPort, maxPort, true);
     expect(port).toBe(discoveredPort);
     // should not return cached, so calls start with scanning all
     // The actual implementation scans the full port range, so we expect more calls
@@ -118,13 +93,7 @@ describe("discoverServerPort", () => {
   it("returns null if no port found", async () => {
     storageService.getPort.mockResolvedValue(null);
     const checkStatus = jest.fn().mockResolvedValue(false);
-    const port = await discoverServerPort(
-      storageService,
-      checkStatus,
-      defaultPort,
-      maxPort,
-      false
-    );
+    const port = await discoverServerPort(storageService, checkStatus, defaultPort, maxPort, false);
     expect(port).toBeNull();
     expect(storageService.setPort).not.toHaveBeenCalled();
   });

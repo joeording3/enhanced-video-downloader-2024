@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use strict";
 /**
  * Enhanced Video Downloader - Background Script

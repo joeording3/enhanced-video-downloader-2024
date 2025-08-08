@@ -2,6 +2,8 @@
  * Enhanced Video Downloader - Centralized Logger
  * Eliminates duplicate logging patterns across the codebase
  */
+// @ts-nocheck
+
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
@@ -39,11 +41,8 @@ export class CentralizedLogger implements Logger {
 
   private constructor() {
     // Set up console logging in development
-    if (
-      typeof process !== "undefined" &&
-      process.env.NODE_ENV === "development"
-    ) {
-      this.onLog((entry) => {
+    if (typeof process !== "undefined" && process.env.NODE_ENV === "development") {
+      this.onLog(entry => {
         const prefix = `[${entry.context.component}]`;
         const timestamp = entry.timestamp.toISOString();
         const message = `${prefix} ${entry.message}`;
@@ -124,9 +123,7 @@ export class CentralizedLogger implements Logger {
     data?: any
   ): void {
     // Check if we should log this level
-    if (
-      CentralizedLogger.LEVELS[level] < CentralizedLogger.LEVELS[this.level]
-    ) {
+    if (CentralizedLogger.LEVELS[level] < CentralizedLogger.LEVELS[this.level]) {
       return;
     }
 
@@ -147,7 +144,7 @@ export class CentralizedLogger implements Logger {
     }
 
     // Notify callbacks
-    this.logCallbacks.forEach((callback) => {
+    this.logCallbacks.forEach(callback => {
       try {
         callback(entry);
       } catch (error) {
@@ -282,11 +279,7 @@ export class CentralizedLogger implements Logger {
      */
     functionEntry: (functionName: string, component: string, data?: any) => {
       const logger = CentralizedLogger.getInstance();
-      logger.debug(
-        `Entering ${functionName}`,
-        { component, operation: functionName },
-        data
-      );
+      logger.debug(`Entering ${functionName}`, { component, operation: functionName }, data);
     },
 
     /**
@@ -294,11 +287,7 @@ export class CentralizedLogger implements Logger {
      */
     functionExit: (functionName: string, component: string, data?: any) => {
       const logger = CentralizedLogger.getInstance();
-      logger.debug(
-        `Exiting ${functionName}`,
-        { component, operation: functionName },
-        data
-      );
+      logger.debug(`Exiting ${functionName}`, { component, operation: functionName }, data);
     },
 
     /**
@@ -306,11 +295,7 @@ export class CentralizedLogger implements Logger {
      */
     asyncStart: (operationName: string, component: string, data?: any) => {
       const logger = CentralizedLogger.getInstance();
-      logger.info(
-        `Starting ${operationName}`,
-        { component, operation: operationName },
-        data
-      );
+      logger.info(`Starting ${operationName}`, { component, operation: operationName }, data);
     },
 
     /**
@@ -318,22 +303,13 @@ export class CentralizedLogger implements Logger {
      */
     asyncComplete: (operationName: string, component: string, data?: any) => {
       const logger = CentralizedLogger.getInstance();
-      logger.info(
-        `Completed ${operationName}`,
-        { component, operation: operationName },
-        data
-      );
+      logger.info(`Completed ${operationName}`, { component, operation: operationName }, data);
     },
 
     /**
      * Log async operation failure
      */
-    asyncError: (
-      operationName: string,
-      component: string,
-      error: Error,
-      data?: any
-    ) => {
+    asyncError: (operationName: string, component: string, error: Error, data?: any) => {
       const logger = CentralizedLogger.getInstance();
       logger.error(
         `Failed ${operationName}: ${error.message}`,

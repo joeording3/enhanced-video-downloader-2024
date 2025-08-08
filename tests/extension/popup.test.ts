@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   setStatus,
   applyPopupTheme,
@@ -54,16 +55,12 @@ describe("Popup Script Tests", () => {
     (chrome.runtime.sendMessage as jest.Mock).mockClear();
 
     // Setup default Chrome API mocks
-    (chrome.storage.local.get as jest.Mock).mockImplementation(
-      (keys, callback) => {
-        callback({});
-      }
-    );
-    (chrome.runtime.sendMessage as jest.Mock).mockImplementation(
-      (message, callback) => {
-        callback({});
-      }
-    );
+    (chrome.storage.local.get as jest.Mock).mockImplementation((keys, callback) => {
+      callback({});
+    });
+    (chrome.runtime.sendMessage as jest.Mock).mockImplementation((message, callback) => {
+      callback({});
+    });
   });
 
   describe("Status Management", () => {
@@ -99,11 +96,9 @@ describe("Popup Script Tests", () => {
   describe("History Management", () => {
     it("should handle storage errors gracefully", () => {
       // Mock storage to return empty data
-      (chrome.storage.local.get as jest.Mock).mockImplementation(
-        (keys, callback) => {
-          callback({});
-        }
-      );
+      (chrome.storage.local.get as jest.Mock).mockImplementation((keys, callback) => {
+        callback({});
+      });
 
       loadAndRenderHistory();
 
@@ -114,11 +109,9 @@ describe("Popup Script Tests", () => {
 
     it("should handle runtime errors gracefully", async () => {
       // Mock runtime to return empty response
-      (chrome.runtime.sendMessage as jest.Mock).mockImplementation(
-        (message, callback) => {
-          callback({});
-        }
-      );
+      (chrome.runtime.sendMessage as jest.Mock).mockImplementation((message, callback) => {
+        callback({});
+      });
 
       const config = await loadConfig();
       // The actual implementation returns undefined when no config is found

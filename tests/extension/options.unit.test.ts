@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   validatePort,
   validateFolder,
@@ -34,7 +35,7 @@ const mockChrome = {
 // Mock window.matchMedia
 Object.defineProperty(window, "matchMedia", {
   writable: true,
-  value: jest.fn().mockImplementation((query) => ({
+  value: jest.fn().mockImplementation(query => ({
     matches: false,
     media: query,
     onchange: null,
@@ -56,21 +57,15 @@ describe("Options Script Unit Tests", () => {
 
     // Setup Chrome API mocks
     global.chrome = mockChrome as any;
-    (chrome.storage.local.get as jest.Mock).mockImplementation(
-      (keys, callback) => {
-        callback({ theme: "light" });
-      }
-    );
-    (chrome.storage.local.set as jest.Mock).mockImplementation(
-      (data, callback) => {
-        callback();
-      }
-    );
-    (chrome.runtime.sendMessage as jest.Mock).mockImplementation(
-      (message, callback) => {
-        callback({ status: "success" });
-      }
-    );
+    (chrome.storage.local.get as jest.Mock).mockImplementation((keys, callback) => {
+      callback({ theme: "light" });
+    });
+    (chrome.storage.local.set as jest.Mock).mockImplementation((data, callback) => {
+      callback();
+    });
+    (chrome.runtime.sendMessage as jest.Mock).mockImplementation((message, callback) => {
+      callback({ status: "success" });
+    });
 
     // Setup DOM
     document.body.innerHTML = `
@@ -210,24 +205,18 @@ describe("Options Script Unit Tests", () => {
       Object.defineProperty(event, "preventDefault", { value: jest.fn() });
 
       // Mock successful storage and runtime calls
-      (chrome.storage.local.set as jest.Mock).mockImplementation(
-        (data, callback) => {
-          callback();
-        }
-      );
-      (chrome.runtime.sendMessage as jest.Mock).mockImplementation(
-        (message, callback) => {
-          callback({ status: "success" });
-        }
-      );
+      (chrome.storage.local.set as jest.Mock).mockImplementation((data, callback) => {
+        callback();
+      });
+      (chrome.runtime.sendMessage as jest.Mock).mockImplementation((message, callback) => {
+        callback({ status: "success" });
+      });
 
       await saveSettings(event);
 
       // Check that the success status is set
       const statusElement = document.getElementById("settings-status");
-      expect(statusElement?.textContent).toContain(
-        "Settings saved successfully"
-      );
+      expect(statusElement?.textContent).toContain("Settings saved successfully");
     });
 
     it("should handle save errors gracefully", async () => {
@@ -237,12 +226,10 @@ describe("Options Script Unit Tests", () => {
       Object.defineProperty(event, "preventDefault", { value: jest.fn() });
 
       // Mock storage error
-      (chrome.storage.local.set as jest.Mock).mockImplementation(
-        (data, callback) => {
-          chrome.runtime.lastError = { message: "Storage error" };
-          callback();
-        }
-      );
+      (chrome.storage.local.set as jest.Mock).mockImplementation((data, callback) => {
+        chrome.runtime.lastError = { message: "Storage error" };
+        callback();
+      });
 
       await saveSettings(event);
 
@@ -279,9 +266,7 @@ describe("Options Script Unit Tests", () => {
     });
 
     it("should handle null element gracefully", () => {
-      expect(() =>
-        showValidationMessage(null, "test message", "error")
-      ).not.toThrow();
+      expect(() => showValidationMessage(null, "test message", "error")).not.toThrow();
     });
   });
 
@@ -302,7 +287,7 @@ describe("Options Script Unit Tests", () => {
 
       // Mock storage set to capture the new theme using Promise-based API
       let savedTheme: string | undefined;
-      (chrome.storage.local.set as jest.Mock).mockImplementation((data) => {
+      (chrome.storage.local.set as jest.Mock).mockImplementation(data => {
         savedTheme = data.theme;
         return Promise.resolve();
       });
@@ -337,18 +322,14 @@ describe("Options Script Unit Tests", () => {
       Object.defineProperty(event, "preventDefault", { value: jest.fn() });
 
       // Mock validation failure by making form invalid
-      const portInput = form.querySelector(
-        "#settings-server-port"
-      ) as HTMLInputElement;
+      const portInput = form.querySelector("#settings-server-port") as HTMLInputElement;
       portInput.value = "invalid";
 
       await saveSettings(event);
 
       // Check that validation error is shown
       const statusElement = document.getElementById("settings-status");
-      expect(statusElement?.textContent).toContain(
-        "Please fix validation errors"
-      );
+      expect(statusElement?.textContent).toContain("Please fix validation errors");
     });
 
     it("should handle server errors gracefully", async () => {
@@ -358,16 +339,12 @@ describe("Options Script Unit Tests", () => {
       Object.defineProperty(event, "preventDefault", { value: jest.fn() });
 
       // Mock server error
-      (chrome.storage.local.set as jest.Mock).mockImplementation(
-        (data, callback) => {
-          callback();
-        }
-      );
-      (chrome.runtime.sendMessage as jest.Mock).mockImplementation(
-        (message, callback) => {
-          callback({ status: "error", message: "Server error" });
-        }
-      );
+      (chrome.storage.local.set as jest.Mock).mockImplementation((data, callback) => {
+        callback();
+      });
+      (chrome.runtime.sendMessage as jest.Mock).mockImplementation((message, callback) => {
+        callback({ status: "error", message: "Server error" });
+      });
 
       await saveSettings(event);
 

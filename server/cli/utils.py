@@ -201,8 +201,6 @@ def _display_table(config_dict: dict[str, Any], verbose: bool) -> None:
 
     # Display each configuration item
     for key, value in config_dict.items():
-        # Type annotation to help pyright
-        value: Any = value
         # Format value for display
         if isinstance(value, dict):
             display_value = f"<{len(value)} items>"  # type: ignore[arg-type]

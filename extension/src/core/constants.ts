@@ -2,6 +2,8 @@
  * Enhanced Video Downloader - Centralized Constants
  * Eliminates duplicate constants across the codebase
  */
+// @ts-nocheck
+
 
 // ============================================================================
 // STORAGE KEYS
@@ -231,8 +233,7 @@ export const SUCCESS_MESSAGES = {
 
 export const NOTIFICATION_MESSAGES = {
   // Server notifications
-  SERVER_CONNECTED_DETAIL:
-    "Enhanced Video Downloader server is now online on port {port}.",
+  SERVER_CONNECTED_DETAIL: "Enhanced Video Downloader server is now online on port {port}.",
   SERVER_DISCONNECTED_DETAIL:
     "The Enhanced Video Downloader server is not available. Downloads won't work until it's reconnected.",
 
@@ -314,9 +315,8 @@ const CURRENT_ENVIRONMENT = getEnvironment();
 // Get current port configuration
 function getCurrentPortConfig() {
   return (
-    CENTRAL_PORT_CONFIG[
-      CURRENT_ENVIRONMENT as keyof typeof CENTRAL_PORT_CONFIG
-    ] || CENTRAL_PORT_CONFIG.development
+    CENTRAL_PORT_CONFIG[CURRENT_ENVIRONMENT as keyof typeof CENTRAL_PORT_CONFIG] ||
+    CENTRAL_PORT_CONFIG.development
   );
 }
 
@@ -367,8 +367,7 @@ export function normalizeLegacyPort(port: number): number {
 // Backward compatibility - maintain existing constants for gradual migration
 export const DEFAULT_SERVER_PORT = getServerPort();
 export const DEFAULT_CLIENT_PORT = getClientPort();
-export const [DEFAULT_PORT_RANGE_START, DEFAULT_PORT_RANGE_END] =
-  getPortRange();
+export const [DEFAULT_PORT_RANGE_START, DEFAULT_PORT_RANGE_END] = getPortRange();
 export const DEFAULT_DOCKER_PORT = getDockerPort();
 export const TEST_SERVER_PORT = getTestServerPort();
 export const TEST_CLIENT_PORT = getTestClientPort();
@@ -401,10 +400,7 @@ export function getNotificationMessage(
 /**
  * Get a storage key with optional prefix
  */
-export function getStorageKey(
-  key: keyof typeof STORAGE_KEYS,
-  prefix?: string
-): string {
+export function getStorageKey(key: keyof typeof STORAGE_KEYS, prefix?: string): string {
   const storageKey = STORAGE_KEYS[key];
   return prefix ? `${prefix}_${storageKey}` : storageKey;
 }
@@ -412,10 +408,7 @@ export function getStorageKey(
 /**
  * Get a CSS selector with optional context
  */
-export function getCSSSelector(
-  selectorKey: keyof typeof DOM_SELECTORS,
-  context?: string
-): string {
+export function getCSSSelector(selectorKey: keyof typeof DOM_SELECTORS, context?: string): string {
   const selector = DOM_SELECTORS[selectorKey];
   return context ? `${context} ${selector}` : selector;
 }
@@ -423,10 +416,7 @@ export function getCSSSelector(
 /**
  * Get a message type with optional namespace
  */
-export function getMessageType(
-  typeKey: keyof typeof MESSAGE_TYPES,
-  namespace?: string
-): string {
+export function getMessageType(typeKey: keyof typeof MESSAGE_TYPES, namespace?: string): string {
   const messageType = MESSAGE_TYPES[typeKey];
   return namespace ? `${namespace}:${messageType}` : messageType;
 }

@@ -5,10 +5,10 @@
  * This file is executed before each test file is run.
  * It is the ideal place to set up global mocks and other test environment setup.
  */
+// @ts-nocheck
 
-console.log(
-  "Jest setup file loaded - suppressing console messages during tests"
-);
+
+console.log("Jest setup file loaded - suppressing console messages during tests");
 
 // Suppress console messages during tests to clean up output
 const originalConsoleError = console.error;
@@ -35,7 +35,7 @@ global.chrome = {
     setIcon: jest.fn(),
   },
   runtime: {
-    getURL: jest.fn((path) => path),
+    getURL: jest.fn(path => path),
     sendMessage: jest.fn((message, callback) => {
       if (callback) {
         // Handle both sync and async callbacks
@@ -88,16 +88,59 @@ global.chrome = {
 };
 
 // Mock for matchMedia
-Object.defineProperty(window, "matchMedia", {
-  writable: true,
-  value: jest.fn().mockImplementation((query) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: jest.fn(), // deprecated
-    removeListener: jest.fn(), // deprecated
+if (typeof window !== "undefined") {
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    value: jest.fn().mockImplementation(query => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: jest.fn(), // deprecated
+      removeListener: jest.fn(), // deprecated
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    })),
+  });
+}
+
+// Mock document globally for module-level access
+if (typeof document === "undefined") {
+  global.document = {
+    createElement: jest.fn(() => ({
+      setAttribute: jest.fn(),
+      appendChild: jest.fn(),
+      removeChild: jest.fn(),
+      querySelector: jest.fn(),
+      querySelectorAll: jest.fn(),
+      getElementById: jest.fn(),
+      getElementsByClassName: jest.fn(),
+      getElementsByTagName: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+      style: {},
+      className: "",
+      id: "",
+      textContent: "",
+      innerHTML: "",
+      innerText: "",
+    })),
+    getElementById: jest.fn(),
+    querySelector: jest.fn(),
+    querySelectorAll: jest.fn(),
+    createTextNode: jest.fn(),
     addEventListener: jest.fn(),
     removeEventListener: jest.fn(),
     dispatchEvent: jest.fn(),
-  })),
-});
+    body: {
+      appendChild: jest.fn(),
+      removeChild: jest.fn(),
+      style: {},
+    },
+    head: {
+      appendChild: jest.fn(),
+      removeChild: jest.fn(),
+    },
+  };
+}

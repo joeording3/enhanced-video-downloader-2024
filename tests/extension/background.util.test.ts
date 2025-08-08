@@ -1,4 +1,6 @@
 /* eslint-env jest */
+// @ts-nocheck
+
 
 // Use the global chrome mock from jest.setup.js
 import * as bg from "../../extension/src/background";

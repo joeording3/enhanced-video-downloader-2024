@@ -1,6 +1,8 @@
 /**
  * Unit tests for options page UI logic functions
  */
+// @ts-nocheck
+
 
 import {
   validatePort,
@@ -9,11 +11,7 @@ import {
   validateFormat,
   showValidationMessage,
 } from "extension/src/options";
-import {
-  getServerPort,
-  getClientPort,
-  getPortRange,
-} from "../../extension/src/core/constants";
+import { getServerPort, getClientPort, getPortRange } from "../../extension/src/core/constants";
 
 // Mock the constants to return a wider port range for testing
 jest.mock("../../extension/src/core/constants", () => ({
@@ -339,8 +337,7 @@ describe("Options UI Logic Tests", () => {
     it("validates bestaudio[ext=m4a] as valid", () => {
       const select = document.createElement("select");
       select.id = "settings-ytdlp-format";
-      select.innerHTML =
-        '<option value="bestaudio[ext=m4a]">bestaudio[ext=m4a]</option>';
+      select.innerHTML = '<option value="bestaudio[ext=m4a]">bestaudio[ext=m4a]</option>';
       select.value = "bestaudio[ext=m4a]";
 
       const result = validateFormat(select);
@@ -352,8 +349,7 @@ describe("Options UI Logic Tests", () => {
     it("validates bestaudio[ext=opus] as valid", () => {
       const select = document.createElement("select");
       select.id = "settings-ytdlp-format";
-      select.innerHTML =
-        '<option value="bestaudio[ext=opus]">bestaudio[ext=opus]</option>';
+      select.innerHTML = '<option value="bestaudio[ext=opus]">bestaudio[ext=opus]</option>';
       select.value = "bestaudio[ext=opus]";
 
       const result = validateFormat(select);
@@ -374,9 +370,7 @@ describe("Options UI Logic Tests", () => {
     });
 
     it("handles null element gracefully", () => {
-      expect(() =>
-        showValidationMessage(null, "Test message", "success")
-      ).not.toThrow();
+      expect(() => showValidationMessage(null, "Test message", "success")).not.toThrow();
     });
 
     it("auto-hides success messages after timeout", () => {

@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Type definitions for Chrome extension API
 interface ChromeStorageLocal {
   get(

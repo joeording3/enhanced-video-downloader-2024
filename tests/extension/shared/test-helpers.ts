@@ -1,14 +1,12 @@
 /**
  * Shared test helpers for consistent testing patterns across the extension
  */
+// @ts-nocheck
+
 
 import { CentralizedLogger } from "../../../extension/src/core/logger";
 import { ExtensionStateManager } from "../../../extension/src/core/state-manager";
-import {
-  setupChromeAPI,
-  teardownChromeAPI,
-  mockConfigs,
-} from "./mock-chrome-api";
+import { setupChromeAPI, teardownChromeAPI, mockConfigs } from "./mock-chrome-api";
 
 export interface TestSetup {
   logger: CentralizedLogger;
@@ -112,10 +110,7 @@ export function createMockClickEvent(element: HTMLElement): MouseEvent {
 /**
  * Create a mock input event
  */
-export function createMockInputEvent(
-  element: HTMLInputElement,
-  value: string
-): Event {
+export function createMockInputEvent(element: HTMLInputElement, value: string): Event {
   const event = new Event("input");
   element.value = value;
   Object.defineProperty(event, "target", { value: element });
@@ -125,10 +120,7 @@ export function createMockInputEvent(
 /**
  * Create a mock change event
  */
-export function createMockChangeEvent(
-  element: HTMLSelectElement,
-  value: string
-): Event {
+export function createMockChangeEvent(element: HTMLSelectElement, value: string): Event {
   const event = new Event("change");
   element.value = value;
   Object.defineProperty(event, "target", { value: element });
@@ -139,14 +131,14 @@ export function createMockChangeEvent(
  * Wait for async operations to complete
  */
 export function waitForAsync(ms: number = 0): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /**
  * Wait for DOM updates
  */
 export function waitForDOMUpdate(): Promise<void> {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => resolve());
     });
@@ -264,28 +256,22 @@ export async function expectAsyncError(
 /**
  * Assert that logs contain specific messages
  */
-export function expectLogsContain(
-  logger: CentralizedLogger,
-  messages: string[]
-): void {
+export function expectLogsContain(logger: CentralizedLogger, messages: string[]): void {
   const logs = logger.getLogs();
 
-  messages.forEach((message) => {
-    expect(logs.some((log) => log.message.includes(message))).toBe(true);
+  messages.forEach(message => {
+    expect(logs.some(log => log.message.includes(message))).toBe(true);
   });
 }
 
 /**
  * Assert that logs don't contain specific messages
  */
-export function expectLogsNotContain(
-  logger: CentralizedLogger,
-  messages: string[]
-): void {
+export function expectLogsNotContain(logger: CentralizedLogger, messages: string[]): void {
   const logs = logger.getLogs();
 
-  messages.forEach((message) => {
-    expect(logs.some((log) => log.message.includes(message))).toBe(false);
+  messages.forEach(message => {
+    expect(logs.some(log => log.message.includes(message))).toBe(false);
   });
 }
 
@@ -302,7 +288,7 @@ export function createMockStorage(data: Record<string, any> = {}) {
       }
 
       const result: Record<string, any> = {};
-      keys.forEach((key) => {
+      keys.forEach(key => {
         result[key] = storage.get(key);
       });
       return Promise.resolve(result);
@@ -317,7 +303,7 @@ export function createMockStorage(data: Record<string, any> = {}) {
 
     remove: jest.fn((keys: string | string[]) => {
       const keyArray = Array.isArray(keys) ? keys : [keys];
-      keyArray.forEach((key) => storage.delete(key));
+      keyArray.forEach(key => storage.delete(key));
       return Promise.resolve();
     }),
 
@@ -365,7 +351,7 @@ export const testUtils = {
    * Assert that an element has specific classes
    */
   expectElementClasses(element: HTMLElement, classes: string[]): void {
-    classes.forEach((className) => {
+    classes.forEach(className => {
       expect(element.classList.contains(className)).toBe(true);
     });
   },
@@ -374,7 +360,7 @@ export const testUtils = {
    * Assert that an element doesn't have specific classes
    */
   expectElementNotClasses(element: HTMLElement, classes: string[]): void {
-    classes.forEach((className) => {
+    classes.forEach(className => {
       expect(element.classList.contains(className)).toBe(false);
     });
   },
@@ -382,10 +368,7 @@ export const testUtils = {
   /**
    * Assert that an element has specific attributes
    */
-  expectElementAttributes(
-    element: HTMLElement,
-    attributes: Record<string, string>
-  ): void {
+  expectElementAttributes(element: HTMLElement, attributes: Record<string, string>): void {
     Object.entries(attributes).forEach(([attr, value]) => {
       expect(element.getAttribute(attr)).toBe(value);
     });

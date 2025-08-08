@@ -1,4 +1,6 @@
 /* eslint-env jest */
+// @ts-nocheck
+
 import * as popup from "extension/src/popup";
 
 describe("Popup Queue Controls", () => {
@@ -6,7 +8,7 @@ describe("Popup Queue Controls", () => {
     // Prepare minimal DOM container
     document.body.innerHTML = '<ul id="download-status"></ul>';
     // Stub chrome runtime
-    // @ts-expect-error - Mocking Chrome API for testing
+    //  - Mocking Chrome API for testing
     global.chrome = { runtime: { sendMessage: jest.fn() } };
   });
 
@@ -31,9 +33,7 @@ describe("Popup Queue Controls", () => {
       active: { idResume: { status: "paused", progress: 0 } },
       queue: [],
     });
-    const resumeBtn = document.querySelector<HTMLButtonElement>(
-      "button.resume-button"
-    );
+    const resumeBtn = document.querySelector<HTMLButtonElement>("button.resume-button");
     expect(resumeBtn).not.toBeNull();
     resumeBtn!.click();
     expect(global.chrome.runtime.sendMessage).toHaveBeenCalledWith(

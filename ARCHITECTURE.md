@@ -439,7 +439,7 @@ The project maintains comprehensive documentation across multiple files:
 - **Pre-commit**: Husky and lint-staged enforce code quality on commit.
 - **Coverage Targets**: 80% coverage for both Python and frontend code.
 
-## External Dependencies
+## CI Chrome Dependencies
 
 - **Chrome**: CI installs Google Chrome versions via apt (`google-chrome-stable`,
   `google-chrome-beta`, `google-chrome-unstable`) to support matrix testing.
@@ -466,7 +466,7 @@ The project maintains comprehensive documentation across multiple files:
 
 ---
 
-## Documentation
+## Documentation Files
 
 ### Core Documentation
 
@@ -511,8 +511,8 @@ The project maintains comprehensive documentation across multiple files:
 
 - **[ci/.github/copilot-instructions.md](ci/.github/copilot-instructions.md)** - GitHub Copilot
   instructions and coding standards
-- **[ci/.github/instructions/rules.instructions.md](ci/.github/instructions/rules.instructions.md)** -
-  AI agent collaboration rules and workflow guidelines
+- **[rules.instructions.md](ci/.github/instructions/rules.instructions.md)** - AI agent
+  collaboration rules and workflow guidelines
 
 ## Last Updated
 

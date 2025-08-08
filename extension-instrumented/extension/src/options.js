@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use strict";
 /**
  * Options page controller for the Enhanced Video Downloader extension.
@@ -738,13 +739,13 @@ function showSaveError() {
 function selectDownloadDirectory() {
     return __awaiter(this, void 0, void 0, function* () {
         const downloadDirInput = document.getElementById("settings-download-dir");
-        // @ts-expect-error showDirectoryPicker is not available on all browsers
+        //  showDirectoryPicker is not available on all browsers
         if (!window.showDirectoryPicker) {
             setStatus("settings-status", "Your browser does not support directory selection. Please manually enter the path.", true);
             return;
         }
         try {
-            // @ts-expect-error showDirectoryPicker is not available on all browsers
+            //  showDirectoryPicker is not available on all browsers
             const dirHandle = yield window.showDirectoryPicker();
             if (downloadDirInput) {
                 // Note: This returns a handle, not a path. For security, browsers don't

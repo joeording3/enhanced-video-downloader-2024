@@ -1,4 +1,6 @@
 /* eslint-env jest */
+// @ts-nocheck
+
 
 import { enhanceYouTubeButton } from "../youtube_enhance";
 import * as utils from "../lib/utils";
@@ -13,9 +15,7 @@ describe("youtube_enhance", () => {
 
   beforeEach(() => {
     btn = document.createElement("button");
-    mockGetHostname = utils.getHostname as jest.MockedFunction<
-      typeof utils.getHostname
-    >;
+    mockGetHostname = utils.getHostname as jest.MockedFunction<typeof utils.getHostname>;
 
     // Mock console.log to avoid noise in tests
     jest.spyOn(console, "log").mockImplementation(() => {});

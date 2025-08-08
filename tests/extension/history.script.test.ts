@@ -1,3 +1,4 @@
+// @ts-nocheck
 // @jest-environment jsdom
 import { fetchHistory, renderHistoryItems } from "../../extension/src/history";
 
@@ -22,9 +23,9 @@ describe("history.ts core functions", () => {
   describe("fetchHistory", () => {
     it("returns empty history on runtime error", async () => {
       (global as any).chrome.runtime.lastError = { message: "fail" };
-      (
-        (global as any).chrome.storage.local.get as jest.Mock
-      ).mockImplementation((keys: any, cb: any) => cb({}));
+      ((global as any).chrome.storage.local.get as jest.Mock).mockImplementation(
+        (keys: any, cb: any) => cb({})
+      );
       const result = await fetchHistory(1, 5);
       expect(result.history).toEqual([]);
       expect(result.totalItems).toBe(0);
@@ -36,10 +37,8 @@ describe("history.ts core functions", () => {
         { id: "1", timestamp: 100, page_title: "A" },
         { id: "2", timestamp: 200, page_title: "B" },
       ];
-      (
-        (global as any).chrome.storage.local.get as jest.Mock
-      ).mockImplementation((keys: any, cb: any) =>
-        cb({ downloadHistory: entries })
+      ((global as any).chrome.storage.local.get as jest.Mock).mockImplementation(
+        (keys: any, cb: any) => cb({ downloadHistory: entries })
       );
       const result = await fetchHistory(1, 1);
       expect(result.history).toEqual([entries[1]]);

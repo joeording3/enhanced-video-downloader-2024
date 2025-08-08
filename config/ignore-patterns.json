@@ -34,14 +34,7 @@
       ".vscode/",
       ".idea/"
     ],
-    "compiled_files": [
-      "*.py[cod]",
-      "*$py.class",
-      "*.min.css",
-      "*.css.map",
-      "*.js.map",
-      "*.d.ts"
-    ],
+    "compiled_files": ["*.py[cod]", "*$py.class", "*.min.css", "*.css.map", "*.js.map", "*.d.ts"],
     "logs_and_temp": [
       "*.log",
       "*.tmp",
@@ -70,12 +63,7 @@
       "test-results/",
       "playwright-report/"
     ],
-    "extension_specific": [
-      "extension-instrumented/",
-      "extension/dist/",
-      "tests/extension/test_extension_ui_e2e.spec.ts",
-      "tests/extension/test_extension_ui_e2e.js"
-    ],
+    "extension_specific": ["extension-instrumented/", "extension/dist/"],
     "config_files": [
       "babel.config.js",
       "stryker.conf.js",
@@ -89,18 +77,8 @@
       "mutmut.ini"
     ],
     "environment_files": [".env", ".envrc", "*.env", "*.envrc"],
-    "coverage_files": [
-      ".coverage",
-      ".coverage.*",
-      "coverage_html/",
-      "htmlcov/"
-    ],
-    "lock_files": [
-      "package-lock.json",
-      "uv.lock",
-      "yarn.lock",
-      "pnpm-lock.yaml"
-    ],
+    "coverage_files": [".coverage", ".coverage.*", "coverage_html/", "htmlcov/"],
+    "lock_files": ["package-lock.json", "uv.lock", "yarn.lock", "pnpm-lock.yaml"],
     "reports_and_docs": ["reports/", "docs/_build/", "docs/.doctrees/"],
     "ci_and_deployment": ["ci/", ".github/workflows/", ".github/actions/"],
     "hypothesis_cache": [".hypothesis/"]

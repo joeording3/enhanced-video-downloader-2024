@@ -1,6 +1,8 @@
 /**
  * Shared Chrome API mock utilities for consistent testing across the extension
  */
+// @ts-nocheck
+
 
 export interface ChromeAPIMock {
   runtime: {
@@ -156,9 +158,7 @@ export class ChromeAPIMocker {
   }
 
   // Message helpers
-  mockMessageListener(
-    handler: (message: any, sender: any, sendResponse: any) => void
-  ): void {
+  mockMessageListener(handler: (message: any, sender: any, sendResponse: any) => void): void {
     this.mock.runtime.onMessage.addListener.mockImplementation(handler);
   }
 

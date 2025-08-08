@@ -4,7 +4,7 @@ import pytest
 from flask.testing import FlaskClient
 
 from server.downloads import progress_data, progress_lock
-from server.downloads.ytdlp import _map_error_message, _progress_downloading, download_errors_from_hooks
+from server.downloads.ytdlp import _progress_downloading, download_errors_from_hooks, map_error_message
 
 pytestmark = pytest.mark.integration
 
@@ -97,8 +97,7 @@ def test_status_by_id_error_only(client: FlaskClient) -> None:
     assert "error" in data
     assert data["error"] == error_info
     # Troubleshooting suggestion based on error message
-
-    _, expected = _map_error_message(str(error_info["original_message"]))
+    _, expected = map_error_message(str(error_info["original_message"]))
     assert data.get("troubleshooting") == expected
 
 
@@ -222,7 +221,7 @@ def test_status_all_includes_errors(client: FlaskClient) -> None:
     assert "eid2" in data
     assert data["eid2"]["error"] == error_info
 
-    _, expected2 = _map_error_message(str(error_info["original_message"]))
+    _, expected2 = map_error_message(str(error_info["original_message"]))
     assert data["eid2"].get("troubleshooting") == expected2
     # Cleanup
     with progress_lock:

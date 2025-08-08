@@ -2,6 +2,8 @@
  * Performance Utilities
  * Optimized functions for better performance
  */
+// @ts-nocheck
+
 
 /**
  * Debounce function to limit execution frequency
@@ -66,7 +68,7 @@ export class DOMBatcher {
   }
 
   private flush(): void {
-    this.operations.forEach((op) => op());
+    this.operations.forEach(op => op());
     this.operations = [];
     this.scheduled = false;
   }

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// @ts-nocheck
 
 /**
  * Tree Shaking Optimization Script
@@ -16,7 +17,7 @@ function findUnusedExports() {
   const tsFiles = [];
   function getTsFiles(dir) {
     const items = fs.readdirSync(dir);
-    items.forEach((item) => {
+    items.forEach(item => {
       const fullPath = path.join(dir, item);
       const stat = fs.statSync(fullPath);
       if (stat.isDirectory()) {
@@ -36,7 +37,7 @@ function findUnusedExports() {
   const usedExports = new Set();
 
   // Analyze each file for exports
-  tsFiles.forEach((file) => {
+  tsFiles.forEach(file => {
     const filePath = path.join(srcPath, file);
     const content = fs.readFileSync(filePath, "utf8");
 
@@ -47,7 +48,7 @@ function findUnusedExports() {
     const namedExports = content.match(/export\s*{\s*([^}]+)\s*}/g);
 
     if (exportMatches) {
-      exportMatches.forEach((match) => {
+      exportMatches.forEach(match => {
         const exportName = match.match(/(\w+)$/)[1];
         // Check if this export is used in other files
         const isUsed = checkIfExportIsUsed(exportName, file, tsFiles, srcPath);
@@ -64,15 +65,10 @@ function findUnusedExports() {
     }
 
     if (namedExports) {
-      namedExports.forEach((match) => {
+      namedExports.forEach(match => {
         const exports = match.match(/\w+/g).slice(1); // Remove 'export'
-        exports.forEach((exportName) => {
-          const isUsed = checkIfExportIsUsed(
-            exportName,
-            file,
-            tsFiles,
-            srcPath
-          );
+        exports.forEach(exportName => {
+          const isUsed = checkIfExportIsUsed(exportName, file, tsFiles, srcPath);
           if (!isUsed) {
             unusedExports.push({
               file,
@@ -92,26 +88,20 @@ function findUnusedExports() {
 
 function checkIfExportIsUsed(exportName, sourceFile, allFiles, srcPath) {
   // Skip checking the source file itself
-  const otherFiles = allFiles.filter((f) => f !== sourceFile);
+  const otherFiles = allFiles.filter(f => f !== sourceFile);
 
   for (const file of otherFiles) {
     const filePath = path.join(srcPath, file);
     const content = fs.readFileSync(filePath, "utf8");
 
     // Check for import statements
-    const importRegex = new RegExp(
-      `import\\s+.*\\b${exportName}\\b.*from\\s+['"][^'"]*['"]`,
-      "g"
-    );
+    const importRegex = new RegExp(`import\\s+.*\\b${exportName}\\b.*from\\s+['"][^'"]*['"]`, "g");
     if (importRegex.test(content)) {
       return true;
     }
 
     // Check for dynamic imports
-    const dynamicImportRegex = new RegExp(
-      `import\\s*\\(.*\\b${exportName}\\b`,
-      "g"
-    );
+    const dynamicImportRegex = new RegExp(`import\\s*\\(.*\\b${exportName}\\b`, "g");
     if (dynamicImportRegex.test(content)) {
       return true;
     }
@@ -161,23 +151,19 @@ function generateTreeShakingReport() {
 
   if (unusedExports.length > 0) {
     recommendations.push("Remove unused exports to reduce bundle size");
-    recommendations.push(
-      "Consider using barrel exports for better tree shaking"
-    );
+    recommendations.push("Consider using barrel exports for better tree shaking");
   }
 
   // Check for large files with many unused exports
   Object.entries(unusedByFile).forEach(([file, exports]) => {
     if (exports.length > 5) {
-      recommendations.push(
-        `File ${file} has many unused exports - consider refactoring`
-      );
+      recommendations.push(`File ${file} has many unused exports - consider refactoring`);
     }
   });
 
   console.log("\nRecommendations:");
   console.log("==================");
-  recommendations.forEach((rec) => {
+  recommendations.forEach(rec => {
     console.log(`  • ${rec}`);
   });
 
@@ -191,10 +177,7 @@ function generateTreeShakingReport() {
     recommendations,
   };
 
-  const reportPath = path.join(
-    __dirname,
-    "../reports/tree_shaking_report.json"
-  );
+  const reportPath = path.join(__dirname, "../reports/tree_shaking_report.json");
   fs.mkdirSync(path.dirname(reportPath), { recursive: true });
   fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
 
@@ -212,15 +195,15 @@ function createOptimizedExports() {
 
   const coreFiles = fs
     .readdirSync(corePath)
-    .filter((file) => file.endsWith(".ts") && file !== "index.ts")
-    .map((file) => file.replace(".ts", ""));
+    .filter(file => file.endsWith(".ts") && file !== "index.ts")
+    .map(file => file.replace(".ts", ""));
 
   const barrelContent = `/**
  * Core Services Barrel Export
  * Optimized for tree shaking
  */
 
-${coreFiles.map((file) => `export * from './${file}';`).join("\n")}
+${coreFiles.map(file => `export * from './${file}';`).join("\n")}
 `;
 
   fs.writeFileSync(barrelPath, barrelContent);
@@ -244,15 +227,10 @@ ${coreFiles.map((file) => `export * from './${file}';`).join("\n")}
  * Only exports used constants for better tree shaking
  */
 
-${usedConstants
-      .map((constant) => `export { ${constant} } from './core/constants';`)
-      .join("\n")}
+${usedConstants.map(constant => `export { ${constant} } from './core/constants';`).join("\n")}
 `;
 
-  const optimizedConstantsPath = path.join(
-    __dirname,
-    "../extension/src/constants-optimized.ts"
-  );
+  const optimizedConstantsPath = path.join(__dirname, "../extension/src/constants-optimized.ts");
   fs.writeFileSync(optimizedConstantsPath, optimizedConstants);
   console.log("Created optimized constants export");
 }

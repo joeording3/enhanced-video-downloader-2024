@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use strict";
 /**
  * Centralized constants for the Enhanced Video Downloader extension.

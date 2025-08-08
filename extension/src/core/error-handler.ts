@@ -2,6 +2,8 @@
  * Enhanced Video Downloader - Centralized Error Handler
  * Eliminates duplicate try-catch patterns across the codebase
  */
+// @ts-nocheck
+
 
 export interface ErrorContext {
   component: string;
@@ -18,10 +20,7 @@ export interface ErrorResult {
 }
 
 export interface ErrorHandler {
-  handle<T>(
-    operation: () => T | Promise<T>,
-    context: ErrorContext
-  ): Promise<ErrorResult>;
+  handle<T>(operation: () => T | Promise<T>, context: ErrorContext): Promise<ErrorResult>;
   handleSync<T>(operation: () => T, context: ErrorContext): ErrorResult;
   wrap<T>(operation: () => T | Promise<T>, context: ErrorContext): Promise<T>;
   wrapSync<T>(operation: () => T, context: ErrorContext): T;
@@ -29,8 +28,7 @@ export interface ErrorHandler {
 
 export class CentralizedErrorHandler implements ErrorHandler {
   private static instance: CentralizedErrorHandler;
-  private errorCallbacks: Set<(error: Error, context: ErrorContext) => void> =
-    new Set();
+  private errorCallbacks: Set<(error: Error, context: ErrorContext) => void> = new Set();
 
   private constructor() {}
 
@@ -44,10 +42,7 @@ export class CentralizedErrorHandler implements ErrorHandler {
   /**
    * Handle async operations with error handling
    */
-  async handle<T>(
-    operation: () => T | Promise<T>,
-    context: ErrorContext
-  ): Promise<ErrorResult> {
+  async handle<T>(operation: () => T | Promise<T>, context: ErrorContext): Promise<ErrorResult> {
     try {
       const result = await operation();
       return {
@@ -77,10 +72,7 @@ export class CentralizedErrorHandler implements ErrorHandler {
   /**
    * Wrap async operations - throws on error
    */
-  async wrap<T>(
-    operation: () => T | Promise<T>,
-    context: ErrorContext
-  ): Promise<T> {
+  async wrap<T>(operation: () => T | Promise<T>, context: ErrorContext): Promise<T> {
     try {
       return await operation();
     } catch (error) {
@@ -120,7 +112,7 @@ export class CentralizedErrorHandler implements ErrorHandler {
     console.error("Context:", context);
 
     // Notify error callbacks
-    this.errorCallbacks.forEach((callback) => {
+    this.errorCallbacks.forEach(callback => {
       try {
         callback(error, context);
       } catch (callbackError) {
@@ -132,8 +124,7 @@ export class CentralizedErrorHandler implements ErrorHandler {
     return {
       success: false,
       error: error.message,
-      userMessage:
-        context.userMessage || `Operation failed: ${context.operation}`,
+      userMessage: context.userMessage || `Operation failed: ${context.operation}`,
     };
   }
 

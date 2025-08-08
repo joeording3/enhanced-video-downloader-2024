@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// @ts-nocheck
 
 /**
  * Performance Profiling Script
@@ -15,7 +16,7 @@ function analyzePerformanceHotPaths() {
   // Get all TypeScript files
   function getTsFiles(dir) {
     const items = fs.readdirSync(dir);
-    items.forEach((item) => {
+    items.forEach(item => {
       const fullPath = path.join(dir, item);
       const stat = fs.statSync(fullPath);
       if (stat.isDirectory()) {
@@ -35,7 +36,7 @@ function analyzePerformanceHotPaths() {
   const hotPaths = [];
 
   // Analyze each file for performance issues
-  files.forEach((file) => {
+  files.forEach(file => {
     const filePath = path.join(srcPath, file);
     const content = fs.readFileSync(filePath, "utf8");
 
@@ -55,9 +56,7 @@ function analyzeFilePerformance(content, fileName) {
   const issues = [];
 
   // Check for synchronous operations
-  const syncOps = content.match(
-    /fs\.readFileSync|fs\.writeFileSync|JSON\.parse|JSON\.stringify/g
-  );
+  const syncOps = content.match(/fs\.readFileSync|fs\.writeFileSync|JSON\.parse|JSON\.stringify/g);
   if (syncOps) {
     issues.push({
       file: fileName,
@@ -69,9 +68,7 @@ function analyzeFilePerformance(content, fileName) {
   }
 
   // Check for expensive DOM operations
-  const domOps = content.match(
-    /querySelector|getElementById|getElementsByClassName|innerHTML/g
-  );
+  const domOps = content.match(/querySelector|getElementById|getElementsByClassName|innerHTML/g);
   if (domOps && domOps.length > 5) {
     issues.push({
       file: fileName,
@@ -85,10 +82,7 @@ function analyzeFilePerformance(content, fileName) {
   // Check for event listeners without cleanup
   const eventListeners = content.match(/addEventListener/g);
   const removeListeners = content.match(/removeEventListener/g);
-  if (
-    eventListeners &&
-    (!removeListeners || eventListeners.length > removeListeners.length)
-  ) {
+  if (eventListeners && (!removeListeners || eventListeners.length > removeListeners.length)) {
     issues.push({
       file: fileName,
       type: "memory_leak_risk",
@@ -110,9 +104,7 @@ function analyzeFilePerformance(content, fileName) {
   }
 
   // Check for frequent API calls
-  const apiCalls = content.match(
-    /fetch|XMLHttpRequest|chrome\.runtime\.sendMessage/g
-  );
+  const apiCalls = content.match(/fetch|XMLHttpRequest|chrome\.runtime\.sendMessage/g);
   if (apiCalls && apiCalls.length > 3) {
     issues.push({
       file: fileName,
@@ -132,7 +124,7 @@ function identifyHotPaths(content, fileName) {
   const functionCalls = content.match(/\w+\([^)]*\)/g);
   if (functionCalls) {
     const callCounts = {};
-    functionCalls.forEach((call) => {
+    functionCalls.forEach(call => {
       const funcName = call.split("(")[0];
       callCounts[funcName] = (callCounts[funcName] || 0) + 1;
     });
@@ -151,11 +143,9 @@ function identifyHotPaths(content, fileName) {
   }
 
   // Find event handlers (potential hot paths)
-  const eventHandlers = content.match(
-    /addEventListener\s*\(\s*['"][^'"]*['"]\s*,\s*(\w+)/g
-  );
+  const eventHandlers = content.match(/addEventListener\s*\(\s*['"][^'"]*['"]\s*,\s*(\w+)/g);
   if (eventHandlers) {
-    eventHandlers.forEach((handler) => {
+    eventHandlers.forEach(handler => {
       const funcName = handler.match(/(\w+)\s*\)/)?.[1];
       if (funcName) {
         hotPaths.push({
@@ -182,7 +172,7 @@ function generatePerformanceReport() {
   if (performanceIssues.length === 0) {
     console.log("No major performance issues found!");
   } else {
-    performanceIssues.forEach((issue) => {
+    performanceIssues.forEach(issue => {
       console.log(`\nFile: ${issue.file}:`);
       console.log(`  Type: ${issue.type}`);
       console.log(`  Description: ${issue.description}`);
@@ -201,7 +191,7 @@ function generatePerformanceReport() {
   if (hotPaths.length === 0) {
     console.log("No obvious hot paths identified");
   } else {
-    hotPaths.forEach((path) => {
+    hotPaths.forEach(path => {
       console.log(`\nFile: ${path.file}:`);
       console.log(`  Function: ${path.function}`);
       console.log(`  Type: ${path.type}`);
@@ -217,48 +207,34 @@ function generatePerformanceReport() {
   // Generate optimization recommendations
   const recommendations = [];
 
-  const syncOps = performanceIssues.filter(
-    (i) => i.type === "synchronous_operation"
-  );
+  const syncOps = performanceIssues.filter(i => i.type === "synchronous_operation");
   if (syncOps.length > 0) {
-    recommendations.push(
-      "Convert synchronous operations to asynchronous where possible"
-    );
+    recommendations.push("Convert synchronous operations to asynchronous where possible");
   }
 
-  const domOps = performanceIssues.filter(
-    (i) => i.type === "expensive_dom_operations"
-  );
+  const domOps = performanceIssues.filter(i => i.type === "expensive_dom_operations");
   if (domOps.length > 0) {
     recommendations.push("Cache DOM queries and batch DOM operations");
   }
 
-  const memoryLeaks = performanceIssues.filter(
-    (i) => i.type === "memory_leak_risk"
-  );
+  const memoryLeaks = performanceIssues.filter(i => i.type === "memory_leak_risk");
   if (memoryLeaks.length > 0) {
     recommendations.push("Ensure all event listeners are properly cleaned up");
   }
 
-  const apiCalls = performanceIssues.filter(
-    (i) => i.type === "frequent_api_calls"
-  );
+  const apiCalls = performanceIssues.filter(i => i.type === "frequent_api_calls");
   if (apiCalls.length > 0) {
     recommendations.push("Implement caching and debouncing for API calls");
   }
 
-  const frequentFunctions = hotPaths.filter(
-    (p) => p.type === "frequently_called"
-  );
+  const frequentFunctions = hotPaths.filter(p => p.type === "frequently_called");
   if (frequentFunctions.length > 0) {
-    recommendations.push(
-      "Optimize frequently called functions with memoization"
-    );
+    recommendations.push("Optimize frequently called functions with memoization");
   }
 
   console.log("\nOptimization Recommendations:");
   console.log("================================");
-  recommendations.forEach((rec) => {
+  recommendations.forEach(rec => {
     console.log(`  • ${rec}`);
   });
 
@@ -271,8 +247,8 @@ function generatePerformanceReport() {
     summary: {
       totalIssues: performanceIssues.length,
       totalHotPaths: hotPaths.length,
-      issueTypes: [...new Set(performanceIssues.map((i) => i.type))],
-      hotPathTypes: [...new Set(hotPaths.map((p) => p.type))],
+      issueTypes: [...new Set(performanceIssues.map(i => i.type))],
+      hotPathTypes: [...new Set(hotPaths.map(p => p.type))],
     },
   };
 
@@ -289,10 +265,7 @@ function createPerformanceOptimizations() {
   console.log("\nCreating performance optimizations...\n");
 
   // Create a performance utilities file
-  const perfUtilsPath = path.join(
-    __dirname,
-    "../extension/src/lib/performance-utils.ts"
-  );
+  const perfUtilsPath = path.join(__dirname, "../extension/src/lib/performance-utils.ts");
   const perfUtilsContent = `/**
  * Performance Utilities
  * Optimized functions for better performance
@@ -406,10 +379,7 @@ export class Cache<T> {
   console.log("Created performance utilities");
 
   // Create optimized event listener manager
-  const eventManagerPath = path.join(
-    __dirname,
-    "../extension/src/lib/event-manager.ts"
-  );
+  const eventManagerPath = path.join(__dirname, "../extension/src/lib/event-manager.ts");
   const eventManagerContent = `/**
  * Event Manager
  * Manages event listeners with automatic cleanup

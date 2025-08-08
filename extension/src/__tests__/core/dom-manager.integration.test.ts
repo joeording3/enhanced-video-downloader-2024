@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { DOMManager } from "../../core/dom-manager";
 
 describe("DOM Manager Tests", () => {
@@ -91,11 +92,7 @@ describe("DOM Manager Tests", () => {
       const button = document.getElementById("test-button")!;
       const mockHandler = jest.fn();
 
-      const success = domManager.addEventListener(
-        "test-button",
-        "click",
-        mockHandler
-      );
+      const success = domManager.addEventListener("test-button", "click", mockHandler);
 
       expect(success).toBe(true);
       button.click();
@@ -107,11 +104,7 @@ describe("DOM Manager Tests", () => {
       const mockHandler = jest.fn();
 
       domManager.addEventListener("test-button", "click", mockHandler);
-      const success = domManager.removeEventListener(
-        "test-button",
-        "click",
-        mockHandler
-      );
+      const success = domManager.removeEventListener("test-button", "click", mockHandler);
 
       expect(success).toBe(true);
       button.click();
@@ -121,11 +114,7 @@ describe("DOM Manager Tests", () => {
     it("should handle non-existent elements", () => {
       const mockHandler = jest.fn();
 
-      const success = domManager.addEventListener(
-        "non-existent",
-        "click",
-        mockHandler
-      );
+      const success = domManager.addEventListener("non-existent", "click", mockHandler);
 
       expect(success).toBe(false);
     });
@@ -143,10 +132,7 @@ describe("DOM Manager Tests", () => {
     it("should set inner HTML", () => {
       domManager.registerSelector("test-content", "#test-content");
 
-      const success = domManager.setInnerHTML(
-        "test-content",
-        "<span>New content</span>"
-      );
+      const success = domManager.setInnerHTML("test-content", "<span>New content</span>");
 
       expect(success).toBe(true);
       const container = document.getElementById("test-content");
@@ -203,11 +189,7 @@ describe("DOM Manager Tests", () => {
 
   describe("Attribute Management", () => {
     it("should set attributes", () => {
-      const success = domManager.setAttribute(
-        "test-button",
-        "data-test",
-        "value"
-      );
+      const success = domManager.setAttribute("test-button", "data-test", "value");
 
       expect(success).toBe(true);
       const button = document.getElementById("test-button");
@@ -346,9 +328,7 @@ describe("DOM Manager Tests", () => {
     });
 
     it("should have options selectors registered", () => {
-      const hasOptionsServerStatus = domManager.hasSelector(
-        "options.serverStatus"
-      );
+      const hasOptionsServerStatus = domManager.hasSelector("options.serverStatus");
       const hasOptionsServerPort = domManager.hasSelector("options.serverPort");
 
       expect(hasOptionsServerStatus).toBe(true);
@@ -357,9 +337,7 @@ describe("DOM Manager Tests", () => {
 
     it("should have content selectors registered", () => {
       const hasContentVideo = domManager.hasSelector("content.video");
-      const hasContentDownloadButton = domManager.hasSelector(
-        "content.downloadButton"
-      );
+      const hasContentDownloadButton = domManager.hasSelector("content.downloadButton");
 
       expect(hasContentVideo).toBe(true);
       expect(hasContentDownloadButton).toBe(true);

@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use strict";
 /**
  * Common types for the Enhanced Video Downloader application

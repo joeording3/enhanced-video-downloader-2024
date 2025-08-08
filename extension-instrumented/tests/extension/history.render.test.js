@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use strict";
 /* eslint-env jest */
 Object.defineProperty(exports, "__esModule", { value: true });

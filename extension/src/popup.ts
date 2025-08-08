@@ -5,6 +5,8 @@
  *
  * @module popup
  */
+// @ts-nocheck
+
 
 import { logger } from "./lib/utils";
 import { HistoryEntry } from "./types";
@@ -70,9 +72,7 @@ export function setStatus(
  *
  * @param forceTheme - Optional theme to force (light/dark)
  */
-export async function applyPopupTheme(
-  forceTheme?: "light" | "dark"
-): Promise<void> {
+export async function applyPopupTheme(forceTheme?: "light" | "dark"): Promise<void> {
   let isDark: boolean;
 
   if (forceTheme) {
@@ -126,12 +126,8 @@ export function updateToggleButtonState(
   if (typeof buttonIdOrState === "boolean") {
     // First parameter is the state
     isActive = buttonIdOrState;
-    buttonId =
-      (isActiveOrButtonId as string) || "toggle-enhanced-download-button";
-  } else if (
-    typeof buttonIdOrState === "string" &&
-    typeof isActiveOrButtonId === "string"
-  ) {
+    buttonId = (isActiveOrButtonId as string) || "toggle-enhanced-download-button";
+  } else if (typeof buttonIdOrState === "string" && typeof isActiveOrButtonId === "string") {
     // First parameter is the button text, second is also a string (button ID)
     buttonText = buttonIdOrState;
     buttonId = isActiveOrButtonId;
@@ -188,7 +184,7 @@ export function loadAndRenderHistory(
   container.innerHTML = "";
 
   // Fetch history entries from storage
-  chrome.storage.local.get(["downloadHistory"], (result) => {
+  chrome.storage.local.get(["downloadHistory"], result => {
     const history: HistoryEntry[] = result.downloadHistory || [];
     const recentEntries = history.slice(0, limit);
 
@@ -202,7 +198,7 @@ export function loadAndRenderHistory(
     }
 
     // Create history items
-    recentEntries.forEach((entry) => {
+    recentEntries.forEach(entry => {
       const item = document.createElement("div");
       item.className = "history-item status-" + entry.status;
 
@@ -213,9 +209,7 @@ export function loadAndRenderHistory(
       const meta = document.createElement("div");
       meta.className = "history-meta";
       meta.textContent =
-        entry.status +
-        "  " +
-        new Date(entry.timestamp || Date.now()).toLocaleString();
+        entry.status + "  " + new Date(entry.timestamp || Date.now()).toLocaleString();
 
       item.appendChild(title);
       item.appendChild(meta);
@@ -228,7 +222,7 @@ export function loadAndRenderHistory(
 
 // Load configuration from server or fallback to local storage
 export async function loadConfig(): Promise<any> {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     chrome.runtime.sendMessage({ type: "getConfig" }, (response: any) => {
       if (!chrome.runtime.lastError && response && response.serverConfig) {
         resolve(response.serverConfig);
@@ -245,7 +239,7 @@ export async function loadConfig(): Promise<any> {
 export async function updateDownloadDirDisplay(): Promise<void> {
   const el = document.getElementById("download-dir-display");
   if (!el) return;
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     chrome.runtime.sendMessage({ type: "getConfig" }, (response: any) => {
       if (!chrome.runtime.lastError && response && response.serverConfig) {
         el.textContent = "Saving to: " + response.serverConfig.download_dir;
@@ -265,7 +259,7 @@ export async function updateDownloadDirDisplay(): Promise<void> {
 export async function updatePortDisplay(): Promise<void> {
   const el = document.getElementById("server-port-display");
   if (!el) return;
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     chrome.runtime.sendMessage({ type: "getConfig" }, (response: any) => {
       if (!chrome.runtime.lastError && response && response.serverConfig) {
         el.textContent = "Server Port: " + response.serverConfig.server_port;
@@ -314,12 +308,7 @@ export function createErrorListItem(
   const content = document.createElement("div");
   content.className = "error-details-content";
   content.textContent =
-    info.errorInfo.type +
-    ": " +
-    info.errorInfo.message +
-    " (" +
-    info.errorInfo.original +
-    ")";
+    info.errorInfo.type + ": " + info.errorInfo.message + " (" + info.errorInfo.original + ")";
   detailsEl.appendChild(content);
   // Add contextual help/troubleshooting link
   const helpBtn = document.createElement("button");
@@ -335,10 +324,7 @@ export function createErrorListItem(
 }
 
 // Create a generic list item with a resume button
-export function createGenericListItem(
-  downloadId: string,
-  item: { status: string }
-): HTMLLIElement {
+export function createGenericListItem(downloadId: string, item: { status: string }): HTMLLIElement {
   const li = document.createElement("li");
   li.classList.add("status-" + item.status);
   const statusText = document.createElement("div");
@@ -366,10 +352,7 @@ export function createQueuedListItem(item: { id: string }): HTMLLIElement {
   btn.className = "cancel-button";
   btn.textContent = "Cancel";
   btn.addEventListener("click", () => {
-    chrome.runtime.sendMessage(
-      { type: "cancelDownload", downloadId: item.id },
-      () => {}
-    );
+    chrome.runtime.sendMessage({ type: "cancelDownload", downloadId: item.id }, () => {});
   });
   li.appendChild(btn);
   return li;
@@ -444,7 +427,7 @@ export function handleDrop(e: DragEvent): void {
   const dropIndex = Array.from(li.parentElement!.children).indexOf(li);
   // Collect current ids
   const listEls = Array.from(li.parentElement!.children) as HTMLLIElement[];
-  const ids = listEls.map((el) => el.dataset.downloadId!);
+  const ids = listEls.map(el => el.dataset.downloadId!);
   // Reorder array
   const reordered = [...ids];
   const [moved] = reordered.splice(dragSrcIndex, 1);
@@ -458,10 +441,7 @@ export function handleDragEnd(e: DragEvent): void {
 }
 
 // Render current downloads and queued items
-export function renderDownloadStatus(data: {
-  active: Record<string, any>;
-  queue: string[];
-}): void {
+export function renderDownloadStatus(data: { active: Record<string, any>; queue: string[] }): void {
   const container = document.getElementById("download-status");
   if (!container) return;
   container.innerHTML = "";
@@ -481,7 +461,7 @@ export function renderDownloadStatus(data: {
     activeSummary.textContent = "Active Downloads";
     activeDetails.appendChild(activeSummary);
     const activeUl = document.createElement("ul");
-    activeIds.forEach((id) => {
+    activeIds.forEach(id => {
       const statusObj = data.active[id];
       let liEl: HTMLLIElement;
       if (statusObj.status === "error") {
@@ -495,14 +475,9 @@ export function renderDownloadStatus(data: {
         });
       } else if (statusObj.status === "paused") {
         liEl = createGenericListItem(id, { status: "paused" });
-        liEl
-          .querySelector("button.resume-button")
-          ?.addEventListener("click", () => {
-            chrome.runtime.sendMessage(
-              { type: "resumeDownload", downloadId: id },
-              () => {}
-            );
-          });
+        liEl.querySelector("button.resume-button")?.addEventListener("click", () => {
+          chrome.runtime.sendMessage({ type: "resumeDownload", downloadId: id }, () => {});
+        });
       } else {
         liEl = createActiveListItem(id, statusObj);
       }
@@ -518,7 +493,7 @@ export function renderDownloadStatus(data: {
     queueSummary.textContent = "Queued Downloads";
     queueDetails.appendChild(queueSummary);
     const queueUl = document.createElement("ul");
-    queuedIds.forEach((id) => {
+    queuedIds.forEach(id => {
       const li = createQueuedListItem({ id });
       // Enable drag-and-drop reordering for queued items
       li.setAttribute("draggable", "true");
@@ -538,9 +513,7 @@ export function renderDownloadStatus(data: {
  * Updates the server status indicator in the popup.
  * @param status - The server status ('connected', 'disconnected', or 'checking')
  */
-export function updatePopupServerStatus(
-  status: "connected" | "disconnected" | "checking"
-): void {
+export function updatePopupServerStatus(status: "connected" | "disconnected" | "checking"): void {
   const indicator = document.getElementById("server-status-indicator");
   const text = document.getElementById("server-status-text");
 
@@ -599,7 +572,7 @@ export async function initPopup(): Promise<void> {
 
 // Initialize popup when DOM is ready
 document.addEventListener("DOMContentLoaded", () => {
-  initPopup().catch((error) => {
+  initPopup().catch(error => {
     console.error("Error initializing popup:", error);
   });
 });

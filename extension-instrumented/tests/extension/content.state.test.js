@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use strict";
 /* eslint-env jest */
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {

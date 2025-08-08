@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const popup_1 = require("../../extension/src/popup");

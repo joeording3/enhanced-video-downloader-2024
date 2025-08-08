@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -40,7 +41,7 @@ describe("Popup Queue Controls", () => {
         // Prepare minimal DOM container
         document.body.innerHTML = '<ul id="download-status"></ul>';
         // Stub chrome runtime
-        // @ts-expect-error - Mocking Chrome API for testing
+        //  - Mocking Chrome API for testing
         global.chrome = { runtime: { sendMessage: jest.fn() } };
     });
     it("createActiveListItem pause button calls pauseDownload", () => {

@@ -5,7 +5,7 @@
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from server.cli_helpers import _cli_build_opts, find_available_port, is_port_in_use
+from server.cli_helpers import cli_build_opts, find_available_port, is_port_in_use
 
 
 class TestCLIBuildOpts:
@@ -16,7 +16,7 @@ class TestCLIBuildOpts:
         url = "https://example.com/video"
         output_template = str(tmp_path / "output.mp4")
 
-        result = _cli_build_opts(url, output_template)
+        result = cli_build_opts(url, output_template)
 
         assert isinstance(result, dict)
         assert result["format"] == "bestvideo+bestaudio/best"
@@ -33,7 +33,7 @@ class TestCLIBuildOpts:
         output_template = str(tmp_path / "output.mp4")
         extra_params = {"format": "best", "cookies": "cookies.txt"}
 
-        result = _cli_build_opts(url, output_template, extra_params)
+        result = cli_build_opts(url, output_template, extra_params)
 
         # The function uses default format, not the one from extra_params
         assert result["format"] == "bestvideo+bestaudio/best"
@@ -46,7 +46,7 @@ class TestCLIBuildOpts:
         output_template = str(tmp_path / "some" / "path" / "file.mp4")
         extra_params = {"filename_override": "override.mp4"}
 
-        result = _cli_build_opts(url, output_template, extra_params)
+        result = cli_build_opts(url, output_template, extra_params)
 
         expected = str(Path(output_template).parent / "override.mp4")
         assert result["outtmpl"] == expected

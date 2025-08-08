@@ -1,7 +1,7 @@
 # Hardcoded Variables Audit Report
 
-**Generated**: 2024-12-19  
-**Scope**: Full codebase audit  
+**Generated**: 2024-12-19
+**Scope**: Full codebase audit
 **Total Issues Found**: 247 instances across 8 categories
 
 ## Executive Summary
@@ -21,8 +21,8 @@ configuration that should be externalized for better maintainability and deploym
 
 ### 1.1 Localhost/127.0.0.1 References
 
-**Count**: 67 instances  
-**Severity**: Critical  
+**Count**: 67 instances
+**Severity**: Critical
 **Impact**: Deployment flexibility, security
 
 #### Server-side (Python)
@@ -49,8 +49,8 @@ configuration that should be externalized for better maintainability and deploym
 
 ### 1.2 Port Numbers
 
-**Count**: 89 instances  
-**Severity**: High  
+**Count**: 89 instances
+**Severity**: High
 **Impact**: Port conflicts, deployment issues
 
 #### Hardcoded Port References
@@ -72,8 +72,8 @@ configuration that should be externalized for better maintainability and deploym
 
 ### 2.1 HTTP Request Timeouts
 
-**Count**: 31 instances  
-**Severity**: High  
+**Count**: 31 instances
+**Severity**: High
 **Impact**: Network reliability, user experience
 
 #### Server-side Timeouts
@@ -97,8 +97,8 @@ configuration that should be externalized for better maintainability and deploym
 
 ### 2.2 Process and Operation Timeouts
 
-**Count**: 14 instances  
-**Severity**: Medium  
+**Count**: 14 instances
+**Severity**: Medium
 **Impact**: System stability
 
 - `server/__main__.py:273`: `timeout=3` for process termination
@@ -110,8 +110,8 @@ configuration that should be externalized for better maintainability and deploym
 
 ### 3.1 Temporary and Test Directories
 
-**Count**: 28 instances  
-**Severity**: High  
+**Count**: 28 instances
+**Severity**: High
 **Impact**: Cross-platform compatibility, security
 
 #### Hardcoded Paths
@@ -129,8 +129,8 @@ configuration that should be externalized for better maintainability and deploym
 
 ### 3.2 Cross-platform Path Issues
 
-**Count**: 6 instances  
-**Severity**: Medium  
+**Count**: 6 instances
+**Severity**: Medium
 **Impact**: Windows compatibility
 
 - `tests/extension/options.ui.test.ts:143`: `"/home/user/downloads"`
@@ -142,8 +142,8 @@ configuration that should be externalized for better maintainability and deploym
 
 ### 4.1 Test URLs
 
-**Count**: 45 instances  
-**Severity**: Low  
+**Count**: 45 instances
+**Severity**: Low
 **Impact**: Test reliability
 
 #### Common Test URLs
@@ -161,8 +161,8 @@ configuration that should be externalized for better maintainability and deploym
 
 ### 4.2 API Endpoints
 
-**Count**: 34 instances  
-**Severity**: Medium  
+**Count**: 34 instances
+**Severity**: Medium
 **Impact**: API flexibility
 
 #### Hardcoded Endpoints
@@ -177,8 +177,8 @@ configuration that should be externalized for better maintainability and deploym
 
 ### 5.1 Application Settings
 
-**Count**: 23 instances  
-**Severity**: Medium  
+**Count**: 23 instances
+**Severity**: Medium
 **Impact**: Configuration flexibility
 
 #### Hardcoded Settings
@@ -191,8 +191,8 @@ configuration that should be externalized for better maintainability and deploym
 
 ### 5.2 Format and Quality Settings
 
-**Count**: 18 instances  
-**Severity**: Low  
+**Count**: 18 instances
+**Severity**: Low
 **Impact**: User preferences
 
 #### Video Format Settings
@@ -205,8 +205,8 @@ configuration that should be externalized for better maintainability and deploym
 
 ### 6.1 Status Messages
 
-**Count**: 31 instances  
-**Severity**: Low  
+**Count**: 31 instances
+**Severity**: Low
 **Impact**: User experience
 
 #### Common Status Messages
@@ -219,8 +219,8 @@ configuration that should be externalized for better maintainability and deploym
 
 ### 6.2 Error Types
 
-**Count**: 12 instances  
-**Severity**: Low  
+**Count**: 12 instances
+**Severity**: Low
 **Impact**: Error handling
 
 #### Error Type Constants
@@ -234,8 +234,8 @@ configuration that should be externalized for better maintainability and deploym
 
 ### 7.1 Mock Data
 
-**Count**: 67 instances  
-**Severity**: Low  
+**Count**: 67 instances
+**Severity**: Low
 **Impact**: Test reliability
 
 #### Common Test Data
@@ -247,8 +247,8 @@ configuration that should be externalized for better maintainability and deploym
 
 ### 7.2 Test Constants
 
-**Count**: 23 instances  
-**Severity**: Low  
+**Count**: 23 instances
+**Severity**: Low
 **Impact**: Test maintenance
 
 #### Test-specific Values
@@ -261,8 +261,8 @@ configuration that should be externalized for better maintainability and deploym
 
 ### 8.1 Valid Constants
 
-**Count**: 90 instances  
-**Severity**: None  
+**Count**: 90 instances
+**Severity**: None
 **Impact**: None
 
 #### Examples
@@ -295,39 +295,39 @@ configuration that should be externalized for better maintainability and deploym
 
 ### Short-term Actions (High Priority)
 
-4. **Externalize Timeout Configuration**
+1. **Externalize Timeout Configuration**
 
    - Create timeout configuration section
    - Implement environment-specific timeouts
    - Add timeout validation and logging
 
-5. **Improve Configuration Management**
+2. **Improve Configuration Management**
    - Move hardcoded settings to configuration files
    - Implement configuration validation
    - Add configuration documentation
 
 ### Medium-term Actions (Medium Priority)
 
-6. **Standardize API Endpoints**
+1. **Standardize API Endpoints**
 
    - Create endpoint configuration
    - Implement endpoint versioning
    - Add endpoint documentation
 
-7. **Improve Test Data Management**
+2. **Improve Test Data Management**
    - Create centralized test fixtures
    - Implement test data factories
    - Add test data documentation
 
 ### Long-term Actions (Low Priority)
 
-8. **Enhance Error Handling**
+1. **Enhance Error Handling**
 
    - Create error message configuration
    - Implement internationalization support
    - Add error message documentation
 
-9. **Improve Status Message Management**
+2. **Improve Status Message Management**
    - Create status message configuration
    - Implement message templating
    - Add message documentation

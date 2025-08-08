@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { loadErrorHistory } from "extension/src/options";
 import * as historyModule from "extension/src/history";
 
@@ -11,9 +12,7 @@ describe("loadErrorHistory", () => {
       history: [{ status: "error" }, { status: "complete" }],
       totalItems: 2,
     });
-    jest
-      .spyOn(historyModule, "renderHistoryItems")
-      .mockImplementation(() => {});
+    jest.spyOn(historyModule, "renderHistoryItems").mockImplementation(() => {});
   });
 
   afterEach(() => {

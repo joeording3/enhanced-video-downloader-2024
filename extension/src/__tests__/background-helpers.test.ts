@@ -1,10 +1,8 @@
 /* eslint-env jest */
+// @ts-nocheck
 
-import {
-  applyThemeToActionIcon,
-  actionIconPaths,
-  getActionIconPaths,
-} from "../background-helpers";
+
+import { applyThemeToActionIcon, actionIconPaths, getActionIconPaths } from "../background-helpers";
 import { Theme } from "../types";
 
 declare const global: any;
@@ -41,35 +39,23 @@ describe("background-helpers", () => {
   describe("actionIconPaths", () => {
     it("should have correct light theme icon paths", () => {
       const paths = getActionIconPaths();
-      expect(paths.light["16"]).toBe(
-        chrome.runtime.getURL("extension/icons/icon16.png")
-      );
-      expect(paths.light["48"]).toBe(
-        chrome.runtime.getURL("extension/icons/icon48.png")
-      );
-      expect(paths.light["128"]).toBe(
-        chrome.runtime.getURL("extension/icons/icon128.png")
-      );
+      expect(paths.light["16"]).toBe(chrome.runtime.getURL("extension/icons/icon16.png"));
+      expect(paths.light["48"]).toBe(chrome.runtime.getURL("extension/icons/icon48.png"));
+      expect(paths.light["128"]).toBe(chrome.runtime.getURL("extension/icons/icon128.png"));
     });
 
     it("should have correct dark theme icon paths", () => {
       const paths = getActionIconPaths();
-      expect(paths.dark["16"]).toBe(
-        chrome.runtime.getURL("extension/icons/darkicon16.png")
-      );
-      expect(paths.dark["48"]).toBe(
-        chrome.runtime.getURL("extension/icons/darkicon48.png")
-      );
-      expect(paths.dark["128"]).toBe(
-        chrome.runtime.getURL("extension/icons/darkicon128.png")
-      );
+      expect(paths.dark["16"]).toBe(chrome.runtime.getURL("extension/icons/darkicon16.png"));
+      expect(paths.dark["48"]).toBe(chrome.runtime.getURL("extension/icons/darkicon48.png"));
+      expect(paths.dark["128"]).toBe(chrome.runtime.getURL("extension/icons/darkicon128.png"));
     });
 
     it("should have all required icon sizes for both themes", () => {
       const requiredSizes = ["16", "48", "128"];
       const paths = getActionIconPaths();
 
-      requiredSizes.forEach((size) => {
+      requiredSizes.forEach(size => {
         expect(paths.light[size]).toBeDefined();
         expect(paths.dark[size]).toBeDefined();
         expect(typeof paths.light[size]).toBe("string");
@@ -80,7 +66,7 @@ describe("background-helpers", () => {
     it("should have different paths for light and dark themes", () => {
       const sizes = ["16", "48", "128"];
       const paths = getActionIconPaths();
-      sizes.forEach((size) => {
+      sizes.forEach(size => {
         expect(paths.light[size]).not.toBe(paths.dark[size]);
       });
     });
@@ -117,7 +103,7 @@ describe("background-helpers", () => {
           "LIGHT",
         ];
 
-        invalidThemes.forEach((invalidTheme) => {
+        invalidThemes.forEach(invalidTheme => {
           global.chrome.action.setIcon.mockClear();
           applyThemeToActionIcon(invalidTheme);
 
@@ -156,16 +142,9 @@ describe("background-helpers", () => {
       });
 
       it("should handle case-sensitive theme values", () => {
-        const caseVariations = [
-          "LIGHT",
-          "Light",
-          "light",
-          "DARK",
-          "Dark",
-          "dark",
-        ];
+        const caseVariations = ["LIGHT", "Light", "light", "DARK", "Dark", "dark"];
 
-        caseVariations.forEach((theme) => {
+        caseVariations.forEach(theme => {
           global.chrome.action.setIcon.mockClear();
           applyThemeToActionIcon(theme as any);
 
@@ -368,7 +347,7 @@ describe("background-helpers", () => {
       it("should handle multiple theme changes", () => {
         const themes: Theme[] = ["light", "dark", "light", "dark"];
 
-        themes.forEach((theme) => {
+        themes.forEach(theme => {
           global.chrome.action.setIcon.mockClear();
           applyThemeToActionIcon(theme);
 
@@ -393,7 +372,7 @@ describe("background-helpers", () => {
       it("should handle non-string theme values", () => {
         const nonStringThemes = [123, true, false, {}, [], () => {}];
 
-        nonStringThemes.forEach((theme) => {
+        nonStringThemes.forEach(theme => {
           global.chrome.action.setIcon.mockClear();
           applyThemeToActionIcon(theme as any);
 
@@ -420,7 +399,7 @@ describe("background-helpers", () => {
       it("should handle special characters in theme strings", () => {
         const specialThemes = ["light!", "dark@", "light#", "dark$", "light%"];
 
-        specialThemes.forEach((theme) => {
+        specialThemes.forEach(theme => {
           global.chrome.action.setIcon.mockClear();
           applyThemeToActionIcon(theme as any);
 

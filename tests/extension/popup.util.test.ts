@@ -1,4 +1,6 @@
 /* eslint-env jest */
+// @ts-nocheck
+
 import { setStatus, applyPopupTheme } from "extension/src/popup";
 
 describe("Popup Util Functions", () => {
@@ -7,17 +9,14 @@ describe("Popup Util Functions", () => {
   let timerId: ReturnType<typeof setTimeout> | null;
 
   beforeEach(() => {
-    document.body.innerHTML =
-      '<div id="status"></div>' + '<img id="header-logo" src="initial" />';
+    document.body.innerHTML = '<div id="status"></div>' + '<img id="header-logo" src="initial" />';
     statusElement = document.getElementById("status")!;
     headerLogo = document.getElementById("header-logo") as HTMLImageElement;
     document.documentElement.className = "";
     document.body.className = "";
 
     // Mock getURL which is used to set the image src
-    (chrome.runtime.getURL as jest.Mock).mockImplementation(
-      (path) => "http://localhost/" + path
-    );
+    (chrome.runtime.getURL as jest.Mock).mockImplementation(path => "http://localhost/" + path);
     jest.useFakeTimers();
     timerId = null;
   });

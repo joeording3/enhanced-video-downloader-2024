@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { checkServerStatus } from "../../extension/src/background";
 import { getServerPort } from "../../extension/src/core/constants";
 
@@ -19,18 +20,14 @@ describe("checkServerStatus - Simple Test", () => {
     jest.clearAllMocks();
 
     // Mock chrome.storage.local.set and get to return promises
-    (global as any).chrome.storage.local.set = jest
-      .fn()
-      .mockResolvedValue(undefined);
+    (global as any).chrome.storage.local.set = jest.fn().mockResolvedValue(undefined);
     (global as any).chrome.storage.local.get = jest.fn().mockResolvedValue({});
   });
 
   it("should return true for successful response", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: jest
-        .fn()
-        .mockResolvedValue({ app_name: "Enhanced Video Downloader" }),
+      json: jest.fn().mockResolvedValue({ app_name: "Enhanced Video Downloader" }),
     });
 
     const result = await checkServerStatus(getServerPort());

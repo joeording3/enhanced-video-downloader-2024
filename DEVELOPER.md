@@ -1819,5 +1819,5 @@ _Last updated: 2025-01-27_
 
 - **[ci/.github/copilot-instructions.md](ci/.github/copilot-instructions.md)** - GitHub Copilot
   instructions and coding standards
-- **[ci/.github/instructions/rules.instructions.md](ci/.github/instructions/rules.instructions.md)** -
-  AI agent collaboration rules and workflow guidelines
+- **[rules.instructions.md](ci/.github/instructions/rules.instructions.md)** - AI agent
+  collaboration rules and workflow guidelines

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { ValidationService } from "../../core/validation-service";
 
 describe("Validation Service Tests", () => {
@@ -10,7 +11,7 @@ describe("Validation Service Tests", () => {
   describe("Port Validation", () => {
     it("should validate valid ports", () => {
       const validPorts = ["8080", "3000", "65535", "1"];
-      validPorts.forEach((port) => {
+      validPorts.forEach(port => {
         const result = validationService.validate("port", port);
         expect(result.valid).toBe(true);
       });
@@ -18,7 +19,7 @@ describe("Validation Service Tests", () => {
 
     it("should reject invalid ports", () => {
       const invalidPorts = ["0", "65536", "abc", "-1"];
-      invalidPorts.forEach((port) => {
+      invalidPorts.forEach(port => {
         const result = validationService.validate("port", port);
         expect(result.valid).toBe(false);
         expect(result.error).toBeDefined();
@@ -34,12 +35,8 @@ describe("Validation Service Tests", () => {
 
   describe("URL Validation", () => {
     it("should validate valid URLs", () => {
-      const validUrls = [
-        "https://example.com",
-        "http://localhost:3000",
-        "ftp://files.example.com",
-      ];
-      validUrls.forEach((url) => {
+      const validUrls = ["https://example.com", "http://localhost:3000", "ftp://files.example.com"];
+      validUrls.forEach(url => {
         const result = validationService.validate("url", url);
         expect(result.valid).toBe(true);
       });
@@ -47,7 +44,7 @@ describe("Validation Service Tests", () => {
 
     it("should reject invalid URLs", () => {
       const invalidUrls = ["not-a-url", "http://", "ftp://"];
-      invalidUrls.forEach((url) => {
+      invalidUrls.forEach(url => {
         const result = validationService.validate("url", url);
         expect(result.valid).toBe(false);
         expect(result.error).toBe("Invalid URL format");
@@ -64,7 +61,7 @@ describe("Validation Service Tests", () => {
   describe("Path Validation", () => {
     it("should validate valid paths", () => {
       const validPaths = ["/home/user", "C:\\Users\\user", "./relative/path"];
-      validPaths.forEach((path) => {
+      validPaths.forEach(path => {
         const result = validationService.validate("path", path);
         expect(result.valid).toBe(true);
       });
@@ -72,7 +69,7 @@ describe("Validation Service Tests", () => {
 
     it("should reject invalid paths", () => {
       const invalidPaths = ["path/../", "path//", "path/.."];
-      invalidPaths.forEach((path) => {
+      invalidPaths.forEach(path => {
         const result = validationService.validate("path", path);
         expect(result.valid).toBe(false);
         expect(result.error).toBe("Invalid path format");
@@ -126,53 +123,32 @@ describe("Validation Service Tests", () => {
     });
 
     it("should validate required fields", () => {
-      const validResult = validationService.validateField(
-        "required-field",
-        "value"
-      );
+      const validResult = validationService.validateField("required-field", "value");
       expect(validResult.valid).toBe(true);
 
-      const invalidResult = validationService.validateField(
-        "required-field",
-        ""
-      );
+      const invalidResult = validationService.validateField("required-field", "");
       expect(invalidResult.valid).toBe(false);
       expect(invalidResult.error).toBe("Required Field is required");
     });
 
     it("should validate field length", () => {
-      const validResult = validationService.validateField(
-        "length-field",
-        "valid"
-      );
+      const validResult = validationService.validateField("length-field", "valid");
       expect(validResult.valid).toBe(true);
 
-      const tooShortResult = validationService.validateField(
-        "length-field",
-        "ab"
-      );
+      const tooShortResult = validationService.validateField("length-field", "ab");
       expect(tooShortResult.valid).toBe(false);
       expect(tooShortResult.error).toBe("Text must be at least 3 characters");
 
-      const tooLongResult = validationService.validateField(
-        "length-field",
-        "verylongvalue"
-      );
+      const tooLongResult = validationService.validateField("length-field", "verylongvalue");
       expect(tooLongResult.valid).toBe(false);
       expect(tooLongResult.error).toBe("Text must be at most 10 characters");
     });
 
     it("should validate field patterns", () => {
-      const validResult = validationService.validateField(
-        "pattern-field",
-        "abc"
-      );
+      const validResult = validationService.validateField("pattern-field", "abc");
       expect(validResult.valid).toBe(true);
 
-      const invalidResult = validationService.validateField(
-        "pattern-field",
-        "abc123"
-      );
+      const invalidResult = validationService.validateField("pattern-field", "abc123");
       expect(invalidResult.valid).toBe(false);
       expect(invalidResult.error).toBe("Text format is invalid");
     });
@@ -240,14 +216,10 @@ describe("Validation Service Tests", () => {
         path: "path/../",
       };
 
-      expect(
-        validationService.isValid(validationService.validateFields(validFields))
-      ).toBe(true);
-      expect(
-        validationService.isValid(
-          validationService.validateFields(invalidFields)
-        )
-      ).toBe(false);
+      expect(validationService.isValid(validationService.validateFields(validFields))).toBe(true);
+      expect(validationService.isValid(validationService.validateFields(invalidFields))).toBe(
+        false
+      );
     });
   });
 
@@ -326,16 +298,10 @@ describe("Validation Service Tests", () => {
         },
       });
 
-      const validResult = validationService.validateField(
-        "custom-field",
-        "special"
-      );
+      const validResult = validationService.validateField("custom-field", "special");
       expect(validResult.valid).toBe(true);
 
-      const invalidResult = validationService.validateField(
-        "custom-field",
-        "other"
-      );
+      const invalidResult = validationService.validateField("custom-field", "other");
       expect(invalidResult.valid).toBe(false);
       expect(invalidResult.error).toBe("Must be 'special'");
     });

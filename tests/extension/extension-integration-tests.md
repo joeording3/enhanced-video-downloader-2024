@@ -5,7 +5,7 @@ This directory contains **integration tests** for the extension. Unit tests are 
 
 ## Test Organization
 
-### ✅ **Integration Tests (Keep Here)**
+### **Integration Tests (Keep Here)**
 
 - **`background.test.ts`** - Comprehensive background script integration testing
 - **`background-simple.test.ts`** - Simple background functionality tests
@@ -25,7 +25,7 @@ This directory contains **integration tests** for the extension. Unit tests are 
 - **`history.*.test.ts`** - History management
 - **`playwright-e2e.spec.js`** - End-to-end browser testing
 
-### ❌ **Unit Tests (Moved to Source)**
+### **Unit Tests (Moved to Source)**
 
 - ~~`background-logic.test.ts`~~ → `extension/src/__tests__/background-logic.test.ts`
 - ~~`background-queue.test.ts`~~ → `extension/src/__tests__/background-queue.test.ts`

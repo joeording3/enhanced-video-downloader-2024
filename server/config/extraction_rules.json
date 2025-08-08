@@ -71,8 +71,6 @@
       { "type": "dom", "selector": "source", "attr": "src" },
       { "type": "dom", "selector": "audio", "attr": "src" }
     ],
-    "regex": [
-      "https?://[^\"'\\s>]+\\.(mp4|webm|m3u8|mp3|ogg|wav)(\\?[^\"'\\s>]*)?"
-    ]
+    "regex": ["https?://[^\"'\\s>]+\\.(mp4|webm|m3u8|mp3|ogg|wav)(\\?[^\"'\\s>]*)?"]
   }
 ]

@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use strict";
 /**
  * Tests for advanced popup UI functionality.

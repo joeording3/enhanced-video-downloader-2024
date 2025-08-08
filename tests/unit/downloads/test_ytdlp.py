@@ -9,9 +9,9 @@ from server.downloads.ytdlp import (
     _default_ydl_opts,
     _extract_video_metadata,
     _format_duration,
-    _map_error_message,
-    _parse_bytes,
     build_opts,
+    map_error_message,
+    parse_bytes,
 )
 
 
@@ -68,17 +68,17 @@ class TestYtdlpHelperFunctions:
         assert ydl_opts["format"] == "best"
 
     def test_parse_bytes_valid(self):
-        """Test _parse_bytes with valid byte strings."""
-        assert _parse_bytes("1.23MIB") == 1289748
-        assert _parse_bytes("2.5GIB") == 2684354560
-        assert _parse_bytes("500KIB") == 512000
-        assert _parse_bytes("100B") == 100
+        """Test parse_bytes with valid byte strings."""
+        assert parse_bytes("1.23MIB") == 1289748
+        assert parse_bytes("2.5GIB") == 2684354560
+        assert parse_bytes("500KIB") == 512000
+        assert parse_bytes("100B") == 100
 
     def test_parse_bytes_invalid(self):
-        """Test _parse_bytes with invalid byte strings."""
-        assert _parse_bytes("invalid") is None
-        assert _parse_bytes("") is None
-        assert _parse_bytes("1.23") == 1  # Plain number is parsed as int
+        """Test parse_bytes with invalid byte strings."""
+        assert parse_bytes("invalid") is None
+        assert parse_bytes("") is None
+        assert parse_bytes("1.23") == 1  # Plain number is parsed as int
 
     def test_format_duration_seconds(self):
         """Test _format_duration with seconds."""
@@ -181,24 +181,24 @@ class TestYtdlpHelperFunctions:
         assert metadata["resolution"] == "Unknown"
 
     def test_map_error_message_common_errors(self):
-        """Test _map_error_message with common error messages."""
+        """Test map_error_message with common error messages."""
         # Test various error scenarios
-        error_type, suggestion = _map_error_message("Video unavailable")
+        error_type, suggestion = map_error_message("Video unavailable")
         assert error_type == "YT_DLP_VIDEO_UNAVAILABLE"
         assert "unavailable" in suggestion.lower()
 
-        error_type, suggestion = _map_error_message("Sign in to confirm your age")
+        error_type, suggestion = map_error_message("Sign in to confirm your age")
         # This should fall back to unknown error since "age" is not in the mappings
         assert error_type == "YT_DLP_UNKNOWN_ERROR"
         assert "contact support" in suggestion.lower()
 
-        error_type, suggestion = _map_error_message("This video is private video")
+        error_type, suggestion = map_error_message("This video is private video")
         assert error_type == "YT_DLP_PRIVATE_VIDEO"
         assert "private" in suggestion.lower()
 
     def test_map_error_message_unknown_error(self):
-        """Test _map_error_message with unknown error."""
-        error_type, suggestion = _map_error_message("Unknown error message")
+        """Test map_error_message with unknown error."""
+        error_type, suggestion = map_error_message("Unknown error message")
         assert error_type == "YT_DLP_UNKNOWN_ERROR"
         assert "contact support" in suggestion.lower()
 
@@ -285,7 +285,7 @@ class TestYtdlpIntegration:
         ]
 
         for error_msg, expected_error_type, expected_keyword in test_cases:
-            mapped_error_type, suggestion = _map_error_message(error_msg)
+            mapped_error_type, suggestion = map_error_message(error_msg)
             assert mapped_error_type == expected_error_type
             assert expected_keyword in suggestion.lower()
 

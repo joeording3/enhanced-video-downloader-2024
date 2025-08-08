@@ -49,7 +49,7 @@ comprehensive enhancement of the test suite.
 
 #### Before (Original Structure)
 
-```
+```text
 tests/extension/playwright-e2e.spec.js
 ├── 4 basic tests
 ├── Duplicated Chrome API mocking
@@ -59,7 +59,7 @@ tests/extension/playwright-e2e.spec.js
 
 #### After (Improved Structure)
 
-```
+```text
 tests/extension/playwright-e2e.spec.js
 ├── UI Component Tests (4 tests)
 │   ├── popup.html loads successfully with enhanced validation
@@ -281,7 +281,7 @@ npm run test:playwright:debug
 
 Coverage data is automatically collected for Chromium browser and saved to:
 
-```
+```text
 coverage/frontend/playwright-coverage-{testName}-{browserName}.json
 ```
 

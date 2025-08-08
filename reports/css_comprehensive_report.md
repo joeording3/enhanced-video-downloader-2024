@@ -112,7 +112,7 @@ icon class
 
 ### Final Architecture
 
-```
+```text
 extension/ui/
 ├── variables.css          # All CSS variables (193 lines)
 ├── components.css         # Reusable components (305 lines)
@@ -167,7 +167,7 @@ extension/ui/
 
 ### Shared CSS Architecture Created
 
-```
+```text
 extension/ui/
 ├── variables.css          # All CSS variables (193 lines)
 ├── components.css         # Reusable components (305 lines)

@@ -177,8 +177,8 @@ Enhanced Video Downloader/
 
 - **[ci/.github/copilot-instructions.md](ci/.github/copilot-instructions.md)** - GitHub Copilot
   instructions and coding standards
-- **[ci/.github/instructions/rules.instructions.md](ci/.github/instructions/rules.instructions.md)** -
-  AI agent collaboration rules and workflow guidelines
+- **[rules.instructions.md](ci/.github/instructions/rules.instructions.md)** - AI agent
+  collaboration rules and workflow guidelines
 
 ---
 
@@ -614,7 +614,7 @@ For complete API documentation, see `server/api/api.md`.
 - Matrix testing across Chrome channels (stable, beta, unstable) for extension compatibility.
 - Quality gates enforce code formatting, linting, and test coverage thresholds.
 
-## Documentation
+## Project Documentation
 
 - **README.md**: This file - user-facing documentation and quickstart guide
 - **ARCHITECTURE.md**: System architecture, tech stack, and data flow documentation

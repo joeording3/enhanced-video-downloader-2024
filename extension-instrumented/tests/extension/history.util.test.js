@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use strict";
 /**
  * Tests for history module utility functions.

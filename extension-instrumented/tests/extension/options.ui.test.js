@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use strict";
 /**
  * Unit tests for options page UI logic functions

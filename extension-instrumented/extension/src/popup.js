@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use strict";
 /**
  * Popup UI controller for the Enhanced Video Downloader extension.

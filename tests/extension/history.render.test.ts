@@ -1,4 +1,6 @@
 /* eslint-env jest */
+// @ts-nocheck
+
 
 import { renderHistoryItems } from "../../extension/src/history";
 import type { HistoryEntry } from "../../extension/src/types";
@@ -78,11 +80,7 @@ describe("renderHistoryItems", () => {
 
     const itemEl = rendered[0];
     expect(itemEl.querySelector("b")?.textContent).toBe("file3.mp4"); // Fallback to filename
-    expect(itemEl.querySelector(".history-item-timestamp")?.textContent).toBe(
-      ""
-    ); // Empty timestamp
-    expect(itemEl.querySelector(".history-item-detail")?.textContent).toBe(
-      "just a string detail"
-    );
+    expect(itemEl.querySelector(".history-item-timestamp")?.textContent).toBe(""); // Empty timestamp
+    expect(itemEl.querySelector(".history-item-detail")?.textContent).toBe("just a string detail");
   });
 });

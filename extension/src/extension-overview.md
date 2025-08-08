@@ -9,7 +9,7 @@ tests:
 
 Unit tests are organized in a centralized `__tests__` directory for better maintainability:
 
-```
+```text
 extension/src/
 ├── __tests__/                    # Centralized unit tests
 │   ├── background-logic.test.ts
@@ -31,7 +31,7 @@ extension/src/
 
 Integration tests are kept in a separate directory for comprehensive testing:
 
-```
+```text
 tests/extension/                  # Integration tests
 ├── background.test.ts            # Comprehensive integration
 ├── background-simple.test.ts     # Simple integration
@@ -150,23 +150,23 @@ This directory contains the TypeScript source files for the Enhanced Video Downl
 - [x] Configure build process with esbuild
 - [x] Set up Jest for TypeScript testing
 - [x] Create initial TypeScript tests for utilities
-- [x] **Convert `popup.js` to TypeScript** ✅
-- [x] **Convert `options.js` to TypeScript** ✅
-- [x] **Convert `history.js` to TypeScript** ✅
-- [x] **Implement core architecture modules** ✅
+- [x] **Convert `popup.js` to TypeScript**
+- [x] **Convert `options.js` to TypeScript**
+- [x] **Convert `history.js` to TypeScript**
+- [x] **Implement core architecture modules**
   - [x] Centralized constants system (including port functions)
   - [x] State management system
   - [x] Error handling system
   - [x] Logging system
   - [x] DOM management system
   - [x] Validation service
-- [x] **Extract background logic into separate module** ✅
-- [x] **Create TypeScript test infrastructure** ✅
-- [x] **Complete migration of legacy constants to core/constants.ts** ✅
-- [x] **Convert all existing JavaScript tests to TypeScript** ✅
-- [x] **Update documentation with TypeScript examples** ✅
-- [x] **Remove legacy JavaScript files after full migration** ✅ (Core files migrated, E2E tests
-      remain as JS)
+- [x] **Extract background logic into separate module**
+- [x] **Create TypeScript test infrastructure**
+- [x] **Complete migration of legacy constants to core/constants.ts**
+- [x] **Convert all existing JavaScript tests to TypeScript**
+- [x] **Update documentation with TypeScript examples**
+- [x] **Remove legacy JavaScript files after full migration** (Core files migrated, E2E tests remain
+      as JS)
 
 ## Remaining Work
 

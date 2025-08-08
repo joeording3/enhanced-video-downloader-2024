@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use strict";
 /* eslint-env jest */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {

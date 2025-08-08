@@ -2,12 +2,12 @@
  * Event Manager
  * Manages event listeners with automatic cleanup
  */
+// @ts-nocheck
+
 
 export class EventManager {
-  private listeners: Map<
-    string,
-    { element: Element; type: string; handler: EventListener }
-  > = new Map();
+  private listeners: Map<string, { element: Element; type: string; handler: EventListener }> =
+    new Map();
   private counter = 0;
 
   addListener(

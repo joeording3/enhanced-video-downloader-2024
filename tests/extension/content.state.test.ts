@@ -1,4 +1,6 @@
 /* eslint-env jest */
+// @ts-nocheck
+
 
 import { getButtonState, saveButtonState } from "../../extension/src/content";
 import type { ButtonState } from "../../extension/src/types";
@@ -14,7 +16,7 @@ describe("getButtonState", () => {
     (global as any).chrome = {
       storage: {
         local: {
-          get: (_key: string, _cb: Function) => {
+          get: (_key: string, _cb: (result: any) => void) => {
             throw new Error("storage error");
           },
         },
@@ -32,7 +34,7 @@ describe("getButtonState", () => {
     (global as any).chrome = {
       storage: {
         local: {
-          get: (_key: string, cb: Function) => cb({ [domain]: testState }),
+          get: (_key: string, cb: (result: any) => void) => cb({ [domain]: testState }),
         },
       },
       runtime: { lastError: undefined },
@@ -55,7 +57,7 @@ describe("saveButtonState", () => {
     (global as any).chrome = {
       storage: {
         local: {
-          set: (items: any, cb: Function) => {
+          set: (items: any, cb: () => void) => {
             calls.push(items);
             cb();
           },

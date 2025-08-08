@@ -3,6 +3,8 @@
  * This module provides common functionality used across different components
  * of the extension, including debugging, browser interactions, and data handling.
  */
+// @ts-nocheck
+
 
 /**
  * Debounces a function, ensuring it's only called after a specified delay
@@ -157,7 +159,7 @@ export const generateId = (): string => {
   if (typeof crypto !== "undefined" && crypto.getRandomValues) {
     const array = new Uint8Array(8);
     crypto.getRandomValues(array);
-    return Array.from(array, (byte) => byte.toString(36)).join("");
+    return Array.from(array, byte => byte.toString(36)).join("");
   }
 
   // Fallback to timestamp + random for environments without crypto

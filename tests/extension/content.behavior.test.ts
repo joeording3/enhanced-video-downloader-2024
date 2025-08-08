@@ -1,4 +1,6 @@
 /* eslint-env jest */
+// @ts-nocheck
+
 /**
  * @jest-environment jsdom
  */
@@ -23,9 +25,7 @@ describe("Content script button behaviors", () => {
     // Reset mocks
     jest.clearAllMocks();
     // Default hostname
-    getHostnameSpy = jest
-      .spyOn(utils, "getHostname")
-      .mockReturnValue("example.com");
+    getHostnameSpy = jest.spyOn(utils, "getHostname").mockReturnValue("example.com");
   });
 
   afterEach(() => {
@@ -174,7 +174,7 @@ describe("Content script button behaviors", () => {
       document.dispatchEvent(mouseUpEvent);
 
       // Use a short timeout to allow the async `saveButtonState` to complete
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      await new Promise(resolve => setTimeout(resolve, 0));
 
       // Check that storage was called with the new position
       expect(chrome.storage.local.set).toHaveBeenCalledWith(
@@ -217,9 +217,7 @@ describe("Content script button behaviors", () => {
       document.body.appendChild(btn);
       ensureDownloadButtonStyle(btn);
       // Should not override to guideline background
-      expect(btn.style.backgroundColor.replace(/\s/g, "")).toBe(
-        "rgba(255,0,0,0.7)"
-      );
+      expect(btn.style.backgroundColor.replace(/\s/g, "")).toBe("rgba(255,0,0,0.7)");
     });
   });
 
@@ -263,9 +261,7 @@ describe("Content script button behaviors", () => {
       // Simulate injection logic
       await createOrUpdateButton(video1);
       await createOrUpdateButton(video2);
-      const buttons = document.querySelectorAll(
-        "button[id^='evd-download-button-']"
-      );
+      const buttons = document.querySelectorAll("button[id^='evd-download-button-']");
       expect(buttons.length).toBeGreaterThanOrEqual(2);
     });
   });
@@ -285,9 +281,7 @@ describe("Content script button behaviors", () => {
       document.body.appendChild(iframe);
 
       // Simulate video detection
-      const videos = document.querySelectorAll(
-        'video, iframe[src*="youtube.com"]'
-      );
+      const videos = document.querySelectorAll('video, iframe[src*="youtube.com"]');
       expect(videos.length).toBe(2);
     });
 

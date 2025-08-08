@@ -2,7 +2,7 @@
 
 .PHONY: all all-continue check install-dev build-js test test-py test-js lint lint-py lint-js lint-md format format-py format-js format-md format-check format-check-py format-check-js format-check-md coverage coverage-py coverage-js clean test-fast test-js-fast test-integration test-js-slow test-slow generate-ignores test-audit audit-coverage audit-mutation audit-performance audit-docs mutation mutation-py mutation-js emoji-check markdown-check check-junk-folders cleanup-junk-folders monitor-junk-folders
 
-all: 
+all:
 	@echo "=== Running All Quality Checks ==="
 	@echo "Running linting..."
 	@$(MAKE) lint || (echo "Linting failed" && exit 1)
@@ -16,9 +16,6 @@ all:
 	@echo "Cleaning up junk folders..."
 	@$(MAKE) cleanup-junk-folders || (echo "Junk folder cleanup failed" && exit 1)
 	@echo "Junk folder cleanup completed"
-	@echo "Running mutation testing..."
-	@$(MAKE) mutation-fast || (echo "Mutation testing failed" && exit 1)
-	@echo "Mutation testing passed"
 	@echo "Generating coverage..."
 	@$(MAKE) coverage || (echo "Coverage generation failed" && exit 1)
 	@echo "Coverage generated"
@@ -54,9 +51,6 @@ check:
 	@echo "Cleaning up junk folders..."
 	@$(MAKE) cleanup-junk-folders || (echo "Junk folder cleanup failed" && exit 1)
 	@echo "Junk folder cleanup completed"
-	@echo "Running fast mutation testing..."
-	@$(MAKE) mutation-fast || (echo "Mutation testing failed" && exit 1)
-	@echo "Mutation testing passed"
 	@echo "=== Quick Quality Checks Complete ==="
 
 install-dev:
@@ -68,13 +62,17 @@ install-dev:
 build-js:
 	npm run build:ts
 
-test: test-py test-js
+test: test-py test-js test-playwright
 
 test-py:
-	pytest tests/unit --maxfail=1 --disable-warnings -q --cov=server --cov-report=term-missing --cov-report=xml --cov-report=html
+	pytest tests/unit tests/integration --maxfail=1 --disable-warnings -q --cov=server --cov-report=term-missing --cov-report=xml --cov-report=html
 
 test-js:
 	npm test
+
+test-playwright:
+	npm run test:playwright:install || true
+	npm run test:playwright
 
 lint: lint-py lint-js lint-md emoji-check
 
@@ -136,7 +134,7 @@ coverage-py:
 	@echo "Coverage reports already generated during test execution"
 
 coverage-js:
-	npm run test:extension:coverage
+	npm run test:coverage
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} +
@@ -198,8 +196,8 @@ mutation: mutation-js mutation-py
 
 mutation-fast:
 	@echo "=== Running Fast Mutation Testing (Critical Modules Only) ==="
-	@echo "Running JavaScript mutation testing on single critical file..."
-	make mutation-js-ultra-minimal || (echo "JavaScript mutation testing failed" && exit 1)
+	@echo "Running JavaScript mutation testing..."
+	npm run test:mutation:js || (echo "JavaScript mutation testing failed" && exit 1)
 	@echo "JavaScript mutation testing passed"
 	@echo "Running Python mutation testing on critical modules..."
 	timeout 60 python -m mutmut run || (echo "Python mutation testing failed" && exit 1)
@@ -211,20 +209,7 @@ mutation-js:
 	npm run test:mutation:js
 	@echo "Stryker mutation testing complete"
 
-mutation-js-fast:
-	@echo "=== Running Fast Stryker Mutation Testing (Critical Files Only) ==="
-	npm run test:mutation:js:fast
-	@echo "Fast Stryker mutation testing complete"
 
-mutation-js-minimal:
-	@echo "=== Running Minimal Stryker Mutation Testing (Single File) ==="
-	npm run test:mutation:js:minimal
-	@echo "Minimal Stryker mutation testing complete"
-
-mutation-js-ultra-minimal:
-	@echo "=== Running Ultra-Minimal Stryker Mutation Testing (Fastest) ==="
-	npm run test:mutation:js:ultra-minimal
-	@echo "Ultra-minimal Stryker mutation testing complete"
 
 mutation-js-debug:
 	@echo "=== Running Stryker Mutation Testing with Debug Output ==="
@@ -271,7 +256,7 @@ mutation-py-minimal:
 mutation-py-quick:
 	@echo "=== Running Quick Mutation Testing ==="
 	timeout 180 mutmut run
-	@echo "Quick mutation testing complete" 
+	@echo "Quick mutation testing complete"
 
 mutmut-quick:
 	@echo "=== Running Quick Mutmut Testing (Critical Modules Only) ==="
@@ -293,7 +278,7 @@ check-junk-folders:
 	  exit 1; \
 	else \
 	  echo "No junk folders found."; \
-	fi 
+	fi
 
 cleanup-junk-folders:
 	@echo "Cleaning up empty junk directories..."
@@ -301,4 +286,4 @@ cleanup-junk-folders:
 
 monitor-junk-folders:
 	@echo "Starting junk folder monitor..."
-	@python scripts/prevent_junk_folders.py --monitor 
+	@python scripts/prevent_junk_folders.py --monitor

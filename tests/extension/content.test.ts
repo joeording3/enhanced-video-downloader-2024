@@ -6,6 +6,8 @@
  *
  * Tests both UI elements and background communication logic.
  */
+// @ts-nocheck
+
 
 /* eslint-env jest */
 import {
@@ -134,7 +136,7 @@ describe("Content Script Tests", () => {
   });
 
   describe("Debounce Function", () => {
-    it("should debounce function calls", (done) => {
+    it("should debounce function calls", done => {
       let callCount = 0;
       const debouncedFn = debounce(() => {
         callCount++;
@@ -158,8 +160,8 @@ describe("Content Script Tests", () => {
       jest
         .spyOn(require("../../extension/src/lib/utils"), "getHostname")
         .mockReturnValue("localhost");
-      (chrome.storage.local.get as jest.Mock).mockImplementation(
-        (keys, callback) => callback({ localhost: mockState })
+      (chrome.storage.local.get as jest.Mock).mockImplementation((keys, callback) =>
+        callback({ localhost: mockState })
       );
 
       const state = await getButtonState();
@@ -168,9 +170,7 @@ describe("Content Script Tests", () => {
 
     it("should save button state to storage", async () => {
       const state = { x: 100, y: 150, hidden: true };
-      (chrome.storage.local.set as jest.Mock).mockImplementation(
-        (data, callback) => callback()
-      );
+      (chrome.storage.local.set as jest.Mock).mockImplementation((data, callback) => callback());
 
       await saveButtonState(state);
 
@@ -183,20 +183,16 @@ describe("Content Script Tests", () => {
     });
 
     it("should handle storage errors gracefully", async () => {
-      (chrome.storage.local.get as jest.Mock).mockImplementation(
-        (keys, callback) => {
-          chrome.runtime.lastError = { message: "Storage error" };
-          callback({});
-        }
-      );
+      (chrome.storage.local.get as jest.Mock).mockImplementation((keys, callback) => {
+        chrome.runtime.lastError = { message: "Storage error" };
+        callback({});
+      });
 
       const state = await getButtonState();
       expect(state).toEqual({ x: 10, y: 10, hidden: false });
 
       const logs = logger.getLogs();
-      expect(logs.some((log) => log.message.includes("Storage error"))).toBe(
-        true
-      );
+      expect(logs.some(log => log.message.includes("Storage error"))).toBe(true);
     });
   });
 

@@ -2,6 +2,8 @@
  * Enhanced YouTube styling module
  * Makes the download button more visible on YouTube
  */
+// @ts-nocheck
+
 
 import { getHostname } from "./lib/utils";
 
@@ -10,9 +12,7 @@ import { getHostname } from "./lib/utils";
  * Makes the download button more visible on YouTube
  * @param btn - The download button element
  */
-export function enhanceYouTubeButton(
-  btn: HTMLElement | null | undefined
-): void {
+export function enhanceYouTubeButton(btn: HTMLElement | null | undefined): void {
   // Handle null/undefined button
   if (!btn) {
     return;

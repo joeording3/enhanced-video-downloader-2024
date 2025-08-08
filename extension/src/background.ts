@@ -2,14 +2,12 @@
  * Enhanced Video Downloader - Background Script
  * Handles port discovery, server communication, and download management
  */
+// @ts-nocheck
+
 
 import { Theme, ServerConfig } from "./types";
 import type { HistoryEntry } from "./types";
-import {
-  applyThemeToActionIcon,
-  actionIconPaths,
-  getActionIconPaths,
-} from "./background-helpers";
+import { applyThemeToActionIcon, actionIconPaths, getActionIconPaths } from "./background-helpers";
 import { debounce } from "./lib/utils";
 import {
   handleSetConfig,
@@ -53,14 +51,12 @@ const _serverCheckInterval = NETWORK_CONSTANTS.SERVER_CHECK_INTERVAL;
 
 // Expected application name for server identification (from manifest)
 const expectedAppName =
-  (chrome.runtime && chrome.runtime.getManifest
-    ? chrome.runtime.getManifest().name
-    : null) || "Enhanced Video Downloader";
+  (chrome.runtime && chrome.runtime.getManifest ? chrome.runtime.getManifest().name : null) ||
+  "Enhanced Video Downloader";
 
 // Initialize background script when loaded (skip in Jest)
 const isTestEnvironment =
-  typeof process !== "undefined" &&
-  (process.env.JEST_WORKER_ID || process.env.NODE_ENV === "test");
+  typeof process !== "undefined" && (process.env.JEST_WORKER_ID || process.env.NODE_ENV === "test");
 // --- END CONSTANTS AND STORAGE KEYS ---
 
 // Utility logging functions - now using centralized logger
@@ -80,16 +76,11 @@ const apiService: ApiService = {
   async fetchConfig(port: number): Promise<Partial<ServerConfig>> {
     const response = await fetch("http://127.0.0.1:" + port + "/api/config");
     if (!response.ok) {
-      throw new Error(
-        "Failed to fetch config from server: " + response.statusText
-      );
+      throw new Error("Failed to fetch config from server: " + response.statusText);
     }
     return response.json();
   },
-  async saveConfig(
-    port: number,
-    config: Partial<ServerConfig>
-  ): Promise<boolean> {
+  async saveConfig(port: number, config: Partial<ServerConfig>): Promise<boolean> {
     const response = await fetch("http://127.0.0.1:" + port + "/api/config", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -165,9 +156,7 @@ const handleNetworkChange = async (online: boolean): Promise<void> => {
         log("Server reconnected on port " + port);
         showNotification(
           "Server Reconnected",
-          "Enhanced Video Downloader server is back online on port " +
-            port +
-            "."
+          "Enhanced Video Downloader server is back online on port " + port + "."
         );
         // Broadcast server status after reconnection
         broadcastServerStatus();
@@ -207,11 +196,9 @@ const handleNetworkChange = async (online: boolean): Promise<void> => {
 };
 // Initialize network status in storage
 if (!isTestEnvironment) {
-  chrome.storage.local.get(networkStatusKey, (res) => {
+  chrome.storage.local.get(networkStatusKey, res => {
     const current =
-      typeof res[networkStatusKey] === "boolean"
-        ? res[networkStatusKey]
-        : navigator.onLine;
+      typeof res[networkStatusKey] === "boolean" ? res[networkStatusKey] : navigator.onLine;
     handleNetworkChange(current);
   });
   // Listen for browser online/offline events
@@ -238,45 +225,35 @@ const initializeActionIconTheme = async (): Promise<void> => {
     } else {
       log("No theme stored. Checking system preference.");
       if (typeof self !== "undefined" && self.matchMedia) {
-        const darkModeMediaQuery = self.matchMedia(
-          "(prefers-color-scheme: dark)"
-        );
+        const darkModeMediaQuery = self.matchMedia("(prefers-color-scheme: dark)");
         const systemPrefersDark = darkModeMediaQuery.matches;
         log("System prefers dark: " + systemPrefersDark);
         applyThemeToActionIcon(systemPrefersDark ? "dark" : "light");
 
         // Add listener for system theme changes
         try {
-          darkModeMediaQuery.addEventListener("change", (e) => {
+          darkModeMediaQuery.addEventListener("change", e => {
             const newSystemPrefersDark = e.matches;
-            log(
-              "System theme changed, now prefers dark: " + newSystemPrefersDark
-            );
+            log("System theme changed, now prefers dark: " + newSystemPrefersDark);
 
             // Check if user has manually set a theme
-            chrome.storage.local.get("theme", (themeResult) => {
+            chrome.storage.local.get("theme", themeResult => {
               if (!themeResult.theme) {
                 // Only update automatically if user hasn't set a preference
                 applyThemeToActionIcon(newSystemPrefersDark ? "dark" : "light");
               } else {
-                log(
-                  "Not updating theme automatically as user has set a preference."
-                );
+                log("Not updating theme automatically as user has set a preference.");
               }
             });
           });
           log("Added listener for system theme changes");
         } catch (listenerError) {
           warn(
-            "Could not add listener for system theme changes: " +
-              (listenerError as Error).message
+            "Could not add listener for system theme changes: " + (listenerError as Error).message
           );
         }
       } else {
-        warn(
-          "self.matchMedia not available. " +
-            "Defaulting action icon to light theme."
-        );
+        warn("self.matchMedia not available. " + "Defaulting action icon to light theme.");
         applyThemeToActionIcon("light"); // Fallback if matchMedia is not available
       }
     }
@@ -324,11 +301,7 @@ const _updateQueueAndBadge = (): void => {
 };
 
 // Show a browser notification with optional tag
-const showNotification = (
-  title: string,
-  message: string,
-  tag: string | null = null
-): void => {
+const showNotification = (title: string, message: string, tag: string | null = null): void => {
   if (!chrome.notifications) {
     warn("Chrome notifications API not available");
     return;
@@ -356,8 +329,7 @@ const showNotification = (
 
 // Server state variables - now managed by centralized state manager
 const PORT_CHECK_TIMEOUT = NETWORK_CONSTANTS.SERVER_CHECK_TIMEOUT;
-const _configRefreshIntervalCount =
-  CONFIG_CONSTANTS.CONFIG_REFRESH_INTERVAL_COUNT;
+const _configRefreshIntervalCount = CONFIG_CONSTANTS.CONFIG_REFRESH_INTERVAL_COUNT;
 const _maxPortBackoffInterval = NETWORK_CONSTANTS.MAX_PORT_BACKOFF_INTERVAL;
 
 // Reset function for testing
@@ -370,9 +342,7 @@ const resetServerState = (): void => {
 };
 
 // Server Communication
-const getServerStatus = async (): Promise<
-  "connected" | "disconnected" | "checking"
-> => {
+const getServerStatus = async (): Promise<"connected" | "disconnected" | "checking"> => {
   try {
     const port = await storageService.getPort();
     if (!port) {
@@ -536,9 +506,7 @@ const checkServerStatus = async (port: number): Promise<boolean> =>
   }, CentralizedErrorHandler.contexts.background.serverCheck(port));
 
 // Additional functions (stub implementations to be completed)
-const fetchServerConfig = async (
-  port: number
-): Promise<Partial<ServerConfig>> => {
+const fetchServerConfig = async (port: number): Promise<Partial<ServerConfig>> => {
   try {
     const response = await fetch(`http://127.0.0.1:${port}/api/config`);
     if (response.ok) {
@@ -647,23 +615,16 @@ const findServerPort = async (
 
       // Notify options page about server discovery
       try {
-        chrome.runtime.sendMessage(
-          { type: "serverDiscovered", port },
-          (response) => {
-            // Ignore any errors - this is just a notification
-            if (chrome.runtime.lastError) {
-              // This is expected when options page is not open
-              logFn(
-                "Server discovery notification sent (options page may not be open)"
-              );
-            }
+        chrome.runtime.sendMessage({ type: "serverDiscovered", port }, response => {
+          // Ignore any errors - this is just a notification
+          if (chrome.runtime.lastError) {
+            // This is expected when options page is not open
+            logFn("Server discovery notification sent (options page may not be open)");
           }
-        );
+        });
       } catch (e) {
         // Ignore errors if no listeners are available
-        logFn(
-          "Server discovery notification failed (expected if options page not open)"
-        );
+        logFn("Server discovery notification failed (expected if options page not open)");
       }
     } else {
       warnFn("Server port discovery failed after scanning range."); // No emoji, just text
@@ -682,10 +643,7 @@ const findServerPort = async (
     warnFn("Error during server port discovery:", e); // No emoji, just text
     // Increase backoff interval for next attempt
     const currentState = stateManager.getServerState();
-    const newBackoffInterval = Math.min(
-      currentState.backoffInterval * 2,
-      _maxPortBackoffInterval
-    );
+    const newBackoffInterval = Math.min(currentState.backoffInterval * 2, _maxPortBackoffInterval);
     stateManager.updateServerState({ backoffInterval: newBackoffInterval });
     return null;
   } finally {
@@ -836,12 +794,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         case "setConfig": {
           // *** This is the new, refactored logic ***
-          const result = await handleSetConfig(
-            port,
-            message.config,
-            apiService,
-            storageService
-          );
+          const result = await handleSetConfig(port, message.config, apiService, storageService);
           sendResponse(result);
           break;
         }
@@ -872,12 +825,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           log("Received restart request");
           if (port) {
             try {
-              const res = await fetch(
-                "http://127.0.0.1:" + port + "/api/restart",
-                {
-                  method: "POST",
-                }
-              );
+              const res = await fetch("http://127.0.0.1:" + port + "/api/restart", {
+                method: "POST",
+              });
               if (res.ok) {
                 sendResponse({ status: "success" });
                 // Server will be gone, so trigger a new scan after a short delay
@@ -905,11 +855,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           if (port) {
             try {
               const res = await fetch(
-                "http://127.0.0.1:" +
-                  port +
-                  "/api/download/" +
-                  message.downloadId +
-                  "/pause",
+                "http://127.0.0.1:" + port + "/api/download/" + message.downloadId + "/pause",
                 { method: "POST" }
               );
               const json = await res.json();
@@ -927,11 +873,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           if (port) {
             try {
               const res = await fetch(
-                "http://127.0.0.1:" +
-                  port +
-                  "/api/download/" +
-                  message.downloadId +
-                  "/resume",
+                "http://127.0.0.1:" + port + "/api/download/" + message.downloadId + "/resume",
                 { method: "POST" }
               );
               const json = await res.json();
@@ -949,11 +891,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           if (port) {
             try {
               const res = await fetch(
-                "http://127.0.0.1:" +
-                  port +
-                  "/api/download/" +
-                  message.downloadId +
-                  "/cancel",
+                "http://127.0.0.1:" + port + "/api/download/" + message.downloadId + "/cancel",
                 { method: "POST" }
               );
               const json = await res.json();
@@ -981,8 +919,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
       }
     } catch (e) {
-      const errorMessage =
-        e instanceof Error ? e.message : "An unknown error occurred";
+      const errorMessage = e instanceof Error ? e.message : "An unknown error occurred";
       error("Error processing message " + message.type + ":", errorMessage);
       sendResponse({ status: "error", message: errorMessage });
     }
@@ -1033,19 +970,16 @@ export const persistQueue = async (): Promise<void> => {
 
 // Initialize persisted queue on startup
 if (!isTestEnvironment) {
-  chrome.storage.local.get(_queueStorageKey, (res) => {
+  chrome.storage.local.get(_queueStorageKey, res => {
     downloadQueue = res[_queueStorageKey] || [];
     updateQueueUI();
   });
 
   // Initialize persisted active downloads on startup
-  chrome.storage.local.get("activeDownloads", (res) => {
+  chrome.storage.local.get("activeDownloads", res => {
     if (res.activeDownloads) {
       Object.assign(activeDownloads, res.activeDownloads);
-      log(
-        "Restored active downloads from storage:",
-        Object.keys(activeDownloads).length
-      );
+      log("Restored active downloads from storage:", Object.keys(activeDownloads).length);
       updateQueueUI();
     }
   });

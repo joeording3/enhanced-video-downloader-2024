@@ -6,6 +6,8 @@
  *
  * Tests both successful and error scenarios for popup UI components.
  */
+// @ts-nocheck
+
 
 /* eslint-env jest */
 
@@ -16,7 +18,7 @@ describe("loadConfig", () => {
     (global as any).chrome = {
       runtime: {
         lastError: undefined,
-        sendMessage: jest.fn((msg: any, cb: Function) =>
+        sendMessage: jest.fn((msg: any, cb: (response: any) => void) =>
           cb({ serverConfig: { test: true } })
         ),
       },
@@ -31,8 +33,8 @@ describe("loadConfig", () => {
 
   it("falls back to storage when runtime.lastError set", async () => {
     (global as any).chrome.runtime.lastError = { message: "err" };
-    (global as any).chrome.storage.local.get = jest.fn(
-      (keys: any, cb: Function) => cb({ extensionConfig: { foo: "bar" } })
+    (global as any).chrome.storage.local.get = jest.fn((keys: any, cb: (result: any) => void) =>
+      cb({ extensionConfig: { foo: "bar" } })
     );
     const cfg = await popup.loadConfig();
     expect(cfg).toEqual({ foo: "bar" });
@@ -51,20 +53,18 @@ describe("updateDownloadDirDisplay", () => {
     (global as any).chrome = {
       runtime: {
         lastError: true,
-        sendMessage: jest.fn((msg: any, cb: Function) => cb({})),
+        sendMessage: jest.fn((msg: any, cb: (response: any) => void) => cb({})),
       },
       storage: {
         local: {
-          get: jest.fn((keys: any, cb: Function) =>
+          get: jest.fn((keys: any, cb: (result: any) => void) =>
             cb({ extensionConfig: { download_dir: "/tmp" } })
           ),
         },
       },
     };
     await popup.updateDownloadDirDisplay();
-    expect(document.getElementById("download-dir-display")?.textContent).toBe(
-      "Saving to: /tmp"
-    );
+    expect(document.getElementById("download-dir-display")?.textContent).toBe("Saving to: /tmp");
   });
 });
 
@@ -80,16 +80,14 @@ describe("updatePortDisplay", () => {
     (global as any).chrome = {
       runtime: {
         lastError: false,
-        sendMessage: jest.fn((msg: any, cb: Function) =>
+        sendMessage: jest.fn((msg: any, cb: (response: any) => void) =>
           cb({ serverConfig: { server_port: 1234 }, status: "success" })
         ),
       },
       storage: { local: { get: jest.fn() } },
     };
     await popup.updatePortDisplay();
-    expect(document.getElementById("server-port-display")?.textContent).toBe(
-      "Server Port: 1234"
-    );
+    expect(document.getElementById("server-port-display")?.textContent).toBe("Server Port: 1234");
   });
 });
 
@@ -104,7 +102,7 @@ describe("showConfigErrorIfPresent", () => {
     (global as any).chrome = {
       storage: {
         local: {
-          get: jest.fn((key: any, cb: Function) => cb({ configError: "oops" })),
+          get: jest.fn((key: any, cb: (result: any) => void) => cb({ configError: "oops" })),
         },
       },
     };

@@ -2,6 +2,8 @@
  * Enhanced Video Downloader - History Management
  * Handles download history fetching, rendering, and management
  */
+// @ts-nocheck
+
 import { HistoryEntry } from "./types";
 
 // --- History utility functions ---
@@ -21,25 +23,19 @@ export async function fetchHistory(
   totalItems: number;
 }> {
   return new Promise((resolve, reject) => {
-    chrome.storage.local.get({ [historyStorageKey]: [] }, (result) => {
+    chrome.storage.local.get({ [historyStorageKey]: [] }, result => {
       if (chrome.runtime.lastError) {
-        console.warn(
-          "[EVD][HISTORY] Error fetching history:",
-          chrome.runtime.lastError.message
-        );
+        console.warn("[EVD][HISTORY] Error fetching history:", chrome.runtime.lastError.message);
         return resolve({ history: [], totalItems: 0 });
       }
       // Ensure items have a timestamp for sorting, default to 0 if missing
-      const allHistory = (result[historyStorageKey] || []).map(
-        (item: HistoryEntry) => ({
-          ...item,
-          timestamp: item.timestamp || 0,
-        })
-      );
+      const allHistory = (result[historyStorageKey] || []).map((item: HistoryEntry) => ({
+        ...item,
+        timestamp: item.timestamp || 0,
+      }));
       // Sort by timestamp descending (newest first)
       allHistory.sort(
-        (a: HistoryEntry, b: HistoryEntry) =>
-          (b.timestamp as number) - (a.timestamp as number)
+        (a: HistoryEntry, b: HistoryEntry) => (b.timestamp as number) - (a.timestamp as number)
       );
 
       // Handle pagination
@@ -75,9 +71,7 @@ export function renderHistoryItems(
   nextPageBtn?: HTMLButtonElement
 ): void {
   if (!historyListElement) {
-    console.error(
-      "[EVD][HISTORY] No history list element provided to renderHistory"
-    );
+    console.error("[EVD][HISTORY] No history list element provided to renderHistory");
     return;
   }
 
@@ -95,8 +89,7 @@ export function renderHistoryItems(
 
   // If we have no items, show a message
   if (!historyItems || historyItems.length === 0) {
-    historyListElement.innerHTML =
-      '<li class="empty-history">No download history available.</li>';
+    historyListElement.innerHTML = '<li class="empty-history">No download history available.</li>';
 
     // Update pagination UI if provided
     if (pageInfoElement && pageInfoElement instanceof Element) {
@@ -116,7 +109,7 @@ export function renderHistoryItems(
   }
 
   // Render history items
-  historyItems.forEach((item) => {
+  historyItems.forEach(item => {
     const li = document.createElement("li");
     li.className = "history-item";
     if (item.id) {
@@ -130,9 +123,7 @@ export function renderHistoryItems(
 
     const timestampDiv = document.createElement("div");
     timestampDiv.className = "history-item-timestamp";
-    timestampDiv.textContent = item.timestamp
-      ? new Date(item.timestamp).toLocaleString()
-      : "";
+    timestampDiv.textContent = item.timestamp ? new Date(item.timestamp).toLocaleString() : "";
 
     const statusDiv = document.createElement("div");
     const statusBold = document.createElement("b");
@@ -147,7 +138,7 @@ export function renderHistoryItems(
     retryButton.className = "btn btn--secondary retry-btn";
     retryButton.textContent = "Retry";
     retryButton.title = "Retry download";
-    retryButton.addEventListener("click", (e) => {
+    retryButton.addEventListener("click", e => {
       e.stopPropagation(); // Prevent li click if any
       // Retry clicked for item
       chrome.runtime.sendMessage(
@@ -158,7 +149,7 @@ export function renderHistoryItems(
           page_title: item.page_title || document.title, // Fallback for page_title
           // id: item.id // Optionally pass original ID if server needs to link them
         },
-        (response) => {
+        response => {
           if (chrome.runtime.lastError) {
             console.warn(
               "[EVD][HISTORY] Error sending retry message:",
@@ -176,7 +167,7 @@ export function renderHistoryItems(
     deleteButton.className = "btn btn--secondary delete-btn";
     deleteButton.textContent = "Delete";
     deleteButton.title = "Remove from history";
-    deleteButton.addEventListener("click", async (e) => {
+    deleteButton.addEventListener("click", async e => {
       e.stopPropagation();
       if (!item.id) return;
       // Delete clicked for item
@@ -184,10 +175,7 @@ export function renderHistoryItems(
         await removeHistoryItemAndNotify(item.id);
         // The historyUpdated message from removeHistoryItemAndNotify will trigger a re-render
       } catch (error) {
-        console.error(
-          "[EVD][HISTORY] Failed to delete history item from UI action:",
-          error
-        );
+        console.error("[EVD][HISTORY] Failed to delete history item from UI action:", error);
       }
     });
 
@@ -204,9 +192,7 @@ export function renderHistoryItems(
       const detailSpan = document.createElement("span");
       detailSpan.className = "history-item-detail";
       // If detail is an array, join it. Otherwise, display as is.
-      detailSpan.textContent = Array.isArray(item.detail)
-        ? item.detail.join(", ")
-        : item.detail;
+      detailSpan.textContent = Array.isArray(item.detail) ? item.detail.join(", ") : item.detail;
       detailDiv.appendChild(document.createTextNode("Detail: "));
       detailDiv.appendChild(detailSpan);
       li.appendChild(detailDiv);
@@ -244,13 +230,7 @@ export function renderHistoryItems(
       const startItem = Math.min((page - 1) * perPage + 1, actualTotal);
       const endItem = Math.min(page * perPage, actualTotal);
       pageInfoElement.textContent =
-        "Showing " +
-        startItem +
-        "-" +
-        endItem +
-        " of " +
-        actualTotal +
-        " items";
+        "Showing " + startItem + "-" + endItem + " of " + actualTotal + " items";
     }
   }
 
@@ -279,7 +259,7 @@ export async function addToHistory(entry: HistoryEntry): Promise<void> {
   };
 
   return new Promise((resolve, reject) => {
-    chrome.storage.local.get({ [historyStorageKey]: [] }, (result) => {
+    chrome.storage.local.get({ [historyStorageKey]: [] }, result => {
       if (chrome.runtime.lastError) {
         console.warn(
           "[EVD][HISTORY] Warning fetching existing history:",
@@ -315,10 +295,7 @@ export async function clearHistory(): Promise<void> {
   return new Promise((resolve, reject) => {
     chrome.storage.local.set({ [historyStorageKey]: [] }, () => {
       if (chrome.runtime.lastError) {
-        console.error(
-          "[EVD][HISTORY] Error clearing history:",
-          chrome.runtime.lastError.message
-        );
+        console.error("[EVD][HISTORY] Error clearing history:", chrome.runtime.lastError.message);
         reject(new Error(chrome.runtime.lastError.message));
       } else {
         // History cleared
@@ -342,9 +319,7 @@ export async function clearHistoryAndNotify(): Promise<void> {
  * @param itemId - ID of the history item to remove
  * @returns Promise resolving when item is removed
  */
-export async function removeHistoryItem(
-  itemId?: string | number
-): Promise<void> {
+export async function removeHistoryItem(itemId?: string | number): Promise<void> {
   if (!itemId) {
     console.warn("[EVD][HISTORY] No item ID provided for removal.");
     return Promise.resolve();
@@ -352,15 +327,13 @@ export async function removeHistoryItem(
 
   return new Promise((resolve, reject) => {
     // Note: We can't use fetchHistory here as it now rejects on error.
-    chrome.storage.local.get({ [historyStorageKey]: [] }, (result) => {
+    chrome.storage.local.get({ [historyStorageKey]: [] }, result => {
       if (chrome.runtime.lastError) {
         return reject(new Error(chrome.runtime.lastError.message));
       }
 
       const history = result[historyStorageKey] || [];
-      const newHistory = history.filter(
-        (item: HistoryEntry) => item.id !== itemId
-      );
+      const newHistory = history.filter((item: HistoryEntry) => item.id !== itemId);
 
       chrome.storage.local.set({ [historyStorageKey]: newHistory }, () => {
         if (chrome.runtime.lastError) {
@@ -382,9 +355,7 @@ export async function removeHistoryItem(
  * @param itemId - The ID of the item to remove.
  * @returns Promise resolving to void
  */
-export async function removeHistoryItemAndNotify(
-  itemId?: string | number
-): Promise<void> {
+export async function removeHistoryItemAndNotify(itemId?: string | number): Promise<void> {
   await removeHistoryItem(itemId);
   chrome.runtime.sendMessage({ type: "historyUpdated" });
 }

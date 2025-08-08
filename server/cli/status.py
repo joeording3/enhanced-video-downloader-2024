@@ -77,7 +77,10 @@ def get_active_downloads() -> list[dict[str, Any]]:
         response = requests.get(f"http://127.0.0.1:{port}/status", timeout=10)
         if response.status_code == 200:
             data: dict[str, Any] = response.json()
-            active_downloads: list[dict[str, Any]] = data.get("active_downloads", [])
+            active_downloads = data.get("active_downloads", [])
+            # Ensure we return a list even if the response format is invalid
+            if not isinstance(active_downloads, list):
+                return []
             return active_downloads
         click.echo(f"Error retrieving downloads: {response.status_code}")
         click.echo(response.text)

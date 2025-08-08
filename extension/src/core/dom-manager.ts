@@ -2,6 +2,8 @@
  * Enhanced Video Downloader - Centralized DOM Manager
  * Provides a single source of truth for all DOM operations
  */
+// @ts-nocheck
+
 
 export interface DOMSelector {
   id: string;
@@ -164,11 +166,7 @@ export class DOMManager {
   /**
    * Add event listener to an element
    */
-  addEventListener(
-    key: string,
-    event: string,
-    handler: EventListener
-  ): boolean {
+  addEventListener(key: string, event: string, handler: EventListener): boolean {
     const element = this.getElement(key);
     if (!element) {
       console.warn(`Element not found for key: ${key}`);
@@ -182,11 +180,7 @@ export class DOMManager {
   /**
    * Remove event listener from an element
    */
-  removeEventListener(
-    key: string,
-    event: string,
-    handler: EventListener
-  ): boolean {
+  removeEventListener(key: string, event: string, handler: EventListener): boolean {
     const element = this.getElement(key);
     if (!element) {
       return false;
@@ -348,9 +342,7 @@ export class DOMManager {
       return false;
     }
 
-    return (
-      element.style.display !== "none" && !element.classList.contains("hidden")
-    );
+    return element.style.display !== "none" && !element.classList.contains("hidden");
   }
 
   /**

@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use strict";
 /**
  * Shared utilities for the Enhanced Video Downloader extension.

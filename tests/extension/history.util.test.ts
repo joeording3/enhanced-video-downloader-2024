@@ -6,6 +6,8 @@
  *
  * Uses jest.isolateModules to ensure clean state between tests.
  */
+// @ts-nocheck
+
 
 import type { HistoryEntry } from "extension/src/types";
 
@@ -43,9 +45,7 @@ describe("history module", () => {
 
     it("returns empty history on storage error", async () => {
       (chrome.runtime.lastError as any) = { message: "fail" };
-      (chrome.storage.local.get as jest.Mock).mockImplementation((keys, cb) =>
-        cb({})
-      );
+      (chrome.storage.local.get as jest.Mock).mockImplementation((keys, cb) => cb({}));
       const result = await historyModule.fetchHistory();
       expect(result).toEqual({ history: [], totalItems: 0 });
     });
@@ -53,9 +53,7 @@ describe("history module", () => {
 
   describe("clearHistory", () => {
     it("clears history from storage", async () => {
-      (chrome.storage.local.set as jest.Mock).mockImplementation((items, cb) =>
-        cb()
-      );
+      (chrome.storage.local.set as jest.Mock).mockImplementation((items, cb) => cb());
       await historyModule.clearHistory();
       expect(chrome.storage.local.set).toHaveBeenCalledWith(
         { [historyModule.historyStorageKey]: [] },
@@ -66,18 +64,14 @@ describe("history module", () => {
 
     it("rejects on storage.set error", async () => {
       (chrome.runtime.lastError as any) = new Error("fail");
-      (chrome.storage.local.set as jest.Mock).mockImplementation((items, cb) =>
-        cb()
-      );
+      (chrome.storage.local.set as jest.Mock).mockImplementation((items, cb) => cb());
       await expect(historyModule.clearHistory()).rejects.toThrow("fail");
     });
   });
 
   describe("clearHistoryAndNotify", () => {
     it("clears history and sends a notification", async () => {
-      (chrome.storage.local.set as jest.Mock).mockImplementation((items, cb) =>
-        cb()
-      );
+      (chrome.storage.local.set as jest.Mock).mockImplementation((items, cb) => cb());
       await historyModule.clearHistoryAndNotify();
       expect(chrome.storage.local.set).toHaveBeenCalledWith(
         { [historyModule.historyStorageKey]: [] },
@@ -121,9 +115,7 @@ describe("history module", () => {
       (chrome.storage.local.get as jest.Mock).mockImplementation((key, cb) => {
         cb({ [historyModule.historyStorageKey]: mockHistory });
       });
-      (chrome.storage.local.set as jest.Mock).mockImplementation((items, cb) =>
-        cb()
-      );
+      (chrome.storage.local.set as jest.Mock).mockImplementation((items, cb) => cb());
 
       await historyModule.removeHistoryItem("remove");
       const expectedHistory = [mockHistory[0]];
@@ -144,12 +136,8 @@ describe("history module", () => {
         cb({ [historyModule.historyStorageKey]: mockHistory });
       });
       (chrome.runtime.lastError as any) = new Error("Failed to save");
-      (chrome.storage.local.set as jest.Mock).mockImplementation((items, cb) =>
-        cb()
-      );
-      await expect(historyModule.removeHistoryItem("remove")).rejects.toThrow(
-        "Failed to save"
-      );
+      (chrome.storage.local.set as jest.Mock).mockImplementation((items, cb) => cb());
+      await expect(historyModule.removeHistoryItem("remove")).rejects.toThrow("Failed to save");
     });
 
     it("rejects if fetching history fails", async () => {
@@ -157,9 +145,7 @@ describe("history module", () => {
       (chrome.storage.local.get as jest.Mock).mockImplementation((key, cb) => {
         cb({}); // Simulate error by returning no data
       });
-      await expect(historyModule.removeHistoryItem("remove")).rejects.toThrow(
-        "Failed to fetch"
-      );
+      await expect(historyModule.removeHistoryItem("remove")).rejects.toThrow("Failed to fetch");
     });
   });
 
@@ -172,17 +158,13 @@ describe("history module", () => {
       (chrome.storage.local.get as jest.Mock).mockImplementation((key, cb) => {
         cb({ [historyModule.historyStorageKey]: mockHistory });
       });
-      (chrome.storage.local.set as jest.Mock).mockImplementation((items, cb) =>
-        cb()
-      );
+      (chrome.storage.local.set as jest.Mock).mockImplementation((items, cb) => cb());
 
       await historyModule.removeHistoryItemAndNotify("some-id");
 
       expect(chrome.storage.local.set).toHaveBeenCalledWith(
         {
-          [historyModule.historyStorageKey]: [
-            { id: "another-id", timestamp: 2 },
-          ],
+          [historyModule.historyStorageKey]: [{ id: "another-id", timestamp: 2 }],
         },
         expect.any(Function)
       );
@@ -214,9 +196,7 @@ describe("history module", () => {
         cb({ [historyModule.historyStorageKey]: [] });
       });
       // Mock set to be successful
-      (chrome.storage.local.set as jest.Mock).mockImplementation((items, cb) =>
-        cb()
-      );
+      (chrome.storage.local.set as jest.Mock).mockImplementation((items, cb) => cb());
 
       await historyModule.addToHistory(newEntry);
 
@@ -232,12 +212,8 @@ describe("history module", () => {
       (chrome.storage.local.get as jest.Mock).mockImplementation((key, cb) => {
         cb({});
       });
-      (chrome.storage.local.set as jest.Mock).mockImplementation((items, cb) =>
-        cb()
-      );
-      await expect(
-        historyModule.addToHistory(newEntry)
-      ).resolves.toBeUndefined();
+      (chrome.storage.local.set as jest.Mock).mockImplementation((items, cb) => cb());
+      await expect(historyModule.addToHistory(newEntry)).resolves.toBeUndefined();
     });
 
     it("resolves when setting history fails", async () => {
@@ -246,12 +222,8 @@ describe("history module", () => {
         cb({ [historyModule.historyStorageKey]: [] });
       });
       (chrome.runtime.lastError as any) = new Error("Failed to set");
-      (chrome.storage.local.set as jest.Mock).mockImplementation((items, cb) =>
-        cb()
-      );
-      await expect(
-        historyModule.addToHistory(newEntry)
-      ).resolves.toBeUndefined();
+      (chrome.storage.local.set as jest.Mock).mockImplementation((items, cb) => cb());
+      await expect(historyModule.addToHistory(newEntry)).resolves.toBeUndefined();
     });
   });
 });

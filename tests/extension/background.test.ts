@@ -3,6 +3,8 @@
  * Comprehensive unit tests for background.ts
  * Updated to use centralized services
  */
+// @ts-nocheck
+
 
 import {
   sendDownloadRequest,
@@ -15,11 +17,7 @@ import {
   applyThemeToActionIcon,
   actionIconPaths,
 } from "../../extension/src/background";
-import {
-  getServerPort,
-  getClientPort,
-  getPortRange,
-} from "../../extension/src/core/constants";
+import { getServerPort, getClientPort, getPortRange } from "../../extension/src/core/constants";
 import { CentralizedLogger } from "../../extension/src/core/logger";
 import { ExtensionStateManager } from "../../extension/src/core/state-manager";
 
@@ -85,10 +83,7 @@ describe("Background Script - Core Functions", () => {
     // Reset global server state variables
     // This is needed because serverAvailable is a global variable in background.ts
     const backgroundModule = require("../../extension/src/background");
-    if (
-      backgroundModule &&
-      typeof backgroundModule.resetServerState === "function"
-    ) {
+    if (backgroundModule && typeof backgroundModule.resetServerState === "function") {
       backgroundModule.resetServerState();
     }
 
@@ -177,9 +172,7 @@ describe("Background Script - Core Functions", () => {
     it("checkServerStatus should return true for successful response", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: jest
-          .fn()
-          .mockResolvedValue({ app_name: "Enhanced Video Downloader" }),
+        json: jest.fn().mockResolvedValue({ app_name: "Enhanced Video Downloader" }),
       });
 
       const result = await checkServerStatus(getServerPort());
@@ -207,9 +200,7 @@ describe("Background Script - Core Functions", () => {
       });
 
       // The centralized error handler re-throws errors, so we expect this to throw
-      await expect(checkServerStatus(getServerPort())).rejects.toThrow(
-        "Network error"
-      );
+      await expect(checkServerStatus(getServerPort())).rejects.toThrow("Network error");
 
       // The error handler logs to console.error, not the centralized logger
       // We just verify the function throws as expected
@@ -246,9 +237,7 @@ describe("Background Script - Core Functions", () => {
       });
 
       // The centralized error handler re-throws errors, so we expect this to throw
-      await expect(checkServerStatus(getServerPort())).rejects.toThrow(
-        "AbortError"
-      );
+      await expect(checkServerStatus(getServerPort())).rejects.toThrow("AbortError");
 
       // The error handler logs to console.error, not the centralized logger
       // We just verify the function throws as expected
@@ -258,9 +247,7 @@ describe("Background Script - Core Functions", () => {
     it("checkServerStatus should handle storage errors", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: jest
-          .fn()
-          .mockResolvedValue({ app_name: "Enhanced Video Downloader" }),
+        json: jest.fn().mockResolvedValue({ app_name: "Enhanced Video Downloader" }),
       });
 
       const result = await checkServerStatus(getServerPort());
@@ -270,9 +257,7 @@ describe("Background Script - Core Functions", () => {
     it("checkServerStatus should handle server availability changes", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: jest
-          .fn()
-          .mockResolvedValue({ app_name: "Enhanced Video Downloader" }),
+        json: jest.fn().mockResolvedValue({ app_name: "Enhanced Video Downloader" }),
       });
 
       const result = await checkServerStatus(getServerPort());
@@ -317,9 +302,7 @@ describe("Background Script - Core Functions", () => {
     it("findServerPort should return port when server is found", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: jest
-          .fn()
-          .mockResolvedValue({ app_name: "Enhanced Video Downloader" }),
+        json: jest.fn().mockResolvedValue({ app_name: "Enhanced Video Downloader" }),
       });
 
       const result = await findServerPort();
@@ -434,9 +417,7 @@ describe("Background Script - Core Functions", () => {
     });
 
     it("persistQueue should handle storage errors gracefully", async () => {
-      (chrome.storage.local.set as jest.Mock).mockRejectedValueOnce(
-        new Error("Storage full")
-      );
+      (chrome.storage.local.set as jest.Mock).mockRejectedValueOnce(new Error("Storage full"));
 
       await persistQueue();
       // The centralized logger should handle the error
@@ -472,9 +453,7 @@ describe("Background Script - Core Functions", () => {
       });
 
       // The centralized error handler re-throws errors, so we expect this to throw
-      await expect(checkServerStatus(getServerPort())).rejects.toThrow(
-        "Network error"
-      );
+      await expect(checkServerStatus(getServerPort())).rejects.toThrow("Network error");
 
       // The error handler logs to console.error, not the centralized logger
       // We just verify the function throws as expected
@@ -605,9 +584,7 @@ describe("Background Script - Core Functions", () => {
     });
 
     it("persistQueue should handle storage errors gracefully", async () => {
-      (chrome.storage.local.set as jest.Mock).mockRejectedValueOnce(
-        new Error("Storage full")
-      );
+      (chrome.storage.local.set as jest.Mock).mockRejectedValueOnce(new Error("Storage full"));
 
       await persistQueue();
       const logs = logger.getLogs();

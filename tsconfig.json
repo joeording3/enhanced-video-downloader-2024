@@ -16,5 +16,5 @@
     }
   },
   "include": ["extension/src/**/*.ts", "tests/**/*.ts", "tests/**/*.js"],
-  "exclude": ["node_modules", "tests/extension/test_extension_ui_e2e.spec.ts"]
+  "exclude": ["node_modules"]
 }

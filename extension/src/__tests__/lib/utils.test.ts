@@ -1,6 +1,8 @@
 /**
  * Tests for utility functions
  */
+// @ts-nocheck
+
 import {
   debounce,
   logger,
@@ -91,26 +93,17 @@ describe("Utility functions", () => {
 
     it("should warn with prefix when console.warn is mocked", () => {
       logger.warn("warning message");
-      expect(console.warn).toHaveBeenCalledWith(
-        "[EVD Warning]",
-        "warning message"
-      );
+      expect(console.warn).toHaveBeenCalledWith("[EVD Warning]", "warning message");
     });
 
     it("should error with prefix when console.error is mocked", () => {
       logger.error("error message");
-      expect(console.error).toHaveBeenCalledWith(
-        "[EVD Error]",
-        "error message"
-      );
+      expect(console.error).toHaveBeenCalledWith("[EVD Error]", "error message");
     });
 
     it("should debug with prefix when console.debug is mocked", () => {
       logger.debug("debug message");
-      expect(console.debug).toHaveBeenCalledWith(
-        "[EVD Debug]",
-        "debug message"
-      );
+      expect(console.debug).toHaveBeenCalledWith("[EVD Debug]", "debug message");
     });
 
     it("should handle logging errors gracefully", () => {

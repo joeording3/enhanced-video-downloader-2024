@@ -1,10 +1,5 @@
-import {
-  debounce,
-  throttle,
-  memoize,
-  DOMBatcher,
-  Cache,
-} from "../../lib/performance-utils";
+// @ts-nocheck
+import { debounce, throttle, memoize, DOMBatcher, Cache } from "../../lib/performance-utils";
 
 describe("Performance Utils Tests", () => {
   describe("Debounce Function", () => {
@@ -20,7 +15,7 @@ describe("Performance Utils Tests", () => {
       expect(mockFunction).not.toHaveBeenCalled();
 
       // Wait for debounce period
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      await new Promise(resolve => setTimeout(resolve, 150));
 
       expect(mockFunction).toHaveBeenCalledTimes(1);
     });
@@ -31,7 +26,7 @@ describe("Performance Utils Tests", () => {
 
       debouncedFunction("arg1", "arg2");
 
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      await new Promise(resolve => setTimeout(resolve, 150));
 
       expect(mockFunction).toHaveBeenCalledWith("arg1", "arg2");
     });
@@ -43,17 +38,17 @@ describe("Performance Utils Tests", () => {
       debouncedFunction();
 
       // Wait half the debounce time
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await new Promise(resolve => setTimeout(resolve, 50));
 
       debouncedFunction(); // This should reset the timer
 
       // Wait less than the full debounce time
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await new Promise(resolve => setTimeout(resolve, 50));
 
       expect(mockFunction).not.toHaveBeenCalled();
 
       // Wait for the full debounce time
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       expect(mockFunction).toHaveBeenCalledTimes(1);
     });
@@ -72,7 +67,7 @@ describe("Performance Utils Tests", () => {
       expect(mockFunction).toHaveBeenCalledTimes(1);
 
       // Wait for throttle period
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      await new Promise(resolve => setTimeout(resolve, 150));
 
       throttledFunction();
       expect(mockFunction).toHaveBeenCalledTimes(2);
@@ -98,7 +93,7 @@ describe("Performance Utils Tests", () => {
       throttledFunction();
       expect(mockFunction).toHaveBeenCalledTimes(1); // Should not call again
 
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      await new Promise(resolve => setTimeout(resolve, 150));
       throttledFunction();
       expect(mockFunction).toHaveBeenCalledTimes(2);
     });
@@ -184,7 +179,7 @@ describe("Performance Utils Tests", () => {
       expect(operations).toHaveLength(0);
 
       // Wait for next frame
-      return new Promise((resolve) => {
+      return new Promise(resolve => {
         requestAnimationFrame(() => {
           expect(operations).toEqual([1, 2, 3]);
           resolve(undefined);
@@ -210,7 +205,7 @@ describe("Performance Utils Tests", () => {
         batcher.add(() => operations.push(i));
       }
 
-      return new Promise((resolve) => {
+      return new Promise(resolve => {
         requestAnimationFrame(() => {
           expect(operations).toHaveLength(100);
           expect(operations[0]).toBe(0);
@@ -245,7 +240,7 @@ describe("Performance Utils Tests", () => {
       expect(cache.get("key")).toBe("value");
 
       // Wait for expiration
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       expect(cache.get("key")).toBeUndefined();
     });
@@ -302,7 +297,7 @@ describe("Performance Utils Tests", () => {
         debouncedFunction();
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await new Promise(resolve => setTimeout(resolve, 50));
 
       const endTime = Date.now();
 

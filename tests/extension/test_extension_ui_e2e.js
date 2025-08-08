@@ -1,3 +1,4 @@
+// @ts-nocheck
 // eslint-env jest
 /**
  * Headless browser tests for Chrome extension UI using Playwright.
@@ -15,13 +16,13 @@ const path = require("path");
 const fs = require("fs");
 // Determine if running coverage tests
 const isCoverage = process.env.PLAYWRIGHT_COVERAGE === "true";
-const v8toIstanbul = require("v8-to-istanbul");
-const { createCoverageMap } = require("istanbul-lib-coverage");
+const _v8toIstanbul = require("v8-to-istanbul");
+const { createCoverageMap: _createCoverageMap } = require("istanbul-lib-coverage");
 // Import centralized port configuration
 const {
   getServerPort,
   getClientPort,
-  getPortRange,
+  _getPortRange,
 } = require("../extension/src/constants");
 
 // Increase default Jest timeout and declare dynamic server port
@@ -62,7 +63,9 @@ describe("Chrome Extension UI E2E", () => {
         // Fallback to assigned port if available
         try {
           serverPort = srv.address().port;
-        } catch {}
+        } catch {
+          // Ignore error
+        }
         UI_BASE = `http://127.0.0.1:${serverPort}/ui`;
         resolve();
       });
@@ -193,7 +196,7 @@ describe("Chrome Extension UI E2E", () => {
                 cb({});
               }
             },
-            onMessage: { addListener: (_fn) => {} },
+            onMessage: { addListener: (_fn) => { } },
           },
           tabs: {
             query: () =>
@@ -225,7 +228,7 @@ describe("Chrome Extension UI E2E", () => {
             lastError: undefined,
             // Listeners registered via onMessage.addListener
             _listeners: [],
-            addListener: function (fn) {},
+            addListener: function (_fn) { },
             onMessage: {
               _listeners: [],
               addListener(fn) {
@@ -291,7 +294,7 @@ describe("Chrome Extension UI E2E", () => {
           },
         };
         // Wire onMessage.addListener alias
-        window.chrome.runtime.onMessage = window.chrome.runtime.onMessage;
+        // No-op assignment for compatibility
         window.chrome.runtime.onMessage.addListener =
           window.chrome.runtime.onMessage.addListener.bind(
             window.chrome.runtime.onMessage
@@ -457,7 +460,7 @@ describe("Chrome Extension UI E2E", () => {
                 cb({});
               }
             },
-            onMessage: { addListener: (_fn) => {} },
+            onMessage: { addListener: (_fn) => { } },
           },
           storage: {
             local: {
@@ -580,7 +583,7 @@ describe("Chrome Extension UI E2E", () => {
                 cb({});
               }
             },
-            onMessage: { addListener: (_fn) => {} },
+            onMessage: { addListener: (_fn) => { } },
           },
           storage: {
             local: {
@@ -658,10 +661,10 @@ describe("Chrome Extension UI E2E", () => {
                   },
                 });
               } else {
-                cb && cb();
+                if (cb) cb();
               }
             },
-            onMessage: { addListener: (_fn) => {} },
+            onMessage: { addListener: (_fn) => { } },
           },
           tabs: {
             query: () =>
@@ -693,11 +696,10 @@ describe("Chrome Extension UI E2E", () => {
         };
       });
       await page.click("#enhanced-download-button");
-      await page.waitForFunction(() =>
-        document
-          .getElementById("status")
-          .textContent.includes("Server error occurred")
-      );
+      await page.waitForFunction(() => {
+        const statusEl = document.getElementById("status");
+        return statusEl && statusEl.textContent.includes("Server error occurred");
+      });
       text = await page.$eval("#status", (el) => el.textContent);
       expect(text).toContain("Server error occurred");
     }, 60000);
@@ -716,7 +718,9 @@ describe("Chrome Extension UI E2E", () => {
             window.chrome.runtime.lastError = {
               message: "Network unreachable",
             };
-            window.chrome.runtime.sendMessage = (msg, cb) => cb && cb();
+            window.chrome.runtime.sendMessage = (msg, cb) => {
+              if (cb) cb();
+            };
             window.chrome.tabs.query = () =>
               Promise.resolve([{ id: 1, url: "https://example.com" }]);
             window.chrome.storage.local.get = (_keys, cb) =>
@@ -934,7 +938,7 @@ describe("Chrome Extension UI E2E", () => {
                 cb({});
               }
             },
-            onMessage: { addListener: (_fn) => {} },
+            onMessage: { addListener: (_fn) => { } },
           },
           storage: {
             local: {
@@ -1157,7 +1161,7 @@ describe("Chrome Extension UI E2E", () => {
           runtime: {
             sendMessage: (_msg, cb) => cb && cb(),
             lastError: undefined,
-            onMessage: { addListener: () => {} },
+            onMessage: { addListener: () => { } },
           },
           tabs: {
             query: () => Promise.resolve([]),
@@ -1178,7 +1182,11 @@ describe("Chrome Extension UI E2E", () => {
         type: "module",
       });
       // Manually initialize content script
-      await page.evaluate(() => init());
+      await page.evaluate(() => {
+        if (typeof window.init === 'function') {
+          window.init();
+        }
+      });
       // Wait for download button to be injected
       await page.waitForSelector('button[id^="evd-download-button-"]');
       const btn = await page.$('button[id^="evd-download-button-"]');

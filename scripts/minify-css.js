@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// @ts-nocheck
 
 const fs = require("fs");
 const path = require("path");
@@ -27,11 +28,9 @@ if (!fs.existsSync(minifiedDir)) {
 }
 
 // Read and minify each CSS file
-const files = fs
-  .readdirSync(optimizedDir)
-  .filter((file) => file.endsWith(".css"));
+const files = fs.readdirSync(optimizedDir).filter(file => file.endsWith(".css"));
 
-files.forEach((file) => {
+files.forEach(file => {
   const inputPath = path.join(optimizedDir, file);
   const outputPath = path.join(minifiedDir, file);
 
@@ -39,9 +38,7 @@ files.forEach((file) => {
   const minified = minifyCSS(css);
 
   fs.writeFileSync(outputPath, minified);
-  console.log(
-    `Minified ${file}: ${css.length} -> ${minified.length} characters`
-  );
+  console.log(`Minified ${file}: ${css.length} -> ${minified.length} characters`);
 });
 
 console.log("CSS minification complete!");

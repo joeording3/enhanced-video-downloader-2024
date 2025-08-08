@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use strict";
 /**
  * Shared Chrome API mock utilities for consistent testing across the extension

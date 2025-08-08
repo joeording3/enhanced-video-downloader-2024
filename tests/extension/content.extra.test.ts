@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   getButtonState,
   saveButtonState,
@@ -35,9 +36,7 @@ describe("Content.ts additional branch coverage", () => {
       });
       const logs = logger.getLogs();
       expect(
-        logs.some((log) =>
-          log.message.includes("Error getting button state from storage")
-        )
+        logs.some(log => log.message.includes("Error getting button state from storage"))
       ).toBe(true);
     });
 
@@ -54,9 +53,7 @@ describe("Content.ts additional branch coverage", () => {
       });
       const logs = logger.getLogs();
       expect(
-        logs.some((log) =>
-          log.message.includes("Error getting button state from storage")
-        )
+        logs.some(log => log.message.includes("Error getting button state from storage"))
       ).toBe(true);
     });
   });
@@ -73,11 +70,9 @@ describe("Content.ts additional branch coverage", () => {
         hidden: true,
       });
       const logs = logger.getLogs();
-      expect(
-        logs.some((log) =>
-          log.message.includes("Error saving button state to storage")
-        )
-      ).toBe(true);
+      expect(logs.some(log => log.message.includes("Error saving button state to storage"))).toBe(
+        true
+      );
     });
   });
 

@@ -9,6 +9,8 @@
     "test:coverage": "jest --coverage",
     "lint": "eslint . --ext .js,.ts",
     "lint:fix": "eslint . --ext .js,.ts --fix",
+    "lint:md": "markdownlint \"**/*.md\" --ignore node_modules",
+    "lint:md:fix": "markdownlint \"**/*.md\" --ignore node_modules --fix",
     "format:check": "prettier --check \"**/*.{js,ts,json,md}\" --ignore-path .prettierignore",
     "format": "prettier --write \"**/*.{js,ts,json,md}\"",
     "build": "npm run build:css && npm run build:ts",
@@ -23,11 +25,13 @@
     "profile:performance": "node scripts/profile_performance.js",
     "optimize:all": "npm run analyze:bundle && npm run optimize:tree-shaking && npm run profile:performance",
     "test:mutation:js": "stryker run",
-    "test:mutation:js:fast": "stryker run stryker.fast.conf.js",
-    "test:mutation:js:minimal": "stryker run stryker.minimal.conf.js",
-    "test:mutation:js:ultra-minimal": "stryker run stryker.ultra-minimal.conf.js",
+    "test:mutation:js": "stryker run",
     "test:mutation:js:debug": "stryker run --logLevel debug --fileLogLevel trace",
-    "test:mutation:js:analyze": "stryker run --reporter html --reporter clear-text"
+    "test:mutation:js:analyze": "stryker run --reporter html --reporter clear-text",
+    "test:playwright": "playwright test",
+    "test:playwright:install": "playwright install",
+    "test:playwright:headed": "playwright test --headed",
+    "test:playwright:debug": "playwright test --debug"
   },
   "repository": {
     "type": "git",
@@ -89,6 +93,7 @@
     ],
     "*.md": [
       "python scripts/check_markdown_emojis.py",
+      "markdownlint --fix",
       "prettier --write"
     ],
     "server/**/*.py": [

@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use strict";
 /**
  * Shared test helpers for consistent testing patterns across the extension

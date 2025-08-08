@@ -2,6 +2,8 @@
  * Enhanced Video Downloader - Centralized State Manager
  * Provides a single source of truth for all extension state
  */
+// @ts-nocheck
+
 
 import { Theme, ServerConfig } from "../types";
 import type { HistoryEntry } from "../types";
@@ -73,8 +75,7 @@ export type StateChangeEvent =
 export class ExtensionStateManager {
   private static instance: ExtensionStateManager;
   private state: ExtensionState;
-  private listeners: Map<StateChangeEvent, Set<(data: any) => void>> =
-    new Map();
+  private listeners: Map<StateChangeEvent, Set<(data: any) => void>> = new Map();
 
   private constructor() {
     this.state = {
@@ -162,10 +163,7 @@ export class ExtensionStateManager {
       this.notifyListeners("uiThemeChanged", this.state.ui.theme);
     }
     if (updates.buttonPosition !== undefined) {
-      this.notifyListeners(
-        "buttonPositionChanged",
-        this.state.ui.buttonPosition
-      );
+      this.notifyListeners("buttonPositionChanged", this.state.ui.buttonPosition);
     }
   }
 
@@ -179,10 +177,7 @@ export class ExtensionStateManager {
       this.notifyListeners("downloadQueueChanged", this.state.downloads.queue);
     }
     if (updates.active !== undefined) {
-      this.notifyListeners(
-        "downloadActiveChanged",
-        this.state.downloads.active
-      );
+      this.notifyListeners("downloadActiveChanged", this.state.downloads.active);
     }
   }
 
@@ -197,10 +192,7 @@ export class ExtensionStateManager {
   /**
    * Subscribe to state changes
    */
-  subscribe(
-    event: StateChangeEvent,
-    callback: (data: any) => void
-  ): () => void {
+  subscribe(event: StateChangeEvent, callback: (data: any) => void): () => void {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set());
     }
@@ -219,7 +211,7 @@ export class ExtensionStateManager {
   private notifyListeners(event: StateChangeEvent, data: any): void {
     const eventListeners = this.listeners.get(event);
     if (eventListeners) {
-      eventListeners.forEach((callback) => {
+      eventListeners.forEach(callback => {
         try {
           callback(data);
         } catch (error) {

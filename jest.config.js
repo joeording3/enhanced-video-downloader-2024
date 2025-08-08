@@ -1,6 +1,8 @@
 /**
  * Jest configuration for the Enhanced Video Downloader extension
  */
+// @ts-nocheck
+
 module.exports = {
   // Use jsdom environment for DOM testing
   testEnvironment: "jsdom",
@@ -114,8 +116,5 @@ module.exports = {
     "^extension/src/(.*)$": "<rootDir>/extension/src/$1",
   },
 
-  setupFilesAfterEnv: [
-    "<rootDir>/tests/jest/jest.setup.js",
-    "@testing-library/jest-dom",
-  ],
+  setupFilesAfterEnv: ["<rootDir>/tests/jest/jest.setup.js", "@testing-library/jest-dom"],
 };
