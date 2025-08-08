@@ -85,24 +85,6 @@ export function initOptionsPage(): void {
       /* ignore */
     }
   });
-
-  // Keep logger level in sync when options change
-  chrome.storage.onChanged.addListener(
-    (
-      changes: Record<string, { oldValue?: any; newValue?: any }>,
-      area: "sync" | "local" | "managed"
-    ) => {
-      if (area === "local" && changes.serverConfig) {
-        const cfg = changes.serverConfig.newValue || {};
-        const level = cfg.console_log_level || cfg.log_level || "info";
-        try {
-          logger.setLevel(String(level).toLowerCase() as any);
-        } catch {
-          /* ignore */
-        }
-      }
-    }
-  );
   // Initialize theme first
   initializeOptionsTheme().catch(error => {
     console.error("Error initializing theme:", error);

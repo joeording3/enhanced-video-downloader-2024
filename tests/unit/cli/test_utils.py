@@ -189,7 +189,9 @@ class TestCliUtilsHelperFunctions:
         from server.cli.utils import get_log_files
 
         with patch("server.cli.utils.Path") as mock_path:
-            mock_path.return_value.parent.parent.resolve.return_value.__truediv__.return_value.exists.return_value = False
+            mock_path.return_value.parent.parent.resolve.return_value.__truediv__.return_value.exists.return_value = (
+                False
+            )
 
             log_files = get_log_files()
 
@@ -251,7 +253,10 @@ class TestCliUtilsHelperFunctions:
         from server.cli.utils import clean_log_files
 
         with patch("server.cli.utils.Path") as mock_path:
-            mock_path.return_value.parent.parent.resolve.return_value.__truediv__.return_value.exists.return_value = False
+            mock_parent = mock_path.return_value.parent.parent
+            mock_resolved = mock_parent.resolve.return_value
+            mock_joined = mock_resolved.__truediv__.return_value
+            mock_joined.exists.return_value = False
 
             count = clean_log_files()
 
@@ -401,3 +406,52 @@ class TestCliUtilsLogFunctions:
         # Test that they have the expected attributes
         assert hasattr(logs_view_command, "callback")
         assert hasattr(logs_clear_command, "callback")
+
+
+class TestRunCleanup:
+    """Tests for the run_cleanup helper used by the cleanup command."""
+
+    def test_run_cleanup_removes_part_and_ytdl_files(self, tmp_path: Path, monkeypatch: Any) -> None:
+        from server.cli.utils import run_cleanup
+        import server.cli.utils as utils_mod
+
+        # Create temp download directory with files
+        download_dir = tmp_path / "downloads"
+        download_dir.mkdir()
+        part_files = [download_dir / f"file{i}.part" for i in range(3)]
+        ytdl_files = [download_dir / f"file{i}.ytdl" for i in range(2)]
+        for pf in part_files + ytdl_files:
+            pf.write_text("tmp")
+
+        class DummyConfig:
+            def get_value(self, key: str, default: Any = None) -> Any:
+                if key == "download_dir":
+                    return str(download_dir)
+                return default
+
+        monkeypatch.setattr(utils_mod, "load_config", staticmethod(lambda: DummyConfig()))
+
+        result = run_cleanup()
+
+        assert result["partial_downloads"] == 3
+        assert result["temp_files"] == 2
+        for pf in part_files + ytdl_files:
+            assert not pf.exists()
+
+    def test_run_cleanup_missing_or_invalid_dir(self, tmp_path: Path, monkeypatch: Any) -> None:
+        from server.cli.utils import run_cleanup
+        import server.cli.utils as utils_mod
+
+        nonexist = tmp_path / "missing"
+
+        class DummyConfig:
+            def get_value(self, key: str, default: Any = None) -> Any:
+                if key == "download_dir":
+                    return str(nonexist)
+                return default
+
+        monkeypatch.setattr(utils_mod, "load_config", staticmethod(lambda: DummyConfig()))
+
+        result = run_cleanup()
+
+        assert result == {"temp_files": 0, "partial_downloads": 0}

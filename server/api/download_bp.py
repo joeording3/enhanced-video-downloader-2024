@@ -269,8 +269,8 @@ def _cleanup_cancel_partfiles(download_id: str) -> None:
             path = Path(download_dir)
             for pf in path.glob(f"{prefix}*.part"):
                 pf.unlink()
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug(f"Failed to clean cancel partfiles for {download_id}: {e}")
 
 
 def _download_error_response(message: str, error_type: str, download_id: str, status_code: int) -> tuple[Response, int]:

@@ -5,6 +5,14 @@ Urgent Tasks:
 - [/] log viewer on options page not working - no logs displayed <!-- working-on: options logs viewer wired to background API -->
 - [ ] 'choose' button to set download directory not working - no response when clicked
 - [ ] nothing at all in browser console for options page or background service
+- [/] Implement `run_cleanup()` in `server/cli/utils.py` and add tests
+- [ ] Replace silent `pass` blocks with logging/handling in:
+  - `server/cli_helpers.py` (loops and maintenance utils)
+  - `server/cli_main.py` (loop around verification)
+  - `server/api/download_bp.py` (partial file cleanup)
+  - `server/api/status_bp.py` (average speed computation)
+  - `server/__main__.py` (process scanning and config save)
+  - `server/lock.py` (unlink/parse/read errors)
 
 #### 1.2 **Fix Critical JavaScript/TypeScript Modules** [WEEK 1-2]
 

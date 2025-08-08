@@ -565,6 +565,49 @@ export async function initPopup(): Promise<void> {
     });
   }
 
+  // Helper to send a message to the active tab's content script
+  const sendToActiveTab = (message: any, callback?: (response: any) => void): void => {
+    try {
+      chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+        const tabId = tabs && tabs[0] && tabs[0].id;
+        if (tabId !== undefined) {
+          chrome.tabs.sendMessage(tabId, message, resp => {
+            // Swallow lastError; content script may not be injected on internal pages
+            if (callback) callback(resp);
+          });
+        } else if (callback) {
+          callback(undefined);
+        }
+      });
+    } catch {
+      if (callback) callback(undefined);
+    }
+  };
+
+  // Wire HIDE/SHOW toggle
+  const toggleBtn = document.getElementById(
+    "toggle-enhanced-download-button"
+  ) as HTMLButtonElement | null;
+  if (toggleBtn) {
+    toggleBtn.addEventListener("click", () => {
+      const currentlyHiding = toggleBtn.textContent?.trim().toUpperCase() === "HIDE";
+      const newHidden = currentlyHiding; // if showing, next action hides
+      sendToActiveTab({ type: "toggleButtonVisibility", hidden: newHidden }, () => {
+        toggleBtn.textContent = newHidden ? "SHOW" : "HIDE";
+      });
+    });
+  }
+
+  // Wire RESET position
+  const resetBtn = document.getElementById("reset-button-position") as HTMLButtonElement | null;
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      sendToActiveTab({ type: "resetButtonPosition" }, () => {
+        // no-op
+      });
+    });
+  }
+
   // Initialize download status
   chrome.runtime.sendMessage({ type: "getQueue" }, (response: any) => {
     renderDownloadStatus(response || { active: {}, queue: [] });

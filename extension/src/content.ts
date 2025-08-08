@@ -154,6 +154,21 @@ function ensureDownloadButtonStyle(buttonElement: HTMLElement): void {
   }
   const computedStyle = window.getComputedStyle(buttonElement);
   let _styleAdjusted = false; // For logging
+  const isYouTubeEnhanced = buttonElement.classList.contains("youtube-enhanced");
+
+  // Utility: parse rgb/rgba string to [r,g,b]
+  const parseColor = (color: string): [number, number, number] | null => {
+    const m = color
+      .replace(/\s+/g, "")
+      .match(/^rgba?\((\d+),(\d+),(\d+)(?:,([0-9.]+))?\)$/i);
+    if (!m) return null;
+    return [parseInt(m[1], 10), parseInt(m[2], 10), parseInt(m[3], 10)];
+  };
+
+  // Utility: estimate luminance
+  const luminance = (rgb: [number, number, number]): number => {
+    return 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
+  };
 
   // Phase 1: Ensure critical visibility (display, opacity) regardless of state
   if (computedStyle.display === "none") {
@@ -178,11 +193,35 @@ function ensureDownloadButtonStyle(buttonElement: HTMLElement): void {
   if (!isTemporaryFeedbackState) {
     // Apply guideline styles
     Object.entries(EVD_BUTTON_GUIDELINE_STYLES).forEach(([prop, value]) => {
+      // Do not override backgroundColor here; we'll set a contrast-aware color below
+      if (prop === "backgroundColor") return;
       if ((computedStyle as any)[prop] !== value) {
         (buttonElement.style as any)[prop] = value;
         _styleAdjusted = true;
       }
     });
+  }
+
+  // Phase 2b: Choose contrast-aware colors based on page background
+  try {
+    const pageBg = window.getComputedStyle(document.body).backgroundColor || "rgb(0,0,0)";
+    const rgb = parseColor(pageBg) || [0, 0, 0];
+    const isDarkBg = luminance(rgb) < 128; // rough threshold
+    if (isDarkBg) {
+      // Light button on dark backgrounds
+      buttonElement.style.backgroundColor = "rgba(255,255,255,0.92)";
+      buttonElement.style.color = "#000";
+      (buttonElement.style as any).borderColor = "#000";
+      _styleAdjusted = true;
+    } else {
+      // Dark button on light backgrounds
+      buttonElement.style.backgroundColor = "rgba(0,0,0,0.72)";
+      buttonElement.style.color = "#fff";
+      (buttonElement.style as any).borderColor = "#fff";
+      _styleAdjusted = true;
+    }
+  } catch {
+    // ignore color detection errors
   }
 
   // Phase 3: Keep button within viewport bounds (avoid off-screen positioning)
@@ -479,6 +518,35 @@ async function setButtonHiddenState(hidden: boolean): Promise<void> {
   // Set display style
   downloadButton.style.display = hidden ? "none" : "block";
 
+  if (!hidden) {
+    // When showing the button, force essential visibility styles and safe position
+    try {
+      // Ensure on top and interactive
+      downloadButton.style.position = "fixed";
+      downloadButton.style.zIndex = "2147483647";
+      downloadButton.style.opacity = "1";
+      (downloadButton.style as any).visibility = "visible";
+      (downloadButton.style as any).pointerEvents = "auto";
+      // If current rect is offscreen or zero-sized, reset to safe spot
+      const rect = downloadButton.getBoundingClientRect();
+      const offscreen =
+        rect.width === 0 ||
+        rect.height === 0 ||
+        rect.left < 0 ||
+        rect.top < 0 ||
+        rect.left > window.innerWidth - Math.max(rect.width, 100) ||
+        rect.top > window.innerHeight - Math.max(rect.height, 40);
+      if (offscreen || !downloadButton.style.left || !downloadButton.style.top) {
+        downloadButton.style.left = "10px";
+        downloadButton.style.top = "70px";
+      }
+      // Re-apply style guidelines
+      ensureDownloadButtonStyle(downloadButton);
+    } catch {
+      // ignore
+    }
+  }
+
   // Get current position
   const rect = downloadButton.getBoundingClientRect();
   const x = rect.left;
@@ -580,6 +648,15 @@ async function init(): Promise<void> {
   if (!checkIntervalId) {
     checkIntervalId = window.setInterval(() => {
       findVideosAndInjectButtons();
+      // Ensure a global button exists even if no <video> is detected
+      if (!downloadButton) {
+        createOrUpdateButton().catch(() => {});
+      } else {
+        // If the global button was removed externally, recreate it
+        if (!document.body.contains(downloadButton)) {
+          createOrUpdateButton().catch(() => {});
+        }
+      }
     }, CHECK_INTERVAL);
   }
 

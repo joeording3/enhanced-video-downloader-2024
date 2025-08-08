@@ -11,6 +11,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - CLI: `videodownloader-server stop` now terminates all running server instances discovered on the system, not just the one referenced by the lock file. This improves reliability when multiple instances are started (e.g., via foreground and daemon runs). Use `--force` to immediately kill if graceful termination times out.
 
+- CLI Utils: Implemented `run_cleanup()` to remove `*.part` and `*.ytdl` artifacts using configured download directory. Added tests for normal and missing-dir cases. Minor logging tweaks in API cleanup paths to avoid silent failures.
+
 ### Testing & Tooling
 
 - Constrain Hypothesis property tests to write any generated directories under
