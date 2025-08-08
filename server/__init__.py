@@ -84,7 +84,8 @@ def create_app(config: Config) -> Flask:
     app.register_blueprint(download_bp)
     app.register_blueprint(config_bp)
     app.register_blueprint(status_bp)
-    app.register_blueprint(health_bp)  # Register without prefix for /health
+    # Register health under /api for a single, consistent API surface
+    app.register_blueprint(health_bp, url_prefix="/api")
     app.register_blueprint(history_bp)
     app.register_blueprint(restart_bp)
     app.register_blueprint(logs_bp)
