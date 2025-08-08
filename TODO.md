@@ -291,7 +291,9 @@ attention:
 - [ ] Monitor for new type ignore patterns
 - [ ] Ensure new test files maintain docstring standards
 - [ ] Track third-party library type stub availability
-- [x] Prevent Hypothesis tests from creating junk folders in repo root by confining generated paths to `tmp/hypothesis_download_dirs` and loading a local Hypothesis profile; updated `Makefile` junk check to ignore `.benchmarks`
+- [x] Prevent Hypothesis tests from creating junk folders in repo root by confining generated paths
+      to `tmp/hypothesis_download_dirs` and loading a local Hypothesis profile; updated `Makefile`
+      junk check to ignore `.benchmarks`
 
 ### Success Metrics to Track
 

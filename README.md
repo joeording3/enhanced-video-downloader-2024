@@ -526,15 +526,19 @@ make generate-ignores
 ## Security & Request Limits
 
 - Security headers: All responses include standard headers:
+
   - `X-Content-Type-Options: nosniff`
   - `X-Frame-Options: DENY`
   - `X-XSS-Protection: 1; mode=block`
   - `Referrer-Policy: strict-origin-when-cross-origin`
   - `Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'`
 
-- CORS: Enabled for local usage and extension contexts. By default, CORS is permissive (`*`) to accommodate Chrome/Firefox extension origins and localhost during development. For production, front a reverse proxy and restrict origins as needed.
+- CORS: Enabled for local usage and extension contexts. By default, CORS is permissive (`*`) to
+  accommodate Chrome/Firefox extension origins and localhost during development. For production,
+  front a reverse proxy and restrict origins as needed.
 
-- Request size limit: Requests are limited by `MAX_CONTENT_LENGTH` (default: 16 MB). Oversized requests return a JSON error with HTTP 413:
+- Request size limit: Requests are limited by `MAX_CONTENT_LENGTH` (default: 16 MB). Oversized
+  requests return a JSON error with HTTP 413:
 
 ```json
 {
@@ -544,7 +548,8 @@ make generate-ignores
 }
 ```
 
-- Rate limiting: Download endpoints include an in-memory rate limiter (10 req/min per IP) to reduce abuse.
+- Rate limiting: Download endpoints include an in-memory rate limiter (10 req/min per IP) to reduce
+  abuse.
 
 ### Development Tools
 

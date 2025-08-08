@@ -6,15 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
 ### Testing & Tooling
 
-- Constrain Hypothesis property tests to write any generated directories under `tmp/hypothesis_download_dirs` and explicitly load a Hypothesis profile storing examples in `.hypothesis/examples`, preventing junk folders at repo root.
-- Update `Makefile` junk folder checker to ignore `.benchmarks` (created by benchmarking), aligning with the cleanup script's critical folders.
+- Constrain Hypothesis property tests to write any generated directories under
+  `tmp/hypothesis_download_dirs` and explicitly load a Hypothesis profile storing examples in
+  `.hypothesis/examples`, preventing junk folders at repo root.
+- Update `Makefile` junk folder checker to ignore `.benchmarks` (created by benchmarking), aligning
+  with the cleanup script's critical folders.
 
 ### Security
 
-- Add standard security headers to all responses (X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy, CSP)
-- Configure CORS for local usage/extension contexts (permissive by default; recommend restricting in production)
+- Add standard security headers to all responses (X-Content-Type-Options, X-Frame-Options,
+  X-XSS-Protection, Referrer-Policy, CSP)
+- Configure CORS for local usage/extension contexts (permissive by default; recommend restricting in
+  production)
 - Enforce request size limits (16MB) with JSON 413 responses
 - Add simple in-memory rate limiting for download endpoints (10 req/min per IP)
 
