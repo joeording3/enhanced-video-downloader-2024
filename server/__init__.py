@@ -80,6 +80,9 @@ def create_app(config: Config) -> Flask:
             413,
         )
 
+    # Explicit reference to satisfy static analyzers that this handler is used
+    _ = handle_request_entity_too_large
+
     # Register blueprints
     app.register_blueprint(download_bp)
     app.register_blueprint(config_bp)

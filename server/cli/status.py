@@ -4,19 +4,43 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict, cast
 
 import click
 import requests
 
-from server.cli_helpers import find_server_processes_cli, get_config_value, get_lock_pid_port_cli, is_server_running
+from server.cli_helpers import (
+    find_server_processes_cli,
+    get_config_value,
+    get_lock_pid_port_cli,
+    is_server_running,
+)
+
+
+class _ProcessInfo(TypedDict, total=False):
+    pid: int | None
+    port: int | None
+    uptime: int | float | None
+    version: str | None
 
 
 @click.command(name="server")
 @click.option("--json", "as_json", is_flag=True, help="Output in JSON format.")
 def server_command(as_json: bool) -> None:
     """Check server status."""
-    processes = find_server_processes_cli()
+    processes_raw = find_server_processes_cli()
+    processes: list[_ProcessInfo] = [
+        cast(
+            _ProcessInfo,
+            {
+                "pid": p.get("pid"),
+                "port": p.get("port"),
+                "uptime": p.get("uptime"),
+                "version": p.get("version"),
+            },
+        )
+        for p in processes_raw
+    ]
     # No server running
     if not processes:
         if as_json:
@@ -81,7 +105,7 @@ def get_active_downloads() -> list[dict[str, Any]]:
             # Ensure we return a list even if the response format is invalid
             if not isinstance(active_downloads, list):
                 return []
-            return active_downloads
+            return cast(list[dict[str, Any]], active_downloads)
         click.echo(f"Error retrieving downloads: {response.status_code}")
         click.echo(response.text)
         sys.exit(1)

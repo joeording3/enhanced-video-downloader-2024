@@ -30,7 +30,7 @@ download_bp = Blueprint("download_api", __name__, url_prefix="/api")
 logger = logging.getLogger(__name__)
 
 # Rate limiting storage
-_rate_limit_storage = defaultdict(list)
+_rate_limit_storage: defaultdict[str, list[float]] = defaultdict(list)
 _RATE_LIMIT_WINDOW = 60  # 1 minute window
 _MAX_REQUESTS_PER_WINDOW = 10  # Max 10 requests per minute per IP
 
@@ -58,9 +58,7 @@ def check_rate_limit(ip_address: str) -> bool:
     window_start = current_time - _RATE_LIMIT_WINDOW
 
     # Clean old entries
-    _rate_limit_storage[ip_address] = [
-        timestamp for timestamp in _rate_limit_storage[ip_address] if timestamp > window_start
-    ]
+    _rate_limit_storage[ip_address] = [ts for ts in _rate_limit_storage[ip_address] if ts > window_start]
 
     # Check if limit exceeded
     if len(_rate_limit_storage[ip_address]) >= _MAX_REQUESTS_PER_WINDOW:
@@ -718,13 +716,13 @@ def perform_background_cleanup() -> None:
 
         # Clean up orphaned temp files
         temp_files_cleaned = 0
-        temp_files_to_clean = []
+        temp_files_to_clean: list[str] = []
 
         # Collect temp files to clean up
         for download_id, temp_files in list(download_tempfile_registry.items()):
             if download_id not in download_process_registry:
                 # Process is gone but temp files remain
-                temp_files_to_clean.extend(temp_files)
+                temp_files_to_clean.extend(list(temp_files))
                 del download_tempfile_registry[download_id]
 
         # Clean up temp files (moved try-except outside loop for performance)
@@ -745,8 +743,7 @@ def perform_background_cleanup() -> None:
 
         if cache_cleaned > 0 or temp_files_cleaned > 0 or progress_cleaned > 0:
             logger.info(
-                f"Background cleanup completed: {cache_cleaned} cache entries, "
-                f"{temp_files_cleaned} temp files, {progress_cleaned} progress entries"
+                f"Background cleanup completed: {cache_cleaned} cache entries, {temp_files_cleaned} temp files, {progress_cleaned} progress entries"
             )
 
         # Update cleanup time using nonlocal-like approach

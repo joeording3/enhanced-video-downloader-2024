@@ -9,6 +9,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Code Quality: Eliminated remaining pyright warnings by tightening types in `config_bp.py` and
+  explicitly referencing nested Flask error handler in `__init__.py`. Fixed implicit string
+  concatenation in `download_bp.py` and cleaned import ordering in CLI status command.
+
 - CLI: `videodownloader-server stop` now terminates all running server instances discovered on the
   system, not just the one referenced by the lock file. This improves reliability when multiple
   instances are started (e.g., via foreground and daemon runs). Use `--force` to immediately kill if
