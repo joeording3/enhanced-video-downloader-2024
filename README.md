@@ -241,8 +241,11 @@ videodownloader-server start --verbose
 # Force start a new instance (stopping any existing instance)
 videodownloader-server start --force
 
-# Stop the server
+# Stop the server (terminates all running instances)
 videodownloader-server stop
+
+# Force stop (immediately kills processes if graceful stop times out)
+videodownloader-server stop --force
 
 # Restart the server
 videodownloader-server restart

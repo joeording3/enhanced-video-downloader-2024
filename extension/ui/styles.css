@@ -5,7 +5,7 @@
    - components.css: Reusable components (buttons, inputs, etc.)
    - base.css: Base styles (body, html, etc.)
    - themes.css: Theme-specific overrides
-   
+
    New files should import from these shared files instead of duplicating styles.
 */
 
@@ -222,6 +222,17 @@ body.dark-theme .separator {
   z-index: var(--z-tooltip) !important;
   text-shadow: 0 0 5px var(--shadow-white) !important;
   transition: var(--transition-normal) !important;
+}
+
+/* Server status text coloring */
+.server-status-text.status-connected {
+  color: #2e7d32; /* green 800 */
+  font-weight: 600;
+}
+
+.server-status-text.status-disconnected {
+  color: #c62828; /* red 800 */
+  font-weight: 600;
 }
 
 .youtube-enhanced:hover {

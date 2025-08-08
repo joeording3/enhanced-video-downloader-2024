@@ -24,6 +24,14 @@ declare namespace chrome {
 
   export interface Storage {
     local: StorageArea;
+    onChanged: {
+      addListener(
+        callback: (
+          changes: Record<string, { oldValue?: any; newValue?: any }>,
+          areaName: "sync" | "local" | "managed"
+        ) => void
+      ): void;
+    };
   }
 
   export interface RuntimeLastError {

@@ -18,6 +18,14 @@ interface ChromeStorageLocal {
 
 interface ChromeStorage {
   local: ChromeStorageLocal;
+  onChanged: {
+    addListener(
+      callback: (
+        changes: Record<string, { oldValue?: any; newValue?: any }>,
+        areaName: "sync" | "local" | "managed"
+      ) => void
+    ): void;
+  };
 }
 
 interface ChromeRuntimeLastError {

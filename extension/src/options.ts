@@ -3,7 +3,8 @@
  * Handles extension settings, configuration, and user preferences.
  */
 
-import { logger, safeParse } from "./lib/utils";
+import { safeParse } from "./lib/utils";
+import { logger } from "./core/logger";
 import { Theme, ServerConfig } from "./types";
 import { clearHistoryAndNotify, fetchHistory, renderHistoryItems } from "./history";
 import { getServerPort, getPortRange } from "./core/constants";
@@ -46,15 +47,21 @@ export function updateOptionsServerStatus(status: "connected" | "disconnected" |
   if (indicator && text) {
     // Remove all status classes
     indicator.classList.remove("connected", "disconnected");
+    text.classList.remove("status-connected", "status-disconnected");
 
     switch (status) {
       case "connected":
         indicator.classList.add("connected");
-        text.textContent = "Connected";
+        text.classList.add("status-connected");
+        chrome.storage.local.get("serverPort", res => {
+          const port = res.serverPort || "?";
+          (text as HTMLElement).textContent = `Server: Connected @ ${port}`;
+        });
         break;
       case "disconnected":
         indicator.classList.add("disconnected");
-        text.textContent = "Disconnected";
+        text.classList.add("status-disconnected");
+        (text as HTMLElement).textContent = "Server: Disconnected";
         break;
       case "checking":
         text.textContent = "Checking...";
@@ -68,6 +75,34 @@ export function updateOptionsServerStatus(status: "connected" | "disconnected" |
  * This function runs when the options page is loaded.
  */
 export function initOptionsPage(): void {
+  // Apply console log level from stored config to reflect user selection
+  chrome.storage.local.get("serverConfig", res => {
+    const cfg = res.serverConfig || {};
+    const level = cfg.console_log_level || cfg.log_level || "info";
+    try {
+      logger.setLevel(String(level).toLowerCase() as any);
+    } catch {
+      /* ignore */
+    }
+  });
+
+  // Keep logger level in sync when options change
+  chrome.storage.onChanged.addListener(
+    (
+      changes: Record<string, { oldValue?: any; newValue?: any }>,
+      area: "sync" | "local" | "managed"
+    ) => {
+      if (area === "local" && changes.serverConfig) {
+        const cfg = changes.serverConfig.newValue || {};
+        const level = cfg.console_log_level || cfg.log_level || "info";
+        try {
+          logger.setLevel(String(level).toLowerCase() as any);
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+  );
   // Initialize theme first
   initializeOptionsTheme().catch(error => {
     console.error("Error initializing theme:", error);
@@ -81,7 +116,7 @@ export function initOptionsPage(): void {
   setupMessageListener();
   setupLogsUI();
   loadErrorHistory();
-  logger.debug("Options page initialized");
+  logger.debug("Options page initialized", { component: "options" });
 }
 
 /**
@@ -98,15 +133,23 @@ export function loadSettings(): void {
     // Then try to get latest from server
     chrome.runtime.sendMessage({ type: "getConfig" }, response => {
       if (chrome.runtime.lastError) {
-        logger.error("Error getting config:", chrome.runtime.lastError.message);
+        logger.error(
+          "Error getting config:",
+          { component: "options" },
+          chrome.runtime.lastError.message as any
+        );
         // Do not proceed if there's an error
         return;
       }
       if (response && response.status === "success" && response.data) {
         populateFormFields(response.data);
-        logger.debug("Loaded settings from server");
+        logger.debug("Loaded settings from server", { component: "options" });
       } else {
-        logger.warn("Could not load settings from server:", response?.message);
+        logger.warn(
+          "Could not load settings from server:",
+          { component: "options" },
+          response?.message as any
+        );
       }
     });
   });
@@ -659,8 +702,12 @@ export function setupLogsUI(): void {
   const refreshBtn = document.getElementById("log-refresh");
   const clearBtn = document.getElementById("log-clear");
   const limitSelect = document.getElementById("log-limit") as HTMLSelectElement | null;
-  const recentFirstCheckbox = document.getElementById("log-recent-first") as HTMLInputElement | null;
-  const filterWerkzeugCheckbox = document.getElementById("log-filter-werkzeug") as HTMLInputElement | null;
+  const recentFirstCheckbox = document.getElementById(
+    "log-recent-first"
+  ) as HTMLInputElement | null;
+  const filterWerkzeugCheckbox = document.getElementById(
+    "log-filter-werkzeug"
+  ) as HTMLInputElement | null;
   const displayDiv = document.getElementById("log-display");
   const textarea = document.getElementById("logViewerTextarea") as HTMLTextAreaElement | null;
   const autoCheckbox = document.getElementById("log-toggle-auto") as HTMLInputElement | null;
@@ -809,12 +856,20 @@ export async function saveSettings(event: Event): Promise<void> {
       setStatus("settings-status", "Settings saved successfully!", false);
 
       // Log the successful save
-      logger.log("Settings saved successfully", { config });
+      logger.info(
+        "Settings saved successfully",
+        { component: "options", operation: "configSave" },
+        { config }
+      );
     } else {
       throw new Error(response?.message || "Failed to save settings to server");
     }
   } catch (error) {
-    logger.error("Failed to save settings:", error);
+    logger.error(
+      "Failed to save settings:",
+      { component: "options", operation: "configSave" },
+      error as any
+    );
     setStatus(
       "settings-status",
       "Error saving settings: " + (error instanceof Error ? error.message : "Unknown error"),
@@ -949,9 +1004,12 @@ export async function selectDownloadDirectory(): Promise<void> {
     }
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
-      logger.log("User aborted directory selection.");
+      logger.info("User aborted directory selection.", {
+        component: "options",
+        operation: "selectDownloadDirectory",
+      });
     } else {
-      logger.error("Error selecting directory:", error);
+      logger.error("Error selecting directory:", { component: "options" }, error);
       setStatus(
         "settings-status",
         "Failed to select directory. Please manually enter the path.",

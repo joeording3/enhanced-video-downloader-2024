@@ -1,3 +1,15 @@
+import { logger } from "./core/logger";
+
+// Align popup console logging level once from stored config
+chrome.storage.local.get("serverConfig", res => {
+  const cfg = (res as any).serverConfig || {};
+  const level = cfg.console_log_level || cfg.log_level || "info";
+  try {
+    logger.setLevel(String(level).toLowerCase() as any);
+  } catch {
+    // ignore
+  }
+});
 /**
  * Enhanced Video Downloader - Popup Script
  * Handles popup UI interactions and server communication
@@ -514,15 +526,21 @@ export function updatePopupServerStatus(status: "connected" | "disconnected" | "
   if (indicator && text) {
     // Remove all status classes
     indicator.classList.remove("connected", "disconnected");
+    text.classList.remove("status-connected", "status-disconnected");
 
     switch (status) {
       case "connected":
         indicator.classList.add("connected");
-        text.textContent = "Connected";
+        text.classList.add("status-connected");
+        chrome.storage.local.get("serverPort", res => {
+          const port = res.serverPort || "?";
+          (text as HTMLElement).textContent = `Server: Connected @ ${port}`;
+        });
         break;
       case "disconnected":
         indicator.classList.add("disconnected");
-        text.textContent = "Disconnected";
+        text.classList.add("status-disconnected");
+        (text as HTMLElement).textContent = "Server: Disconnected";
         break;
       case "checking":
         text.textContent = "Checking...";
