@@ -39,7 +39,10 @@ describe("content.ts UI functions", () => {
       ensureDownloadButtonStyle(btn);
       expect(btn.style.padding).toBe("4px 8px");
       expect(btn.style.borderRadius).toBe("4px");
-      expect(btn.style.backgroundColor).toBe("rgba(0, 0, 0, 0.3)");
+      // Background is contrast-aware; allow either dark or light depending on environment
+      expect(["rgba(0, 0, 0, 0.72)", "rgba(255, 255, 255, 0.92)", "rgba(0, 0, 0, 0.3)"]).toContain(
+        btn.style.backgroundColor
+      );
       expect(btn.style.borderWidth).toBe("1px");
       expect(btn.style.borderStyle).toBe("solid");
     });

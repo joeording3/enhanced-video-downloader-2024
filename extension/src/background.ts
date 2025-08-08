@@ -1062,14 +1062,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
             const qs = params.toString() ? `?${params.toString()}` : "";
             const candidates = [
-              `http://127.0.0.1:${port}/logs${qs}`,
-              `http://127.0.0.1:${port}/logs/${qs}`,
               `http://127.0.0.1:${port}/api/logs${qs}`,
-              `http://127.0.0.1:${port}/api/logs/${qs}`,
-              `http://localhost:${port}/logs${qs}`,
-              `http://localhost:${port}/logs/${qs}`,
               `http://localhost:${port}/api/logs${qs}`,
-              `http://localhost:${port}/api/logs/${qs}`,
             ];
 
             let text: string | null = null;
@@ -1108,9 +1102,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           }
           try {
             const candidates = [
-              `http://127.0.0.1:${port}/logs/clear`,
               `http://127.0.0.1:${port}/api/logs/clear`,
-              `http://localhost:${port}/logs/clear`,
               `http://localhost:${port}/api/logs/clear`,
             ];
             let ok = false;

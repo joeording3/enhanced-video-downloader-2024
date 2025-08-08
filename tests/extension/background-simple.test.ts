@@ -32,7 +32,7 @@ describe("checkServerStatus - Simple Test", () => {
     const result = await checkServerStatus(getServerPort());
     expect(result).toBe(true);
     expect(mockFetch).toHaveBeenCalledWith(
-      `http://127.0.0.1:${getServerPort()}/health`,
+      `http://127.0.0.1:${getServerPort()}/api/health`,
       expect.objectContaining({ signal: expect.anything() })
     );
   });

@@ -199,21 +199,24 @@ function ensureDownloadButtonStyle(buttonElement: HTMLElement): void {
 
   // Phase 2b: Choose contrast-aware colors based on page background
   try {
-    const pageBg = window.getComputedStyle(document.body).backgroundColor || "rgb(0,0,0)";
-    const rgb = parseColor(pageBg) || [0, 0, 0];
-    const isDarkBg = luminance(rgb) < 128; // rough threshold
-    if (isDarkBg) {
-      // Light button on dark backgrounds
-      buttonElement.style.backgroundColor = "rgba(255,255,255,0.92)";
-      buttonElement.style.color = "#000";
-      (buttonElement.style as any).borderColor = "#000";
-      _styleAdjusted = true;
-    } else {
-      // Dark button on light backgrounds
-      buttonElement.style.backgroundColor = "rgba(0,0,0,0.72)";
-      buttonElement.style.color = "#fff";
-      (buttonElement.style as any).borderColor = "#fff";
-      _styleAdjusted = true;
+    // Respect temporary feedback colors; do not override background during feedback
+    if (!isTemporaryFeedbackState) {
+      const pageBg = window.getComputedStyle(document.body).backgroundColor || "rgb(0,0,0)";
+      const rgb = parseColor(pageBg) || [0, 0, 0];
+      const isDarkBg = luminance(rgb) < 128; // rough threshold
+      if (isDarkBg) {
+        // Light button on dark backgrounds
+        buttonElement.style.backgroundColor = "rgba(255,255,255,0.92)";
+        buttonElement.style.color = "#000";
+        (buttonElement.style as any).borderColor = "#000";
+        _styleAdjusted = true;
+      } else {
+        // Dark button on light backgrounds
+        buttonElement.style.backgroundColor = "rgba(0,0,0,0.72)";
+        buttonElement.style.color = "#fff";
+        (buttonElement.style as any).borderColor = "#fff";
+        _styleAdjusted = true;
+      }
     }
   } catch {
     // ignore color detection errors
