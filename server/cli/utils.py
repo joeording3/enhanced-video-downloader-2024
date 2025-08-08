@@ -450,18 +450,15 @@ def _validate_updates(updates: dict[str, Any], config_data: Config) -> list[str]
 
         elif key == "download_dir":
             # Accept only string-like paths; otherwise, surface a validation error instead of crashing
-            try:
-                if not isinstance(value, (str, Path)):
-                    raise TypeError("download_dir must be a string path")
-                path = Path(value)
-            except Exception:
+            if not isinstance(value, str | Path):
                 errors.append(f"Invalid download directory value: {value}")
-            else:
-                if not path.exists():
-                    try:
-                        path.mkdir(parents=True, exist_ok=True)
-                    except OSError:
-                        errors.append(f"Cannot create download directory: {value}")
+                continue
+            path = Path(value)
+            if not path.exists():
+                try:
+                    path.mkdir(parents=True, exist_ok=True)
+                except OSError:
+                    errors.append(f"Cannot create download directory: {value}")
 
     return errors
 
