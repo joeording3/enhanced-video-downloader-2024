@@ -1,5 +1,4 @@
-// @ts-nocheck
-// 
+//
 const { defineConfig, devices } = require("@playwright/test");
 
 /**

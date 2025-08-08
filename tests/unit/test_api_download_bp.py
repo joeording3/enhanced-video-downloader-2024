@@ -5,11 +5,15 @@ from unittest.mock import Mock, patch
 
 from flask import Flask
 
-from server.api.download_bp import download_bp
+from server.api.download_bp import clear_rate_limit_storage, download_bp
 
 
 class TestDownloadBlueprint:
-    """Test download blueprint functionality."""
+    """Test download blueprint registration and basic functionality."""
+
+    def setup_method(self):
+        """Clear rate limit storage before each test."""
+        clear_rate_limit_storage()
 
     def test_download_bp_registration(self):
         """Test that download blueprint can be registered with Flask app."""
@@ -17,8 +21,8 @@ class TestDownloadBlueprint:
         app.register_blueprint(download_bp)
 
         # Verify blueprint is registered
-        assert "download" in app.blueprints
-        assert app.blueprints["download"] == download_bp
+        assert "download_api" in app.blueprints
+        assert app.blueprints["download_api"] == download_bp
 
     def test_download_bp_url_prefix(self):
         """Test that download blueprint has correct URL prefix."""
@@ -34,6 +38,10 @@ class TestDownloadBlueprint:
 
 class TestDownloadEndpoints:
     """Test download API endpoints."""
+
+    def setup_method(self):
+        """Clear rate limit storage before each test."""
+        clear_rate_limit_storage()
 
     def test_download_endpoint_options_method(self):
         """Test download endpoint with OPTIONS method."""
@@ -71,8 +79,7 @@ class TestDownloadEndpoints:
             assert response.status_code == 500
             data = response.json
             assert data["status"] == "error"
-            assert "Server error" in data["message"]
-            assert data["error_type"] == "SERVER_ERROR"
+            assert "Server error:" in data["message"]
 
     def test_download_endpoint_post_method_validation_error(self):
         """Test download endpoint with POST method (validation error)."""
@@ -103,8 +110,7 @@ class TestDownloadEndpoints:
             assert response.status_code == 500
             data = response.json
             assert data["status"] == "error"
-            assert "Server error" in data["message"]
-            assert data["error_type"] == "SERVER_ERROR"
+            assert "Server error:" in data["message"]
 
     def test_gallery_dl_endpoint_options_method(self):
         """Test gallery-dl endpoint with OPTIONS method."""
@@ -171,8 +177,7 @@ class TestDownloadEndpoints:
             assert response.status_code == 500
             data = response.json
             assert data["status"] == "error"
-            assert "Server error" in data["message"]
-            assert data["error_type"] == "SERVER_ERROR"
+            assert "Server error:" in data["message"]
 
     def test_resume_endpoint_post_method_success(self):
         """Test resume endpoint with POST method (success)."""

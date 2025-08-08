@@ -5,7 +5,8 @@ Provides the application factory to create the Flask app.
 
 from pathlib import Path
 
-from flask import Flask
+from flask import Flask, jsonify
+from flask.wrappers import Response as FlaskResponse
 from flask_cors import CORS
 
 from .api.config_bp import config_bp
@@ -19,6 +20,18 @@ from .api.restart_bp import restart_bp
 from .api.status_bp import status_bp
 from .config import Config
 from .logging_setup import setup_logging
+
+
+def add_security_headers(response: FlaskResponse) -> FlaskResponse:
+    """Add security headers to all responses."""
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
+    )
+    return response
 
 
 def create_app(config: Config) -> Flask:
@@ -35,8 +48,37 @@ def create_app(config: Config) -> Flask:
     project_root = Path(__file__).resolve().parent.parent
     ui_dir = project_root / "extension" / "ui"
     app = Flask(__name__, static_folder=str(ui_dir), static_url_path="/ui")
-    # Enable CORS for all routes (allow extension UI to fetch data)
-    CORS(app)
+
+    # Configure request size limits
+    app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB max request size
+
+    # Configure CORS (local server usage); allow any origin for localhost usage scenarios
+    CORS(
+        app,
+        origins="*",
+        methods=["GET", "POST", "OPTIONS"],
+        allow_headers=["Content-Type", "Authorization"],
+        max_age=3600,
+        supports_credentials=False,
+    )  # Cache preflight requests for 1 hour
+
+    # Add security headers to all responses
+    app.after_request(add_security_headers)
+
+    # Error handlers
+    @app.errorhandler(413)
+    def handle_request_entity_too_large(_error: Exception) -> tuple[FlaskResponse, int]:
+        """Return JSON for request size limit violations (413)."""
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": "Request entity too large",
+                    "error_type": "REQUEST_ENTITY_TOO_LARGE",
+                }
+            ),
+            413,
+        )
 
     # Register blueprints
     app.register_blueprint(download_bp)

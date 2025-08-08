@@ -1,9 +1,7 @@
 /**
- * Enhanced Video Downloader - Centralized Constants
- * Eliminates duplicate constants across the codebase
+ * Core constants for the Enhanced Video Downloader extension.
+ * Centralized configuration and constants used throughout the extension.
  */
-// @ts-nocheck
-
 
 // ============================================================================
 // STORAGE KEYS

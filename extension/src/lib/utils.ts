@@ -1,10 +1,7 @@
 /**
- * Shared utilities for the Enhanced Video Downloader extension.
- * This module provides common functionality used across different components
- * of the extension, including debugging, browser interactions, and data handling.
+ * Utility functions for the Enhanced Video Downloader extension.
+ * Common utilities used across multiple components.
  */
-// @ts-nocheck
-
 
 /**
  * Debounces a function, ensuring it's only called after a specified delay

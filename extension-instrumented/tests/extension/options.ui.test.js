@@ -1,8 +1,8 @@
-// @ts-nocheck
 "use strict";
 /**
  * Unit tests for options page UI logic functions
  */
+// @ts-nocheck
 Object.defineProperty(exports, "__esModule", { value: true });
 const options_1 = require("extension/src/options");
 // Mock the constants to return a wider port range for testing
@@ -252,8 +252,7 @@ describe("Options UI Logic Tests", () => {
         it("validates bestaudio[ext=m4a] as valid", () => {
             const select = document.createElement("select");
             select.id = "settings-ytdlp-format";
-            select.innerHTML =
-                '<option value="bestaudio[ext=m4a]">bestaudio[ext=m4a]</option>';
+            select.innerHTML = '<option value="bestaudio[ext=m4a]">bestaudio[ext=m4a]</option>';
             select.value = "bestaudio[ext=m4a]";
             const result = (0, options_1.validateFormat)(select);
             expect(result).toBe(true);
@@ -262,8 +261,7 @@ describe("Options UI Logic Tests", () => {
         it("validates bestaudio[ext=opus] as valid", () => {
             const select = document.createElement("select");
             select.id = "settings-ytdlp-format";
-            select.innerHTML =
-                '<option value="bestaudio[ext=opus]">bestaudio[ext=opus]</option>';
+            select.innerHTML = '<option value="bestaudio[ext=opus]">bestaudio[ext=opus]</option>';
             select.value = "bestaudio[ext=opus]";
             const result = (0, options_1.validateFormat)(select);
             expect(result).toBe(true);

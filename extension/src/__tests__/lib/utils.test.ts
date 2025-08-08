@@ -1,7 +1,6 @@
 /**
  * Tests for utility functions
  */
-// @ts-nocheck
 
 import {
   debounce,

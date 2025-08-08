@@ -2,8 +2,6 @@
  * Enhanced Video Downloader - Background Script
  * Handles port discovery, server communication, and download management
  */
-// @ts-nocheck
-
 
 import { Theme, ServerConfig } from "./types";
 import type { HistoryEntry } from "./types";
@@ -274,8 +272,11 @@ interface DownloadStatus {
 }
 
 // Forward declaration for functions used by debouncedUpdateQueueUI or early setup
-export let downloadQueue: string[] = []; // Stores URLs of queued videos
+let downloadQueue: string[] = []; // Stores URLs of queued videos
 const activeDownloads: Record<string, DownloadStatus> = {}; // Store {url: {status, progress, filename}}
+
+// Export the variables to ensure they're not optimized out
+export { downloadQueue, activeDownloads };
 
 // Define updateQueueUI before it's used by debouncedUpdateQueueUI
 const updateQueueUI = (): void => {
@@ -662,11 +663,54 @@ const findServerPort = async (
 };
 
 const updateIcon = (): void => {
-  // Implementation details
+  try {
+    const serverState = stateManager.getServerState();
+    const iconPaths = getActionIconPaths();
+
+    // Get current theme
+    getCurrentTheme()
+      .then(currentTheme => {
+        const iconPath = iconPaths[currentTheme];
+
+        // Update icon based on server status
+        if (serverState.status === "connected") {
+          chrome.action.setIcon({ path: iconPath });
+          // Clear badge when connected
+          (chrome.action as any).setBadgeText?.({ text: "" });
+        } else {
+          chrome.action.setIcon({ path: iconPath });
+          // Show error badge when disconnected
+          (chrome.action as any).setBadgeText?.({ text: "!" });
+          (chrome.action as any).setBadgeBackgroundColor?.({ color: "#f44336" });
+        }
+      })
+      .catch(error => {
+        warn("Failed to update icon:", error);
+      });
+  } catch (error) {
+    warn("Error updating icon:", error);
+  }
 };
 
 const updateBadge = (): void => {
-  // Implementation details
+  try {
+    // Get current queue length
+    const queueLength = downloadQueue.length;
+    const activeCount = Object.keys(activeDownloads).length;
+
+    if (queueLength > 0 || activeCount > 0) {
+      const totalCount = queueLength + activeCount;
+      const badgeText = totalCount > 99 ? "99+" : String(totalCount);
+
+      (chrome.action as any).setBadgeText?.({ text: badgeText });
+      (chrome.action as any).setBadgeBackgroundColor?.({ color: "#4CAF50" });
+    } else {
+      // Clear badge when no downloads
+      (chrome.action as any).setBadgeText?.({ text: "" });
+    }
+  } catch (error) {
+    warn("Error updating badge:", error);
+  }
 };
 
 const addOrUpdateHistory = async (
@@ -678,11 +722,69 @@ const addOrUpdateHistory = async (
   sourceUrl?: string,
   title?: string
 ): Promise<void> => {
-  // Implementation details
+  try {
+    // Check if history is enabled
+    const result = await chrome.storage.local.get("isHistoryEnabled");
+    const isHistoryEnabled = result.isHistoryEnabled !== false; // Default to true
+
+    if (!isHistoryEnabled) {
+      return; // Skip if history is disabled
+    }
+
+    // Get existing history
+    const historyResult = await chrome.storage.local.get(_historyStorageKey);
+    const history: HistoryEntry[] = historyResult[_historyStorageKey] || [];
+
+    // Create new history entry
+    const newEntry: HistoryEntry = {
+      id: Date.now().toString(),
+      url,
+      status,
+      timestamp: Date.now(),
+      filename,
+      filepath,
+      page_title: title,
+      thumbnailUrl,
+      sourceUrl,
+    };
+
+    // Add to beginning of history (most recent first)
+    history.unshift(newEntry);
+
+    // Limit history to last 100 entries
+    const limitedHistory = history.slice(0, 100);
+
+    // Save updated history
+    await chrome.storage.local.set({ [_historyStorageKey]: limitedHistory });
+
+    // Notify other components about history update
+    try {
+      chrome.runtime.sendMessage({ type: "historyUpdated" });
+    } catch (e) {
+      // Ignore errors if no listeners are available
+    }
+
+    log("Added download to history:", { url, status, filename });
+  } catch (error) {
+    warn("Failed to add download to history:", error);
+  }
 };
 
 const clearDownloadHistory = async (): Promise<void> => {
-  // Implementation details
+  try {
+    await chrome.storage.local.set({ [_historyStorageKey]: [] });
+
+    // Notify other components about history update
+    try {
+      chrome.runtime.sendMessage({ type: "historyUpdated" });
+    } catch (e) {
+      // Ignore errors if no listeners are available
+    }
+
+    log("Download history cleared");
+  } catch (error) {
+    warn("Failed to clear download history:", error);
+  }
 };
 
 const toggleHistorySetting = async (): Promise<void> => {
@@ -703,9 +805,59 @@ const sendDownloadRequest = async (
   format?: string | null,
   pageTitle = "video",
   customDownloadId?: string | null
-): Promise<any> =>
-  // Implementation details
-  ({});
+): Promise<any> => {
+  try {
+    const port = await storageService.getPort();
+    if (!port) {
+      return { status: "error", message: "Server not available" };
+    }
+
+    // Create download request payload
+    const downloadRequest = {
+      url: videoUrl,
+      quality: quality || "best",
+      format: format || "mp4",
+      is_playlist: isPlaylist,
+      page_title: pageTitle,
+      download_id: customDownloadId || null,
+    };
+
+    // Send request to server
+    const response = await fetch(`http://127.0.0.1:${port}/api/download`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(downloadRequest),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return { status: "error", message: `Server error: ${response.status} - ${errorText}` };
+    }
+
+    const result = await response.json();
+
+    // Add to history if successful
+    if (result.status === "success" || result.status === "queued") {
+      await addOrUpdateHistory(
+        videoUrl,
+        result.status,
+        result.filename,
+        result.filepath,
+        result.thumbnail_url,
+        result.source_url,
+        result.title || pageTitle
+      );
+    }
+
+    return result;
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
+    error("Error sending download request:", errorMessage);
+    return { status: "error", message: errorMessage };
+  }
+};
 
 // Consolidated initialization function
 const initializeExtension = async (): Promise<void> => {

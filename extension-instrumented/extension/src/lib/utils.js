@@ -1,10 +1,10 @@
-// @ts-nocheck
 "use strict";
 /**
  * Shared utilities for the Enhanced Video Downloader extension.
  * This module provides common functionality used across different components
  * of the extension, including debugging, browser interactions, and data handling.
  */
+// @ts-nocheck
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.generateId = exports.safeParse = exports.safeStringify = exports.logger = void 0;
 exports.debounce = debounce;
@@ -158,7 +158,7 @@ const generateId = () => {
     if (typeof crypto !== "undefined" && crypto.getRandomValues) {
         const array = new Uint8Array(8);
         crypto.getRandomValues(array);
-        return Array.from(array, (byte) => byte.toString(36)).join("");
+        return Array.from(array, byte => byte.toString(36)).join("");
     }
     // Fallback to timestamp + random for environments without crypto
     return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);

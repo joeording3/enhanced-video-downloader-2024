@@ -1,8 +1,7 @@
 /**
- * Enhanced Video Downloader - History Management
- * Handles download history fetching, rendering, and management
+ * History management for the Enhanced Video Downloader extension.
+ * Handles download history storage, retrieval, and display.
  */
-// @ts-nocheck
 
 import { HistoryEntry } from "./types";
 

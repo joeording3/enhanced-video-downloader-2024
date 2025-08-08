@@ -1,5 +1,4 @@
 /* eslint-env jest */
-// @ts-nocheck
 
 import * as popup from "extension/src/popup";
 
@@ -9,7 +8,41 @@ describe("Popup Queue Controls", () => {
     document.body.innerHTML = '<ul id="download-status"></ul>';
     // Stub chrome runtime
     //  - Mocking Chrome API for testing
-    global.chrome = { runtime: { sendMessage: jest.fn() } };
+    global.chrome = {
+      runtime: {
+        onInstalled: { addListener: jest.fn() },
+        onStartup: { addListener: jest.fn() },
+        lastError: null,
+        sendMessage: jest.fn(),
+        getManifest: jest.fn(() => ({})),
+        getURL: jest.fn(path => path),
+        onMessage: { addListener: jest.fn() },
+      },
+      tabs: {
+        query: jest.fn(),
+        sendMessage: jest.fn(),
+      },
+      action: {
+        setIcon: jest.fn(),
+      },
+      storage: {
+        local: {
+          get: jest.fn((keys: any, cb?: any) => {
+            if (typeof cb === "function") cb({});
+            return Promise.resolve({});
+          }),
+          set: jest.fn((items: any, cb?: any) => {
+            if (typeof cb === "function") cb();
+            return Promise.resolve();
+          }),
+        },
+      },
+      notifications: {
+        create: jest.fn((id: string, opts: any, cb?: any) => {
+          if (typeof cb === "function") cb(id);
+        }),
+      },
+    } as any;
   });
 
   it("createActiveListItem pause button calls pauseDownload", () => {

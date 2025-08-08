@@ -1,9 +1,9 @@
-// @ts-nocheck
 "use strict";
 /**
  * Enhanced Video Downloader - Content Script
  * Injects download buttons, handles video discovery, and button interactions.
  */
+// @ts-nocheck
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -96,9 +96,9 @@ const isJest = typeof process !== "undefined" &&
 function getButtonState() {
     return __awaiter(this, void 0, void 0, function* () {
         const domain = (0, utils_1.getHostname)();
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
             try {
-                chrome.storage.local.get(domain, (result) => {
+                chrome.storage.local.get(domain, result => {
                     if (chrome.runtime.lastError) {
                         error("Error getting button state from storage:", chrome.runtime.lastError.message);
                         resolve({ x: 10, y: 10, hidden: false });
@@ -124,7 +124,7 @@ function saveButtonState(state) {
     return __awaiter(this, void 0, void 0, function* () {
         const host = (0, utils_1.getHostname)();
         const data = { [host]: state };
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
             chrome.storage.local.set(data, () => {
                 if (chrome.runtime.lastError) {
                     error("Error saving button state to storage:", chrome.runtime.lastError.message);
@@ -172,7 +172,7 @@ function ensureDownloadButtonStyle(buttonElement) {
     }
     // Phase 2: Enforce guideline styles for the button's DEFAULT state
     const currentInlineBg = buttonElement.style.backgroundColor;
-    const isTemporaryFeedbackState = EVD_BUTTON_TEMPORARY_BACKGROUNDS.some((tmpBg) => {
+    const isTemporaryFeedbackState = EVD_BUTTON_TEMPORARY_BACKGROUNDS.some(tmpBg => {
         const normalizedInline = currentInlineBg.replace(/\s/g, "");
         const normalizedTmp = tmpBg.replace(/\s/g, "");
         return normalizedInline === normalizedTmp;
@@ -235,7 +235,7 @@ function createOrUpdateButton() {
         // Ensure button has correct style
         ensureDownloadButtonStyle(btn);
         // Add event listeners for dragging
-        btn.addEventListener("mousedown", (e) => {
+        btn.addEventListener("mousedown", e => {
             if (e.button !== 0)
                 return; // Only left mouse button
             const rect = btn.getBoundingClientRect();
@@ -267,14 +267,12 @@ function createOrUpdateButton() {
                 btn.classList.add("download-sending");
                 try {
                     // Determine download URL, avoid blob URLs by falling back to page URL
-                    const rawUrl = videoElement &&
-                        videoElement.tagName === "VIDEO" &&
-                        videoElement.src
+                    const rawUrl = videoElement && videoElement.tagName === "VIDEO" && videoElement.src
                         ? videoElement.src
                         : window.location.href;
                     const url = rawUrl.startsWith("blob:") ? window.location.href : rawUrl;
                     // Send message to background script
-                    chrome.runtime.sendMessage({ type: "downloadVideo", url: url }, (response) => {
+                    chrome.runtime.sendMessage({ type: "downloadVideo", url: url }, response => {
                         if (chrome.runtime.lastError) {
                             error("Error sending download request:", chrome.runtime.lastError.message);
                             btn.classList.remove("download-sending");
@@ -328,12 +326,10 @@ function createOrUpdateButton() {
         // Set up observer to detect button removal
         if (!buttonObserver && !isJest) {
             // Only observe DOM mutations outside of Jest tests to avoid async logs
-            buttonObserver = new MutationObserver((mutations) => {
+            buttonObserver = new MutationObserver(mutations => {
                 for (const mutation of mutations) {
                     for (const node of Array.from(mutation.removedNodes)) {
-                        if (node instanceof HTMLElement &&
-                            node.id &&
-                            node.id.startsWith(BUTTON_ID_PREFIX)) {
+                        if (node instanceof HTMLElement && node.id && node.id.startsWith(BUTTON_ID_PREFIX)) {
                             log("Button was removed, re-adding");
                             createOrUpdateButton();
                             return;
@@ -503,9 +499,7 @@ function findVideosAndInjectButtons() {
         }
         // If we've checked MAX_CHECKS times and found no videos, clear the interval
         const currentState = state_manager_1.stateManager.getUIState();
-        if (!foundSignificantVideo &&
-            currentState.checksDone >= MAX_CHECKS &&
-            checkIntervalId) {
+        if (!foundSignificantVideo && currentState.checksDone >= MAX_CHECKS && checkIntervalId) {
             clearInterval(checkIntervalId);
             checkIntervalId = null;
         }
@@ -556,7 +550,7 @@ function _resetStateForTesting() {
 }
 // Global listeners - initialize once
 if (typeof window !== "undefined") {
-    document.addEventListener("dragover", (event) => {
+    document.addEventListener("dragover", event => {
         const uiState = state_manager_1.stateManager.getUIState();
         if (uiState.isDragging) {
             event.preventDefault();

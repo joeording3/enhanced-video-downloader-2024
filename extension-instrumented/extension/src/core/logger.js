@@ -1,9 +1,9 @@
-// @ts-nocheck
 "use strict";
 /**
  * Enhanced Video Downloader - Centralized Logger
  * Eliminates duplicate logging patterns across the codebase
  */
+// @ts-nocheck
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.logger = exports.CentralizedLogger = void 0;
 class CentralizedLogger {
@@ -13,9 +13,8 @@ class CentralizedLogger {
         this.maxLogs = 1000; // Prevent memory leaks
         this.logCallbacks = new Set();
         // Set up console logging in development
-        if (typeof process !== "undefined" &&
-            process.env.NODE_ENV === "development") {
-            this.onLog((entry) => {
+        if (typeof process !== "undefined" && process.env.NODE_ENV === "development") {
+            this.onLog(entry => {
                 const prefix = `[${entry.context.component}]`;
                 const timestamp = entry.timestamp.toISOString();
                 const message = `${prefix} ${entry.message}`;
@@ -91,7 +90,7 @@ class CentralizedLogger {
             this.logs = this.logs.slice(-this.maxLogs / 2);
         }
         // Notify callbacks
-        this.logCallbacks.forEach((callback) => {
+        this.logCallbacks.forEach(callback => {
             try {
                 callback(entry);
             }

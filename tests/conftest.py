@@ -18,6 +18,7 @@ from flask.testing import FlaskClient
 from werkzeug.serving import make_server
 
 from server import create_app
+from server.api.download_bp import clear_rate_limit_storage
 from server.config import Config
 from server.schemas import ServerConfig
 
@@ -105,3 +106,13 @@ def enforce_cwd_isolation() -> Generator[None, None, None]:
     # Restore original working directory after each test
     if Path.cwd() != original_cwd:
         os.chdir(original_cwd)
+
+
+# Ensure rate limit storage does not leak across tests, which can cause
+# unexpected 429 responses in otherwise independent test cases.
+@pytest.fixture(autouse=True)
+def _reset_rate_limits() -> Generator[None, None, None]:
+    """Clear in-memory rate limit storage before and after each test."""
+    clear_rate_limit_storage()
+    yield
+    clear_rate_limit_storage()

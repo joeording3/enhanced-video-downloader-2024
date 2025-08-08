@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use strict";
 /**
  * Options page controller for the Enhanced Video Downloader extension.
@@ -7,6 +6,7 @@
  *
  * @module options
  */
+// @ts-nocheck
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -86,7 +86,7 @@ function updateOptionsServerStatus(status) {
  */
 function initOptionsPage() {
     // Initialize theme first
-    initializeOptionsTheme().catch((error) => {
+    initializeOptionsTheme().catch(error => {
         console.error("Error initializing theme:", error);
     });
     loadSettings();
@@ -104,12 +104,12 @@ function initOptionsPage() {
  */
 function loadSettings() {
     // First try to load from storage
-    chrome.storage.local.get(["serverConfig"], (result) => {
+    chrome.storage.local.get(["serverConfig"], result => {
         if (result.serverConfig) {
             populateFormFields(result.serverConfig);
         }
         // Then try to get latest from server
-        chrome.runtime.sendMessage({ type: "getConfig" }, (response) => {
+        chrome.runtime.sendMessage({ type: "getConfig" }, response => {
             if (chrome.runtime.lastError) {
                 utils_1.logger.error("Error getting config:", chrome.runtime.lastError.message);
                 // Do not proceed if there's an error
@@ -142,9 +142,7 @@ function populateFormFields(config) {
         ytdlpFormat: document.getElementById("settings-ytdlp-format"),
         allowPlaylists: document.getElementById("settings-allow-playlists"),
     };
-    if (elements.port &&
-        config.server_port !== undefined &&
-        config.server_port !== null) {
+    if (elements.port && config.server_port !== undefined && config.server_port !== null) {
         elements.port.value = config.server_port.toString();
     }
     if (elements.downloadDir && config.download_dir) {
@@ -202,7 +200,7 @@ function setupEventListeners() {
     if (clearHistoryButton) {
         clearHistoryButton.addEventListener("click", () => {
             if (confirm("Are you sure you want to permanently delete all download history?")) {
-                (0, history_1.clearHistoryAndNotify)().catch((error) => {
+                (0, history_1.clearHistoryAndNotify)().catch(error => {
                     console.error("Failed to clear history:", error);
                     setStatus("settings-status", "Failed to clear history", true);
                 });
@@ -212,7 +210,7 @@ function setupEventListeners() {
     const resumeDownloadsButton = document.getElementById("settings-resume-downloads");
     if (resumeDownloadsButton) {
         resumeDownloadsButton.addEventListener("click", () => {
-            chrome.runtime.sendMessage({ type: "resumeDownloads" }, (response) => {
+            chrome.runtime.sendMessage({ type: "resumeDownloads" }, response => {
                 if (response && response.status === "success") {
                     setStatus("settings-status", "Resume operation completed successfully!");
                 }
@@ -251,9 +249,8 @@ function setupValidation() {
     }
     // Real-time validation for all fields
     const allInputs = document.querySelectorAll("input, select");
-    allInputs.forEach((input) => {
-        if (input instanceof HTMLInputElement ||
-            input instanceof HTMLSelectElement) {
+    allInputs.forEach(input => {
+        if (input instanceof HTMLInputElement || input instanceof HTMLSelectElement) {
             input.addEventListener("input", () => validateField(input));
             input.addEventListener("blur", () => validateField(input));
         }
@@ -464,9 +461,8 @@ function showValidationMessage(element, message, type) {
 function validateAllFields() {
     const requiredFields = document.querySelectorAll("input[required], select[required]");
     let allValid = true;
-    requiredFields.forEach((field) => {
-        if (field instanceof HTMLInputElement ||
-            field instanceof HTMLSelectElement) {
+    requiredFields.forEach(field => {
+        if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement) {
             if (!validateField(field)) {
                 allValid = false;
             }
@@ -550,11 +546,11 @@ function updateLogLevelInfo(select) {
 function setupTabNavigation() {
     const tabs = document.querySelectorAll(".tab-button");
     const tabContents = document.querySelectorAll(".tab-content");
-    tabs.forEach((tab) => {
+    tabs.forEach(tab => {
         tab.addEventListener("click", () => {
             // Remove active class from all tabs
-            tabs.forEach((t) => t.classList.remove("active"));
-            tabContents.forEach((content) => content.classList.remove("active"));
+            tabs.forEach(t => t.classList.remove("active"));
+            tabContents.forEach(content => content.classList.remove("active"));
             // Add active class to current tab
             tab.classList.add("active");
             // Show corresponding content
@@ -627,7 +623,7 @@ function saveSettings(event) {
             });
             // Send to server
             const response = yield new Promise((resolve, reject) => {
-                chrome.runtime.sendMessage({ type: "setConfig", config }, (response) => {
+                chrome.runtime.sendMessage({ type: "setConfig", config }, response => {
                     if (chrome.runtime.lastError) {
                         reject(new Error(chrome.runtime.lastError.message));
                     }
@@ -649,8 +645,7 @@ function saveSettings(event) {
         }
         catch (error) {
             utils_1.logger.error("Failed to save settings:", error);
-            setStatus("settings-status", "Error saving settings: " +
-                (error instanceof Error ? error.message : "Unknown error"), true);
+            setStatus("settings-status", "Error saving settings: " + (error instanceof Error ? error.message : "Unknown error"), true);
             // Show error state
             showSaveError();
         }
@@ -779,7 +774,7 @@ function restartServer() {
         restartButton.disabled = true;
         restartButton.innerHTML = "Restarting...";
     }
-    chrome.runtime.sendMessage({ type: "restartServer" }, (response) => {
+    chrome.runtime.sendMessage({ type: "restartServer" }, response => {
         if (restartButton) {
             restartButton.disabled = false;
             restartButton.innerHTML = "Restart Server";
@@ -800,7 +795,7 @@ function restartServer() {
 function loadErrorHistory() {
     return __awaiter(this, arguments, void 0, function* (page = 1, perPage = 25) {
         const { history, totalItems } = yield (0, history_1.fetchHistory)(page, perPage);
-        const errorEntries = history.filter((item) => item.status === "error");
+        const errorEntries = history.filter(item => item.status === "error");
         const listEl = document.getElementById("error-history-list");
         if (!listEl)
             return;

@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -43,6 +42,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+// @ts-nocheck
 const content_1 = require("../../extension/src/content");
 const ytEnhance = __importStar(require("../../extension/src/youtube_enhance"));
 const logger_1 = require("../../extension/src/core/logger");
@@ -71,7 +71,7 @@ describe("Content.ts additional branch coverage", () => {
                 hidden: false,
             });
             const logs = logger.getLogs();
-            expect(logs.some((log) => log.message.includes("Error getting button state from storage"))).toBe(true);
+            expect(logs.some(log => log.message.includes("Error getting button state from storage"))).toBe(true);
         }));
         it("returns default on exception", () => __awaiter(void 0, void 0, void 0, function* () {
             // Throw an exception in storage.get
@@ -85,7 +85,7 @@ describe("Content.ts additional branch coverage", () => {
                 hidden: false,
             });
             const logs = logger.getLogs();
-            expect(logs.some((log) => log.message.includes("Error getting button state from storage"))).toBe(true);
+            expect(logs.some(log => log.message.includes("Error getting button state from storage"))).toBe(true);
         }));
     });
     describe("saveButtonState error handling", () => {
@@ -100,7 +100,7 @@ describe("Content.ts additional branch coverage", () => {
                 hidden: true,
             });
             const logs = logger.getLogs();
-            expect(logs.some((log) => log.message.includes("Error saving button state to storage"))).toBe(true);
+            expect(logs.some(log => log.message.includes("Error saving button state to storage"))).toBe(true);
         }));
     });
     describe("ensureDownloadButtonStyle adjustments", () => {

@@ -166,19 +166,19 @@ class TestCliUtilsHelperFunctions:
     def test_get_log_files_existing_logs(self, tmp_path: Path) -> None:
         """Test get_log_files with existing log files."""
         from server.cli.utils import get_log_files
-        
+
         # Create a mock logs directory with some log files
         logs_dir = tmp_path / "logs"
         logs_dir.mkdir()
         (logs_dir / "app.log").write_text("log content")
         (logs_dir / "error.log").write_text("error content")
         (logs_dir / "not_a_log.txt").write_text("not a log")
-        
+
         with patch("server.cli.utils.Path") as mock_path:
             mock_path.return_value.parent.parent.resolve.return_value.__truediv__.return_value = logs_dir
-            
+
             log_files = get_log_files()
-            
+
             assert len(log_files) == 2
             assert any("app.log" in f for f in log_files)
             assert any("error.log" in f for f in log_files)
@@ -187,61 +187,61 @@ class TestCliUtilsHelperFunctions:
     def test_get_log_files_no_logs_dir(self, tmp_path: Path) -> None:
         """Test get_log_files when logs directory doesn't exist."""
         from server.cli.utils import get_log_files
-        
+
         with patch("server.cli.utils.Path") as mock_path:
             mock_path.return_value.parent.parent.resolve.return_value.__truediv__.return_value.exists.return_value = False
-            
+
             log_files = get_log_files()
-            
+
             assert log_files == []
 
     def test_read_log_file_success(self, tmp_path: Path) -> None:
         """Test read_log_file with successful file read."""
         from server.cli.utils import read_log_file
-        
+
         log_file = tmp_path / "test.log"
         log_file.write_text("line1\nline2\nline3\nline4\nline5")
-        
+
         lines = read_log_file(str(log_file), lines=3)
-        
+
         assert len(lines) == 3
         assert lines == ["line3", "line4", "line5"]
 
     def test_read_log_file_with_filter(self, tmp_path: Path) -> None:
         """Test read_log_file with text filtering."""
         from server.cli.utils import read_log_file
-        
+
         log_file = tmp_path / "test.log"
         log_file.write_text("error: something went wrong\ninfo: normal operation\nerror: another error\n")
-        
+
         lines = read_log_file(str(log_file), lines=10, filter_text="error")
-        
+
         assert len(lines) == 2
         assert all("error" in line.lower() for line in lines)
 
     def test_read_log_file_file_not_found(self) -> None:
         """Test read_log_file with non-existent file."""
         from server.cli.utils import read_log_file
-        
+
         lines = read_log_file("/nonexistent/file.log")
-        
+
         assert lines == []
 
     def test_clean_log_files_success(self, tmp_path: Path) -> None:
         """Test clean_log_files with existing log files."""
         from server.cli.utils import clean_log_files
-        
+
         # Create a mock logs directory with some log files
         logs_dir = tmp_path / "logs"
         logs_dir.mkdir()
         (logs_dir / "app.log").write_text("log content")
         (logs_dir / "error.log").write_text("error content")
-        
+
         with patch("server.cli.utils.Path") as mock_path:
             mock_path.return_value.parent.parent.resolve.return_value.__truediv__.return_value = logs_dir
-            
+
             count = clean_log_files()
-            
+
             assert count == 2
             assert not (logs_dir / "app.log").exists()
             assert not (logs_dir / "error.log").exists()
@@ -249,12 +249,12 @@ class TestCliUtilsHelperFunctions:
     def test_clean_log_files_no_logs_dir(self) -> None:
         """Test clean_log_files when logs directory doesn't exist."""
         from server.cli.utils import clean_log_files
-        
+
         with patch("server.cli.utils.Path") as mock_path:
             mock_path.return_value.parent.parent.resolve.return_value.__truediv__.return_value.exists.return_value = False
-            
+
             count = clean_log_files()
-            
+
             assert count == 0
 
 
@@ -264,23 +264,23 @@ class TestCliUtilsDisplayFunctions:
     def test_filter_by_section(self) -> None:
         """Test _filter_by_section function."""
         from server.cli.utils import _filter_by_section
-        
+
         config_dict = {
             "server_port": 9090,
             "download_dir": "/tmp",
             "log_level": "info",
             "ytdlp_options": {"format": "best"},
         }
-        
+
         # Test server section
         server_config = _filter_by_section(config_dict, "server")
         assert "server_port" in server_config
         assert "download_dir" not in server_config
-        
+
         # Test download section
         download_config = _filter_by_section(config_dict, "download")
         assert "download_dir" in download_config
-        
+
         # Test unknown section - should return all config when section is unknown
         unknown_config = _filter_by_section(config_dict, "unknown")
         assert len(unknown_config) == 4  # Should return all config items
@@ -288,12 +288,12 @@ class TestCliUtilsDisplayFunctions:
     def test_display_json(self, capsys: Any) -> None:
         """Test _display_json function."""
         from server.cli.utils import _display_json
-        
+
         config_dict = {"server_port": 9090, "log_level": "info"}
-        
+
         _display_json(config_dict, verbose=False)
         captured = capsys.readouterr()
-        
+
         assert "server_port" in captured.out
         assert "9090" in captured.out
         assert "log_level" in captured.out
@@ -301,12 +301,12 @@ class TestCliUtilsDisplayFunctions:
     def test_display_yaml(self, capsys: Any) -> None:
         """Test _display_yaml function."""
         from server.cli.utils import _display_yaml
-        
+
         config_dict = {"server_port": 9090, "log_level": "info"}
-        
+
         _display_yaml(config_dict, verbose=False)
         captured = capsys.readouterr()
-        
+
         assert "server_port" in captured.out
         assert "9090" in captured.out
         assert "log_level" in captured.out
@@ -314,12 +314,12 @@ class TestCliUtilsDisplayFunctions:
     def test_display_table(self, capsys: Any) -> None:
         """Test _display_table function."""
         from server.cli.utils import _display_table
-        
+
         config_dict = {"server_port": 9090, "log_level": "info"}
-        
+
         _display_table(config_dict, verbose=False)
         captured = capsys.readouterr()
-        
+
         assert "server_port" in captured.out
         assert "9090" in captured.out
         assert "log_level" in captured.out
@@ -327,56 +327,56 @@ class TestCliUtilsDisplayFunctions:
     def test_validate_and_convert_value(self) -> None:
         """Test _validate_and_convert_value function."""
         from server.cli.utils import _validate_and_convert_value
-        
+
         # Test integer conversion
         assert _validate_and_convert_value("server_port", "9090") == 9090
-        
+
         # Test boolean conversion
         assert _validate_and_convert_value("debug_mode", "true") is True
         assert _validate_and_convert_value("debug_mode", "false") is False
-        
+
         # Test string value
         assert _validate_and_convert_value("log_level", "info") == "info"
-        
+
         # Test invalid integer - function prints error message instead of raising exception
         # This is expected behavior for CLI validation
         result = _validate_and_convert_value("server_port", "not_a_number")
         # Function should return None or handle the error gracefully
-        assert result is None or isinstance(result, (int, str))
+        assert result is None or isinstance(result, int | str)
 
     def test_validate_updates(self) -> None:
         """Test _validate_updates function."""
         from server.cli.utils import _validate_updates
         from server.config import Config
-        
+
         config_data = Config({
             "server_port": 9090,
             "download_dir": "/tmp",
             "log_level": "info",
         })
-        
+
         updates = {
             "server_port": 9091,
             "log_level": "debug",
             "invalid_key": "value",
         }
-        
+
         errors = _validate_updates(updates, config_data)
-        
+
         assert "invalid_key" in errors[0]
         assert len(errors) == 1
 
     def test_requires_restart(self) -> None:
         """Test _requires_restart function."""
         from server.cli.utils import _requires_restart
-        
+
         # Test changes that require restart
         restart_updates = {
             "server_port": 9091,
             "max_concurrent_downloads": 5,
         }
         assert _requires_restart(restart_updates) is True
-        
+
         # Test changes that don't require restart - actual implementation may require restart for any changes
         no_restart_updates = {
             "log_level": "debug",
@@ -392,12 +392,12 @@ class TestCliUtilsLogFunctions:
 
     def test_log_functions_exist(self) -> None:
         """Test that log functions exist and are callable."""
-        from server.cli.utils import logs_view_command, logs_clear_command
-        
+        from server.cli.utils import logs_clear_command, logs_view_command
+
         # Test that the commands exist and are callable
         assert callable(logs_view_command)
         assert callable(logs_clear_command)
-        
+
         # Test that they have the expected attributes
-        assert hasattr(logs_view_command, 'callback')
-        assert hasattr(logs_clear_command, 'callback')
+        assert hasattr(logs_view_command, "callback")
+        assert hasattr(logs_clear_command, "callback")

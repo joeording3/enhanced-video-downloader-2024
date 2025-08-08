@@ -1,6 +1,6 @@
-// @ts-nocheck
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+// @ts-nocheck
 const stryker_test_1 = require("../stryker-test");
 describe("add", () => {
     it("adds two numbers", () => {

@@ -50,6 +50,30 @@
 /* Dark theme scrollbar overrides - Now using shared styles from themes.css */
 
 /* YouTube Enhanced Button Styling */
+.youtube-enhanced {
+  background-color: var(--error) !important;
+  color: var(--text-inverse) !important;
+  border: 2px solid var(--text-inverse) !important;
+  box-shadow: 0 0 15px var(--shadow-dark) !important;
+  font-weight: var(--font-weight-bold) !important;
+  font-size: var(--font-size-md) !important;
+  padding: var(--space-xs) var(--space-md) !important;
+  z-index: var(--z-tooltip) !important;
+  text-shadow: 0 0 5px var(--shadow-white) !important;
+  transition: var(--transition-normal) !important;
+}
+
+.youtube-enhanced:hover {
+  transform: scale(1.1) !important;
+  box-shadow: 0 0 20px var(--shadow-white) !important;
+  opacity: 1 !important;
+}
+
+.youtube-enhanced:not(:hover) {
+  transform: scale(1) !important;
+  box-shadow: 0 0 15px var(--shadow-dark) !important;
+  opacity: 1 !important;
+}
 
 /* Download Button Styling */
 .download-button {

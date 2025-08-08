@@ -6,8 +6,6 @@
  *
  * Tests both successful and error scenarios for popup UI components.
  */
-// @ts-nocheck
-
 
 /* eslint-env jest */
 

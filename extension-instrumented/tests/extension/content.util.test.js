@@ -1,6 +1,6 @@
-// @ts-nocheck
 "use strict";
 /* eslint-env jest */
+// @ts-nocheck
 Object.defineProperty(exports, "__esModule", { value: true });
 const content_1 = require("../../extension/src/content");
 describe("debounce", () => {

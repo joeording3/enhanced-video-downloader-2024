@@ -1,9 +1,7 @@
 /**
  * Enhanced Video Downloader - Content Script
- * Injects download buttons, handles video discovery, and button interactions.
+ * Handles DOM manipulation, video detection, and UI injection
  */
-// @ts-nocheck
-
 
 import { ButtonState } from "./types";
 import { debounce, getHostname } from "./lib/utils";

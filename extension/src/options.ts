@@ -1,17 +1,23 @@
 /**
- * Options page controller for the Enhanced Video Downloader extension.
- * Manages the settings page UI, configuration options, and server communication
- * for the extension's user-configurable settings.
- *
- * @module options
+ * Options page functionality for the Enhanced Video Downloader extension.
+ * Handles extension settings, configuration, and user preferences.
  */
-// @ts-nocheck
-
 
 import { logger, safeParse } from "./lib/utils";
-import { ServerConfig, Theme } from "./types";
+import { Theme, ServerConfig } from "./types";
 import { clearHistoryAndNotify, fetchHistory, renderHistoryItems } from "./history";
 import { getServerPort, getPortRange } from "./core/constants";
+
+// Add type definitions for newer APIs
+declare global {
+  interface Window {
+    showDirectoryPicker?: (options?: DirectoryPickerOptions) => Promise<FileSystemDirectoryHandle>;
+  }
+
+  interface DirectoryPickerOptions {
+    mode?: "read" | "readwrite";
+  }
+}
 
 const setStatus = (elementId: string, message: string, isError = false, timeout = 3000): void => {
   const statusElement = document.getElementById(elementId);

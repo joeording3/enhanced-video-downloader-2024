@@ -1,5 +1,9 @@
-// @ts-nocheck
-// Type definitions for Chrome extension API
+/**
+ * Chrome extension API type definitions.
+ * Extends the Chrome extension APIs with additional type safety.
+ */
+
+// Extend Chrome extension APIs with additional type safety
 interface ChromeStorageLocal {
   get(
     keys: string | string[] | object | null,

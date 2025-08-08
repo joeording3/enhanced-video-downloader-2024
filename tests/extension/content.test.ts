@@ -6,8 +6,6 @@
  *
  * Tests both UI elements and background communication logic.
  */
-// @ts-nocheck
-
 
 /* eslint-env jest */
 import {

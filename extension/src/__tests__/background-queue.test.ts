@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { persistQueue, downloadQueue } from "../background";
 
 describe("persistQueue", () => {

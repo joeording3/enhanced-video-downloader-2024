@@ -1,12 +1,13 @@
 """
 Provide blueprint for download-related API endpoints.
 
-This module defines endpoints for processing video downloads, gallery
-downloads, and resuming downloads using underlying handlers and
-Pydantic validation.
+This module defines endpoints to handle video and gallery downloads,
+including validation, processing, and status management.
 """
 
 import logging
+import time
+from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -14,7 +15,7 @@ import psutil
 from flask import Blueprint, jsonify, request
 from flask.wrappers import Response
 from pydantic import ValidationError
-from werkzeug.exceptions import BadRequest
+from werkzeug.exceptions import BadRequest, RequestEntityTooLarge
 
 from server.config import Config
 from server.downloads import progress_data
@@ -22,10 +23,111 @@ from server.downloads.gallery_dl import handle_gallery_dl_download
 from server.downloads.resume import handle_resume_download
 from server.downloads.ytdlp import download_process_registry, download_tempfile_registry, handle_ytdlp_download
 from server.schemas import DownloadRequest, GalleryDLRequest, PriorityRequest, ResumeRequest
+from server.utils import cleanup_expired_cache
 
 # Create blueprint with '/api' prefix
-download_bp = Blueprint("download", __name__, url_prefix="/api")
+download_bp = Blueprint("download_api", __name__, url_prefix="/api")
 logger = logging.getLogger(__name__)
+
+# Rate limiting storage
+_rate_limit_storage = defaultdict(list)
+_RATE_LIMIT_WINDOW = 60  # 1 minute window
+_MAX_REQUESTS_PER_WINDOW = 10  # Max 10 requests per minute per IP
+
+# Background cleanup tracking
+_last_cleanup_time = 0.0
+_CLEANUP_INTERVAL = 300  # 5 minutes
+
+
+def clear_rate_limit_storage() -> None:
+    """Clear the rate limit storage (for testing purposes)."""
+    _rate_limit_storage.clear()
+
+
+def check_rate_limit(ip_address: str) -> bool:
+    """
+    Check if the IP address has exceeded the rate limit.
+
+    Args:
+        ip_address: The client's IP address
+
+    Returns:
+        True if rate limit is exceeded, False otherwise
+    """
+    current_time = time.time()
+    window_start = current_time - _RATE_LIMIT_WINDOW
+
+    # Clean old entries
+    _rate_limit_storage[ip_address] = [
+        timestamp for timestamp in _rate_limit_storage[ip_address] if timestamp > window_start
+    ]
+
+    # Check if limit exceeded
+    if len(_rate_limit_storage[ip_address]) >= _MAX_REQUESTS_PER_WINDOW:
+        return True
+
+    # Add current request
+    _rate_limit_storage[ip_address].append(current_time)
+    return False
+
+
+def rate_limit_response() -> tuple[Response, int]:
+    """Return rate limit exceeded response."""
+    return (
+        jsonify(
+            {
+                "status": "error",
+                "message": "Rate limit exceeded. Please wait before making more requests.",
+                "error_type": "RATE_LIMIT_EXCEEDED",
+                "downloadId": "unknown",
+            }
+        ),
+        429,
+    )
+
+
+def _cleanup_temp_files(temp_file: str) -> None:
+    """Clean up a temporary file safely."""
+    try:
+        if Path(temp_file).exists():
+            Path(temp_file).unlink()
+            logger.debug(f"Cleaned up temp file: {temp_file}")
+    except Exception as e:
+        logger.warning(f"Failed to clean up temp file {temp_file}: {e}")
+
+
+def cleanup_failed_download(download_id: str) -> None:
+    """
+    Clean up resources for a failed download.
+
+    Args:
+        download_id: The ID of the failed download to clean up
+    """
+    try:
+        # Clean up process registry
+        if download_id in download_process_registry:
+            try:
+                proc = download_process_registry[download_id]
+                if proc and proc.is_running():
+                    proc.terminate()
+                    proc.wait(timeout=5)
+            finally:
+                del download_process_registry[download_id]
+
+        # Clean up temp files
+        if download_id in download_tempfile_registry:
+            temp_file = download_tempfile_registry[download_id]
+            _cleanup_temp_files(temp_file)
+            del download_tempfile_registry[download_id]
+
+        # Remove from progress data
+        if download_id in progress_data:
+            del progress_data[download_id]
+
+        logger.info(f"Cleaned up failed download: {download_id}")
+
+    except Exception as e:
+        logger.error(f"Error during cleanup for {download_id}: {e}", exc_info=True)
 
 
 # Helper functions for the /api/download endpoint
@@ -245,6 +347,15 @@ def download() -> Any:
     if request.method == "OPTIONS":
         return "", 204
 
+    # Perform background cleanup
+    perform_background_cleanup()
+
+    # Check rate limit
+    client_ip = request.remote_addr or "unknown"
+    if check_rate_limit(client_ip):
+        logger.warning(f"Rate limit exceeded for IP: {client_ip}")
+        return rate_limit_response()
+
     raw_data = {}
     try:
         # Parse raw JSON and extract download ID
@@ -252,6 +363,19 @@ def download() -> Any:
 
         # Process the request
         response, _ = _process_download_request(raw_data)
+    except RequestEntityTooLarge:
+        # Large payloads should yield a structured 413 JSON
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": "Request entity too large",
+                    "error_type": "REQUEST_ENTITY_TOO_LARGE",
+                    "downloadId": raw_data.get("downloadId", "unknown"),
+                }
+            ),
+            413,
+        )
     except ValidationError as e:
         logger.warning(f"Invalid download request: {e}")
         return _download_error_response(
@@ -278,6 +402,12 @@ def gallery_dl() -> Any:
     """
     if request.method == "OPTIONS":
         return "", 204
+
+    # Check rate limit
+    client_ip = request.remote_addr or "unknown"
+    if check_rate_limit(client_ip):
+        logger.warning(f"Rate limit exceeded for IP: {client_ip}")
+        return rate_limit_response()
 
     raw_data = {}
     try:
@@ -572,3 +702,60 @@ def set_priority(download_id: str) -> Any:
         return _priority_response("error", "Invalid JSON", download_id, 400)
 
     return _process_priority_request(download_id, data)
+
+
+def perform_background_cleanup() -> None:
+    """
+    Perform background cleanup tasks.
+
+    This function should be called periodically to clean up:
+    - Expired cache entries
+    - Orphaned temp files
+    - Stale process registry entries
+    """
+    current_time = time.time()
+    if current_time - _last_cleanup_time < _CLEANUP_INTERVAL:
+        return  # Not time for cleanup yet
+
+    try:
+        # Clean up expired cache entries
+        cache_cleaned = cleanup_expired_cache()
+
+        # Clean up orphaned temp files
+        temp_files_cleaned = 0
+        temp_files_to_clean = []
+
+        # Collect temp files to clean up
+        for download_id, temp_files in list(download_tempfile_registry.items()):
+            if download_id not in download_process_registry:
+                # Process is gone but temp files remain
+                temp_files_to_clean.extend(temp_files)
+                del download_tempfile_registry[download_id]
+
+        # Clean up temp files (moved try-except outside loop for performance)
+        for temp_file in temp_files_to_clean:
+            if Path(temp_file).exists():
+                try:
+                    Path(temp_file).unlink()
+                    temp_files_cleaned += 1
+                except Exception as e:
+                    logger.warning(f"Failed to clean up temp file {temp_file}: {e}")
+
+        # Clean up stale progress data
+        progress_cleaned = 0
+        for download_id in list(progress_data.keys()):
+            if download_id not in download_process_registry:
+                del progress_data[download_id]
+                progress_cleaned += 1
+
+        if cache_cleaned > 0 or temp_files_cleaned > 0 or progress_cleaned > 0:
+            logger.info(
+                f"Background cleanup completed: {cache_cleaned} cache entries, "
+                f"{temp_files_cleaned} temp files, {progress_cleaned} progress entries"
+            )
+
+        # Update cleanup time using nonlocal-like approach
+        globals()["_last_cleanup_time"] = current_time
+
+    except Exception as e:
+        logger.error(f"Error during background cleanup: {e}", exc_info=True)

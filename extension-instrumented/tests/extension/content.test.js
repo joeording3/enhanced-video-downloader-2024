@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use strict";
 /**
  * Tests for content script functionality.
@@ -8,6 +7,7 @@
  *
  * Tests both UI elements and background communication logic.
  */
+// @ts-nocheck
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -119,7 +119,7 @@ describe("Content Script Tests", () => {
         });
     });
     describe("Debounce Function", () => {
-        it("should debounce function calls", (done) => {
+        it("should debounce function calls", done => {
             let callCount = 0;
             const debouncedFn = (0, utils_1.debounce)(() => {
                 callCount++;
@@ -160,7 +160,7 @@ describe("Content Script Tests", () => {
             const state = yield (0, content_1.getButtonState)();
             expect(state).toEqual({ x: 10, y: 10, hidden: false });
             const logs = logger.getLogs();
-            expect(logs.some((log) => log.message.includes("Storage error"))).toBe(true);
+            expect(logs.some(log => log.message.includes("Storage error"))).toBe(true);
         }));
     });
     describe("Button Style Management", () => {

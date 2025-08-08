@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use strict";
 /**
  * Tests for advanced popup UI functionality.
@@ -8,6 +7,7 @@
  *
  * Tests both successful and error scenarios for popup UI components.
  */
+// @ts-nocheck
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);

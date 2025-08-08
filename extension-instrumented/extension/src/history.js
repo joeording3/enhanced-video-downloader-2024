@@ -1,5 +1,9 @@
-// @ts-nocheck
 "use strict";
+/**
+ * Enhanced Video Downloader - History Management
+ * Handles download history fetching, rendering, and management
+ */
+// @ts-nocheck
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -29,7 +33,7 @@ exports.historyStorageKey = "downloadHistory";
 function fetchHistory() {
     return __awaiter(this, arguments, void 0, function* (page = 1, perPage = 25) {
         return new Promise((resolve, reject) => {
-            chrome.storage.local.get({ [exports.historyStorageKey]: [] }, (result) => {
+            chrome.storage.local.get({ [exports.historyStorageKey]: [] }, result => {
                 if (chrome.runtime.lastError) {
                     console.warn("[EVD][HISTORY] Error fetching history:", chrome.runtime.lastError.message);
                     return resolve({ history: [], totalItems: 0 });
@@ -73,8 +77,7 @@ function renderHistoryItems(historyItems, page = 1, perPage = 25, totalItems = 0
     historyListElement.innerHTML = "";
     // If we have no items, show a message
     if (!historyItems || historyItems.length === 0) {
-        historyListElement.innerHTML =
-            '<li class="empty-history">No download history available.</li>';
+        historyListElement.innerHTML = '<li class="empty-history">No download history available.</li>';
         // Update pagination UI if provided
         if (pageInfoElement && pageInfoElement instanceof Element) {
             pageInfoElement.textContent = "No items";
@@ -89,7 +92,7 @@ function renderHistoryItems(historyItems, page = 1, perPage = 25, totalItems = 0
         return;
     }
     // Render history items
-    historyItems.forEach((item) => {
+    historyItems.forEach(item => {
         const li = document.createElement("li");
         li.className = "history-item";
         if (item.id) {
@@ -101,9 +104,7 @@ function renderHistoryItems(historyItems, page = 1, perPage = 25, totalItems = 0
         titleDiv.appendChild(titleBold);
         const timestampDiv = document.createElement("div");
         timestampDiv.className = "history-item-timestamp";
-        timestampDiv.textContent = item.timestamp
-            ? new Date(item.timestamp).toLocaleString()
-            : "";
+        timestampDiv.textContent = item.timestamp ? new Date(item.timestamp).toLocaleString() : "";
         const statusDiv = document.createElement("div");
         const statusBold = document.createElement("b");
         statusBold.textContent = item.status || "";
@@ -115,7 +116,7 @@ function renderHistoryItems(historyItems, page = 1, perPage = 25, totalItems = 0
         retryButton.className = "btn btn--secondary retry-btn";
         retryButton.textContent = "Retry";
         retryButton.title = "Retry download";
-        retryButton.addEventListener("click", (e) => {
+        retryButton.addEventListener("click", e => {
             e.stopPropagation(); // Prevent li click if any
             // Retry clicked for item
             chrome.runtime.sendMessage({
@@ -124,7 +125,7 @@ function renderHistoryItems(historyItems, page = 1, perPage = 25, totalItems = 0
                 filename: item.filename,
                 page_title: item.page_title || document.title, // Fallback for page_title
                 // id: item.id // Optionally pass original ID if server needs to link them
-            }, (response) => {
+            }, response => {
                 if (chrome.runtime.lastError) {
                     console.warn("[EVD][HISTORY] Error sending retry message:", chrome.runtime.lastError.message);
                 }
@@ -162,9 +163,7 @@ function renderHistoryItems(historyItems, page = 1, perPage = 25, totalItems = 0
             const detailSpan = document.createElement("span");
             detailSpan.className = "history-item-detail";
             // If detail is an array, join it. Otherwise, display as is.
-            detailSpan.textContent = Array.isArray(item.detail)
-                ? item.detail.join(", ")
-                : item.detail;
+            detailSpan.textContent = Array.isArray(item.detail) ? item.detail.join(", ") : item.detail;
             detailDiv.appendChild(document.createTextNode("Detail: "));
             detailDiv.appendChild(detailSpan);
             li.appendChild(detailDiv);
@@ -199,13 +198,7 @@ function renderHistoryItems(historyItems, page = 1, perPage = 25, totalItems = 0
             const startItem = Math.min((page - 1) * perPage + 1, actualTotal);
             const endItem = Math.min(page * perPage, actualTotal);
             pageInfoElement.textContent =
-                "Showing " +
-                    startItem +
-                    "-" +
-                    endItem +
-                    " of " +
-                    actualTotal +
-                    " items";
+                "Showing " + startItem + "-" + endItem + " of " + actualTotal + " items";
         }
     }
     // Update pagination button states
@@ -227,7 +220,7 @@ function addToHistory(entry) {
     return __awaiter(this, void 0, void 0, function* () {
         const newEntry = Object.assign(Object.assign({}, entry), { id: entry.id || crypto.randomUUID(), timestamp: entry.timestamp || Date.now() });
         return new Promise((resolve, reject) => {
-            chrome.storage.local.get({ [exports.historyStorageKey]: [] }, (result) => {
+            chrome.storage.local.get({ [exports.historyStorageKey]: [] }, result => {
                 if (chrome.runtime.lastError) {
                     console.warn("[EVD][HISTORY] Warning fetching existing history:", chrome.runtime.lastError.message);
                 }
@@ -290,7 +283,7 @@ function removeHistoryItem(itemId) {
         }
         return new Promise((resolve, reject) => {
             // Note: We can't use fetchHistory here as it now rejects on error.
-            chrome.storage.local.get({ [exports.historyStorageKey]: [] }, (result) => {
+            chrome.storage.local.get({ [exports.historyStorageKey]: [] }, result => {
                 if (chrome.runtime.lastError) {
                     return reject(new Error(chrome.runtime.lastError.message));
                 }

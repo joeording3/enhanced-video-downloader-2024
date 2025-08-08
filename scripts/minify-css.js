@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-// @ts-nocheck
 
 const fs = require("fs");
 const path = require("path");
@@ -21,10 +20,16 @@ function minifyCSS(css) {
 // Process all CSS files in optimized directory
 const optimizedDir = path.join(__dirname, "../extension/ui/optimized");
 const minifiedDir = path.join(__dirname, "../extension/ui/minified");
+const distDir = path.join(__dirname, "../extension/dist");
 
 // Create minified directory if it doesn't exist
 if (!fs.existsSync(minifiedDir)) {
   fs.mkdirSync(minifiedDir, { recursive: true });
+}
+
+// Create dist directory if it doesn't exist
+if (!fs.existsSync(distDir)) {
+  fs.mkdirSync(distDir, { recursive: true });
 }
 
 // Read and minify each CSS file
@@ -32,13 +37,20 @@ const files = fs.readdirSync(optimizedDir).filter(file => file.endsWith(".css"))
 
 files.forEach(file => {
   const inputPath = path.join(optimizedDir, file);
-  const outputPath = path.join(minifiedDir, file);
+  const minifiedPath = path.join(minifiedDir, file);
+  const distPath = path.join(distDir, file);
 
   const css = fs.readFileSync(inputPath, "utf8");
   const minified = minifyCSS(css);
 
-  fs.writeFileSync(outputPath, minified);
+  // Write to minified directory
+  fs.writeFileSync(minifiedPath, minified);
+
+  // Copy to dist directory for manifest.json
+  fs.writeFileSync(distPath, minified);
+
   console.log(`Minified ${file}: ${css.length} -> ${minified.length} characters`);
+  console.log(`Copied ${file} to dist directory`);
 });
 
-console.log("CSS minification complete!");
+console.log("CSS minification and distribution complete!");

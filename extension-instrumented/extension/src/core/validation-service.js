@@ -1,9 +1,9 @@
-// @ts-nocheck
 "use strict";
 /**
  * Enhanced Video Downloader - Centralized Validation Service
  * Provides a single source of truth for all validation logic
  */
+// @ts-nocheck
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.validationService = exports.ValidationService = void 0;
 /**
@@ -102,15 +102,13 @@ class ValidationService {
                     return { valid: false, error: "Text is required" };
                 }
                 const trimmedValue = value.trim();
-                if ((context === null || context === void 0 ? void 0 : context.minLength) !== undefined &&
-                    trimmedValue.length < context.minLength) {
+                if ((context === null || context === void 0 ? void 0 : context.minLength) !== undefined && trimmedValue.length < context.minLength) {
                     return {
                         valid: false,
                         error: `Text must be at least ${context.minLength} characters`,
                     };
                 }
-                if ((context === null || context === void 0 ? void 0 : context.maxLength) !== undefined &&
-                    trimmedValue.length > context.maxLength) {
+                if ((context === null || context === void 0 ? void 0 : context.maxLength) !== undefined && trimmedValue.length > context.maxLength) {
                     return {
                         valid: false,
                         error: `Text must be at most ${context.maxLength} characters`,
@@ -180,10 +178,24 @@ class ValidationService {
         }
         // Build context for validation
         const context = {};
-        if (config.min !== undefined)
-            context.min = config.min;
-        if (config.max !== undefined)
-            context.max = config.max;
+        if (config.min !== undefined) {
+            // For text type, map min/max to minLength/maxLength
+            if (config.type === "text") {
+                context.minLength = config.min;
+            }
+            else {
+                context.min = config.min;
+            }
+        }
+        if (config.max !== undefined) {
+            // For text type, map min/max to minLength/maxLength
+            if (config.type === "text") {
+                context.maxLength = config.max;
+            }
+            else {
+                context.max = config.max;
+            }
+        }
         if (config.pattern)
             context.pattern = config.pattern;
         // Run validation
@@ -211,7 +223,7 @@ class ValidationService {
      * Check if all validations pass
      */
     isValid(results) {
-        return Object.values(results).every((result) => result.valid);
+        return Object.values(results).every(result => result.valid);
     }
     /**
      * Get all validation errors

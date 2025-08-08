@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use strict";
 /**
  * @fileoverview
@@ -132,7 +131,7 @@ function discoverServerPort(storageService_1, checkStatus_1, defaultPort_1, maxP
                 }
             }));
             const results = yield Promise.all(promises);
-            const foundPort = results.find((port) => port !== null);
+            const foundPort = results.find(port => port !== null);
             if (foundPort !== null && foundPort !== undefined) {
                 // Cache discovered port
                 if (storageService.setPort) {

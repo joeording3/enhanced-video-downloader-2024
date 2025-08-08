@@ -1,9 +1,9 @@
-// @ts-nocheck
 "use strict";
 /**
  * Enhanced YouTube styling module
  * Makes the download button more visible on YouTube
  */
+// @ts-nocheck
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.enhanceYouTubeButton = enhanceYouTubeButton;
 const utils_1 = require("./lib/utils");

@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -10,6 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+// @ts-nocheck
 const options_1 = require("../../extension/src/options");
 const state_manager_1 = require("../../extension/src/core/state-manager");
 // Mock the constants module to return a wider port range for testing
@@ -30,7 +30,7 @@ const mockChrome = {
 // Mock window.matchMedia
 Object.defineProperty(window, "matchMedia", {
     writable: true,
-    value: jest.fn().mockImplementation((query) => ({
+    value: jest.fn().mockImplementation(query => ({
         matches: false,
         media: query,
         onchange: null,
@@ -237,7 +237,7 @@ describe("Options Script Unit Tests", () => {
             });
             // Mock storage set to capture the new theme using Promise-based API
             let savedTheme;
-            chrome.storage.local.set.mockImplementation((data) => {
+            chrome.storage.local.set.mockImplementation(data => {
                 savedTheme = data.theme;
                 return Promise.resolve();
             });

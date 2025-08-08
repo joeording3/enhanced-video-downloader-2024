@@ -1,9 +1,9 @@
-// @ts-nocheck
 "use strict";
 /**
  * Performance Utilities
  * Optimized functions for better performance
  */
+// @ts-nocheck
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Cache = exports.DOMBatcher = void 0;
 exports.debounce = debounce;
@@ -63,7 +63,7 @@ class DOMBatcher {
         }
     }
     flush() {
-        this.operations.forEach((op) => op());
+        this.operations.forEach(op => op());
         this.operations = [];
         this.scheduled = false;
     }

@@ -1,9 +1,9 @@
-// @ts-nocheck
 "use strict";
 /**
  * Event Manager
  * Manages event listeners with automatic cleanup
  */
+// @ts-nocheck
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.globalEventManager = exports.EventManager = void 0;
 class EventManager {

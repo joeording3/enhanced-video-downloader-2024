@@ -1,9 +1,13 @@
 /**
- * Performance Utilities
- * Optimized functions for better performance
+ * Performance utilities for the Enhanced Video Downloader extension.
+ * Provides performance monitoring and optimization tools.
  */
-// @ts-nocheck
 
+export interface PerformanceMetric {
+  name: string;
+  value: number;
+  timestamp: number;
+}
 
 /**
  * Debounce function to limit execution frequency

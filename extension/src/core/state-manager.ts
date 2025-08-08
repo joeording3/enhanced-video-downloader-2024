@@ -1,9 +1,7 @@
 /**
- * Enhanced Video Downloader - Centralized State Manager
- * Provides a single source of truth for all extension state
+ * Centralized state management for the Enhanced Video Downloader extension.
+ * Manages server state, connection status, and UI state across components.
  */
-// @ts-nocheck
-
 
 import { Theme, ServerConfig } from "../types";
 import type { HistoryEntry } from "../types";

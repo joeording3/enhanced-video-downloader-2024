@@ -1,9 +1,9 @@
-// @ts-nocheck
 "use strict";
 /**
  * Enhanced Video Downloader - Centralized DOM Manager
  * Provides a single source of truth for all DOM operations
  */
+// @ts-nocheck
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.domManager = exports.DOMManager = void 0;
 /**
@@ -277,7 +277,7 @@ class DOMManager {
         if (!element) {
             return false;
         }
-        return (element.style.display !== "none" && !element.classList.contains("hidden"));
+        return element.style.display !== "none" && !element.classList.contains("hidden");
     }
     /**
      * Clear the cache

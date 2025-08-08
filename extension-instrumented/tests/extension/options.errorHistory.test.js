@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -43,6 +42,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+// @ts-nocheck
 const options_1 = require("extension/src/options");
 const historyModule = __importStar(require("extension/src/history"));
 describe("loadErrorHistory", () => {
@@ -54,9 +54,7 @@ describe("loadErrorHistory", () => {
             history: [{ status: "error" }, { status: "complete" }],
             totalItems: 2,
         });
-        jest
-            .spyOn(historyModule, "renderHistoryItems")
-            .mockImplementation(() => { });
+        jest.spyOn(historyModule, "renderHistoryItems").mockImplementation(() => { });
     });
     afterEach(() => {
         jest.resetAllMocks();

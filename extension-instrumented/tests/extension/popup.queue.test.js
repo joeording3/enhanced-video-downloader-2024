@@ -1,5 +1,6 @@
-// @ts-nocheck
 "use strict";
+/* eslint-env jest */
+// @ts-nocheck
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -34,7 +35,6 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-/* eslint-env jest */
 const popup = __importStar(require("extension/src/popup"));
 describe("Popup Queue Controls", () => {
     beforeEach(() => {

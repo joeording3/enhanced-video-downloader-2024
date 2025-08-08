@@ -1,9 +1,7 @@
 /**
- * Enhanced Video Downloader - Background Script Helpers
- * Utility functions for the background service worker
+ * Helper functions for the background script of the Enhanced Video Downloader extension.
+ * Provides utilities for icon management, theme handling, and server communication.
  */
-// @ts-nocheck
-
 
 import { Theme } from "./types";
 
@@ -23,6 +21,11 @@ export function getActionIconPaths(): Record<Theme, Record<string, string>> {
         "48": "extension/icons/darkicon48.png",
         "128": "extension/icons/darkicon128.png",
       },
+      auto: {
+        "16": "extension/icons/icon16.png",
+        "48": "extension/icons/icon48.png",
+        "128": "extension/icons/icon128.png",
+      },
     };
   }
 
@@ -36,6 +39,11 @@ export function getActionIconPaths(): Record<Theme, Record<string, string>> {
       "16": chrome.runtime.getURL("extension/icons/darkicon16.png"),
       "48": chrome.runtime.getURL("extension/icons/darkicon48.png"),
       "128": chrome.runtime.getURL("extension/icons/darkicon128.png"),
+    },
+    auto: {
+      "16": chrome.runtime.getURL("extension/icons/icon16.png"),
+      "48": chrome.runtime.getURL("extension/icons/icon48.png"),
+      "128": chrome.runtime.getURL("extension/icons/icon128.png"),
     },
   };
 }

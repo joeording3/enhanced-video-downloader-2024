@@ -1,11 +1,9 @@
 /**
- * Enhanced Video Downloader - Centralized Error Handler
- * Eliminates duplicate try-catch patterns across the codebase
+ * Centralized error handling for the Enhanced Video Downloader extension.
+ * Provides consistent error handling and logging across all components.
  */
-// @ts-nocheck
 
-
-export interface ErrorContext {
+export interface ErrorInfo {
   component: string;
   operation: string;
   data?: any;
@@ -20,15 +18,15 @@ export interface ErrorResult {
 }
 
 export interface ErrorHandler {
-  handle<T>(operation: () => T | Promise<T>, context: ErrorContext): Promise<ErrorResult>;
-  handleSync<T>(operation: () => T, context: ErrorContext): ErrorResult;
-  wrap<T>(operation: () => T | Promise<T>, context: ErrorContext): Promise<T>;
-  wrapSync<T>(operation: () => T, context: ErrorContext): T;
+  handle<T>(operation: () => T | Promise<T>, context: ErrorInfo): Promise<ErrorResult>;
+  handleSync<T>(operation: () => T, context: ErrorInfo): ErrorResult;
+  wrap<T>(operation: () => T | Promise<T>, context: ErrorInfo): Promise<T>;
+  wrapSync<T>(operation: () => T, context: ErrorInfo): T;
 }
 
 export class CentralizedErrorHandler implements ErrorHandler {
   private static instance: CentralizedErrorHandler;
-  private errorCallbacks: Set<(error: Error, context: ErrorContext) => void> = new Set();
+  private errorCallbacks: Set<(error: Error, context: ErrorInfo) => void> = new Set();
 
   private constructor() {}
 
@@ -42,7 +40,7 @@ export class CentralizedErrorHandler implements ErrorHandler {
   /**
    * Handle async operations with error handling
    */
-  async handle<T>(operation: () => T | Promise<T>, context: ErrorContext): Promise<ErrorResult> {
+  async handle<T>(operation: () => T | Promise<T>, context: ErrorInfo): Promise<ErrorResult> {
     try {
       const result = await operation();
       return {
@@ -57,7 +55,7 @@ export class CentralizedErrorHandler implements ErrorHandler {
   /**
    * Handle sync operations with error handling
    */
-  handleSync<T>(operation: () => T, context: ErrorContext): ErrorResult {
+  handleSync<T>(operation: () => T, context: ErrorInfo): ErrorResult {
     try {
       const result = operation();
       return {
@@ -72,7 +70,7 @@ export class CentralizedErrorHandler implements ErrorHandler {
   /**
    * Wrap async operations - throws on error
    */
-  async wrap<T>(operation: () => T | Promise<T>, context: ErrorContext): Promise<T> {
+  async wrap<T>(operation: () => T | Promise<T>, context: ErrorInfo): Promise<T> {
     try {
       return await operation();
     } catch (error) {
@@ -84,7 +82,7 @@ export class CentralizedErrorHandler implements ErrorHandler {
   /**
    * Wrap sync operations - throws on error
    */
-  wrapSync<T>(operation: () => T, context: ErrorContext): T {
+  wrapSync<T>(operation: () => T, context: ErrorInfo): T {
     try {
       return operation();
     } catch (error) {
@@ -96,7 +94,7 @@ export class CentralizedErrorHandler implements ErrorHandler {
   /**
    * Register error callback for custom error handling
    */
-  onError(callback: (error: Error, context: ErrorContext) => void): () => void {
+  onError(callback: (error: Error, context: ErrorInfo) => void): () => void {
     this.errorCallbacks.add(callback);
     return () => {
       this.errorCallbacks.delete(callback);
@@ -106,7 +104,7 @@ export class CentralizedErrorHandler implements ErrorHandler {
   /**
    * Internal error handling logic
    */
-  private handleError(error: Error, context: ErrorContext): ErrorResult {
+  private handleError(error: Error, context: ErrorInfo): ErrorResult {
     // Log error with context
     console.error(`[${context.component}] ${context.operation} failed:`, error);
     console.error("Context:", context);

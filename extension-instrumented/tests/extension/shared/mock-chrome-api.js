@@ -1,8 +1,8 @@
-// @ts-nocheck
 "use strict";
 /**
  * Shared Chrome API mock utilities for consistent testing across the extension
  */
+// @ts-nocheck
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.mockConfigs = exports.chromeAPIMocker = exports.ChromeAPIMocker = void 0;
 exports.setupChromeAPI = setupChromeAPI;

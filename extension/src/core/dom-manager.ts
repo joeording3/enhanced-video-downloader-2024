@@ -1,11 +1,9 @@
 /**
- * Enhanced Video Downloader - Centralized DOM Manager
- * Provides a single source of truth for all DOM operations
+ * DOM management utilities for the Enhanced Video Downloader extension.
+ * Handles DOM manipulation, element queries, and UI interactions.
  */
-// @ts-nocheck
 
-
-export interface DOMSelector {
+export interface DOMElement {
   id: string;
   selector: string;
   type: "id" | "class" | "attribute";

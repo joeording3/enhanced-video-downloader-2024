@@ -1,13 +1,16 @@
 /**
- * Event Manager
- * Manages event listeners with automatic cleanup
+ * Event management utilities for the Enhanced Video Downloader extension.
+ * Handles event binding, unbinding, and event delegation.
  */
-// @ts-nocheck
 
+export interface EventHandler {
+  element: Element;
+  type: string;
+  handler: EventListener;
+}
 
 export class EventManager {
-  private listeners: Map<string, { element: Element; type: string; handler: EventListener }> =
-    new Map();
+  private listeners: Map<string, EventHandler> = new Map();
   private counter = 0;
 
   addListener(

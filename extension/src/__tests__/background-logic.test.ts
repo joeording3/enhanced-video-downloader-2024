@@ -1,18 +1,15 @@
-// @ts-nocheck
-import { 
-  discoverServerPort, 
-  handleSetConfig, 
-  handleGetHistory, 
+import {
+  handleSetConfig,
+  handleGetHistory,
   handleClearHistory,
-  type ApiService,
-  type StorageService 
+  discoverServerPort,
 } from "../background-logic";
-import { getServerPort, getPortRange } from "../core/constants";
-import type { ServerConfig, HistoryEntry } from "../types";
+import { ApiService, StorageService } from "../background-logic";
+import { ServerConfig, HistoryEntry } from "../types";
 
 describe("discoverServerPort", () => {
-  const defaultPort = getServerPort();
-  const maxPort = getPortRange()[1];
+  const defaultPort = 9090; // Placeholder, actual value depends on getServerPort
+  const maxPort = 9090; // Placeholder, actual value depends on getPortRange
   let calls: number[];
   let storageService: any;
   beforeEach(() => {
@@ -24,7 +21,7 @@ describe("discoverServerPort", () => {
   });
 
   it("returns cached port if valid", async () => {
-    const cachedPort = getServerPort() + 1;
+    const cachedPort = 9091;
     storageService.getPort.mockResolvedValue(cachedPort);
     const checkStatus = jest.fn().mockImplementation(port => {
       calls.push(port);
@@ -38,11 +35,11 @@ describe("discoverServerPort", () => {
   });
 
   it("scans all ports when cached invalid and caches discovered port", async () => {
-    const cachedPort = getServerPort() + 1;
-    const discoveredPort = getServerPort(); // Use the actual server port since range is [9090, 9090]
+    const cachedPort = 9091;
+    const discoveredPort = 9090; // Use the actual server port since range is [9090, 9090]
     storageService.getPort.mockResolvedValue(cachedPort);
     const statuses: Record<number, boolean> = {
-      [getServerPort()]: true, // The only port in range should be available
+      [9090]: true, // The only port in range should be available
       [cachedPort]: false,
     };
     const checkStatus = jest.fn().mockImplementation(port => {
@@ -54,7 +51,7 @@ describe("discoverServerPort", () => {
     // The actual implementation scans the full port range, so we expect more calls
     // but we can verify the key calls are in the right order
     expect(calls).toContain(cachedPort);
-    expect(calls).toContain(getServerPort());
+    expect(calls).toContain(9090);
     expect(calls.indexOf(cachedPort)).toBeLessThan(calls.indexOf(discoveredPort));
     // should expire cache then set new cache
     expect(storageService.setPort).toHaveBeenCalledWith(null);
@@ -63,9 +60,9 @@ describe("discoverServerPort", () => {
 
   it("scans ports when no cache", async () => {
     storageService.getPort.mockResolvedValue(null);
-    const discoveredPort = getServerPort(); // Use the actual server port since range is [9090, 9090]
+    const discoveredPort = 9090; // Use the actual server port since range is [9090, 9090]
     const statuses: Record<number, boolean> = {
-      [getServerPort()]: true, // The only port in range should be available
+      [9090]: true, // The only port in range should be available
     };
     const checkStatus = jest
       .fn()
@@ -76,11 +73,11 @@ describe("discoverServerPort", () => {
   });
 
   it("forces scan when startScan is true", async () => {
-    const cachedPort = getServerPort() + 1;
-    const discoveredPort = getServerPort(); // Use the actual server port since range is [9090, 9090]
+    const cachedPort = 9091;
+    const discoveredPort = 9090; // Use the actual server port since range is [9090, 9090]
     storageService.getPort.mockResolvedValue(cachedPort);
     const statuses: Record<number, boolean> = {
-      [getServerPort()]: true, // The only port in range should be available
+      [9090]: true, // The only port in range should be available
       [cachedPort]: false,
     };
     const checkStatus = jest.fn().mockImplementation(port => {
@@ -92,7 +89,7 @@ describe("discoverServerPort", () => {
     // should not return cached, so calls start with scanning all
     // The actual implementation scans the full port range, so we expect more calls
     // but we can verify the key calls are in the right order
-    expect(calls).toContain(getServerPort());
+    expect(calls).toContain(9090);
     // Note: cachedPort (9091) is outside the scan range [9090, 9090], so it won't be called
     // Since both getServerPort() and discoveredPort are the same (9090), they have the same index
     expect(calls).toContain(discoveredPort);
@@ -107,17 +104,24 @@ describe("discoverServerPort", () => {
   });
 
   it("handles timeout during cached port check", async () => {
-    const cachedPort = getServerPort() + 1;
+    const cachedPort = 9091;
     storageService.getPort.mockResolvedValue(cachedPort);
     storageService.setPort = jest.fn();
-    
+
     // Mock checkStatus to timeout
-    const checkStatus = jest.fn().mockImplementation(() => 
-      new Promise((resolve) => setTimeout(() => resolve(false), 3000))
+    const checkStatus = jest
+      .fn()
+      .mockImplementation(() => new Promise(resolve => setTimeout(() => resolve(false), 3000)));
+
+    const port = await discoverServerPort(
+      storageService,
+      checkStatus,
+      defaultPort,
+      maxPort,
+      false,
+      1000
     );
-    
-    const port = await discoverServerPort(storageService, checkStatus, defaultPort, maxPort, false, 1000);
-    
+
     // Should expire cached port and return null (since no other ports available)
     expect(storageService.setPort).toHaveBeenCalledWith(null);
     expect(port).toBeNull();
@@ -126,45 +130,45 @@ describe("discoverServerPort", () => {
   it("handles batch processing and progress callback", async () => {
     storageService.getPort.mockResolvedValue(null);
     const progressCallback = jest.fn();
-    
+
     // Mock checkStatus to fail first batch, succeed on second batch
     // Create a wider port range to ensure multiple batches
-    const testDefaultPort = getServerPort();
-    const testMaxPort = getServerPort() + 10; // Wider range
-    
-    const checkStatus = jest.fn().mockImplementation((port) => {
+    const testDefaultPort = 9090;
+    const testMaxPort = 9090 + 10; // Wider range
+
+    const checkStatus = jest.fn().mockImplementation(port =>
       // Only the last port in range succeeds to ensure progress callbacks
-      return Promise.resolve(port === testMaxPort);
-    });
-    
+      Promise.resolve(port === testMaxPort)
+    );
+
     const port = await discoverServerPort(
-      storageService, 
-      checkStatus, 
-      testDefaultPort, 
-      testMaxPort, 
-      false, 
-      2000, 
+      storageService,
+      checkStatus,
+      testDefaultPort,
+      testMaxPort,
+      false,
+      2000,
       progressCallback
     );
-    
+
     expect(port).toBe(testMaxPort);
     expect(progressCallback).toHaveBeenCalled();
   });
 
   it("handles error during port checking", async () => {
     storageService.getPort.mockResolvedValue(null);
-    
+
     // Mock checkStatus to throw errors
     const checkStatus = jest.fn().mockRejectedValue(new Error("Network error"));
-    
+
     const port = await discoverServerPort(storageService, checkStatus, defaultPort, maxPort, false);
     expect(port).toBeNull();
   });
 });
 
 describe("handleSetConfig", () => {
-  let apiService: ApiService;
-  let storageService: StorageService;
+  let apiService: any;
+  let storageService: any;
   let mockConfig: Partial<ServerConfig>;
 
   beforeEach(() => {
@@ -201,9 +205,9 @@ describe("handleSetConfig", () => {
   it("returns error when port is null", async () => {
     const result = await handleSetConfig(null, mockConfig, apiService, storageService);
 
-    expect(result).toEqual({ 
-      status: "error", 
-      message: "Server port not found." 
+    expect(result).toEqual({
+      status: "error",
+      message: "Server port not found.",
     });
     expect(apiService.saveConfig).not.toHaveBeenCalled();
     expect(storageService.setConfig).not.toHaveBeenCalled();
@@ -214,9 +218,9 @@ describe("handleSetConfig", () => {
 
     const result = await handleSetConfig(9090, mockConfig, apiService, storageService);
 
-    expect(result).toEqual({ 
-      status: "error", 
-      message: "Failed to save config to server." 
+    expect(result).toEqual({
+      status: "error",
+      message: "Failed to save config to server.",
     });
     expect(apiService.saveConfig).toHaveBeenCalledWith(9090, mockConfig);
     expect(storageService.setConfig).not.toHaveBeenCalled();
@@ -225,17 +229,20 @@ describe("handleSetConfig", () => {
   it("handles API service error", async () => {
     const error = new Error("Network timeout");
     apiService.saveConfig.mockRejectedValue(error);
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 
     const result = await handleSetConfig(9090, mockConfig, apiService, storageService);
 
-    expect(result).toEqual({ 
-      status: "error", 
-      message: "Network timeout" 
+    expect(result).toEqual({
+      status: "error",
+      message: "Network timeout",
     });
-    expect(consoleSpy).toHaveBeenCalledWith("[BG Logic] Error in handleSetConfig:", "Network timeout");
+    expect(consoleSpy).toHaveBeenCalledWith(
+      "[BG Logic] Error in handleSetConfig:",
+      "Network timeout"
+    );
     expect(storageService.setConfig).not.toHaveBeenCalled();
-    
+
     consoleSpy.mockRestore();
   });
 
@@ -243,37 +250,43 @@ describe("handleSetConfig", () => {
     apiService.saveConfig.mockResolvedValue(true);
     const error = new Error("Storage quota exceeded");
     storageService.setConfig.mockRejectedValue(error);
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 
     const result = await handleSetConfig(9090, mockConfig, apiService, storageService);
 
-    expect(result).toEqual({ 
-      status: "error", 
-      message: "Storage quota exceeded" 
+    expect(result).toEqual({
+      status: "error",
+      message: "Storage quota exceeded",
     });
-    expect(consoleSpy).toHaveBeenCalledWith("[BG Logic] Error in handleSetConfig:", "Storage quota exceeded");
-    
+    expect(consoleSpy).toHaveBeenCalledWith(
+      "[BG Logic] Error in handleSetConfig:",
+      "Storage quota exceeded"
+    );
+
     consoleSpy.mockRestore();
   });
 
   it("handles unknown error type", async () => {
     apiService.saveConfig.mockRejectedValue("Unknown error string");
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 
     const result = await handleSetConfig(9090, mockConfig, apiService, storageService);
 
-    expect(result).toEqual({ 
-      status: "error", 
-      message: "An unknown error occurred." 
+    expect(result).toEqual({
+      status: "error",
+      message: "An unknown error occurred.",
     });
-    expect(consoleSpy).toHaveBeenCalledWith("[BG Logic] Error in handleSetConfig:", "An unknown error occurred.");
-    
+    expect(consoleSpy).toHaveBeenCalledWith(
+      "[BG Logic] Error in handleSetConfig:",
+      "An unknown error occurred."
+    );
+
     consoleSpy.mockRestore();
   });
 });
 
 describe("handleGetHistory", () => {
-  let storageService: StorageService;
+  let storageService: jest.Mocked<StorageService>;
   let mockHistory: HistoryEntry[];
 
   beforeEach(() => {
@@ -284,7 +297,7 @@ describe("handleGetHistory", () => {
       setPort: jest.fn(),
       getHistory: jest.fn(),
       clearHistory: jest.fn(),
-    };
+    } as unknown as jest.Mocked<StorageService>;
     mockHistory = [
       {
         id: "1",
@@ -294,7 +307,7 @@ describe("handleGetHistory", () => {
         status: "completed",
       },
       {
-        id: "2", 
+        id: "2",
         url: "https://example.com/video2",
         title: "Test Video 2",
         downloaded_at: new Date().toISOString(),
@@ -331,7 +344,7 @@ describe("handleGetHistory", () => {
 });
 
 describe("handleClearHistory", () => {
-  let storageService: StorageService;
+  let storageService: jest.Mocked<StorageService>;
 
   beforeEach(() => {
     storageService = {
@@ -341,7 +354,7 @@ describe("handleClearHistory", () => {
       setPort: jest.fn(),
       getHistory: jest.fn(),
       clearHistory: jest.fn(),
-    };
+    } as unknown as jest.Mocked<StorageService>;
   });
 
   it("successfully clears history and returns success", async () => {

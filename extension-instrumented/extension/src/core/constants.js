@@ -1,9 +1,9 @@
-// @ts-nocheck
 "use strict";
 /**
  * Enhanced Video Downloader - Centralized Constants
  * Eliminates duplicate constants across the codebase
  */
+// @ts-nocheck
 var _a, _b;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CURRENT_ENV = exports.PORT_CONFIG = exports.TEST_PORT_RANGE_END = exports.TEST_PORT_RANGE_START = exports.TEST_CLIENT_PORT = exports.TEST_SERVER_PORT = exports.DEFAULT_DOCKER_PORT = exports.DEFAULT_PORT_RANGE_END = exports.DEFAULT_PORT_RANGE_START = exports.DEFAULT_CLIENT_PORT = exports.DEFAULT_SERVER_PORT = exports.MAX_PORT = exports.MIN_PORT = exports.NOTIFICATION_MESSAGES = exports.SUCCESS_MESSAGES = exports.ERROR_MESSAGES = exports.STATUS_CONSTANTS = exports.THEME_CONSTANTS = exports.MESSAGE_TYPES = exports.CSS_CLASSES = exports.DOM_SELECTORS = exports.CONFIG_CONSTANTS = exports.NETWORK_CONSTANTS = exports.UI_CONSTANTS = exports.STORAGE_KEYS = void 0;
@@ -277,7 +277,8 @@ exports.MAX_PORT = 65535;
 const CURRENT_ENVIRONMENT = getEnvironment();
 // Get current port configuration
 function getCurrentPortConfig() {
-    return (CENTRAL_PORT_CONFIG[CURRENT_ENVIRONMENT] || CENTRAL_PORT_CONFIG.development);
+    return (CENTRAL_PORT_CONFIG[CURRENT_ENVIRONMENT] ||
+        CENTRAL_PORT_CONFIG.development);
 }
 // Convenience functions for accessing specific ports
 function getServerPort() {

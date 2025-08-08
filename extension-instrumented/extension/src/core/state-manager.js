@@ -1,9 +1,9 @@
-// @ts-nocheck
 "use strict";
 /**
  * Enhanced Video Downloader - Centralized State Manager
  * Provides a single source of truth for all extension state
  */
+// @ts-nocheck
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -140,7 +140,7 @@ class ExtensionStateManager {
     notifyListeners(event, data) {
         const eventListeners = this.listeners.get(event);
         if (eventListeners) {
-            eventListeners.forEach((callback) => {
+            eventListeners.forEach(callback => {
                 try {
                     callback(data);
                 }

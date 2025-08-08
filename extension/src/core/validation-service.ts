@@ -1,9 +1,7 @@
 /**
- * Enhanced Video Downloader - Centralized Validation Service
- * Provides a single source of truth for all validation logic
+ * Centralized validation service for the Enhanced Video Downloader extension.
+ * Provides consistent validation logic across all components.
  */
-// @ts-nocheck
-
 
 export interface ValidationResult {
   valid: boolean;

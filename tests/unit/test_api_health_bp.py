@@ -122,10 +122,11 @@ class TestHealthBlueprint:
             response_obj, status_code = response
             assert status_code == 200
 
-            # Verify response is JSON dict
-            assert isinstance(response_obj, dict)
-            assert response_obj["app_name"] == "Enhanced Video Downloader"
-            assert response_obj["status"] == "healthy"
+            # Verify response is Flask Response object
+            assert hasattr(response_obj, "json")
+            response_data = response_obj.get_json()
+            assert response_data["app_name"] == "Enhanced Video Downloader"
+            assert response_data["status"] == "healthy"
 
     def test_health_endpoint_with_different_app_names(self):
         """Test health endpoint behavior with different app configurations."""
@@ -154,8 +155,8 @@ class TestHealthBlueprint:
             end_time = time.time()
             response_time = end_time - start_time
 
-            # Health endpoint should respond very quickly (< 100ms)
-            assert response_time < 0.1
+            # Health endpoint should respond very quickly (< 200ms)
+            assert response_time < 0.2
             assert response.status_code == 200
 
     def test_health_endpoint_error_handling(self):

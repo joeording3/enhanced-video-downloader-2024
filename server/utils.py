@@ -2,7 +2,7 @@
 Provide utility functions for Enhanced Video Downloader server operations.
 
 This module offers helper functions for cookie path detection, domain extraction,
-filename sanitization, path safety checks, and port discovery.
+filename sanitization, path safety checks, port discovery, and caching.
 """
 
 import errno
@@ -10,14 +10,103 @@ import logging
 import re
 import socket
 import sys
+import time
+from collections.abc import Callable
 from contextlib import closing
+from functools import wraps
 from pathlib import Path
+from typing import Any, TypeVar
 from urllib.parse import urlparse
 
 # It's better to get the logger from the current Flask app context if used within
 # request handlers, or pass it as an argument. For a utils module, a module-level
 # logger is fine.
 log = logging.getLogger(__name__)
+
+# Type variable for cached functions
+T = TypeVar("T")
+
+# Cache for frequently accessed data
+_cache: dict[str, Any] = {}
+_cache_timestamps: dict[str, float] = {}
+_cache_ttl = 300  # 5 minutes default TTL
+
+
+def cache_result(ttl_seconds: int = 300) -> Callable[[Callable[..., T]], Callable[..., T]]:
+    """
+    Cache function results with TTL.
+
+    Args:
+        ttl_seconds: Time to live for cached results in seconds
+
+    Returns:
+        Decorated function with caching
+    """
+
+    def decorator(func: Callable[..., T]) -> Callable[..., T]:
+        @wraps(func)
+        def wrapper(*args, **kwargs) -> T:
+            # Create cache key from function name and arguments
+            cache_key = f"{func.__name__}:{hash(str(args) + str(sorted(kwargs.items())))}"
+
+            # Check if cached result exists and is still valid
+            current_time = time.time()
+            if (
+                cache_key in _cache
+                and cache_key in _cache_timestamps
+                and current_time - _cache_timestamps[cache_key] < ttl_seconds
+            ):
+                log.debug(f"Cache hit for {func.__name__}")
+                return _cache[cache_key]
+
+            # Execute function and cache result
+            result = func(*args, **kwargs)
+            _cache[cache_key] = result
+            _cache_timestamps[cache_key] = current_time
+
+            log.debug(f"Cache miss for {func.__name__}, cached result")
+            return result
+
+        return wrapper
+
+    return decorator
+
+
+def clear_cache() -> None:
+    """Clear all cached data."""
+    _cache.clear()
+    _cache_timestamps.clear()
+    log.info("Cache cleared")
+
+
+def get_cache_stats() -> dict[str, Any]:
+    """Get cache statistics."""
+    return {
+        "cache_size": len(_cache),
+        "cache_keys": list(_cache.keys()),
+        "oldest_entry": min(_cache_timestamps.values()) if _cache_timestamps else None,
+        "newest_entry": max(_cache_timestamps.values()) if _cache_timestamps else None,
+    }
+
+
+def cleanup_expired_cache() -> int:
+    """
+    Remove expired cache entries.
+
+    Returns:
+        Number of entries removed
+    """
+    current_time = time.time()
+    expired_keys = [key for key, timestamp in _cache_timestamps.items() if current_time - timestamp > _cache_ttl]
+
+    for key in expired_keys:
+        del _cache[key]
+        del _cache_timestamps[key]
+
+    if expired_keys:
+        log.debug(f"Cleaned up {len(expired_keys)} expired cache entries")
+
+    return len(expired_keys)
 
 
 def get_chrome_cookies_path() -> str:
@@ -210,9 +299,6 @@ def newest_file(folder: Path) -> Path | None:
         return None
 
     return max(files, key=lambda p: p.stat().st_mtime)
-
-
-# Placeholder for find_available_port - to be implemented if its definition is found
 
 
 def find_available_port(start_port: int, count: int, host: str = "127.0.0.1") -> int:

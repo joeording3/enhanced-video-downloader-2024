@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use strict";
 /**
  * Popup UI controller for the Enhanced Video Downloader extension.
@@ -7,6 +6,7 @@
  *
  * @module popup
  */
+// @ts-nocheck
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -123,11 +123,9 @@ function updateToggleButtonState(buttonIdOrState, isActiveOrButtonId) {
     if (typeof buttonIdOrState === "boolean") {
         // First parameter is the state
         isActive = buttonIdOrState;
-        buttonId =
-            isActiveOrButtonId || "toggle-enhanced-download-button";
+        buttonId = isActiveOrButtonId || "toggle-enhanced-download-button";
     }
-    else if (typeof buttonIdOrState === "string" &&
-        typeof isActiveOrButtonId === "string") {
+    else if (typeof buttonIdOrState === "string" && typeof isActiveOrButtonId === "string") {
         // First parameter is the button text, second is also a string (button ID)
         buttonText = buttonIdOrState;
         buttonId = isActiveOrButtonId;
@@ -176,7 +174,7 @@ function loadAndRenderHistory(containerId = "history-items", limit = 5) {
     // Clear existing history items
     container.innerHTML = "";
     // Fetch history entries from storage
-    chrome.storage.local.get(["downloadHistory"], (result) => {
+    chrome.storage.local.get(["downloadHistory"], result => {
         const history = result.downloadHistory || [];
         const recentEntries = history.slice(0, limit);
         if (recentEntries.length === 0) {
@@ -188,7 +186,7 @@ function loadAndRenderHistory(containerId = "history-items", limit = 5) {
             return;
         }
         // Create history items
-        recentEntries.forEach((entry) => {
+        recentEntries.forEach(entry => {
             const item = document.createElement("div");
             item.className = "history-item status-" + entry.status;
             const title = document.createElement("div");
@@ -197,9 +195,7 @@ function loadAndRenderHistory(containerId = "history-items", limit = 5) {
             const meta = document.createElement("div");
             meta.className = "history-meta";
             meta.textContent =
-                entry.status +
-                    "  " +
-                    new Date(entry.timestamp || Date.now()).toLocaleString();
+                entry.status + "  " + new Date(entry.timestamp || Date.now()).toLocaleString();
             item.appendChild(title);
             item.appendChild(meta);
             container.appendChild(item);
@@ -210,7 +206,7 @@ function loadAndRenderHistory(containerId = "history-items", limit = 5) {
 // Load configuration from server or fallback to local storage
 function loadConfig() {
     return __awaiter(this, void 0, void 0, function* () {
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
             chrome.runtime.sendMessage({ type: "getConfig" }, (response) => {
                 if (!chrome.runtime.lastError && response && response.serverConfig) {
                     resolve(response.serverConfig);
@@ -230,7 +226,7 @@ function updateDownloadDirDisplay() {
         const el = document.getElementById("download-dir-display");
         if (!el)
             return;
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
             chrome.runtime.sendMessage({ type: "getConfig" }, (response) => {
                 if (!chrome.runtime.lastError && response && response.serverConfig) {
                     el.textContent = "Saving to: " + response.serverConfig.download_dir;
@@ -253,7 +249,7 @@ function updatePortDisplay() {
         const el = document.getElementById("server-port-display");
         if (!el)
             return;
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
             chrome.runtime.sendMessage({ type: "getConfig" }, (response) => {
                 if (!chrome.runtime.lastError && response && response.serverConfig) {
                     el.textContent = "Server Port: " + response.serverConfig.server_port;
@@ -296,12 +292,7 @@ function createErrorListItem(downloadId, info) {
     const content = document.createElement("div");
     content.className = "error-details-content";
     content.textContent =
-        info.errorInfo.type +
-            ": " +
-            info.errorInfo.message +
-            " (" +
-            info.errorInfo.original +
-            ")";
+        info.errorInfo.type + ": " + info.errorInfo.message + " (" + info.errorInfo.original + ")";
     detailsEl.appendChild(content);
     // Add contextual help/troubleshooting link
     const helpBtn = document.createElement("button");
@@ -405,7 +396,7 @@ function handleDrop(e) {
     const dropIndex = Array.from(li.parentElement.children).indexOf(li);
     // Collect current ids
     const listEls = Array.from(li.parentElement.children);
-    const ids = listEls.map((el) => el.dataset.downloadId);
+    const ids = listEls.map(el => el.dataset.downloadId);
     // Reorder array
     const reordered = [...ids];
     const [moved] = reordered.splice(dragSrcIndex, 1);
@@ -438,7 +429,7 @@ function renderDownloadStatus(data) {
         activeSummary.textContent = "Active Downloads";
         activeDetails.appendChild(activeSummary);
         const activeUl = document.createElement("ul");
-        activeIds.forEach((id) => {
+        activeIds.forEach(id => {
             var _a;
             const statusObj = data.active[id];
             let liEl;
@@ -454,8 +445,7 @@ function renderDownloadStatus(data) {
             }
             else if (statusObj.status === "paused") {
                 liEl = createGenericListItem(id, { status: "paused" });
-                (_a = liEl
-                    .querySelector("button.resume-button")) === null || _a === void 0 ? void 0 : _a.addEventListener("click", () => {
+                (_a = liEl.querySelector("button.resume-button")) === null || _a === void 0 ? void 0 : _a.addEventListener("click", () => {
                     chrome.runtime.sendMessage({ type: "resumeDownload", downloadId: id }, () => { });
                 });
             }
@@ -474,7 +464,7 @@ function renderDownloadStatus(data) {
         queueSummary.textContent = "Queued Downloads";
         queueDetails.appendChild(queueSummary);
         const queueUl = document.createElement("ul");
-        queuedIds.forEach((id) => {
+        queuedIds.forEach(id => {
             const li = createQueuedListItem({ id });
             // Enable drag-and-drop reordering for queued items
             li.setAttribute("draggable", "true");
@@ -549,7 +539,7 @@ function initPopup() {
 }
 // Initialize popup when DOM is ready
 document.addEventListener("DOMContentLoaded", () => {
-    initPopup().catch((error) => {
+    initPopup().catch(error => {
         console.error("Error initializing popup:", error);
     });
 });

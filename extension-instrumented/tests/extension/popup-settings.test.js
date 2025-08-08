@@ -1,6 +1,6 @@
-// @ts-nocheck
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+// @ts-nocheck
 const popup_1 = require("../../extension/src/popup");
 describe("popup settings button", () => {
     let originalChrome;

@@ -28,7 +28,7 @@ export interface StorageService {
   getPort(): Promise<number | null>;
   setPort?(port: number | null): Promise<void>;
   getHistory(): Promise<HistoryEntry[]>;
-  clearHistory(): Promise<void>;
+  clearHistory(): Promise<void | boolean>;
   // Add other storage methods here
 }
 
@@ -64,8 +64,7 @@ export async function handleSetConfig(
 
     return { status: "success" };
   } catch (err) {
-    const errorMessage =
-      err instanceof Error ? err.message : "An unknown error occurred.";
+    const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
     console.error("[BG Logic] Error in handleSetConfig:", errorMessage);
     return { status: "error", message: errorMessage };
   }
@@ -143,10 +142,7 @@ export async function discoverServerPort(
   }
 
   // Scan port range with timeout and parallel checking for efficiency
-  const portRange = Array.from(
-    { length: totalPorts },
-    (_, i) => defaultPort + i
-  );
+  const portRange = Array.from({ length: totalPorts }, (_, i) => defaultPort + i);
 
   // Check ports in batches to avoid overwhelming the system
   const batchSize = 5;
@@ -154,7 +150,7 @@ export async function discoverServerPort(
     const batch = portRange.slice(i, i + batchSize);
 
     // Check ports in parallel within the batch
-    const promises = batch.map(async (port) => {
+    const promises = batch.map(async port => {
       try {
         const isAvailable = await Promise.race([
           checkStatus(port),
@@ -169,7 +165,7 @@ export async function discoverServerPort(
     });
 
     const results = await Promise.all(promises);
-    const foundPort = results.find((port) => port !== null);
+    const foundPort = results.find(port => port !== null);
 
     if (foundPort !== null && foundPort !== undefined) {
       // Cache discovered port

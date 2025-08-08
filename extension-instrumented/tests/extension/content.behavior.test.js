@@ -1,9 +1,6 @@
-// @ts-nocheck
 "use strict";
 /* eslint-env jest */
-/**
- * @jest-environment jsdom
- */
+// @ts-nocheck
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -47,6 +44,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * @jest-environment jsdom
+ */
 const content_1 = require("../../extension/src/content");
 const utils = __importStar(require("../../extension/src/lib/utils"));
 // Additional imports for direct style testing
@@ -59,9 +59,7 @@ describe("Content script button behaviors", () => {
         // Reset mocks
         jest.clearAllMocks();
         // Default hostname
-        getHostnameSpy = jest
-            .spyOn(utils, "getHostname")
-            .mockReturnValue("example.com");
+        getHostnameSpy = jest.spyOn(utils, "getHostname").mockReturnValue("example.com");
     });
     afterEach(() => {
         getHostnameSpy.mockRestore();
@@ -181,7 +179,7 @@ describe("Content script button behaviors", () => {
             });
             document.dispatchEvent(mouseUpEvent);
             // Use a short timeout to allow the async `saveButtonState` to complete
-            yield new Promise((resolve) => setTimeout(resolve, 0));
+            yield new Promise(resolve => setTimeout(resolve, 0));
             // Check that storage was called with the new position
             expect(chrome.storage.local.set).toHaveBeenCalledWith({
                 "example.com": {

@@ -1,10 +1,10 @@
-// @ts-nocheck
 "use strict";
 /**
  * @fileoverview
  * Comprehensive unit tests for background.ts
  * Updated to use centralized services
  */
+// @ts-nocheck
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -70,8 +70,7 @@ describe("Background Script - Core Functions", () => {
         // Reset global server state variables
         // This is needed because serverAvailable is a global variable in background.ts
         const backgroundModule = require("../../extension/src/background");
-        if (backgroundModule &&
-            typeof backgroundModule.resetServerState === "function") {
+        if (backgroundModule && typeof backgroundModule.resetServerState === "function") {
             backgroundModule.resetServerState();
         }
         // Default successful responses
@@ -145,9 +144,7 @@ describe("Background Script - Core Functions", () => {
         it("checkServerStatus should return true for successful response", () => __awaiter(void 0, void 0, void 0, function* () {
             mockFetch.mockResolvedValueOnce({
                 ok: true,
-                json: jest
-                    .fn()
-                    .mockResolvedValue({ app_name: "Enhanced Video Downloader" }),
+                json: jest.fn().mockResolvedValue({ app_name: "Enhanced Video Downloader" }),
             });
             const result = yield (0, background_1.checkServerStatus)((0, constants_1.getServerPort)());
             expect(result).toBe(true);
@@ -204,9 +201,7 @@ describe("Background Script - Core Functions", () => {
         it("checkServerStatus should handle storage errors", () => __awaiter(void 0, void 0, void 0, function* () {
             mockFetch.mockResolvedValueOnce({
                 ok: true,
-                json: jest
-                    .fn()
-                    .mockResolvedValue({ app_name: "Enhanced Video Downloader" }),
+                json: jest.fn().mockResolvedValue({ app_name: "Enhanced Video Downloader" }),
             });
             const result = yield (0, background_1.checkServerStatus)((0, constants_1.getServerPort)());
             expect(result).toBe(true);
@@ -214,9 +209,7 @@ describe("Background Script - Core Functions", () => {
         it("checkServerStatus should handle server availability changes", () => __awaiter(void 0, void 0, void 0, function* () {
             mockFetch.mockResolvedValueOnce({
                 ok: true,
-                json: jest
-                    .fn()
-                    .mockResolvedValue({ app_name: "Enhanced Video Downloader" }),
+                json: jest.fn().mockResolvedValue({ app_name: "Enhanced Video Downloader" }),
             });
             const result = yield (0, background_1.checkServerStatus)((0, constants_1.getServerPort)());
             expect(result).toBe(true);
@@ -253,9 +246,7 @@ describe("Background Script - Core Functions", () => {
         it("findServerPort should return port when server is found", () => __awaiter(void 0, void 0, void 0, function* () {
             mockFetch.mockResolvedValueOnce({
                 ok: true,
-                json: jest
-                    .fn()
-                    .mockResolvedValue({ app_name: "Enhanced Video Downloader" }),
+                json: jest.fn().mockResolvedValue({ app_name: "Enhanced Video Downloader" }),
             });
             const result = yield (0, background_1.findServerPort)();
             expect(result).toBe((0, constants_1.getServerPort)());
@@ -282,13 +273,19 @@ describe("Background Script - Core Functions", () => {
         }));
     });
     describe("Download Request", () => {
-        it("sendDownloadRequest should return empty object (stub implementation)", () => __awaiter(void 0, void 0, void 0, function* () {
+        it("sendDownloadRequest should return error when server not available", () => __awaiter(void 0, void 0, void 0, function* () {
             const result = yield (0, background_1.sendDownloadRequest)("https://example.com/video");
-            expect(result).toEqual({});
+            expect(result).toEqual({
+                status: "error",
+                message: "Server not available",
+            });
         }));
         it("sendDownloadRequest should handle different parameters", () => __awaiter(void 0, void 0, void 0, function* () {
             const result = yield (0, background_1.sendDownloadRequest)("https://example.com/video", 1, true, "best", "mp4", "Test Video");
-            expect(result).toEqual({});
+            expect(result).toEqual({
+                status: "error",
+                message: "Server not available",
+            });
         }));
     });
     describe("Theme Initialization", () => {

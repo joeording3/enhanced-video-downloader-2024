@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { ValidationService } from "../../core/validation-service";
 
 describe("Validation Service Tests", () => {
@@ -399,15 +398,15 @@ describe("Validation Service Tests", () => {
       // Test exact boundary conditions for mutation testing
       const exactMinResult = validationService.validate("number", "1", { min: 1, max: 10 });
       expect(exactMinResult.valid).toBe(true);
-      
+
       const exactMaxResult = validationService.validate("number", "10", { min: 1, max: 10 });
       expect(exactMaxResult.valid).toBe(true);
-      
-      // Test >= vs > mutations  
+
+      // Test >= vs > mutations
       const belowMinResult = validationService.validate("number", "0", { min: 1, max: 10 });
       expect(belowMinResult.valid).toBe(false);
       expect(belowMinResult.error).toBe("Value must be at least 1");
-      
+
       const aboveMaxResult = validationService.validate("number", "11", { min: 1, max: 10 });
       expect(aboveMaxResult.valid).toBe(false);
       expect(aboveMaxResult.error).toBe("Value must be at most 10");
@@ -415,18 +414,30 @@ describe("Validation Service Tests", () => {
 
     it("should handle exact text length boundaries", () => {
       // Test exact boundary conditions for text length
-      const exactMinLengthResult = validationService.validate("text", "abc", { minLength: 3, maxLength: 10 });
+      const exactMinLengthResult = validationService.validate("text", "abc", {
+        minLength: 3,
+        maxLength: 10,
+      });
       expect(exactMinLengthResult.valid).toBe(true);
-      
-      const exactMaxLengthResult = validationService.validate("text", "abcdefghij", { minLength: 3, maxLength: 10 });
+
+      const exactMaxLengthResult = validationService.validate("text", "abcdefghij", {
+        minLength: 3,
+        maxLength: 10,
+      });
       expect(exactMaxLengthResult.valid).toBe(true);
-      
+
       // Test < vs <= mutations
-      const belowMinLengthResult = validationService.validate("text", "ab", { minLength: 3, maxLength: 10 });
+      const belowMinLengthResult = validationService.validate("text", "ab", {
+        minLength: 3,
+        maxLength: 10,
+      });
       expect(belowMinLengthResult.valid).toBe(false);
       expect(belowMinLengthResult.error).toBe("Text must be at least 3 characters");
-      
-      const aboveMaxLengthResult = validationService.validate("text", "abcdefghijk", { minLength: 3, maxLength: 10 });
+
+      const aboveMaxLengthResult = validationService.validate("text", "abcdefghijk", {
+        minLength: 3,
+        maxLength: 10,
+      });
       expect(aboveMaxLengthResult.valid).toBe(false);
       expect(aboveMaxLengthResult.error).toBe("Text must be at most 10 characters");
     });
@@ -436,42 +447,46 @@ describe("Validation Service Tests", () => {
     it("should handle number validator without context", () => {
       const result = validationService.validate("number", "42");
       expect(result.valid).toBe(true);
-      
+
       const invalidResult = validationService.validate("number", "not-a-number");
       expect(invalidResult.valid).toBe(false);
       expect(invalidResult.error).toBe("Must be a valid number");
     });
-    
+
     it("should handle text validator without trim", () => {
       // Test text validation when trimming is mutated
       const result = validationService.validate("text", "  hello  ", { minLength: 3 });
       expect(result.valid).toBe(true);
-      
+
       const emptyAfterTrimResult = validationService.validate("text", "   ", { minLength: 1 });
       expect(emptyAfterTrimResult.valid).toBe(false);
       expect(emptyAfterTrimResult.error).toBe("Text is required");
     });
-    
+
     it("should handle select validator edge cases", () => {
       // Test select with empty value after trim
       const emptyResult = validationService.validate("select", "");
       expect(emptyResult.valid).toBe(false);
       expect(emptyResult.error).toBe("Selection is required");
-      
+
       // Test select with whitespace only
       const whitespaceResult = validationService.validate("select", "   ");
       expect(whitespaceResult.valid).toBe(false);
       expect(whitespaceResult.error).toBe("Selection is required");
-      
+
       // Test select with valid options
-      const validResult = validationService.validate("select", "option1", { options: ["option1", "option2"] });
+      const validResult = validationService.validate("select", "option1", {
+        options: ["option1", "option2"],
+      });
       expect(validResult.valid).toBe(true);
-      
+
       // Test select with invalid option
-      const invalidResult = validationService.validate("select", "option3", { options: ["option1", "option2"] });
+      const invalidResult = validationService.validate("select", "option3", {
+        options: ["option1", "option2"],
+      });
       expect(invalidResult.valid).toBe(false);
       expect(invalidResult.error).toBe("Invalid selection");
-      
+
       // Test select without options context
       const noOptionsResult = validationService.validate("select", "anything");
       expect(noOptionsResult.valid).toBe(true);
@@ -482,27 +497,27 @@ describe("Validation Service Tests", () => {
     it("should handle undefined context gracefully", () => {
       const result = validationService.validate("number", "42", undefined);
       expect(result.valid).toBe(true);
-      
+
       const textResult = validationService.validate("text", "hello", undefined);
       expect(textResult.valid).toBe(true);
     });
-    
+
     it("should handle null context gracefully", () => {
       const result = validationService.validate("number", "42", null);
       expect(result.valid).toBe(true);
-      
+
       const textResult = validationService.validate("text", "hello", null);
       expect(textResult.valid).toBe(true);
     });
-    
+
     it("should handle context with undefined properties", () => {
       const result = validationService.validate("number", "42", { min: undefined, max: undefined });
       expect(result.valid).toBe(true);
-      
-      const textResult = validationService.validate("text", "hello", { 
-        minLength: undefined, 
-        maxLength: undefined, 
-        pattern: undefined 
+
+      const textResult = validationService.validate("text", "hello", {
+        minLength: undefined,
+        maxLength: undefined,
+        pattern: undefined,
       });
       expect(textResult.valid).toBe(true);
     });
@@ -510,41 +525,41 @@ describe("Validation Service Tests", () => {
 
   describe("Field Configuration and Common Fields", () => {
     it("should configure common fields", () => {
-      // Reset service to clean state
-      const cleanService = new validationService.constructor();
+      // Reset service to clean state by constructing a new instance
+      const cleanService = new (ValidationService as any)();
       cleanService.configureCommonFields();
-      
+
       // Test server port field
       const portResult = cleanService.validateField("serverPort", "9090");
       expect(portResult.valid).toBe(true);
-      
+
       const invalidPortResult = cleanService.validateField("serverPort", "70000");
       expect(invalidPortResult.valid).toBe(false);
-      
+
       // Test download directory field
       const dirResult = cleanService.validateField("downloadDir", "/home/user/downloads");
       expect(dirResult.valid).toBe(true);
-      
+
       const emptyDirResult = cleanService.validateField("downloadDir", "");
       expect(emptyDirResult.valid).toBe(false);
-      
+
       // Test log level field
       const logLevelResult = cleanService.validateField("logLevel", "INFO");
       expect(logLevelResult.valid).toBe(true);
-      
+
       const invalidLogLevelResult = cleanService.validateField("logLevel", "INVALID");
       expect(invalidLogLevelResult.valid).toBe(false);
       expect(invalidLogLevelResult.error).toBe("Invalid log level");
-      
+
       // Test format field
       const formatResult = cleanService.validateField("format", "mp4");
       expect(formatResult.valid).toBe(true);
-      
+
       const invalidFormatResult = cleanService.validateField("format", "invalid");
       expect(invalidFormatResult.valid).toBe(false);
       expect(invalidFormatResult.error).toBe("Invalid format");
     });
-    
+
     it("should handle field configuration with undefined properties", () => {
       validationService.registerField("test-field", {
         name: "Test Field",
@@ -554,7 +569,7 @@ describe("Validation Service Tests", () => {
         max: undefined,
         pattern: undefined,
       });
-      
+
       const result = validationService.validateField("test-field", "42");
       expect(result.valid).toBe(true);
     });
@@ -570,39 +585,42 @@ describe("Validation Service Tests", () => {
         max: 10,
       });
     });
-    
+
     it("should allow empty values for non-required fields", () => {
       const emptyResult = validationService.validateField("optional-field", "");
       expect(emptyResult.valid).toBe(true);
-      
+
       const nullResult = validationService.validateField("optional-field", null);
       expect(nullResult.valid).toBe(true);
-      
+
       const undefinedResult = validationService.validateField("optional-field", undefined);
       expect(undefinedResult.valid).toBe(true);
-      
+
       const whitespaceResult = validationService.validateField("optional-field", "   ");
       expect(whitespaceResult.valid).toBe(true);
     });
-    
+
     it("should still validate non-empty values for non-required fields", () => {
       const validResult = validationService.validateField("optional-field", "hello");
       expect(validResult.valid).toBe(true);
-      
+
       // Note: Non-required fields with custom validation will only be validated if they have content
       // For length validation on non-required fields, create a required field for this specific test
       validationService.registerField("optional-with-validation", {
         name: "Optional with Validation",
-        type: "text", 
+        type: "text",
         required: true, // Make it required to test length validation
         min: 3, // Use min/max instead of minLength/maxLength
         max: 10,
       });
-      
+
       const tooShortResult = validationService.validateField("optional-with-validation", "hi");
       expect(tooShortResult.valid).toBe(false);
-      
-      const tooLongResult = validationService.validateField("optional-with-validation", "verylongtext");
+
+      const tooLongResult = validationService.validateField(
+        "optional-with-validation",
+        "verylongtext"
+      );
       expect(tooLongResult.valid).toBe(false);
     });
   });
@@ -624,18 +642,18 @@ describe("Validation Service Tests", () => {
         },
       });
     });
-    
+
     it("should handle custom validator success", () => {
       const result = validationService.validateField("custom-validation-field", "valid-value");
       expect(result.valid).toBe(true);
     });
-    
+
     it("should handle custom validator failure with error", () => {
       const result = validationService.validateField("custom-validation-field", "trigger-error");
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Custom error message");
     });
-    
+
     it("should handle custom validator failure without error", () => {
       const result = validationService.validateField("custom-validation-field", "trigger-invalid");
       expect(result.valid).toBe(false);
@@ -652,50 +670,50 @@ describe("Validation Service Tests", () => {
         min: 1,
         max: 10,
       });
-      
+
       validationService.registerField("field2", {
-        name: "Field 2", 
+        name: "Field 2",
         type: "text",
         required: true,
         min: 3, // Use min instead of minLength for field config
       });
     });
-    
+
     it("should collect multiple errors correctly", () => {
       const fields = {
         field1: "99", // Invalid - too high
         field2: "ab", // Invalid - too short
       };
-      
+
       const results = validationService.validateFields(fields);
       const errors = validationService.getErrors(results);
-      
+
       expect(errors.field1).toBe("Value must be at most 10");
       expect(errors.field2).toBe("Text must be at least 3 characters");
     });
-    
+
     it("should handle mixed valid and invalid fields", () => {
       const fields = {
         field1: "5", // Valid
         field2: "ab", // Invalid
       };
-      
+
       const results = validationService.validateFields(fields);
       const errors = validationService.getErrors(results);
-      
+
       expect(errors.field1).toBeUndefined();
       expect(errors.field2).toBe("Text must be at least 3 characters");
     });
-    
+
     it("should return empty errors for all valid fields", () => {
       const fields = {
         field1: "5",
         field2: "hello",
       };
-      
+
       const results = validationService.validateFields(fields);
       const errors = validationService.getErrors(results);
-      
+
       expect(Object.keys(errors)).toHaveLength(0);
     });
   });
@@ -705,12 +723,12 @@ describe("Validation Service Tests", () => {
       const pattern = /^[A-Z]+$/;
       const result = validationService.validate("text", "HELLO", { pattern });
       expect(result.valid).toBe(true);
-      
+
       const invalidResult = validationService.validate("text", "hello", { pattern });
       expect(invalidResult.valid).toBe(false);
       expect(invalidResult.error).toBe("Text format is invalid");
     });
-    
+
     it("should handle text validation without pattern", () => {
       const result = validationService.validate("text", "any text");
       expect(result.valid).toBe(true);

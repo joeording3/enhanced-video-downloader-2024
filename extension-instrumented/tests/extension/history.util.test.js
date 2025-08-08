@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use strict";
 /**
  * Tests for history module utility functions.
@@ -8,6 +7,7 @@
  *
  * Uses jest.isolateModules to ensure clean state between tests.
  */
+// @ts-nocheck
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -145,9 +145,7 @@ describe("history module", () => {
             chrome.storage.local.set.mockImplementation((items, cb) => cb());
             yield historyModule.removeHistoryItemAndNotify("some-id");
             expect(chrome.storage.local.set).toHaveBeenCalledWith({
-                [historyModule.historyStorageKey]: [
-                    { id: "another-id", timestamp: 2 },
-                ],
+                [historyModule.historyStorageKey]: [{ id: "another-id", timestamp: 2 }],
             }, expect.any(Function));
             expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
                 type: "historyUpdated",

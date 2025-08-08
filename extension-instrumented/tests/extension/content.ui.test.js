@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -10,12 +9,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+// @ts-nocheck
 // @jest-environment jsdom
 const content_1 = require("../../extension/src/content");
 describe("content.ts UI functions", () => {
     beforeEach(() => {
-        document.body.innerHTML =
-            '<div id="video-container"><video id="video"></video></div>';
+        document.body.innerHTML = '<div id="video-container"><video id="video"></video></div>';
         global.chrome = {
             storage: {
                 local: {

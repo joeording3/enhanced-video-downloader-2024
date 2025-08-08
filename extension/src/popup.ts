@@ -1,15 +1,9 @@
 /**
- * Popup UI controller for the Enhanced Video Downloader extension.
- * Manages the popup UI components, download status, history display,
- * and user interactions with the extension popup.
- *
- * @module popup
+ * Enhanced Video Downloader - Popup Script
+ * Handles popup UI interactions and server communication
  */
-// @ts-nocheck
 
-
-import { logger } from "./lib/utils";
-import { HistoryEntry } from "./types";
+import { Theme, ServerConfig, HistoryEntry } from "./types";
 
 /**
  * Download status interface for the popup UI
@@ -141,7 +135,7 @@ export function updateToggleButtonState(
 
   const button = document.getElementById(buttonId) as HTMLButtonElement;
   if (!button) {
-    logger.error("Toggle button with ID " + buttonId + " not found");
+    // logger.error("Toggle button with ID " + buttonId + " not found"); // Original code had logger, but logger is removed.
     return;
   }
 
@@ -176,7 +170,7 @@ export function loadAndRenderHistory(
 ): void {
   const container = document.getElementById(containerId);
   if (!container) {
-    logger.error("History container with ID " + containerId + " not found");
+    // logger.error("History container with ID " + containerId + " not found"); // Original code had logger, but logger is removed.
     return;
   }
 
@@ -216,7 +210,7 @@ export function loadAndRenderHistory(
       container.appendChild(item);
     });
 
-    logger.debug("Rendered " + recentEntries.length + " history entries");
+    // logger.debug("Rendered " + recentEntries.length + " history entries"); // Original code had logger, but logger is removed.
   });
 }
 

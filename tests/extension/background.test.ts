@@ -3,8 +3,6 @@
  * Comprehensive unit tests for background.ts
  * Updated to use centralized services
  */
-// @ts-nocheck
-
 
 import {
   sendDownloadRequest,
@@ -339,9 +337,12 @@ describe("Background Script - Core Functions", () => {
   });
 
   describe("Download Request", () => {
-    it("sendDownloadRequest should return empty object (stub implementation)", async () => {
+    it("sendDownloadRequest should return error when server not available", async () => {
       const result = await sendDownloadRequest("https://example.com/video");
-      expect(result).toEqual({});
+      expect(result).toEqual({
+        status: "error",
+        message: "Server not available",
+      });
     });
 
     it("sendDownloadRequest should handle different parameters", async () => {
@@ -353,7 +354,10 @@ describe("Background Script - Core Functions", () => {
         "mp4",
         "Test Video"
       );
-      expect(result).toEqual({});
+      expect(result).toEqual({
+        status: "error",
+        message: "Server not available",
+      });
     });
   });
 

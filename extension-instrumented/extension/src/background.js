@@ -1,9 +1,9 @@
-// @ts-nocheck
 "use strict";
 /**
  * Enhanced Video Downloader - Background Script
  * Handles port discovery, server communication, and download management
  */
+// @ts-nocheck
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -39,13 +39,11 @@ const _defaultServerPort = (0, constants_1.getServerPort)();
 const _maxPortScan = (0, constants_1.getPortRange)()[1]; // Use the end of the port range
 const _serverCheckInterval = constants_2.NETWORK_CONSTANTS.SERVER_CHECK_INTERVAL;
 // Expected application name for server identification (from manifest)
-const expectedAppName = (chrome.runtime && chrome.runtime.getManifest
-    ? chrome.runtime.getManifest().name
-    : null) || "Enhanced Video Downloader";
+const expectedAppName = (chrome.runtime && chrome.runtime.getManifest ? chrome.runtime.getManifest().name : null) ||
+    "Enhanced Video Downloader";
 exports.expectedAppName = expectedAppName;
 // Initialize background script when loaded (skip in Jest)
-const isTestEnvironment = typeof process !== "undefined" &&
-    (process.env.JEST_WORKER_ID || process.env.NODE_ENV === "test");
+const isTestEnvironment = typeof process !== "undefined" && (process.env.JEST_WORKER_ID || process.env.NODE_ENV === "test");
 // --- END CONSTANTS AND STORAGE KEYS ---
 // Utility logging functions - now using centralized logger
 const log = (...args) => {
@@ -155,9 +153,7 @@ const handleNetworkChange = (online) => __awaiter(void 0, void 0, void 0, functi
             const port = yield findServerPort(true);
             if (port !== null) {
                 log("Server reconnected on port " + port);
-                showNotification("Server Reconnected", "Enhanced Video Downloader server is back online on port " +
-                    port +
-                    ".");
+                showNotification("Server Reconnected", "Enhanced Video Downloader server is back online on port " + port + ".");
                 // Broadcast server status after reconnection
                 broadcastServerStatus();
             }
@@ -192,10 +188,8 @@ const handleNetworkChange = (online) => __awaiter(void 0, void 0, void 0, functi
 });
 // Initialize network status in storage
 if (!isTestEnvironment) {
-    chrome.storage.local.get(networkStatusKey, (res) => {
-        const current = typeof res[networkStatusKey] === "boolean"
-            ? res[networkStatusKey]
-            : navigator.onLine;
+    chrome.storage.local.get(networkStatusKey, res => {
+        const current = typeof res[networkStatusKey] === "boolean" ? res[networkStatusKey] : navigator.onLine;
         handleNetworkChange(current);
     });
     // Listen for browser online/offline events
@@ -228,11 +222,11 @@ const initializeActionIconTheme = () => __awaiter(void 0, void 0, void 0, functi
                 (0, background_helpers_1.applyThemeToActionIcon)(systemPrefersDark ? "dark" : "light");
                 // Add listener for system theme changes
                 try {
-                    darkModeMediaQuery.addEventListener("change", (e) => {
+                    darkModeMediaQuery.addEventListener("change", e => {
                         const newSystemPrefersDark = e.matches;
                         log("System theme changed, now prefers dark: " + newSystemPrefersDark);
                         // Check if user has manually set a theme
-                        chrome.storage.local.get("theme", (themeResult) => {
+                        chrome.storage.local.get("theme", themeResult => {
                             if (!themeResult.theme) {
                                 // Only update automatically if user hasn't set a preference
                                 (0, background_helpers_1.applyThemeToActionIcon)(newSystemPrefersDark ? "dark" : "light");
@@ -245,13 +239,11 @@ const initializeActionIconTheme = () => __awaiter(void 0, void 0, void 0, functi
                     log("Added listener for system theme changes");
                 }
                 catch (listenerError) {
-                    warn("Could not add listener for system theme changes: " +
-                        listenerError.message);
+                    warn("Could not add listener for system theme changes: " + listenerError.message);
                 }
             }
             else {
-                warn("self.matchMedia not available. " +
-                    "Defaulting action icon to light theme.");
+                warn("self.matchMedia not available. " + "Defaulting action icon to light theme.");
                 (0, background_helpers_1.applyThemeToActionIcon)("light"); // Fallback if matchMedia is not available
             }
         }
@@ -538,7 +530,7 @@ const findServerPort = (...args_1) => __awaiter(void 0, [...args_1], void 0, fun
             state_manager_1.stateManager.updateServerState({ backoffInterval: 1000 });
             // Notify options page about server discovery
             try {
-                chrome.runtime.sendMessage({ type: "serverDiscovered", port }, (response) => {
+                chrome.runtime.sendMessage({ type: "serverDiscovered", port }, response => {
                     // Ignore any errors - this is just a notification
                     if (chrome.runtime.lastError) {
                         // This is expected when options page is not open
@@ -585,16 +577,113 @@ const findServerPort = (...args_1) => __awaiter(void 0, [...args_1], void 0, fun
 });
 exports.findServerPort = findServerPort;
 const updateIcon = () => {
-    // Implementation details
+    try {
+        const serverState = state_manager_1.stateManager.getServerState();
+        const iconPaths = (0, background_helpers_1.getActionIconPaths)();
+        // Get current theme
+        getCurrentTheme()
+            .then(currentTheme => {
+            var _a, _b, _c, _d, _e, _f;
+            const iconPath = iconPaths[currentTheme];
+            // Update icon based on server status
+            if (serverState.status === "connected") {
+                chrome.action.setIcon({ path: iconPath });
+                // Clear badge when connected
+                (_b = (_a = chrome.action).setBadgeText) === null || _b === void 0 ? void 0 : _b.call(_a, { text: "" });
+            }
+            else {
+                chrome.action.setIcon({ path: iconPath });
+                // Show error badge when disconnected
+                (_d = (_c = chrome.action).setBadgeText) === null || _d === void 0 ? void 0 : _d.call(_c, { text: "!" });
+                (_f = (_e = chrome.action).setBadgeBackgroundColor) === null || _f === void 0 ? void 0 : _f.call(_e, { color: "#f44336" });
+            }
+        })
+            .catch(error => {
+            warn("Failed to update icon:", error);
+        });
+    }
+    catch (error) {
+        warn("Error updating icon:", error);
+    }
 };
 const updateBadge = () => {
-    // Implementation details
+    var _a, _b, _c, _d, _e, _f;
+    try {
+        // Get current queue length
+        const queueLength = exports.downloadQueue.length;
+        const activeCount = Object.keys(activeDownloads).length;
+        if (queueLength > 0 || activeCount > 0) {
+            const totalCount = queueLength + activeCount;
+            const badgeText = totalCount > 99 ? "99+" : String(totalCount);
+            (_b = (_a = chrome.action).setBadgeText) === null || _b === void 0 ? void 0 : _b.call(_a, { text: badgeText });
+            (_d = (_c = chrome.action).setBadgeBackgroundColor) === null || _d === void 0 ? void 0 : _d.call(_c, { color: "#4CAF50" });
+        }
+        else {
+            // Clear badge when no downloads
+            (_f = (_e = chrome.action).setBadgeText) === null || _f === void 0 ? void 0 : _f.call(_e, { text: "" });
+        }
+    }
+    catch (error) {
+        warn("Error updating badge:", error);
+    }
 };
 const addOrUpdateHistory = (url, status, filename, filepath, thumbnailUrl, sourceUrl, title) => __awaiter(void 0, void 0, void 0, function* () {
-    // Implementation details
+    try {
+        // Check if history is enabled
+        const result = yield chrome.storage.local.get("isHistoryEnabled");
+        const isHistoryEnabled = result.isHistoryEnabled !== false; // Default to true
+        if (!isHistoryEnabled) {
+            return; // Skip if history is disabled
+        }
+        // Get existing history
+        const historyResult = yield chrome.storage.local.get(_historyStorageKey);
+        const history = historyResult[_historyStorageKey] || [];
+        // Create new history entry
+        const newEntry = {
+            id: Date.now().toString(),
+            url,
+            status,
+            timestamp: Date.now(),
+            filename,
+            filepath,
+            page_title: title,
+            thumbnailUrl,
+            sourceUrl,
+        };
+        // Add to beginning of history (most recent first)
+        history.unshift(newEntry);
+        // Limit history to last 100 entries
+        const limitedHistory = history.slice(0, 100);
+        // Save updated history
+        yield chrome.storage.local.set({ [_historyStorageKey]: limitedHistory });
+        // Notify other components about history update
+        try {
+            chrome.runtime.sendMessage({ type: "historyUpdated" });
+        }
+        catch (e) {
+            // Ignore errors if no listeners are available
+        }
+        log("Added download to history:", { url, status, filename });
+    }
+    catch (error) {
+        warn("Failed to add download to history:", error);
+    }
 });
 const clearDownloadHistory = () => __awaiter(void 0, void 0, void 0, function* () {
-    // Implementation details
+    try {
+        yield chrome.storage.local.set({ [_historyStorageKey]: [] });
+        // Notify other components about history update
+        try {
+            chrome.runtime.sendMessage({ type: "historyUpdated" });
+        }
+        catch (e) {
+            // Ignore errors if no listeners are available
+        }
+        log("Download history cleared");
+    }
+    catch (error) {
+        warn("Failed to clear download history:", error);
+    }
 });
 const toggleHistorySetting = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -606,9 +695,46 @@ const toggleHistorySetting = () => __awaiter(void 0, void 0, void 0, function* (
         warn("Failed to toggle history setting:", e);
     }
 });
-const sendDownloadRequest = (videoUrl_1, tabId_1, ...args_1) => __awaiter(void 0, [videoUrl_1, tabId_1, ...args_1], void 0, function* (videoUrl, tabId, isPlaylist = false, quality, format, pageTitle = "video", customDownloadId) { 
-// Implementation details
-return ({}); });
+const sendDownloadRequest = (videoUrl_1, tabId_1, ...args_1) => __awaiter(void 0, [videoUrl_1, tabId_1, ...args_1], void 0, function* (videoUrl, tabId, isPlaylist = false, quality, format, pageTitle = "video", customDownloadId) {
+    try {
+        const port = yield storageService.getPort();
+        if (!port) {
+            return { status: "error", message: "Server not available" };
+        }
+        // Create download request payload
+        const downloadRequest = {
+            url: videoUrl,
+            quality: quality || "best",
+            format: format || "mp4",
+            is_playlist: isPlaylist,
+            page_title: pageTitle,
+            download_id: customDownloadId || null,
+        };
+        // Send request to server
+        const response = yield fetch(`http://127.0.0.1:${port}/api/download`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(downloadRequest),
+        });
+        if (!response.ok) {
+            const errorText = yield response.text();
+            return { status: "error", message: `Server error: ${response.status} - ${errorText}` };
+        }
+        const result = yield response.json();
+        // Add to history if successful
+        if (result.status === "success" || result.status === "queued") {
+            yield addOrUpdateHistory(videoUrl, result.status, result.filename, result.filepath, result.thumbnail_url, result.source_url, result.title || pageTitle);
+        }
+        return result;
+    }
+    catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+        error("Error sending download request:", errorMessage);
+        return { status: "error", message: errorMessage };
+    }
+});
 exports.sendDownloadRequest = sendDownloadRequest;
 // Consolidated initialization function
 const initializeExtension = () => __awaiter(void 0, void 0, void 0, function* () {
@@ -741,11 +867,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 case "pauseDownload": {
                     if (port) {
                         try {
-                            const res = yield fetch("http://127.0.0.1:" +
-                                port +
-                                "/api/download/" +
-                                message.downloadId +
-                                "/pause", { method: "POST" });
+                            const res = yield fetch("http://127.0.0.1:" + port + "/api/download/" + message.downloadId + "/pause", { method: "POST" });
                             const json = yield res.json();
                             sendResponse(json);
                         }
@@ -761,11 +883,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 case "resumeDownload": {
                     if (port) {
                         try {
-                            const res = yield fetch("http://127.0.0.1:" +
-                                port +
-                                "/api/download/" +
-                                message.downloadId +
-                                "/resume", { method: "POST" });
+                            const res = yield fetch("http://127.0.0.1:" + port + "/api/download/" + message.downloadId + "/resume", { method: "POST" });
                             const json = yield res.json();
                             sendResponse(json);
                         }
@@ -781,11 +899,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 case "cancelDownload": {
                     if (port) {
                         try {
-                            const res = yield fetch("http://127.0.0.1:" +
-                                port +
-                                "/api/download/" +
-                                message.downloadId +
-                                "/cancel", { method: "POST" });
+                            const res = yield fetch("http://127.0.0.1:" + port + "/api/download/" + message.downloadId + "/cancel", { method: "POST" });
                             const json = yield res.json();
                             sendResponse(json);
                         }
@@ -843,12 +957,12 @@ const persistQueue = () => __awaiter(void 0, void 0, void 0, function* () {
 exports.persistQueue = persistQueue;
 // Initialize persisted queue on startup
 if (!isTestEnvironment) {
-    chrome.storage.local.get(_queueStorageKey, (res) => {
+    chrome.storage.local.get(_queueStorageKey, res => {
         exports.downloadQueue = res[_queueStorageKey] || [];
         updateQueueUI();
     });
     // Initialize persisted active downloads on startup
-    chrome.storage.local.get("activeDownloads", (res) => {
+    chrome.storage.local.get("activeDownloads", res => {
         if (res.activeDownloads) {
             Object.assign(activeDownloads, res.activeDownloads);
             log("Restored active downloads from storage:", Object.keys(activeDownloads).length);

@@ -14,6 +14,30 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from server.constants import DEFAULT_SERVER_PORT, get_server_port
 
 
+class URLValidationError(ValueError):
+    """Custom exception for URL validation errors."""
+
+    URL_TOO_SHORT = "URL is too short"
+    UNSAFE_PROTOCOL = "Unsafe protocol not allowed"
+    INVALID_PROTOCOL = "URL must use HTTP or HTTPS protocol"
+    SUSPICIOUS_PATTERN = "Suspicious URL pattern detected: {pattern}"
+    URL_TOO_LONG = "URL is too long (max 2048 characters)"
+    INVALID_CONTROL_CHARS = "URL contains invalid control characters"
+
+
+class DownloadIDValidationError(ValueError):
+    """Custom exception for download ID validation errors."""
+
+    TOO_LONG = "Long"
+    INVALID_CHARS = "Invalid"
+
+
+class DownloadDirValidationError(ValueError):
+    """Custom exception for download directory validation errors."""
+
+    INVALID_PATH = "Invalid"
+
+
 class YTDLPOptions(BaseModel):
     """
     Define yt-dlp options schema.
@@ -219,16 +243,47 @@ class DownloadRequest(BaseModel):
         """Validate URL format and ensure it's not an obviously malicious URL."""
         v = v.strip()
         if not v or len(v) < 10:
-            raise ValueError("Short")
+            raise URLValidationError(URLValidationError.URL_TOO_SHORT)
 
         # Check for file:// and other potentially unsafe protocols
-        unsafe_protocols = ["file://", "data:", "javascript:", "vbscript:"]
+        unsafe_protocols = ["file://", "data:", "javascript:", "vbscript:", "ftp://", "gopher://"]
         if any(v.lower().startswith(proto) for proto in unsafe_protocols):
-            raise ValueError("Unsafe")
+            raise URLValidationError(URLValidationError.UNSAFE_PROTOCOL)
 
-        # Basic URL structure check
+        # Basic URL structure check - must start with http or https
         if not (v.startswith(("http://", "https://"))):
-            raise ValueError("Invalid")
+            raise URLValidationError(URLValidationError.INVALID_PROTOCOL)
+
+        # Check for suspicious patterns
+        suspicious_patterns = [
+            "javascript:",
+            "vbscript:",
+            "data:",
+            "file:",
+            "ftp:",
+            "gopher:",
+            "mailto:",
+            "tel:",
+            "sms:",
+            "chrome:",
+            "chrome-extension:",
+            "moz-extension:",
+            "about:",
+            "view-source:",
+            "resource:",
+        ]
+
+        for pattern in suspicious_patterns:
+            if pattern in v.lower():
+                raise URLValidationError(URLValidationError.SUSPICIOUS_PATTERN.format(pattern=pattern))
+
+        # Check for excessive length (prevent DoS)
+        if len(v) > 2048:
+            raise URLValidationError(URLValidationError.URL_TOO_LONG)
+
+        # Check for null bytes or other control characters
+        if any(ord(char) < 32 for char in v):
+            raise URLValidationError(URLValidationError.INVALID_CONTROL_CHARS)
 
         return v
 
@@ -244,11 +299,11 @@ class DownloadRequest(BaseModel):
             return None
 
         if len(v) > 64:
-            raise ValueError("Long")
+            raise DownloadIDValidationError(DownloadIDValidationError.TOO_LONG)
 
         # Check for any characters that might be problematic in filenames or logs
         if any(c in v for c in ["/", "\\", ":", "*", "?", '"', "<", ">", "|"]):
-            raise ValueError("Invalid")
+            raise DownloadIDValidationError(DownloadIDValidationError.INVALID_CHARS)
 
         return v
 
@@ -312,7 +367,7 @@ class ConfigUpdate(BaseModel):
             if str(path).startswith("~"):
                 path = path.expanduser()
             if not path.is_absolute():
-                raise ValueError("Invalid")
+                raise DownloadDirValidationError(DownloadDirValidationError.INVALID_PATH)
             return str(path)
         return v
 

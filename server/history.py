@@ -10,12 +10,15 @@ import json
 from pathlib import Path
 from typing import Any, cast  # Added cast
 
+from server.utils import cache_result
+
 # Update the history file path to use the data directory
 DATA_DIR = Path(__file__).parent / "data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 HISTORY_PATH = DATA_DIR / "history.json"
 
 
+@cache_result(ttl_seconds=60)  # Cache for 1 minute
 def load_history() -> list[dict[str, Any]]:
     """
     Load download history from the storage file.

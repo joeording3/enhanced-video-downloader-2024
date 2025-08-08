@@ -54,11 +54,11 @@ class TestDownloadRequestValidation:
     @pytest.mark.parametrize(
         "url, user_agent, expected_error",
         [
-            ("http://a", "chrome", "Short"),
-            ("file:///etc/passwd", "chrome", "Unsafe"),
-            ("ftp://example.com", "chrome", "Invalid"),
-            ("not-a-url", "chrome", "Short"),
-            ("", "chrome", "Short"),
+            ("http://a", "chrome", "URL is too short"),
+            ("file:///etc/passwd", "chrome", "Unsafe protocol not allowed"),
+            ("ftp://example.com", "chrome", "Unsafe protocol not allowed"),
+            ("not-a-url", "chrome", "URL is too short"),
+            ("", "chrome", "URL is too short"),
         ],
     )
     def test_download_request_invalid_urls(self, url: str, user_agent: str, expected_error: str) -> None:

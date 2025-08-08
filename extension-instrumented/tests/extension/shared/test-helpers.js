@@ -1,8 +1,8 @@
-// @ts-nocheck
 "use strict";
 /**
  * Shared test helpers for consistent testing patterns across the extension
  */
+// @ts-nocheck
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -133,13 +133,13 @@ function createMockChangeEvent(element, value) {
  * Wait for async operations to complete
  */
 function waitForAsync(ms = 0) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 /**
  * Wait for DOM updates
  */
 function waitForDOMUpdate() {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
         requestAnimationFrame(() => {
             requestAnimationFrame(() => resolve());
         });
@@ -244,8 +244,8 @@ function expectAsyncError(fn, errorMessage) {
  */
 function expectLogsContain(logger, messages) {
     const logs = logger.getLogs();
-    messages.forEach((message) => {
-        expect(logs.some((log) => log.message.includes(message))).toBe(true);
+    messages.forEach(message => {
+        expect(logs.some(log => log.message.includes(message))).toBe(true);
     });
 }
 /**
@@ -253,8 +253,8 @@ function expectLogsContain(logger, messages) {
  */
 function expectLogsNotContain(logger, messages) {
     const logs = logger.getLogs();
-    messages.forEach((message) => {
-        expect(logs.some((log) => log.message.includes(message))).toBe(false);
+    messages.forEach(message => {
+        expect(logs.some(log => log.message.includes(message))).toBe(false);
     });
 }
 /**
@@ -268,7 +268,7 @@ function createMockStorage(data = {}) {
                 return Promise.resolve({ [keys]: storage.get(keys) });
             }
             const result = {};
-            keys.forEach((key) => {
+            keys.forEach(key => {
                 result[key] = storage.get(key);
             });
             return Promise.resolve(result);
@@ -281,7 +281,7 @@ function createMockStorage(data = {}) {
         }),
         remove: jest.fn((keys) => {
             const keyArray = Array.isArray(keys) ? keys : [keys];
-            keyArray.forEach((key) => storage.delete(key));
+            keyArray.forEach(key => storage.delete(key));
             return Promise.resolve();
         }),
         clear: jest.fn(() => {
@@ -325,7 +325,7 @@ exports.testUtils = {
      * Assert that an element has specific classes
      */
     expectElementClasses(element, classes) {
-        classes.forEach((className) => {
+        classes.forEach(className => {
             expect(element.classList.contains(className)).toBe(true);
         });
     },
@@ -333,7 +333,7 @@ exports.testUtils = {
      * Assert that an element doesn't have specific classes
      */
     expectElementNotClasses(element, classes) {
-        classes.forEach((className) => {
+        classes.forEach(className => {
             expect(element.classList.contains(className)).toBe(false);
         });
     },

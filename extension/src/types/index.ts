@@ -1,8 +1,7 @@
 /**
- * Common types for the Enhanced Video Downloader application
+ * Type definitions for the Enhanced Video Downloader extension.
+ * Centralized type definitions used throughout the extension.
  */
-// @ts-nocheck
-
 
 // Button state for position and visibility
 export interface ButtonState {
@@ -31,10 +30,12 @@ export interface HistoryEntry {
   filename?: string;
   filepath?: string;
   page_title?: string;
+  title?: string;
   thumbnailUrl?: string;
   error?: string;
   detail?: string | string[];
   sourceUrl?: string;
+  downloaded_at?: string;
 }
 
 // Server configuration
@@ -45,6 +46,7 @@ export interface ServerConfig {
   enable_history: boolean;
   log_level: string;
   console_log_level: "debug" | "info" | "warning" | "error" | "critical";
+  max_concurrent_downloads?: number;
   allow_playlists?: boolean;
   yt_dlp_options?: {
     format?: string;
@@ -84,7 +86,7 @@ export interface ServerResponse {
 }
 
 // Theme type
-export type Theme = "light" | "dark";
+export type Theme = "light" | "dark" | "auto";
 
 // Queue message for active and queued downloads
 export interface QueueMessage {

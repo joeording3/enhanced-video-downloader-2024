@@ -1,9 +1,9 @@
-// @ts-nocheck
 "use strict";
 /**
  * Enhanced Video Downloader - Centralized Error Handler
  * Eliminates duplicate try-catch patterns across the codebase
  */
+// @ts-nocheck
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -100,7 +100,7 @@ class CentralizedErrorHandler {
         console.error(`[${context.component}] ${context.operation} failed:`, error);
         console.error("Context:", context);
         // Notify error callbacks
-        this.errorCallbacks.forEach((callback) => {
+        this.errorCallbacks.forEach(callback => {
             try {
                 callback(error, context);
             }
