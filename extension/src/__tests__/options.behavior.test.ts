@@ -48,7 +48,10 @@ describe("options.ts behavior", () => {
 
     // Reset chrome mocks default behavior
     (chrome.storage.local.get as jest.Mock).mockResolvedValue({});
-    (chrome.storage.local.set as jest.Mock).mockResolvedValue(undefined);
+    (chrome.storage.local.set as jest.Mock).mockImplementation((_items: any, cb?: any) => {
+      if (cb) cb();
+      return Promise.resolve();
+    });
     (chrome.runtime.sendMessage as jest.Mock).mockImplementation((_msg: any, cb?: any) => {
       if (cb) {
         cb({ status: "success", data: "log-line-1\nwerkzeug line\nlog-line-2" });
@@ -81,6 +84,14 @@ describe("options.ts behavior", () => {
       }
     });
 
+    // Mock background handler to respond success to setConfig
+    (chrome.runtime.sendMessage as jest.Mock).mockImplementation((msg: any, cb?: any) => {
+      if (msg?.type === "setConfig") {
+        if (cb) cb({ status: "success" });
+        return;
+      }
+      if (cb) cb({ status: "success" });
+    });
     await saveSettings(evt);
     expect(document.getElementById("settings-status")?.textContent).toContain(
       "Settings saved successfully"
@@ -93,9 +104,13 @@ describe("options.ts behavior", () => {
     Object.defineProperty(evt, "target", { value: form });
     Object.defineProperty(evt, "preventDefault", { value: jest.fn() });
 
-    (chrome.runtime.sendMessage as jest.Mock).mockImplementation((_m: any, cb?: any) => {
+    (chrome.runtime.sendMessage as jest.Mock).mockImplementation((msg: any, cb?: any) => {
+      if (msg?.type === "setConfig") {
+        if (cb) cb({ status: "error", message: "bad" });
+        return;
+      }
       if (cb) {
-        cb({ status: "error", message: "bad" });
+        cb({ status: "success" });
       }
     });
 
