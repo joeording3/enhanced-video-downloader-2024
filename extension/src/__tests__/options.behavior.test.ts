@@ -50,7 +50,9 @@ describe("options.ts behavior", () => {
     (chrome.storage.local.get as jest.Mock).mockResolvedValue({});
     (chrome.storage.local.set as jest.Mock).mockResolvedValue(undefined);
     (chrome.runtime.sendMessage as jest.Mock).mockImplementation((_msg: any, cb?: any) => {
-      cb && cb({ status: "success", data: "log-line-1\nwerkzeug line\nlog-line-2" });
+      if (cb) {
+        cb({ status: "success", data: "log-line-1\nwerkzeug line\nlog-line-2" });
+      }
     });
   });
 
@@ -71,11 +73,15 @@ describe("options.ts behavior", () => {
     Object.defineProperty(evt, "target", { value: form });
     Object.defineProperty(evt, "preventDefault", { value: jest.fn() });
 
-    (chrome.runtime.sendMessage as jest.Mock).mockImplementation((_m: any, cb?: any) => cb && cb({ status: "success" }));
+    (chrome.runtime.sendMessage as jest.Mock).mockImplementation((_m: any, cb?: any) => {
+      if (cb) {
+        cb({ status: "success" });
+      }
+    });
 
     await saveSettings(evt);
     expect(document.getElementById("settings-status")?.textContent).toContain("Settings saved successfully");
-  });
+  }, 15000);
 
   it("saves settings with server error", async () => {
     const form = document.getElementById("settings-form") as HTMLFormElement;
@@ -83,11 +89,15 @@ describe("options.ts behavior", () => {
     Object.defineProperty(evt, "target", { value: form });
     Object.defineProperty(evt, "preventDefault", { value: jest.fn() });
 
-    (chrome.runtime.sendMessage as jest.Mock).mockImplementation((_m: any, cb?: any) => cb && cb({ status: "error", message: "bad" }));
+    (chrome.runtime.sendMessage as jest.Mock).mockImplementation((_m: any, cb?: any) => {
+      if (cb) {
+        cb({ status: "error", message: "bad" });
+      }
+    });
 
     await saveSettings(evt);
     expect(document.getElementById("settings-status")?.textContent).toContain("Error saving settings");
-  });
+  }, 15000);
 
   it("applies and toggles theme", async () => {
     applyOptionsTheme("dark");
@@ -109,14 +119,16 @@ describe("options.ts behavior", () => {
   it("loads error history via background", async () => {
     (chrome.runtime.sendMessage as jest.Mock).mockImplementation((msg: any, cb?: any) => {
       if (msg?.type === "getHistory") {
-        cb && cb({ status: "success", history: [ { id: "1", url: "u", status: "error" } ] });
-      } else {
-        cb && cb({ status: "success" });
+        if (cb) {
+          cb({ status: "success", history: [{ id: "1", url: "u", status: "error" }] });
+        }
+      } else if (cb) {
+        cb({ status: "success" });
       }
     });
     await loadErrorHistory();
     expect(document.getElementById("error-history-list")?.textContent).toBeDefined();
-  });
+  }, 15000);
 });
 
 

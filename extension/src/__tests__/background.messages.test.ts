@@ -2,11 +2,7 @@
  * Tests for background.ts message routing and icon/theme updates
  */
 
-import "../../tests/jest/jest.setup";
-import {
-  // exported from background.ts
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-} from "../background";
+// background module will be imported dynamically inside tests to register listeners
 
 describe("background message routing", () => {
   beforeEach(() => {
@@ -15,8 +11,7 @@ describe("background message routing", () => {
   });
 
   it("handles getServerStatus message", async () => {
-    // Import after setup to register listeners
-    const mod = await import("../background");
+    await import("../background");
     const cb = jest.fn();
     // simulate sendMessage listener invocation
     const handler = (chrome.runtime.onMessage.addListener as jest.Mock).mock.calls[0][0];
@@ -25,7 +20,7 @@ describe("background message routing", () => {
   });
 
   it("handles getLogs and clearLogs gracefully when no port", async () => {
-    const mod = await import("../background");
+    await import("../background");
     const handler = (chrome.runtime.onMessage.addListener as jest.Mock).mock.calls[0][0];
     const cb = jest.fn();
     await handler({ type: "getLogs", lines: 10, recent: true }, {}, cb);
@@ -35,5 +30,4 @@ describe("background message routing", () => {
     expect(cb2).toHaveBeenCalledWith(expect.objectContaining({ status: "error" }));
   });
 });
-
 
