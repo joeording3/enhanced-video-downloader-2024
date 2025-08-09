@@ -9,6 +9,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Port discovery: Unified all usages on `server.utils.find_available_port(start_port, count, host)`.
+  - `server/cli_helpers.py` keeps a simple wrapper `find_available_port(start_port, end_port)` that computes inclusive count and delegates to the centralized implementation, ensuring single source of truth and consistent behavior.
+
 - CSS: Audited and deduplicated UI styles. Replaced inline style toggles with CSS classes (`hidden`,
   `evd-visible`, `evd-on-dark`, `evd-on-light`), unified z-index variable (`--z-max`), and
   consolidated floating button states into `content.css`. Updated TS to toggle classes instead of

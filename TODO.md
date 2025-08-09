@@ -31,7 +31,7 @@ Legacy/Stub Cleanup:
 - [/] Audit `server/cli_commands/lifecycle.py` legacy shims; remove if not referenced
 - [/] Review `server/video_downloader_server.py` compatibility shim; remove if WSGI entrypoints
   cover all use cases
-- [ ] Consider unifying `find_available_port` usage (prefer `server/utils.py`) and remove duplicates
+- [/] Unified `find_available_port` usage (prefer `server/utils.py`) and removed duplicates; CLI range-signature wrapper now delegates to `server.utils.find_available_port`
 - [/] Removed deprecated `extension/ui/styles.css` (legacy styles) – project now uses
   `variables.css`, `components.css`, `base.css`, and `themes.css`
 - [/] CSS audit: migrated inline styles to classes, unified visibility helpers.
