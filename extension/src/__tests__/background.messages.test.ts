@@ -11,12 +11,15 @@ describe("background message routing", () => {
   });
 
   it("handles getServerStatus message", async () => {
+    // By default, getServerStatus will check storage for a port and return disconnected when none.
+    (chrome.storage.local.get as jest.Mock).mockImplementation((_k: any, cb: any) => cb({}));
     // Ensure addListener captures our handler
     (chrome.runtime.onMessage.addListener as jest.Mock).mockImplementation((fn: any) => {
       (chrome.runtime.onMessage.addListener as any).handler = fn;
     });
     await import("../background");
     const cb = jest.fn();
+    // Ensure sendResponse is called synchronously by stubbing fetch/health path via storage returning no port
     const handler =
       (chrome.runtime.onMessage.addListener as any).handler ||
       (chrome.runtime.onMessage.addListener as jest.Mock).mock.calls[0][0];

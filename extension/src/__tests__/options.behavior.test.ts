@@ -46,8 +46,7 @@ describe("options.ts behavior", () => {
       <div id="format-validation"></div>
     `;
 
-    // Reset chrome mocks default behavior
-    (chrome.storage.local.get as jest.Mock).mockResolvedValue({});
+    // Reset chrome mocks default behavior (use callback-based get from jest.setup)
     (chrome.storage.local.set as jest.Mock).mockImplementation((_items: any, cb?: any) => {
       if (cb) cb();
       return Promise.resolve();
