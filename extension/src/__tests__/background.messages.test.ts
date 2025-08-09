@@ -21,6 +21,7 @@ describe("background message routing", () => {
       (chrome.runtime.onMessage.addListener as any).handler ||
       (chrome.runtime.onMessage.addListener as jest.Mock).mock.calls[0][0];
     await handler({ type: "getServerStatus" }, {}, cb);
+    jest.runAllTimers?.();
     // handler is async and returns true to indicate async sendResponse; flush microtasks
     await Promise.resolve();
     expect(cb).toHaveBeenCalled();
@@ -36,10 +37,12 @@ describe("background message routing", () => {
       (chrome.runtime.onMessage.addListener as jest.Mock).mock.calls[0][0];
     const cb = jest.fn();
     await handler({ type: "getLogs", lines: 10, recent: true }, {}, cb);
+    jest.runAllTimers?.();
     await Promise.resolve();
     expect(cb).toHaveBeenCalledWith(expect.objectContaining({ status: "error" }));
     const cb2 = jest.fn();
     await handler({ type: "clearLogs" }, {}, cb2);
+    jest.runAllTimers?.();
     await Promise.resolve();
     expect(cb2).toHaveBeenCalledWith(expect.objectContaining({ status: "error" }));
   });

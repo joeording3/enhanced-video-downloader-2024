@@ -148,6 +148,7 @@ describe("options.ts behavior", () => {
       }
     });
     await loadErrorHistory();
+    jest.runAllTimers?.();
     // allow any pending sendMessage callbacks to run
     await Promise.resolve();
     expect(document.getElementById("error-history-list")?.textContent).toBeDefined();
