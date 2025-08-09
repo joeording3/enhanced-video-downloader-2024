@@ -9,6 +9,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Backend: Ensure `LOG_FILE` env is set at startup to the active default `server_output.log` path
+  when not provided, so `/api/config` returns `log_file` and the Options UI field
+  `settings-log-file` populates with the current log location.
+
 - Port discovery: Unified all usages on `server.utils.find_available_port(start_port, count, host)`.
 
   - `server/cli_helpers.py` keeps a simple wrapper `find_available_port(start_port, end_port)` that
