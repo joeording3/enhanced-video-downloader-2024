@@ -137,14 +137,10 @@ describe("options.ts behavior", () => {
   });
 
   it("loads error history via background", async () => {
-    (chrome.runtime.sendMessage as jest.Mock).mockImplementation((msg: any, cb?: any) => {
-      if (msg?.type === "getHistory") {
-        if (cb) {
-          cb({ status: "success", history: [{ id: "1", url: "u", status: "error" }] });
-        }
-      } else if (cb) {
-        cb({ status: "success" });
-      }
+    // Ensure storage.get uses callback style with error entries present
+    (chrome.storage.local.get as jest.Mock).mockImplementation((_keys: any, cb: any) => {
+      cb({ downloadHistory: [{ id: "1", url: "u", status: "error", timestamp: Date.now() }] });
+      return Promise.resolve({});
     });
     await loadErrorHistory();
     jest.runAllTimers?.();
