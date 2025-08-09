@@ -60,7 +60,9 @@ describe("options.ts behavior", () => {
 
   it("updates server status text when connected", () => {
     updateOptionsServerStatus("connected");
-    expect(document.getElementById("server-status-indicator")?.classList.contains("connected")).toBe(true);
+    expect(
+      document.getElementById("server-status-indicator")?.classList.contains("connected")
+    ).toBe(true);
   });
 
   it("loads settings without throwing", () => {
@@ -80,7 +82,9 @@ describe("options.ts behavior", () => {
     });
 
     await saveSettings(evt);
-    expect(document.getElementById("settings-status")?.textContent).toContain("Settings saved successfully");
+    expect(document.getElementById("settings-status")?.textContent).toContain(
+      "Settings saved successfully"
+    );
   }, 15000);
 
   it("saves settings with server error", async () => {
@@ -96,7 +100,9 @@ describe("options.ts behavior", () => {
     });
 
     await saveSettings(evt);
-    expect(document.getElementById("settings-status")?.textContent).toContain("Error saving settings");
+    expect(document.getElementById("settings-status")?.textContent).toContain(
+      "Error saving settings"
+    );
   }, 15000);
 
   it("applies and toggles theme", async () => {
@@ -130,5 +136,3 @@ describe("options.ts behavior", () => {
     expect(document.getElementById("error-history-list")?.textContent).toBeDefined();
   }, 15000);
 });
-
-

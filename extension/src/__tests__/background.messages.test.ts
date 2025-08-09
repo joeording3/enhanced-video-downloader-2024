@@ -30,4 +30,3 @@ describe("background message routing", () => {
     expect(cb2).toHaveBeenCalledWith(expect.objectContaining({ status: "error" }));
   });
 });
-

@@ -10,7 +10,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 
 - Port discovery: Unified all usages on `server.utils.find_available_port(start_port, count, host)`.
-  - `server/cli_helpers.py` keeps a simple wrapper `find_available_port(start_port, end_port)` that computes inclusive count and delegates to the centralized implementation, ensuring single source of truth and consistent behavior.
+
+  - `server/cli_helpers.py` keeps a simple wrapper `find_available_port(start_port, end_port)` that
+    computes inclusive count and delegates to the centralized implementation, ensuring single source
+    of truth and consistent behavior.
 
 - CSS: Audited and deduplicated UI styles. Replaced inline style toggles with CSS classes (`hidden`,
   `evd-visible`, `evd-on-dark`, `evd-on-light`), unified z-index variable (`--z-max`), and
@@ -69,9 +72,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Security
 
 - Add standard security headers to all responses (X-Content-Type-Options, X-Frame-Options,
-X-XSS-Protection, Referrer-Policy, CSP)
+  X-XSS-Protection, Referrer-Policy, CSP)
 - Configure CORS for local usage/extension contexts (permissive by default; recommend restricting in
-production)
+  production)
 - Enforce request size limits (16MB) with JSON 413 responses
 - Add simple in-memory rate limiting for download endpoints (10 req/min per IP)
 - Standardize API JSON error responses with centralized handlers for 400/404/405/500 under `/api`

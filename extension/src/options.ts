@@ -129,6 +129,23 @@ export function loadSettings(): void {
         // prefer that and avoid overwriting the user's selections from storage.
         if (!hadLocalConfig) {
           populateFormFields(response.data);
+        } else {
+          // When local config exists, still populate env-only fields from server (e.g., LOG_FILE)
+          try {
+            const serverData: any = response.data;
+            const logFileInput = document.getElementById(
+              "settings-log-file"
+            ) as HTMLInputElement | null;
+            if (
+              logFileInput &&
+              typeof serverData?.log_file === "string" &&
+              logFileInput.value.trim() === ""
+            ) {
+              logFileInput.value = serverData.log_file;
+            }
+          } catch {
+            // ignore UI population issues for env-only fields
+          }
         }
         logger.debug("Loaded settings from server", { component: "options" });
       } else {
