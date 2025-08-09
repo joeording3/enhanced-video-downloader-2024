@@ -50,6 +50,7 @@ export interface ServerConfig {
   allow_playlists?: boolean;
   yt_dlp_options?: {
     format?: string;
+    concurrent_fragments?: number;
     [key: string]: any;
   };
 }

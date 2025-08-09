@@ -19,9 +19,11 @@ try:  # Prefer real dotenv if available
 except Exception:  # Fallbacks
 
     def find_dotenv() -> str | None:  # type: ignore[return-type]
+        """Return None when python-dotenv is unavailable (stub)."""
         return None
 
     def set_key(*_args: Any, **_kwargs: Any) -> tuple[bool | None, str, str]:  # type: ignore[return-type]
+        """Stub set_key to satisfy type checkers when dotenv is missing."""
         return None, "", ""
 
 
@@ -54,6 +56,7 @@ def _handle_get_config(cfg: Config) -> tuple[Response, int]:
         env_gunicorn = os.getenv("EVD_GUNICORN")
         env_workers = os.getenv("EVD_WORKERS")
         env_verbose = os.getenv("EVD_VERBOSE")
+        env_ytdlp_conc = os.getenv("YTDLP_CONCURRENT_FRAGMENTS")
 
         def _truthy(v: str | None) -> bool | None:
             if v is None:
@@ -72,6 +75,7 @@ def _handle_get_config(cfg: Config) -> tuple[Response, int]:
                 "evd_gunicorn": _truthy(env_gunicorn),
                 "evd_workers": _int_or_none(env_workers),
                 "evd_verbose": _truthy(env_verbose),
+                "ytdlp_concurrent_fragments": _int_or_none(env_ytdlp_conc),
             }
         )
         return jsonify(data), 200
@@ -125,6 +129,10 @@ def _handle_post_config(cfg: Config) -> tuple[Response, int]:
             v = data.pop("evd_verbose")
             if v is not None:
                 env_updates["EVD_VERBOSE"] = "true" if bool(v) else "false"
+        if "ytdlp_concurrent_fragments" in data:
+            v = data.pop("ytdlp_concurrent_fragments")
+            if v is not None:
+                env_updates["YTDLP_CONCURRENT_FRAGMENTS"] = str(int(v))
 
         # Apply standard config updates
         if data:
@@ -150,6 +158,7 @@ def _handle_post_config(cfg: Config) -> tuple[Response, int]:
                 "evd_gunicorn": os.getenv("EVD_GUNICORN"),
                 "evd_workers": os.getenv("EVD_WORKERS"),
                 "evd_verbose": os.getenv("EVD_VERBOSE"),
+                "ytdlp_concurrent_fragments": os.getenv("YTDLP_CONCURRENT_FRAGMENTS"),
             }
         )
         return (

@@ -1050,22 +1050,34 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               const base = "http://127.0.0.1:" + port;
               let ok = false;
               let lastStatus: number | null = null;
-              // 1) Dev restart
-              try {
-                const r1 = await fetch(base + "/api/restart", { method: "POST" });
-                lastStatus = r1.status;
-                ok = r1.ok;
-              } catch {
-                ok = false;
-              }
-              // 2) Managed restart fallback (supervisor/systemd/launchctl)
-              if (!ok) {
+              const restartCandidates = [base + "/api/restart", base + "/restart"];
+              const managedCandidates = [base + "/api/restart/managed", base + "/restart/managed"];
+              // Try dev restart endpoints first
+              for (const url of restartCandidates) {
                 try {
-                  const r2 = await fetch(base + "/api/restart/managed", { method: "POST" });
-                  lastStatus = r2.status;
-                  ok = r2.ok;
+                  const r = await fetch(url, { method: "POST" });
+                  lastStatus = r.status;
+                  if (r.ok) {
+                    ok = true;
+                    break;
+                  }
                 } catch {
-                  ok = false;
+                  // continue to next candidate
+                }
+              }
+              // Fallback to managed restart endpoints
+              if (!ok) {
+                for (const url of managedCandidates) {
+                  try {
+                    const r = await fetch(url, { method: "POST" });
+                    lastStatus = r.status;
+                    if (r.ok) {
+                      ok = true;
+                      break;
+                    }
+                  } catch {
+                    // continue to next candidate
+                  }
                 }
               }
               if (ok) {

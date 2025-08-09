@@ -76,6 +76,7 @@ def _default_ydl_opts(output_path: str, download_playlist: bool) -> dict[str, An
         "continuedl": True,
         "fragment_retries": 10,
         "ignoreerrors": False,
+        # Default concurrency; can be overridden via config/env
         "concurrent_fragments": 4,
         "logger": logging.getLogger("yt_dlp_native"),
         "noplaylist": not download_playlist,

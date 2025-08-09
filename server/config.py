@@ -208,4 +208,12 @@ def _collect_env_data() -> dict[str, Any]:
             env_data[key] = caster(v)
         except Exception:
             continue
+    # Map yt-dlp concurrent fragments from env if provided
+    ytdlp_conc = os.getenv("YTDLP_CONCURRENT_FRAGMENTS")
+    if ytdlp_conc is not None:
+        try:
+            env_data.setdefault("yt_dlp_options", {})
+            env_data["yt_dlp_options"]["concurrent_fragments"] = int(ytdlp_conc)
+        except Exception:
+            pass
     return env_data

@@ -175,9 +175,9 @@ export function populateFormFields(config: ServerConfig): void {
     ytdlpFormat: document.getElementById("settings-ytdlp-format") as HTMLSelectElement,
     allowPlaylists: document.getElementById("settings-allow-playlists") as HTMLInputElement,
     logFile: document.getElementById("settings-log-file") as HTMLInputElement,
-    evdGunicorn: document.getElementById("settings-evd-gunicorn") as HTMLInputElement,
-    evdWorkers: document.getElementById("settings-evd-workers") as HTMLInputElement,
-    evdVerbose: document.getElementById("settings-evd-verbose") as HTMLInputElement,
+    ytdlpConcurrent: document.getElementById(
+      "settings-ytdlp-concurrent-fragments"
+    ) as HTMLInputElement,
   };
 
   if (elements.port && config.server_port !== undefined && config.server_port !== null) {
@@ -204,18 +204,12 @@ export function populateFormFields(config: ServerConfig): void {
   if (elements.logFile && (config as any).log_file) {
     elements.logFile.value = (config as any).log_file as string;
   }
-  if (elements.evdGunicorn && (config as any).evd_gunicorn !== undefined) {
-    elements.evdGunicorn.checked = Boolean((config as any).evd_gunicorn);
-  }
-  if (elements.evdVerbose && (config as any).evd_verbose !== undefined) {
-    elements.evdVerbose.checked = Boolean((config as any).evd_verbose);
-  }
-  if (
-    elements.evdWorkers &&
-    (config as any).evd_workers !== undefined &&
-    (config as any).evd_workers !== null
-  ) {
-    elements.evdWorkers.value = String((config as any).evd_workers);
+  // Populate yt-dlp concurrent fragments from config or env overlay
+  const conc =
+    (config as any)?.yt_dlp_options?.concurrent_fragments ??
+    (config as any)?.ytdlp_concurrent_fragments;
+  if (elements.ytdlpConcurrent && conc !== undefined && conc !== null) {
+    elements.ytdlpConcurrent.value = String(conc);
   }
 
   // Trigger validation after populating
@@ -943,22 +937,19 @@ export async function saveSettings(event: Event): Promise<void> {
       console_log_level: ((formData.get("log-level") as string) || "info") as any,
       yt_dlp_options: {
         format: formData.get("ytdlp-format") as string,
+        concurrent_fragments: (() => {
+          const raw = formData.get("ytdlp-concurrent-fragments") as string | null;
+          const n = raw ? parseInt(raw, 10) : undefined;
+          return Number.isFinite(n as any) ? n : undefined;
+        })(),
       },
       allow_playlists: formData.get("allow-playlists") === "on",
     };
 
     // Include env-backed runtime settings
     const logFile = formData.get("log-file") as string | null;
-    const evdGunicorn = formData.get("evd-gunicorn") === "on";
-    const evdVerbose = formData.get("evd-verbose") === "on";
-    const evdWorkersRaw = formData.get("evd-workers") as string | null;
-    const evdWorkers = evdWorkersRaw ? parseInt(evdWorkersRaw, 10) : undefined;
     if (logFile) (config as any).log_file = logFile;
-    (config as any).evd_gunicorn = evdGunicorn;
-    (config as any).evd_verbose = evdVerbose;
-    if (!Number.isNaN(evdWorkers as any) && evdWorkers !== undefined) {
-      (config as any).evd_workers = evdWorkers;
-    }
+    // Gunicorn UI removed; workers forced to 1 in backend
 
     // Save to local storage first
     await new Promise<void>((resolve, reject) => {

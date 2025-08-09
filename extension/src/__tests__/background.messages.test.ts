@@ -17,7 +17,9 @@ describe("background message routing", () => {
     });
     await import("../background");
     const cb = jest.fn();
-    const handler = (chrome.runtime.onMessage.addListener as any).handler || (chrome.runtime.onMessage.addListener as jest.Mock).mock.calls[0][0];
+    const handler =
+      (chrome.runtime.onMessage.addListener as any).handler ||
+      (chrome.runtime.onMessage.addListener as jest.Mock).mock.calls[0][0];
     await handler({ type: "getServerStatus" }, {}, cb);
     expect(cb).toHaveBeenCalled();
   });
@@ -27,7 +29,9 @@ describe("background message routing", () => {
       (chrome.runtime.onMessage.addListener as any).handler = fn;
     });
     await import("../background");
-    const handler = (chrome.runtime.onMessage.addListener as any).handler || (chrome.runtime.onMessage.addListener as jest.Mock).mock.calls[0][0];
+    const handler =
+      (chrome.runtime.onMessage.addListener as any).handler ||
+      (chrome.runtime.onMessage.addListener as jest.Mock).mock.calls[0][0];
     const cb = jest.fn();
     await handler({ type: "getLogs", lines: 10, recent: true }, {}, cb);
     expect(cb).toHaveBeenCalledWith(expect.objectContaining({ status: "error" }));
