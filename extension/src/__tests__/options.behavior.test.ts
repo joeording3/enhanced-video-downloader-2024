@@ -148,6 +148,8 @@ describe("options.ts behavior", () => {
       }
     });
     await loadErrorHistory();
+    // allow any pending sendMessage callbacks to run
+    await Promise.resolve();
     expect(document.getElementById("error-history-list")?.textContent).toBeDefined();
   }, 15000);
 });
