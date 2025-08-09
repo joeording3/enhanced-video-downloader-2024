@@ -208,6 +208,8 @@ label {
   margin-bottom: var(--space-md);
 }
 
+/* Visible helper used by scripts to show blocks without inline styles */
+
 /* Status message severity classes - Now using standardized selectors from styles.css */
 
 /* Error message summary in list items */

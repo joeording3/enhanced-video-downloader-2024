@@ -76,7 +76,7 @@ describe("Content.ts additional branch coverage", () => {
   });
 
   describe("ensureDownloadButtonStyle adjustments", () => {
-    it("fixes display and opacity and applies guideline styles", () => {
+    it("fixes visibility via classes and applies contrast class", () => {
       const btn = document.createElement("button");
       document.body.appendChild(btn);
       // Stub computed style
@@ -90,16 +90,10 @@ describe("Content.ts additional branch coverage", () => {
         borderStyle: "dashed",
       } as any);
       ensureDownloadButtonStyle(btn);
-      expect(btn.style.display).toBe("block");
-      expect(btn.style.opacity).toBe("1");
-      // Check guideline props
-      expect(btn.style.padding).toBe("4px 8px");
-      expect(btn.style.borderRadius).toBe("4px");
-      expect(["rgba(0, 0, 0, 0.72)", "rgba(255, 255, 255, 0.92)", "rgba(0, 0, 0, 0.3)"]).toContain(
-        btn.style.backgroundColor
-      );
-      expect(btn.style.borderWidth).toBe("1px");
-      expect(btn.style.borderStyle).toBe("solid");
+      expect(btn.classList.contains("evd-visible")).toBe(true);
+      const hasContrastClass =
+        btn.classList.contains("evd-on-dark") || btn.classList.contains("evd-on-light");
+      expect(hasContrastClass).toBe(true);
     });
 
     it("skips if element not in DOM", () => {

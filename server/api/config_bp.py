@@ -6,12 +6,22 @@ via GET and POST requests with Pydantic validation.
 """
 
 import logging
+import os
 from typing import Any, cast
 
 from flask import Blueprint, jsonify, request
 from flask.wrappers import Response
 
 from server.config import Config
+
+try:  # Prefer real dotenv if available
+    from dotenv import find_dotenv, set_key  # type: ignore[import]
+except Exception:  # Fallbacks
+    def find_dotenv() -> str | None:  # type: ignore[return-type]
+        return None
+
+    def set_key(*_args: Any, **_kwargs: Any) -> tuple[bool | None, str, str]:  # type: ignore[return-type]
+        return None, "", ""
 
 config_bp = Blueprint("config_api", __name__, url_prefix="/api")
 logger = logging.getLogger(__name__)
@@ -36,7 +46,30 @@ def _handle_load_error(e: Exception) -> tuple[Response, int]:
 def _handle_get_config(cfg: Config) -> tuple[Response, int]:
     """Handle GET config requests."""
     try:
-        return jsonify(cfg.as_dict()), 200
+        data = cfg.as_dict()
+        # Overlay env-only runtime settings for UI visibility
+        env_log = os.getenv("LOG_FILE")
+        env_gunicorn = os.getenv("EVD_GUNICORN")
+        env_workers = os.getenv("EVD_WORKERS")
+        env_verbose = os.getenv("EVD_VERBOSE")
+        def _truthy(v: str | None) -> bool | None:
+            if v is None:
+                return None
+            return v.strip().lower() in ("1", "true", "yes", "on")
+        def _int_or_none(v: str | None) -> int | None:
+            try:
+                return int(v) if v is not None else None
+            except Exception:
+                return None
+        data.update(
+            {
+                "log_file": env_log,
+                "evd_gunicorn": _truthy(env_gunicorn),
+                "evd_workers": _int_or_none(env_workers),
+                "evd_verbose": _truthy(env_verbose),
+            }
+        )
+        return jsonify(data), 200
     except Exception as e:
         logger.error(f"Error retrieving config for GET request: {e}", exc_info=True)
         return jsonify({"success": False, "error": "Error retrieving configuration."}), 500
@@ -69,9 +102,53 @@ def _handle_post_config(cfg: Config) -> tuple[Response, int]:
         return error
 
     try:
-        cfg.update_config(data)
+        # Extract env-only runtime settings if present
+        env_updates: dict[str, str] = {}
+        if "log_file" in data:
+            v = data.pop("log_file")
+            if v is not None:
+                env_updates["LOG_FILE"] = str(v)
+        if "evd_gunicorn" in data:
+            v = data.pop("evd_gunicorn")
+            if v is not None:
+                env_updates["EVD_GUNICORN"] = "true" if bool(v) else "false"
+        if "evd_workers" in data:
+            v = data.pop("evd_workers")
+            if v is not None:
+                env_updates["EVD_WORKERS"] = str(int(v))
+        if "evd_verbose" in data:
+            v = data.pop("evd_verbose")
+            if v is not None:
+                env_updates["EVD_VERBOSE"] = "true" if bool(v) else "false"
+
+        # Apply standard config updates
+        if data:
+            cfg.update_config(data)
+
+        # Persist env-only updates
+        if env_updates:
+            dotenv_path = find_dotenv()
+            if not dotenv_path:
+                # Still update process env for current runtime
+                for k, v in env_updates.items():
+                    os.environ[k] = v
+            else:
+                for k, v in env_updates.items():
+                    set_key(dotenv_path, k, v)
+                    os.environ[k] = v
+
+        # Return merged view including env-only values
+        merged = cfg.as_dict()
+        merged.update(
+            {
+                "log_file": os.getenv("LOG_FILE"),
+                "evd_gunicorn": os.getenv("EVD_GUNICORN"),
+                "evd_workers": os.getenv("EVD_WORKERS"),
+                "evd_verbose": os.getenv("EVD_VERBOSE"),
+            }
+        )
         return (
-            jsonify({"success": True, "message": "Configuration updated successfully", "new_config": cfg.as_dict()}),
+            jsonify({"success": True, "message": "Configuration updated successfully", "new_config": merged}),
             200,
         )
     except (ValueError, AttributeError) as e:

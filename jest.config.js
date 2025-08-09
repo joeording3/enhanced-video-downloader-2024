@@ -79,7 +79,10 @@ module.exports = {
 
   // Collect coverage from extension code
   collectCoverage: true,
-  collectCoverageFrom: ["extension/src/**/*.{js,ts}"],
+  collectCoverageFrom: [
+    "extension/src/**/*.{js,ts}",
+    "!extension/src/global.d.ts",
+  ],
   coveragePathIgnorePatterns: [
     "/node_modules/",
     "/tests/",

@@ -35,6 +35,8 @@ Legacy/Stub Cleanup:
 - [ ] Consider unifying `find_available_port` usage (prefer `server/utils.py`) and remove duplicates
 - [/] Removed deprecated `extension/ui/styles.css` (legacy styles) – project now uses
   `variables.css`, `components.css`, `base.css`, and `themes.css`
+- [/] CSS audit: migrated inline styles to classes, unified visibility helpers.
+  <!-- working-on: css refactor - visibility classes and contrast variants -->
 
 ## 1.2 Fix Critical JavaScript/TypeScript Modules [WEEK 1-2]
 

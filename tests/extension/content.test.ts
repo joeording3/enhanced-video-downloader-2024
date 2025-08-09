@@ -60,14 +60,16 @@ describe("Content Script Tests", () => {
       expect(button.style.top).toBe("10px");
     });
 
-    it("should set button hidden state", async () => {
+    it("should set button hidden state via classes", async () => {
       const button = await createOrUpdateButton();
 
       await setButtonHiddenState(true);
-      expect(button.style.display).toBe("none");
+      expect(button.classList.contains("hidden")).toBe(true);
+      expect(button.classList.contains("evd-visible")).toBe(false);
 
       await setButtonHiddenState(false);
-      expect(button.style.display).toBe("block");
+      expect(button.classList.contains("hidden")).toBe(false);
+      expect(button.classList.contains("evd-visible")).toBe(true);
     });
   });
 
@@ -202,8 +204,7 @@ describe("Content Script Tests", () => {
       document.body.appendChild(button);
 
       ensureDownloadButtonStyle(button);
-      expect(button.style.display).toBe("block");
-      expect(button.style.opacity).toBe("1");
+      expect(button.classList.contains("evd-visible")).toBe(true);
     });
   });
 

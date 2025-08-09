@@ -32,8 +32,10 @@ if (!fs.existsSync(distDir)) {
   fs.mkdirSync(distDir, { recursive: true });
 }
 
-// Read and minify each CSS file
-const files = fs.readdirSync(optimizedDir).filter(file => file.endsWith(".css"));
+// Read and minify each CSS file (skip deprecated styles.css)
+const files = fs
+  .readdirSync(optimizedDir)
+  .filter(file => file.endsWith(".css") && file !== "styles.css");
 
 files.forEach(file => {
   const inputPath = path.join(optimizedDir, file);

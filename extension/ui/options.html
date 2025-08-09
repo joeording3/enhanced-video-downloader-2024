@@ -216,6 +216,39 @@
                     </div>
                   </div>
                 </div>
+                <div class="settings-section">
+                  <label for="settings-log-file">Log File (server)</label>
+                  <div class="input-group">
+                    <input
+                      type="text"
+                      id="settings-log-file"
+                      name="log-file"
+                      class="input input--text"
+                      placeholder="/path/to/server_output.log"
+                    />
+                    <div class="settings-hint">
+                      Path used by the server /logs endpoint when set
+                    </div>
+                  </div>
+                </div>
+                <div class="settings-section">
+                  <label>Runtime (requires restart)</label>
+                  <div class="settings-row">
+                    <label class="checkbox-item">
+                      <input type="checkbox" id="settings-evd-gunicorn" name="evd-gunicorn" />
+                      <span class="checkbox-label">Use Gunicorn</span>
+                    </label>
+                    <label class="checkbox-item">
+                      <input type="checkbox" id="settings-evd-verbose" name="evd-verbose" />
+                      <span class="checkbox-label">Verbose Console</span>
+                    </label>
+                    <label class="checkbox-inline">
+                      <span>Workers</span>
+                      <input type="number" id="settings-evd-workers" name="evd-workers" class="input input--number" min="1" max="16" value="2" />
+                    </label>
+                  </div>
+                  <div class="settings-hint">Changes apply on server restart</div>
+                </div>
               </fieldset>
             </div>
           </section>

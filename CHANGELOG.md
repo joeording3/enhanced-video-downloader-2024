@@ -9,6 +9,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- CSS: Audited and deduplicated UI styles. Replaced inline style toggles with CSS classes
+  (`hidden`, `evd-visible`, `evd-on-dark`, `evd-on-light`), unified z-index variable (`--z-max`),
+  and consolidated floating button states into `content.css`. Updated TS to toggle classes instead of
+  setting inline `display`/`opacity`.
 - Code Quality: Eliminated remaining pyright warnings by tightening types in `config_bp.py` and
   explicitly referencing nested Flask error handler in `__init__.py`. Fixed implicit string
   concatenation in `download_bp.py` and cleaned import ordering in CLI status command.

@@ -282,7 +282,8 @@ export function showConfigErrorIfPresent(): void {
   chrome.storage.local.get("configError", (result: any) => {
     if (result.configError) {
       el.textContent = "Configuration Error: " + result.configError;
-      el.style.display = "block";
+      el.classList.remove("hidden");
+      el.classList.add("evd-visible");
     }
   });
 }

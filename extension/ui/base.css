@@ -131,6 +131,11 @@ th {
   border: 0 !important;
 }
 
+/* Generic hidden utility used across scripts */
+.hidden {
+  display: none !important;
+}
+
 /* ===== RESPONSIVE CONTAINER SYSTEM ===== */
 
 .container {

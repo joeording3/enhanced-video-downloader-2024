@@ -33,18 +33,14 @@ describe("content.ts UI functions", () => {
   });
 
   describe("ensureDownloadButtonStyle", () => {
-    it("applies guideline styles to the button", () => {
+    it("adds visibility and contrast classes", () => {
       const btn = document.createElement("button");
       document.body.appendChild(btn);
       ensureDownloadButtonStyle(btn);
-      expect(btn.style.padding).toBe("4px 8px");
-      expect(btn.style.borderRadius).toBe("4px");
-      // Background is contrast-aware; allow either dark or light depending on environment
-      expect(["rgba(0, 0, 0, 0.72)", "rgba(255, 255, 255, 0.92)", "rgba(0, 0, 0, 0.3)"]).toContain(
-        btn.style.backgroundColor
-      );
-      expect(btn.style.borderWidth).toBe("1px");
-      expect(btn.style.borderStyle).toBe("solid");
+      expect(btn.classList.contains("evd-visible")).toBe(true);
+      const hasContrastClass =
+        btn.classList.contains("evd-on-dark") || btn.classList.contains("evd-on-light");
+      expect(hasContrastClass).toBe(true);
     });
   });
 

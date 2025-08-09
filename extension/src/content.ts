@@ -47,14 +47,7 @@ const CHECK_INTERVAL = UI_CONSTANTS.VIDEO_CHECK_INTERVAL;
 const MAX_CHECKS = UI_CONSTANTS.MAX_VIDEO_CHECKS;
 const VIDEO_SELECTOR = DOM_SELECTORS.VIDEO_SELECTORS;
 
-// Style guideline constants for the download button
-const EVD_BUTTON_GUIDELINE_STYLES: Record<string, string> = {
-  padding: "4px 8px",
-  borderRadius: "4px",
-  backgroundColor: "rgba(0, 0, 0, 0.3)", // Default background
-  borderWidth: "1px",
-  borderStyle: "solid",
-};
+// Visual guidelines are enforced via CSS classes in content.css
 
 // Temporary background colors used by the button for feedback
 const EVD_BUTTON_TEMPORARY_BACKGROUNDS: string[] = [
@@ -167,16 +160,14 @@ function ensureDownloadButtonStyle(buttonElement: HTMLElement): void {
   const luminance = (rgb: [number, number, number]): number =>
     0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
 
-  // Phase 1: Ensure critical visibility (display, opacity) regardless of state
-  if (computedStyle.display === "none") {
-    buttonElement.style.display = "block";
+  // Phase 1: Ensure visibility via class toggles (no inline fallbacks)
+  if (computedStyle.display === "none" || buttonElement.classList.contains("hidden")) {
+    buttonElement.classList.remove("hidden");
+    buttonElement.classList.add("evd-visible");
     _styleAdjusted = true;
-    log('EVD button computed display was "none", forced to "block".');
-  }
-  if (parseFloat(computedStyle.opacity) < 0.8) {
-    buttonElement.style.opacity = "1";
-    _styleAdjusted = true;
-    log('EVD button computed opacity was low, forced to "1".');
+    log("EVD button was hidden; made visible via class.");
+  } else if (!buttonElement.classList.contains("evd-visible")) {
+    buttonElement.classList.add("evd-visible");
   }
 
   // Phase 2: Enforce guideline styles for the button's DEFAULT state
@@ -185,17 +176,7 @@ function ensureDownloadButtonStyle(buttonElement: HTMLElement): void {
     tmpBg => currentInlineBg.replace(/\s/g, "") === tmpBg.replace(/\s/g, "")
   );
 
-  if (!isTemporaryFeedbackState) {
-    // Apply guideline styles
-    Object.entries(EVD_BUTTON_GUIDELINE_STYLES).forEach(([prop, value]) => {
-      // Do not override backgroundColor here; we'll set a contrast-aware color below
-      if (prop === "backgroundColor") return;
-      if ((computedStyle as any)[prop] !== value) {
-        (buttonElement.style as any)[prop] = value;
-        _styleAdjusted = true;
-      }
-    });
-  }
+  // Phase 2: Base look & feel handled by CSS class `.download-button`
 
   // Phase 2b: Choose contrast-aware colors based on page background
   try {
@@ -204,19 +185,9 @@ function ensureDownloadButtonStyle(buttonElement: HTMLElement): void {
       const pageBg = window.getComputedStyle(document.body).backgroundColor || "rgb(0,0,0)";
       const rgb = parseColor(pageBg) || [0, 0, 0];
       const isDarkBg = luminance(rgb) < 128; // rough threshold
-      if (isDarkBg) {
-        // Light button on dark backgrounds
-        buttonElement.style.backgroundColor = "rgba(255,255,255,0.92)";
-        buttonElement.style.color = "#000";
-        (buttonElement.style as any).borderColor = "#000";
-        _styleAdjusted = true;
-      } else {
-        // Dark button on light backgrounds
-        buttonElement.style.backgroundColor = "rgba(0,0,0,0.72)";
-        buttonElement.style.color = "#fff";
-        (buttonElement.style as any).borderColor = "#fff";
-        _styleAdjusted = true;
-      }
+      buttonElement.classList.remove("evd-on-dark", "evd-on-light");
+      buttonElement.classList.add(isDarkBg ? "evd-on-dark" : "evd-on-light");
+      _styleAdjusted = true;
     }
   } catch {
     // ignore color detection errors
@@ -282,9 +253,8 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
   btn.className = DRAG_HANDLE_CLASS;
 
   // Set initial position and style
-  btn.style.position = "fixed";
-  btn.style.zIndex = "2147483647"; // Maximum z-index value
   btn.classList.add("download-button");
+  btn.classList.add("evd-visible");
 
   // Get stored state or default
   const state = await getButtonState();
@@ -407,7 +377,8 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
 
   // Apply hidden state if needed
   if (state.hidden) {
-    btn.style.display = "none";
+    btn.classList.add("hidden");
+    btn.classList.remove("evd-visible");
   }
 
   // Set up observer to detect button removal
@@ -527,19 +498,18 @@ async function resetButtonPosition(): Promise<void> {
 async function setButtonHiddenState(hidden: boolean): Promise<void> {
   if (!downloadButton) return;
 
-  // Set display style
-  downloadButton.style.display = hidden ? "none" : "block";
+  // Toggle visibility classes instead of inline styles
+  if (hidden) {
+    downloadButton.classList.add("hidden");
+    downloadButton.classList.remove("evd-visible");
+  } else {
+    downloadButton.classList.remove("hidden");
+    downloadButton.classList.add("evd-visible");
+  }
 
   if (!hidden) {
-    // When showing the button, force essential visibility styles and safe position
+    // When showing the button, ensure safe position if offscreen
     try {
-      // Ensure on top and interactive
-      downloadButton.style.position = "fixed";
-      downloadButton.style.zIndex = "2147483647";
-      downloadButton.style.opacity = "1";
-      (downloadButton.style as any).visibility = "visible";
-      (downloadButton.style as any).pointerEvents = "auto";
-      // If current rect is offscreen or zero-sized, reset to safe spot
       const rect = downloadButton.getBoundingClientRect();
       const offscreen =
         rect.width === 0 ||
@@ -552,7 +522,7 @@ async function setButtonHiddenState(hidden: boolean): Promise<void> {
         downloadButton.style.left = "10px";
         downloadButton.style.top = "70px";
       }
-      // Re-apply style guidelines
+      // Re-apply style guidelines via classes
       ensureDownloadButtonStyle(downloadButton);
     } catch {
       // ignore

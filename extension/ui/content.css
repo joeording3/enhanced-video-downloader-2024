@@ -13,7 +13,57 @@
   top: var(--space-sm) !important;
   right: var(--space-sm) !important;
   cursor: move !important;
-  z-index: var(--z-maximum) !important;
+  z-index: var(--z-max) !important;
   user-select: none !important;
   box-shadow: 0 2px 6px var(--shadow-dark) !important;
+}
+
+/* New unified styles for injected floating download button */
+.download-button {
+  composes: btn btn--primary;
+  position: fixed;
+  z-index: var(--z-max);
+  user-select: none;
+  cursor: move;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-md);
+  padding: var(--space-xs) var(--space-sm);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
+  transition: var(--transition-normal);
+}
+
+/* Visibility helpers for the floating button */
+.evd-visible {
+  display: block !important;
+  opacity: 1 !important;
+}
+
+/* Contrast-aware variants applied dynamically based on page background */
+.evd-on-dark {
+  background-color: rgba(255, 255, 255, 0.92) !important;
+  color: #000 !important;
+  border-color: #000 !important;
+}
+
+.evd-on-light {
+  background-color: rgba(0, 0, 0, 0.72) !important;
+  color: #fff !important;
+  border-color: #fff !important;
+}
+
+/* Download feedback states */
+.download-sending {
+  background-color: var(--success) !important;
+  opacity: 0.7;
+}
+
+.download-success {
+  background-color: var(--success) !important;
+  opacity: 0.7;
+}
+
+.download-error {
+  background-color: var(--error) !important;
+  opacity: 0.7;
 }

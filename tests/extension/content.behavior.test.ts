@@ -70,7 +70,8 @@ describe("Content script button behaviors", () => {
       // Hide
       await setButtonHiddenState(true);
       if (btn) {
-        expect(btn.style.display).toBe("none");
+        expect(btn.classList.contains("hidden")).toBe(true);
+        expect(btn.classList.contains("evd-visible")).toBe(false);
       }
       expect(chrome.storage.local.set).toHaveBeenCalledWith(
         { "example.com": { x: 0, y: 0, hidden: true } },
@@ -79,7 +80,8 @@ describe("Content script button behaviors", () => {
       // Show
       await setButtonHiddenState(false);
       if (btn) {
-        expect(btn.style.display).toBe("block");
+        expect(btn.classList.contains("hidden")).toBe(false);
+        expect(btn.classList.contains("evd-visible")).toBe(true);
       }
       expect(chrome.storage.local.set).toHaveBeenCalledWith(
         { "example.com": { x: 0, y: 0, hidden: false } },
@@ -191,26 +193,26 @@ describe("Content script button behaviors", () => {
 
   // --- NEW TESTS ---
   describe("ensureDownloadButtonStyle", () => {
-    it("should force display to block and opacity to 1 if needed", () => {
+    it("adds visibility class when hidden", () => {
       const btn = document.createElement("button");
       btn.style.display = "none";
       btn.style.opacity = "0.5";
       document.body.appendChild(btn);
       ensureDownloadButtonStyle(btn);
-      expect(btn.style.display).toBe("block");
-      expect(btn.style.opacity).toBe("1");
+      expect(btn.classList.contains("evd-visible")).toBe(true);
     });
 
-    it("should apply guideline styles if not in temporary feedback state", () => {
+    it("applies contrast-aware classes when not in temporary feedback state", () => {
       const btn = document.createElement("button");
       btn.style.backgroundColor = "rgba(0,0,0,0.3)";
       document.body.appendChild(btn);
       ensureDownloadButtonStyle(btn);
-      expect(btn.style.borderRadius).toBe("4px");
-      expect(btn.style.padding).toBe("4px 8px");
+      const hasContrastClass =
+        btn.classList.contains("evd-on-dark") || btn.classList.contains("evd-on-light");
+      expect(hasContrastClass).toBe(true);
     });
 
-    it("should not override temporary feedback backgrounds", () => {
+    it("does not override temporary feedback backgrounds", () => {
       const btn = document.createElement("button");
       btn.style.backgroundColor = "rgba(255,0,0,0.7)"; // FAILED
       document.body.appendChild(btn);
@@ -398,8 +400,7 @@ describe("Content script button behaviors", () => {
       // Restore original
       window.getComputedStyle = originalGetComputedStyle;
 
-      expect(btn.style.display).toBe("block");
-      expect(btn.style.opacity).toBe("1");
+      expect(btn.classList.contains("evd-visible")).toBe(true);
     });
   });
 
@@ -417,7 +418,7 @@ describe("Content script button behaviors", () => {
       ensureDownloadButtonStyle(btn);
 
       // Should not throw
-      expect(btn.style.display).toBe("block");
+      expect(btn.classList.contains("evd-visible")).toBe(true);
 
       logSpy.mockRestore();
       warnSpy.mockRestore();

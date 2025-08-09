@@ -107,7 +107,8 @@ describe("showConfigErrorIfPresent", () => {
     popup.showConfigErrorIfPresent();
     const el = document.getElementById("config-error-display");
     expect(el?.textContent).toBe("Configuration Error: oops");
-    expect(el?.style.display).toBe("block");
+    expect(el?.classList.contains("hidden")).toBe(false);
+    expect(el?.classList.contains("evd-visible")).toBe(true);
   });
 });
 

@@ -171,7 +171,8 @@ class TestHelperFunctions:
                 assert status_code == 200
                 assert response.json["success"] is True
                 assert "Configuration updated successfully" in response.json["message"]
-                assert response.json["new_config"] == {"updated": "config"}
+                # Environment overlays may add keys; assert updated value is present
+                assert response.json["new_config"]["updated"] == "config"
                 mock_config.update_config.assert_called_once_with({"key": "value"})
 
     def test_handle_post_config_validation_error(self):

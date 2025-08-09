@@ -360,14 +360,9 @@ def download() -> Any:
 
     raw_data: dict[str, Any] = {}
     try:
-        # Parse JSON first without consuming the stream
+        # Parse JSON first without consuming the stream; if this yields None or non-dict,
+        # fallback to strict parsing which will raise on invalid JSON and be handled uniformly below.
         json_obj = request.get_json(silent=True)
-        if json_obj is None:
-            body_text = request.get_data(cache=True, as_text=True) or ""
-            if body_text.strip():
-                # Non-empty body but JSON parse failed → treat as server error (test expectation)
-                raise Exception("Invalid JSON payload")
-        # Parse raw JSON and extract download ID
         raw_data = json_obj if isinstance(json_obj, dict) else _parse_download_raw()
         # Process the request
         response, _ = _process_download_request(raw_data)

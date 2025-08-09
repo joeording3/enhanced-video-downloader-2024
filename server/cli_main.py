@@ -7,6 +7,7 @@ configuration, debug utilities, and system maintenance via a unified CLI.
 
 import json
 import logging
+import os
 import platform
 import shutil
 import subprocess
@@ -171,11 +172,13 @@ def _cli_build_command(_cfg: Config, host: str, port: int, gunicorn: bool, worke
     """Build the command list for starting the server."""
     if gunicorn:
         log.info("Starting server in production mode with Gunicorn on %s:%s", host, port)
+        # Use the WSGI callable defined in server/__main__.py as 'application'
+        app_path = "server.__main__:application"
         cmd = [
             "gunicorn",
             f"--workers={workers}",
             f"--bind={host}:{port}",
-            "server.wsgi:app",
+            app_path,
             "--access-logfile",
             "-",
             "--error-logfile",
@@ -247,10 +250,51 @@ def _run_start_server(
     cfg = _cli_load_config(ctx)
     _cli_set_logging(verbose)
 
-    resolved_host, resolved_port, _ = _resolve_start_params(cfg, host, port, download_dir)
+    resolved_host, resolved_port, resolved_download_dir = _resolve_start_params(
+        cfg, host, port, download_dir
+    )
+
+    # Environment-controlled defaults when CLI flags are not set
+    def _truthy(val: str | None) -> bool:
+        return bool(val) and str(val).strip().lower() in {"1", "true", "yes", "on"}
+
+    env_gunicorn = _truthy(os.getenv("EVD_GUNICORN"))
+    env_verbose = _truthy(os.getenv("EVD_VERBOSE"))
+    env_workers_raw = os.getenv("EVD_WORKERS")
+    try:
+        env_workers = int(env_workers_raw) if env_workers_raw is not None else None
+    except ValueError:
+        env_workers = None
+
+    # Log environment-provided defaults explicitly for visibility
+    log.info(
+        "Startup env defaults: EVD_GUNICORN=%s, EVD_WORKERS=%s, EVD_VERBOSE=%s",
+        env_gunicorn,
+        env_workers if env_workers_raw is not None else None,
+        env_verbose,
+    )
+
+    effective_gunicorn = gunicorn or env_gunicorn
+    effective_verbose = verbose or env_verbose
+    effective_workers = workers if env_workers is None else env_workers
+
+    if effective_verbose and not verbose:
+        _cli_set_logging(True)
+
+    # Log resolved parameters including effective run-mode flags
+    log.info(
+        "Resolved server params: daemon=%s, host=%s, port=%s, download_dir=%s, gunicorn=%s, workers=%s, verbose=%s",
+        daemon,
+        resolved_host,
+        resolved_port,
+        resolved_download_dir,
+        effective_gunicorn,
+        effective_workers,
+        effective_verbose,
+    )
     _cli_pre_start_checks(resolved_host, resolved_port, force)
 
-    cmd = _cli_build_command(cfg, resolved_host, resolved_port, gunicorn, workers)
+    cmd = _cli_build_command(cfg, resolved_host, resolved_port, effective_gunicorn, effective_workers)
 
     if daemon:
         _cli_execute_daemon(cmd, resolved_host, resolved_port)

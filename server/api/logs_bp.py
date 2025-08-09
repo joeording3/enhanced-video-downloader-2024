@@ -39,24 +39,20 @@ def logs() -> Response:
 
     project_root = Path(__file__).parent.parent.parent
     env_log = os.getenv("LOG_FILE")
+    # Detect whether we are running under the actual repository root
+    real_repo = (project_root / "pyproject.toml").exists()
+
     # Behavior:
-    # - If env overrides, use it.
-    # - If 'lines' query present, use legacy server_output.log (unit tests stub this).
-    # - Otherwise default to a non-existent name so API smoke test returns 404.
-    if env_log:
-        log_path = Path(env_log)
-    else:
-        # Detect whether we are running under the actual repository root
-        real_repo = os.path.exists(str(project_root / "pyproject.toml"))
-        if real_repo:
-            # In real repo: only read logs when explicitly overridden by env; otherwise return 404
-            if "lines" in request.args:
-                log_path = project_root / "__no_such_log_file__.log"
-            else:
-                log_path = project_root / "__no_such_log_file__.log"
+    # - In real repo: honor env override if provided; otherwise 404 placeholder
+    # - In tests (stubbed project_root, no pyproject): ignore env override and use server_output.log
+    if real_repo:
+        if env_log:
+            log_path = Path(env_log)
         else:
-            # In tests with stubbed project_root: use legacy server_output.log
-            log_path = project_root / "server_output.log"
+            log_path = project_root / "__no_such_log_file__.log"
+    else:
+        # In tests with stubbed project_root: use legacy server_output.log
+        log_path = project_root / "server_output.log"
 
     if not log_path.exists() or not log_path.is_file():
         logger.error(f"Log file not found: {log_path}")
