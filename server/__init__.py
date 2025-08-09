@@ -5,7 +5,7 @@ Provides the application factory to create the Flask app.
 
 from pathlib import Path
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask.wrappers import Response as FlaskResponse
 from flask_cors import CORS
 
@@ -87,6 +87,49 @@ def create_app(config: Config) -> Flask:
 
     # Explicit reference to satisfy static analyzers that this handler is used
     _ = handle_request_entity_too_large
+
+    @app.errorhandler(400)
+    def handle_bad_request(error: Exception) -> tuple[FlaskResponse, int]:
+        """Return sanitized JSON for bad requests on API routes (400)."""
+        # Only return JSON for API routes; otherwise, fall through to default handling
+        if request.path.startswith("/api"):
+            return jsonify({"status": "error", "message": "Bad request", "error_type": "BAD_REQUEST"}), 400
+        # Log and return minimal message for non-API paths
+        app.logger.debug("Bad request on non-API path: %s", request.path, exc_info=True)
+        return jsonify({"status": "error", "message": "Bad request"}), 400
+
+    @app.errorhandler(404)
+    def handle_not_found(_error: Exception) -> tuple[FlaskResponse, int]:
+        """Return JSON for not found errors on API routes (404)."""
+        if request.path.startswith("/api"):
+            return jsonify({"status": "error", "message": "Not found", "error_type": "NOT_FOUND"}), 404
+        return jsonify({"status": "error", "message": "Not found"}), 404
+
+    @app.errorhandler(405)
+    def handle_method_not_allowed(_error: Exception) -> tuple[FlaskResponse, int]:
+        """Return JSON for method not allowed on API routes (405)."""
+        if request.path.startswith("/api"):
+            return jsonify(
+                {"status": "error", "message": "Method not allowed", "error_type": "METHOD_NOT_ALLOWED"}
+            ), 405
+        return jsonify({"status": "error", "message": "Method not allowed"}), 405
+
+    @app.errorhandler(500)
+    def handle_internal_error(error: Exception) -> tuple[FlaskResponse, int]:
+        """Return sanitized JSON for internal server errors on API routes (500)."""
+        app.logger.exception("Unhandled server error: %s", error)
+        if request.path.startswith("/api"):
+            return (
+                jsonify(
+                    {
+                        "status": "error",
+                        "message": "Internal server error",
+                        "error_type": "INTERNAL_SERVER_ERROR",
+                    }
+                ),
+                500,
+            )
+        return jsonify({"status": "error", "message": "Internal server error"}), 500
 
     # Register blueprints
     app.register_blueprint(download_bp)

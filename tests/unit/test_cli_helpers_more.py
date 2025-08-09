@@ -1,5 +1,5 @@
 """Additional high-yield unit tests for server.cli_helpers to raise coverage."""
-
+        
 from __future__ import annotations
 
 import os
@@ -177,5 +177,65 @@ class TestDownloaderHelpers:
         opts_g = h._build_resume_options("gallery-dl", "https://ex", tmp_path, priority=7)
         assert opts_g.get("directory") == str(tmp_path)
         assert opts_g.get("continue") is True and opts_g.get("nice") == "7"
+
+    def test_process_incomplete_batch_integrity_and_no_url(self, tmp_path: Path, monkeypatch: Any) -> None:
+        """_process_incomplete_batch should count integrity failures and missing URL files as errors."""
+        import logging
+        import server.cli_helpers as h
+
+        # Create two fake part files
+        f1 = tmp_path / "a.mp4.part"
+        f2 = tmp_path / "b.mp4.part"
+        f1.write_text("x")
+        f2.write_text("y")
+
+        # Force integrity check to fail for first and succeed for second
+        monkeypatch.setattr(h, "_verify_file_integrity", lambda p, _l: p.name != "a.mp4.part")
+        # For second, return unknown downloader and no URL to trigger failure path
+        monkeypatch.setattr(h, "_determine_downloader_and_url", lambda *_a, **_k: ("unknown", None))
+
+        res = h._process_incomplete_batch([f1, f2], tmp_path, logging.getLogger(__name__), None, True)
+        assert res["resumed"] == 0
+        assert res["errors"] == 2
+        assert len(res["non_resumable"]) == 2
+
+    def test_process_resume_batch_counts_results(self, tmp_path: Path, monkeypatch: Any) -> None:
+        """_process_resume_batch should aggregate success/failure across futures."""
+        import logging
+        import server.cli_helpers as h
+
+        # Prepare fake history with two entries
+        history = [
+            {"download_id": "id1", "url": "http://ex/1"},
+            {"download_id": "id2", "url": "http://ex/2"},
+        ]
+
+        monkeypatch.setattr(h, "load_history", lambda: history)
+
+        # Fake YoutubeDL context manager to simulate one success and one raise
+        class FakeYDL:
+            def __init__(self, _opts: dict) -> None:
+                pass
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_a):
+                return None
+
+            def download(self, urls):
+                if urls and urls[0].endswith("/1"):
+                    return None
+                raise RuntimeError("boom")
+
+        monkeypatch.setattr(h, "yt_dlp", type("_M", (), {"YoutubeDL": FakeYDL}))
+        # Simple build opts func
+        
+        def build_opts(url: str, tmpl: str, extra: dict | None) -> dict:
+            return {"outtmpl": tmpl, "urls": [url]}
+        res = h._process_resume_batch(["id1", "id2"], tmp_path, build_opts, logging.getLogger(__name__), None)
+        assert res["resumed"] == 1
+        assert res["failed"] == 1
+        assert set(res["non_resumable"]) == {"id2"}
 
 

@@ -1,7 +1,69 @@
-"""Simplified unit tests for server.cli.status module."""
+"""Additional tests to increase coverage for server/cli/status.py."""
+
+from __future__ import annotations
 
 import json
-from unittest.mock import Mock, patch
+from typing import Any
+from unittest.mock import MagicMock, patch
+
+from click.testing import CliRunner
+
+
+def test_status_server_no_processes_json(monkeypatch: Any) -> None:
+    from server.cli import status as mod
+
+    runner = CliRunner()
+    monkeypatch.setattr(mod, "find_server_processes_cli", list)
+    result = runner.invoke(mod.server, ["--json"])
+    assert result.exit_code != 0
+    assert "No running server found" in result.output
+
+
+def test_status_server_as_json(monkeypatch: Any) -> None:
+    from server.cli import status as mod
+
+    runner = CliRunner()
+    monkeypatch.setattr(
+        mod,
+        "find_server_processes_cli",
+        lambda: [{"pid": 1, "port": 5050, "uptime": 3700, "version": "1.0.0"}],
+    )
+    result = runner.invoke(mod.server, ["--json"])
+    assert result.exit_code == 0
+    parsed = json.loads(result.output)
+    assert parsed[0]["pid"] == 1 and parsed[0]["port"] == 5050
+    assert "h" in parsed[0]["uptime"]
+
+
+def test_status_downloads_happy_path(monkeypatch: Any) -> None:
+    from server.cli import status as mod
+
+    runner = CliRunner()
+    # Pretend server is running and has port
+    monkeypatch.setattr(mod, "is_server_running", lambda: True)
+    monkeypatch.setattr(mod, "get_config_value", lambda _k: 5001)
+    fake_resp = MagicMock(status_code=200, json=lambda: {"active_downloads": [{"id": "x", "url": "u", "status": "s", "progress": 10}]})
+    monkeypatch.setattr(mod.requests, "get", lambda *_a, **_k: fake_resp)
+    result = runner.invoke(mod.downloads)
+    assert result.exit_code == 0
+    assert "ID: x" in result.output and "Progress: 10%" in result.output
+
+
+def test_status_downloads_errors(monkeypatch: Any) -> None:
+    from server.cli import status as mod
+
+    runner = CliRunner()
+    monkeypatch.setattr(mod, "is_server_running", lambda: True)
+    monkeypatch.setattr(mod, "get_config_value", lambda _k: 5001)
+    # HTTP error
+    fake_resp = MagicMock(status_code=500, text="boom")
+    monkeypatch.setattr(mod.requests, "get", lambda *_a, **_k: fake_resp)
+    result = runner.invoke(mod.downloads, [])
+    assert result.exit_code != 0
+
+"""Simplified unit tests for server.cli.status module."""
+
+from unittest.mock import Mock
 
 import pytest
 import requests

@@ -66,11 +66,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Security
 
 - Add standard security headers to all responses (X-Content-Type-Options, X-Frame-Options,
-  X-XSS-Protection, Referrer-Policy, CSP)
+X-XSS-Protection, Referrer-Policy, CSP)
 - Configure CORS for local usage/extension contexts (permissive by default; recommend restricting in
-  production)
+production)
 - Enforce request size limits (16MB) with JSON 413 responses
 - Add simple in-memory rate limiting for download endpoints (10 req/min per IP)
+- Standardize API JSON error responses with centralized handlers for 400/404/405/500 under `/api`
 
 ### Comprehensive Extension Build Process
 

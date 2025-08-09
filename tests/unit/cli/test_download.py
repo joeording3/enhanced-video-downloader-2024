@@ -468,3 +468,105 @@ def test_list_command_failed_only(mock_get_config: Any, mock_is_running: Any, mo
     mock_get.assert_called_once()
     # The filtering is done in the code, not in the URL
     assert mock_get.call_args[0][0] == f"http://127.0.0.1:{get_server_port()}/status"
+
+
+@patch("server.cli.download.requests.post")
+@patch("server.cli.download.is_server_running")
+@patch("server.cli.download.get_config_value")
+def test_download_single_url_http_error(
+    mock_get_config: Any, mock_is_running: Any, mock_post: Any
+) -> None:
+    """Non-200 response should exit with error and print response body."""
+    mock_is_running.return_value = True
+    mock_get_config.return_value = get_server_port()
+    mock_response = MagicMock()
+    mock_response.status_code = 500
+    mock_response.text = "internal error"
+    mock_post.return_value = mock_response
+
+    runner = CliRunner()
+    result = runner.invoke(url_command, ["https://example.com/v"])
+    assert result.exit_code == 1
+    assert "Error: 500" in result.output
+
+
+class TestBatchFlows:
+    """Additional tests covering batch flows and error branches."""
+
+    @patch("server.cli.download.requests.post")
+    @patch("server.cli.download.is_server_running")
+    @patch("server.cli.download.get_config_value")
+    def test_batch_continue_on_error_keeps_processing(
+        self,
+        mock_get_config: Any,
+        mock_is_running: Any,
+        mock_post: Any,
+        tmp_path: Path,
+    ) -> None:
+        """When continue-on-error is set, failures should not exit early and summary should print."""
+        mock_is_running.return_value = True
+        mock_get_config.return_value = get_server_port()
+
+        # First URL fails, second succeeds
+        resp_fail = MagicMock(status_code=500, text="boom")
+        resp_ok = MagicMock(status_code=200)
+        resp_ok.json.return_value = {"downloadId": "xyz"}
+        mock_post.side_effect = [resp_fail, resp_ok]
+
+        urls_file = tmp_path / "urls.txt"
+        urls_file.write_text("https://a\nhttps://b\n")
+
+        runner = CliRunner()
+        result = runner.invoke(
+            batch_command,
+            [str(urls_file), "--continue-on-error", "--delay", "0", "--concurrent", "1"],
+        )
+
+        assert result.exit_code == 0
+        # both URLs attempted
+        assert mock_post.call_count == 2
+        assert "Batch download completed" in result.output
+
+    @patch("server.cli.download.requests.post")
+    @patch("server.cli.download.is_server_running")
+    @patch("server.cli.download.get_config_value")
+    def test_batch_stops_on_error_without_flag(
+        self,
+        mock_get_config: Any,
+        mock_is_running: Any,
+        mock_post: Any,
+        tmp_path: Path,
+    ) -> None:
+        """Without continue-on-error, a failure should exit early."""
+        mock_is_running.return_value = True
+        mock_get_config.return_value = get_server_port()
+
+        # First URL fails
+        resp_fail = MagicMock(status_code=500, text="boom")
+        mock_post.return_value = resp_fail
+
+        urls_file = tmp_path / "urls.txt"
+        urls_file.write_text("https://a\nhttps://b\n")
+
+        runner = CliRunner()
+        result = runner.invoke(batch_command, [str(urls_file), "--delay", "0", "--concurrent", "1"])
+
+        assert result.exit_code == 1
+        assert "Failed to download" in result.output
+
+    @patch("server.cli.download.get_config_value")
+    @patch("server.cli.download.is_server_running")
+    def test_batch_empty_file_exits(
+        self, mock_is_running: Any, mock_get_config: Any, tmp_path: Path
+    ) -> None:
+        """Empty URLs file should exit with message."""
+        mock_is_running.return_value = True
+        mock_get_config.return_value = get_server_port()
+
+        urls_file = tmp_path / "urls.txt"
+        urls_file.write_text("\n# comment only\n\n")
+
+        runner = CliRunner()
+        result = runner.invoke(batch_command, [str(urls_file)])
+        assert result.exit_code == 1
+        assert "No valid URLs" in result.output

@@ -6,7 +6,6 @@ Urgent Tasks:
   <!-- working-on: options logs viewer wired to background API -->
 - [/] 'choose' button to set download directory now wired (added id `settings-folder-picker` in
   `extension/ui/options.html`)
-- [ ] nothing at all in browser console for options page or background service
 - [/] Implement `run_cleanup()` in `server/cli/utils.py` and add tests
 - [/] Replace silent `pass` blocks with logging/handling in:
   - `server/cli_helpers.py` (loops and maintenance utils)
@@ -202,7 +201,7 @@ Legacy/Stub Cleanup:
 - [ ] Add input sanitization for all user inputs
 - [/] Implement proper CORS configuration
 - [/] Add request size limits
-- [ ] Implement proper error message sanitization
+- [/] Implement proper error message sanitization
 - [/] Add security headers
 - [/] Implement rate limiting for download endpoints
 - [ ] Add comprehensive logging for debugging
