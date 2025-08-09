@@ -174,9 +174,11 @@ def _cli_build_command(_cfg: Config, host: str, port: int, gunicorn: bool, worke
         log.info("Starting server in production mode with Gunicorn on %s:%s", host, port)
         # Use the WSGI callable defined in server/__main__.py as 'application'
         app_path = "server.__main__:application"
+        # Respect requested workers (minimum 1)
+        effective_workers = max(1, int(workers))
         cmd = [
             "gunicorn",
-            f"--workers={workers}",
+            f"--workers={effective_workers}",
             f"--bind={host}:{port}",
             app_path,
             "--access-logfile",
@@ -258,11 +260,9 @@ def _run_start_server(
 
     env_gunicorn = _truthy(os.getenv("EVD_GUNICORN"))
     env_verbose = _truthy(os.getenv("EVD_VERBOSE"))
-    env_workers_raw = os.getenv("EVD_WORKERS")
-    try:
-        env_workers = int(env_workers_raw) if env_workers_raw is not None else None
-    except ValueError:
-        env_workers = None
+    # Workers are forced to 1 regardless of env or CLI
+    env_workers_raw = None
+    env_workers = 1
 
     # Log environment-provided defaults explicitly for visibility
     log.info(
@@ -274,7 +274,8 @@ def _run_start_server(
 
     effective_gunicorn = gunicorn or env_gunicorn
     effective_verbose = verbose or env_verbose
-    effective_workers = workers if env_workers is None else env_workers
+    # Force single worker for correctness with in-memory state
+    effective_workers = 1
 
     if effective_verbose and not verbose:
         _cli_set_logging(True)
