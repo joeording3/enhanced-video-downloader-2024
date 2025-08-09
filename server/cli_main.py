@@ -250,9 +250,7 @@ def _run_start_server(
     cfg = _cli_load_config(ctx)
     _cli_set_logging(verbose)
 
-    resolved_host, resolved_port, resolved_download_dir = _resolve_start_params(
-        cfg, host, port, download_dir
-    )
+    resolved_host, resolved_port, resolved_download_dir = _resolve_start_params(cfg, host, port, download_dir)
 
     # Environment-controlled defaults when CLI flags are not set
     def _truthy(val: str | None) -> bool:

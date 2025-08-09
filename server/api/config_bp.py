@@ -17,11 +17,13 @@ from server.config import Config
 try:  # Prefer real dotenv if available
     from dotenv import find_dotenv, set_key  # type: ignore[import]
 except Exception:  # Fallbacks
+
     def find_dotenv() -> str | None:  # type: ignore[return-type]
         return None
 
     def set_key(*_args: Any, **_kwargs: Any) -> tuple[bool | None, str, str]:  # type: ignore[return-type]
         return None, "", ""
+
 
 config_bp = Blueprint("config_api", __name__, url_prefix="/api")
 logger = logging.getLogger(__name__)
@@ -52,15 +54,18 @@ def _handle_get_config(cfg: Config) -> tuple[Response, int]:
         env_gunicorn = os.getenv("EVD_GUNICORN")
         env_workers = os.getenv("EVD_WORKERS")
         env_verbose = os.getenv("EVD_VERBOSE")
+
         def _truthy(v: str | None) -> bool | None:
             if v is None:
                 return None
             return v.strip().lower() in ("1", "true", "yes", "on")
+
         def _int_or_none(v: str | None) -> int | None:
             try:
                 return int(v) if v is not None else None
             except Exception:
                 return None
+
         data.update(
             {
                 "log_file": env_log,
