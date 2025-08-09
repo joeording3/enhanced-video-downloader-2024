@@ -783,6 +783,11 @@ export function setupLogsUI(): void {
 
   const applyFilters = (text: string): string => {
     let t = text;
+    // Suppress server log clear/rotation banner lines
+    t = t
+      .split("\n")
+      .filter(line => !/^\s*Log file cleared and archived to /i.test(line))
+      .join("\n");
     if (filterWerkzeugCheckbox?.checked) {
       t = t
         .split("\n")
