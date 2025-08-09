@@ -3,6 +3,7 @@
 Provides the application factory to create the Flask app.
 """
 
+import os
 from pathlib import Path
 
 from flask import Flask, jsonify, request
@@ -46,6 +47,10 @@ def create_app(config: Config) -> Flask:
     # Establish project root and default log file path
     project_root = Path(__file__).resolve().parent.parent
     default_log_path = str(project_root / "server_output.log")
+
+    # Ensure environment reflects the active log file path so UI and APIs can report it
+    # Only set when not explicitly provided by the environment
+    os.environ.setdefault("LOG_FILE", default_log_path)
 
     # Initialize logging with file output to a stable, known path so /logs works
     setup_logging(config.get_value("log_level", "INFO"), default_log_path)
