@@ -8,6 +8,7 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 import server.cli_helpers as h
 
 
@@ -167,7 +168,7 @@ class TestDownloaderHelpers:
 
     def test_process_incomplete_batch_integrity_and_no_url(self, tmp_path: Path, monkeypatch: Any) -> None:
         """_process_incomplete_batch should count integrity failures and missing URL files as errors."""
-        
+
 
         # Create two fake part files
         f1 = tmp_path / "a.mp4.part"
@@ -187,7 +188,7 @@ class TestDownloaderHelpers:
 
     def test_process_resume_batch_counts_results(self, tmp_path: Path, monkeypatch: Any) -> None:
         """_process_resume_batch should aggregate success/failure across futures."""
-        
+
 
         # Prepare fake history with two entries
         history = [

@@ -6,9 +6,9 @@ import json
 from typing import Any
 from unittest.mock import MagicMock, Mock, patch
 
-from click.testing import CliRunner
 import pytest
 import requests
+from click.testing import CliRunner
 
 from server.cli.status import (
     downloads_command,
