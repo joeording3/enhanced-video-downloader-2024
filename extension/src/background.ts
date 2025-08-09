@@ -1085,8 +1085,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
             const qs = params.toString() ? `?${params.toString()}` : "";
             const candidates = [
+              // Preferred new paths under /api
               `http://127.0.0.1:${port}/api/logs${qs}`,
               `http://localhost:${port}/api/logs${qs}`,
+              // Backward-compatible paths without /api
+              `http://127.0.0.1:${port}/logs${qs}`,
+              `http://localhost:${port}/logs${qs}`,
             ];
 
             let text: string | null = null;
@@ -1125,8 +1129,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           }
           try {
             const candidates = [
+              // Preferred new paths under /api
               `http://127.0.0.1:${port}/api/logs/clear`,
               `http://localhost:${port}/api/logs/clear`,
+              // Backward-compatible paths without /api
+              `http://127.0.0.1:${port}/logs/clear`,
+              `http://localhost:${port}/logs/clear`,
             ];
             let ok = false;
             let lastStatus: number | null = null;
