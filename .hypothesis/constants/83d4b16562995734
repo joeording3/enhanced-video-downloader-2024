@@ -1,4 +1,0 @@
-# file: /Users/josephording/myscripts/Enhanced Video Downloader/server/schemas.py
-# hypothesis_version: 6.137.1
-
-[100, 500, 1000, 1024, 65535, '"', '*', '/', '127.0.0.1', ':', '<', '>', '?', 'Debug mode', 'Downloads', 'Failed', 'Filter by domain', 'Invalid', 'Logging level', 'Long', 'Referrer URL', 'Short', 'Unsafe', 'VideoDownloader', '\\', 'allow', 'before', 'chrome', 'console_log_level', 'critical', 'data:', 'debug', 'default', 'download_dir', 'download_id', 'error', 'ffmpeg', 'file://', 'forbid', 'gallery', 'http://', 'https://', 'info', 'javascript:', 'log_level', 'mp4', 'page_title', 'url', 'vbscript:', 'warning', 'ytdlp_options', '|', '~']

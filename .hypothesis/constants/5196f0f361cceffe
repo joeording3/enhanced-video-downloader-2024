@@ -1,4 +1,0 @@
-# file: /Users/josephording/myscripts/Enhanced Video Downloader/server/cli/status.py
-# hypothesis_version: 6.137.1
-
-[200, 3600, '--json', 'LOCK_FILE', 'No active downloads', 'active_downloads', 'as_json', 'downloads', 'error', 'pid', 'port', 'server', 'server_port', 'status', 'uptime', 'version']

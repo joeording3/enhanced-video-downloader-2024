@@ -41,6 +41,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   on the subprocess exit code. Added a unit test to validate command construction and success
   handling via subprocess mocking. README updated to describe gallery resume behavior.
 
+### Removed
+
+- Deprecated UI stylesheet `extension/ui/styles.css` removed. UI now uses modular styles:
+  `variables.css`, `components.css`, `base.css`, and `themes.css`.
+
+### Fixed
+
+- Options page Choose button wired to directory picker (`settings-folder-picker`), aligning with
+  current implementation in `options.ts`.
+
 ### Testing & Tooling
 
 - Constrain Hypothesis property tests to write any generated directories under

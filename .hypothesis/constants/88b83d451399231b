@@ -1,4 +1,0 @@
-# file: /Users/josephording/myscripts/Enhanced Video Downloader/server/cli_commands/system_maintenance.py
-# hypothesis_version: 6.137.1
-
-['--clear-cache', '--clear-history', '--resume-failed', '--resume-incomplete', 'download_dir', 'system_maintenance']

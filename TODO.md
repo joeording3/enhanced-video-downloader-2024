@@ -4,7 +4,8 @@ Urgent Tasks:
 
 - [/] log viewer on options page not working - no logs displayed
   <!-- working-on: options logs viewer wired to background API -->
-- [ ] 'choose' button to set download directory not working - no response when clicked
+- [/] 'choose' button to set download directory now wired (added id `settings-folder-picker` in
+  `extension/ui/options.html`)
 - [ ] nothing at all in browser console for options page or background service
 - [/] Implement `run_cleanup()` in `server/cli/utils.py` and add tests
 - [/] Replace silent `pass` blocks with logging/handling in:
@@ -23,8 +24,7 @@ Legacy/Stub Cleanup:
   via gallery-dl API
 - [/] Drop legacy PID-only lock format handling in `server/lock.py:get_lock_pid` once migration
   confirmed; update callers
-- [ ] Replace "for now" comments in `server/__main__.py` (state save) with concrete persistence or
-      remove note
+- [/] Cleaned up "for now" comment in `server/__main__.py` to reflect current behavior
 - [/] Remove legacy port compatibility helpers in `server/constants.py` if unused (`LEGACY_PORTS`,
   `normalize_legacy_port`, `get_port_config`)
 - [/] Remove legacy frontend fallbacks for logs endpoints; standardize on `/api/logs` and
@@ -33,9 +33,10 @@ Legacy/Stub Cleanup:
 - [/] Review `server/video_downloader_server.py` compatibility shim; remove if WSGI entrypoints
   cover all use cases
 - [ ] Consider unifying `find_available_port` usage (prefer `server/utils.py`) and remove duplicates
-- [ ] identify legacy/backwards compatiblity code and refector/remove it
+- [/] Removed deprecated `extension/ui/styles.css` (legacy styles) – project now uses
+  `variables.css`, `components.css`, `base.css`, and `themes.css`
 
-#### 1.2 **Fix Critical JavaScript/TypeScript Modules** [WEEK 1-2]
+## 1.2 Fix Critical JavaScript/TypeScript Modules [WEEK 1-2]
 
 **background-logic.ts (87.36% → EXCEEDED 70% target by 17%)**
 
@@ -61,7 +62,7 @@ Legacy/Stub Cleanup:
 - [ ] Test startup/shutdown procedures
 - [ ] Verify message passing between components
 
-#### 1.3 **Improve Test Quality Patterns** [WEEK 2-3]
+### 1.3 Improve Test Quality Patterns [WEEK 2-3]
 
 - [ ] Replace stub-only assertions with behavior verification
 - [ ] Add realistic in-memory shims for file I/O and network calls
@@ -69,7 +70,7 @@ Legacy/Stub Cleanup:
 - [ ] Add boundary value and edge case testing
 - [ ] Create shared test utilities for common patterns
 
-#### 1.4 **Set Up Continuous Monitoring** [WEEK 1]
+### 1.4 Set Up Continuous Monitoring [WEEK 1]
 
 - [ ] Configure CI to fail on mutation score drops below 70% (JS/TS) and 80% (Python)
 - [ ] Set up weekly mutation testing reports

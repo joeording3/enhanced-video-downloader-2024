@@ -1,4 +1,0 @@
-# file: /Users/josephording/myscripts/Enhanced Video Downloader/server/api/download_bp.py
-# hypothesis_version: 6.137.1
-
-[200, 204, 400, 403, 404, 500, '.', '/api', '/download', '/gallery-dl', '/resume', 'Download canceled.', 'Download not found', 'Download paused.', 'Download resumed.', 'Invalid JSON', 'MISSING_URL', 'OPTIONS', 'POST', 'SERVER_ERROR', 'URL is required', 'VALIDATION_ERROR', 'allow_playlists', 'download', 'downloadId', 'download_dir', 'download_playlist', 'error', 'error_type', 'loc', 'message', 'msg', 'priority', 'status', 'success', 'unknown', 'url', 'use_gallery_dl', 'validation_errors']

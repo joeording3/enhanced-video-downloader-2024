@@ -113,14 +113,17 @@ def resume_all_incomplete_downloads() -> dict[str, Any]:
     # Common partial file extensions
     # yt-dlp typically uses .part, but can also leave .ytdl files if interrupted early.
     # gallery-dl might use others, or just incomplete files.
-    # For now, focusing on .part as it's explicitly mentioned.
-    part_files: list[str] = [str(p) for p in Path(download_dir).glob("*.part")]
+    # Include both .part and .ytdl sidecar temp files
+    patterns = ("*.part", "*.ytdl")
+    part_files: list[str] = []
+    for pattern in patterns:
+        part_files.extend(str(p) for p in Path(download_dir).glob(pattern))
 
     resumed_count = 0
     failed_to_resume_count = 0
 
     if not part_files:
-        logger.info("No common partial download files (*.part) found to resume.")
+        logger.info("No partial download files (*.part, *.ytdl) found to resume.")
         return {"status": "success", "message": "No partial downloads found."}
 
     logger.info(f"Found {len(part_files)} potential partial files: {part_files}")

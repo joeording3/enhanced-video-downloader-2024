@@ -1,4 +1,0 @@
-# file: /Users/josephording/myscripts/Enhanced Video Downloader/server/cli/resume.py
-# hypothesis_version: 6.137.1
-
-[100, '--max-concurrent', '--no-verify', '--order', '--priority', '--progress', '--scan-dir', 'cli.resume.failed', 'download_dir', 'download_ids', 'failed', 'incomplete', 'newest', 'oldest', 'priority', 'resume', 'scan_dir_str']

@@ -43,9 +43,14 @@ def create_app(config: Config) -> Flask:
     Returns:
         Flask app instance.
     """
-    setup_logging(config.get_value("log_level", "INFO"))
-    # Serve extension UI static files under /ui
+    # Establish project root and default log file path
     project_root = Path(__file__).resolve().parent.parent
+    default_log_path = str(project_root / "server_output.log")
+
+    # Initialize logging with file output to a stable, known path so /logs works
+    setup_logging(config.get_value("log_level", "INFO"), default_log_path)
+
+    # Serve extension UI static files under /ui
     ui_dir = project_root / "extension" / "ui"
     app = Flask(__name__, static_folder=str(ui_dir), static_url_path="/ui")
 

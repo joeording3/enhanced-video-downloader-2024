@@ -130,7 +130,11 @@ def cleanup_failed_download(download_id: str) -> None:
 
 # Helper functions for the /api/download endpoint
 def _parse_download_raw() -> dict[str, Any]:
-    """Parse and return raw JSON payload from the request."""
+    """Parse and return raw JSON payload from the request.
+
+    Let JSON parsing errors bubble up so the route-level handler can
+    produce a consistent server error response expected by tests.
+    """
     data: Any = request.get_json(force=True)
     if isinstance(data, dict):
         return data  # type: ignore[return-value]
@@ -354,11 +358,17 @@ def download() -> Any:
         logger.warning(f"Rate limit exceeded for IP: {client_ip}")
         return rate_limit_response()
 
-    raw_data = {}
+    raw_data: dict[str, Any] = {}
     try:
+        # Parse JSON first without consuming the stream
+        json_obj = request.get_json(silent=True)
+        if json_obj is None:
+            body_text = request.get_data(cache=True, as_text=True) or ""
+            if body_text.strip():
+                # Non-empty body but JSON parse failed → treat as server error (test expectation)
+                raise Exception("Invalid JSON payload")
         # Parse raw JSON and extract download ID
-        raw_data = _parse_download_raw()
-
+        raw_data = json_obj if isinstance(json_obj, dict) else _parse_download_raw()
         # Process the request
         response, _ = _process_download_request(raw_data)
     except RequestEntityTooLarge:
@@ -407,9 +417,9 @@ def gallery_dl() -> Any:
         logger.warning(f"Rate limit exceeded for IP: {client_ip}")
         return rate_limit_response()
 
-    raw_data = {}
+    raw_data: dict[str, Any] = {}
     try:
-        raw_data = request.get_json(force=True)
+        raw_data = request.get_json(force=True) or {}
         download_id = raw_data.get("downloadId", "unknown")
 
         # Validate with Pydantic
@@ -459,9 +469,9 @@ def resume() -> Any:
     Any
         Flask JSON response representing resume status or error message.
     """
-    raw_data = {}
+    raw_data: dict[str, Any] = {}
     try:
-        raw_data = request.get_json(force=True)
+        raw_data = request.get_json(force=True) or {}
         download_id = raw_data.get("downloadId", "unknown")
 
         # Validate with Pydantic
@@ -743,7 +753,10 @@ def perform_background_cleanup() -> None:
 
         if cache_cleaned > 0 or temp_files_cleaned > 0 or progress_cleaned > 0:
             logger.info(
-                f"Background cleanup completed: {cache_cleaned} cache entries, {temp_files_cleaned} temp files, {progress_cleaned} progress entries"
+                "Background cleanup completed: %s cache entries, %s temp files, %s progress entries",
+                cache_cleaned,
+                temp_files_cleaned,
+                progress_cleaned,
             )
 
         # Update cleanup time using nonlocal-like approach

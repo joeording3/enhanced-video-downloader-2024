@@ -128,7 +128,7 @@ def save_download_state() -> None:
             if progress_data:
                 logger.info(f"Saving state for {len(progress_data)} active downloads")
                 # Save the state - could write to a file for persistence if needed
-                # For now we just log it, as the built-in history mechanism should capture completed downloads
+                # Log active download statuses; the built-in history captures completed downloads
                 for download_id, data in progress_data.items():
                     logger.info(f"Download {download_id} status: {data.get('status', 'unknown')}")
     except Exception:

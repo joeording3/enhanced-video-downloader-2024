@@ -383,11 +383,15 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
         });
       } catch (err) {
         error("Error initiating download:", err);
-        btn.classList.remove("download-sending");
-        btn.classList.add("download-error");
-        setTimeout(() => {
-          btn.classList.remove("download-error");
-        }, 2000);
+        try {
+          btn.classList.remove("download-sending");
+          btn.classList.add("download-error");
+          setTimeout(() => {
+            btn.classList.remove("download-error");
+          }, 2000);
+        } catch {
+          // no-op: visual feedback cleanup best-effort
+        }
       }
     }
   });

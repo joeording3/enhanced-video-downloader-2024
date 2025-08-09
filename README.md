@@ -9,7 +9,8 @@ on video pages or through the extension popup.
 ## Features
 
 - Download videos from YouTube, Vimeo, and any site supported by `yt-dlp`
-- Optional fallback to `gallery-dl` for image galleries
+- Optional fallback to `gallery-dl` for image galleries (supports resume with `--continue` and
+  directory targeting)
 - Resume interrupted downloads automatically
 - Draggable "Download" button (position & visibility saved per-site)
 - Popup UI: trigger downloads, view active/queued tasks with pause, resume, cancel, drag-and-drop
@@ -79,14 +80,13 @@ Enhanced Video Downloader/
 │   │   ├── status.py         # Status check commands
 │   │   ├── utils.py          # Utility commands
 │   │   └── resume.py         # Resume commands
-│   ├── cli_commands/         # Legacy CLI subcommands
+│   ├── cli_commands/         # Legacy CLI subcommands (removed; use `server/cli_main.py`)
 │   │   └── system_maintenance.py # System maintenance commands
 │   ├── cli_helpers.py        # Shared helpers for CLI commands
 │   ├── cli_resume_helpers.py # Resume-specific CLI helpers
 │   ├── api/                  # Flask Blueprints
 │   ├── config.py             # Config loader
-│   ├── config/               # JSON config files
-│   │   ├── config.json       # Server settings
+│   ├── config/               # JSON config files (extraction rules, etc.)
 │   │   └── extraction_rules.json
 │   ├── data/                 # Persisted data files
 │   │   ├── history.json
@@ -98,7 +98,7 @@ Enhanced Video Downloader/
 │   ├── logging_setup.py      # Logging configuration
 │   ├── schemas.py            # Pydantic schemas
 │   ├── utils.py              # Shared helper functions
-│   └── video_downloader_server.py  # Flask app entrypoint
+│   └── video_downloader_server.py  # Deprecated legacy entrypoint (removed)
 ├── tests/                    # Test files
 │   ├── extension/            # Extension unit tests (Jest + Playwright)
 │   ├── integration/          # Integration tests
@@ -402,7 +402,8 @@ gunicorn --workers=4 --bind=0.0.0.0:<SERVER_PORT> server:create_app()
 ### Configure
 
 In the popup or options page set your download directory, server port, debug & log level. Settings
-write through the server API; config.json remains the source of truth.
+write through the server API; configuration is environment-driven and persisted via `.env` updates
+when using the CLI, not a central `config.json` file.
 
 ### Download
 
@@ -413,11 +414,13 @@ the popup. Watch progress live in the popup; completed downloads move to history
 
 View past downloads in History (filter by status, domain). History entries now include full metadata
 extracted from yt-dlp's .info.json for detailed insights. Use Resume partials in options to recover
-interrupted tasks.
+interrupted tasks. For galleries, the server invokes `gallery-dl` with continuation enabled and the
+configured download directory, attempting to resume previously started gallery downloads.
 
 ## Configuration
 
-The server configuration is stored in `config.json` (located at the project root) and includes:
+Server configuration is derived from environment variables (and persisted to `.env` by CLI helpers)
+and includes:
 
 - `server_port`: The port the server listens on (default: 5001, but see port discovery).
 - `download_dir`: Directory where downloaded videos are saved (e.g.,
@@ -436,7 +439,6 @@ You can configure these settings through:
 - The options page
 - Command-line interface: `videodownloader-server config set`
 - Enhanced CLI commands: `videodownloader-server utils config show/set`
-- Editing `config.json` directly (not recommended while server is running)
 
 ---
 

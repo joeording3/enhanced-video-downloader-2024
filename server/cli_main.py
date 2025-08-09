@@ -207,7 +207,8 @@ def cli(ctx: click.Context, verbose: bool) -> None:
         log.setLevel(logging.DEBUG)
         log.debug("Verbose logging enabled")
     # Configuration is now environment-only
-    ctx.obj = {}
+    # Ensure ctx.obj exists and carries any sentinel values used downstream
+    ctx.obj = {"config_path": "<env>"}
     # Subcommands are registered below
     # If no subcommand provided, show help and exit
     if ctx.invoked_subcommand is None:
@@ -1089,9 +1090,8 @@ def _preserve_server_state() -> dict[str, Any] | None:
             with history_file.open() as f:
                 state["history"] = json.load(f)
 
-        # Preserve active downloads (if any)
-        # This would require integration with the server's download manager
-        # For now, we'll preserve what we can
+        # Preserve active downloads (if any). Requires integration with the server's
+        # download manager; only history is currently persisted here.
 
     except Exception:
         log.warning("Failed to preserve server state")

@@ -146,11 +146,11 @@ generate-ignores:
 
 # Fast JS unit tests (extension)
 test-js-fast:
-	npm run test:extension:ts
+	npm test
 
 # Slow JS tests with coverage (extension E2E)
 test-js-slow:
-	npm run test:extension:coverage
+	npm run test:coverage
 
 # Python integration tests (API smoke tests)
 test-integration:

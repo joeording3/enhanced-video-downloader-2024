@@ -893,6 +893,16 @@ const sendDownloadRequest = async (
         result.source_url,
         result.title || pageTitle
       );
+
+      // Also reflect in the extension's queue UI for immediate feedback
+      try {
+        if (!downloadQueue.includes(videoUrl)) {
+          downloadQueue.push(videoUrl);
+          _updateQueueAndBadge();
+        }
+      } catch {
+        /* ignore UI update issues */
+      }
     }
 
     return result;

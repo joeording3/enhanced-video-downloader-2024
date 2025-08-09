@@ -85,17 +85,23 @@ def _default_ydl_opts(output_path: str, download_playlist: bool) -> dict[str, An
 
 
 def _apply_custom_opts(ydl_opts: dict[str, Any], custom_opts: Any, _download_id: str | None) -> None:
+    # Accept either dict-like or Pydantic model instances
+    try:
+        if hasattr(custom_opts, "model_dump"):
+            custom_opts = custom_opts.model_dump(mode="json")  # type: ignore[assignment]
+    except Exception:
+        pass
+
     if isinstance(custom_opts, dict):
-        ydl_opts.update(
-            {
-                key: value
-                for key, value in custom_opts.items()
-                if key not in ["outtmpl", "progress_hooks", "logger", "noplaylist", "yesplaylist"]
-            }
-        )
+        # Apply config options, but block only a few keys; allow 'format' to override defaults
+        blocked = {"outtmpl", "progress_hooks", "logger", "noplaylist", "yesplaylist"}
+        for key, value in custom_opts.items():
+            if key in blocked:
+                continue
+            ydl_opts[key] = value
         logger.debug(f"Applied custom yt-dlp options from config: {custom_opts}")
     else:
-        logger.warning("Config ytdlp_options is not a dictionary, using defaults only")
+        logger.warning("Config yt_dlp_options is not a dictionary, using defaults only")
 
 
 def _apply_playlist_flags(ydl_opts: dict[str, Any], download_playlist: bool) -> None:
@@ -132,15 +138,17 @@ def _assign_progress_hook(ydl_opts: dict[str, Any], download_id: str) -> None:
 
 
 def _handle_cookies(ydl_opts: dict[str, Any], download_id: str | None) -> None:
-    cfb = ydl_opts.get("cookies_from_browser")
-    if not cfb:
+    # If cookies_from_browser is set, let yt-dlp handle cookie extraction natively
+    if ydl_opts.get("cookies_from_browser"):
         return
+    # Otherwise, only attempt to provide a cookiefile if we can safely serialize
     try:
         cj = browser_cookie3.chrome(domain_name="youtube.com")
-        with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as tmp_file:
-            cj.save(tmp_file.name)  # type: ignore[attr-defined]
-            ydl_opts["cookiefile"] = tmp_file.name
-        logger.debug(f"[{download_id}] Using cookie file: {tmp_file.name}")
+        if hasattr(cj, "save"):
+            with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as tmp_file:
+                cj.save(tmp_file.name)  # type: ignore[attr-defined]
+                ydl_opts["cookiefile"] = tmp_file.name
+            logger.debug(f"[{download_id}] Using cookie file: {tmp_file.name}")
     except Exception as e:
         logger.warning(f"[{download_id}] Could not extract browser cookies: {e}")
 
@@ -165,12 +173,29 @@ def build_opts(output_path: str, download_id: str | None = None, download_playli
     """
     # Load config to get custom yt-dlp options
     config = Config.load()
-    ytdlp_config_options = config.get_value("yt_dlp_options", {})
+    # Ensure we always get a plain dict of options; fall back if method not available
+    try:
+        ytdlp_config_options = config.get_download_options()
+    except AttributeError:
+        # Older/alternate Config stubs in tests may not implement this helper
+        ytdlp_config_options: Any = {}
+        # Fallback 1: dedicated getter by key
+        try:
+            ytdlp_config_options = config.get_value("yt_dlp_options", {})  # type: ignore[attr-defined]
+        except Exception:
+            ytdlp_config_options = {}
+        # Fallback 2: attribute on config
+        if not isinstance(ytdlp_config_options, dict):
+            ytdlp_config_options = getattr(config, "yt_dlp_options", {})  # type: ignore[assignment]
+        if hasattr(ytdlp_config_options, "model_dump"):
+            ytdlp_config_options = ytdlp_config_options.model_dump(mode="json")  # type: ignore[assignment]
+        if not isinstance(ytdlp_config_options, dict):
+            ytdlp_config_options = {}
 
     # Start with default options
     ydl_opts: dict[str, Any] = _default_ydl_opts(output_path, download_playlist)
 
-    # Override with config options if present
+    # Override with config options if present (including 'format')
     _apply_custom_opts(ydl_opts, ytdlp_config_options, download_id)
 
     # Ensure only one of noplaylist or yesplaylist is present based on download_playlist
@@ -594,7 +619,8 @@ def _init_download(data: dict[str, Any]) -> tuple[Path | None, str, str, str, bo
         error_tuple is (response, status) if error occurred, otherwise None.
     """
     url = data.get("url", "").strip()
-    download_id = data.get("downloadId", "N/A")
+    # Accept both camelCase (client) and snake_case (validated) keys
+    download_id = str(data.get("download_id") or data.get("downloadId") or "N/A")
     page_title = data.get("page_title", "video")
     download_playlist = bool(data.get("download_playlist", False))
     if not url:

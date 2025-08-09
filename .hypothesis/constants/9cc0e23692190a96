@@ -1,4 +1,0 @@
-# file: /Users/josephording/myscripts/Enhanced Video Downloader/server/cli/serve.py
-# hypothesis_version: 6.137.1
-
-['--auto-port', '--download-dir', '--force', '--gunicorn', '--host', '--port', '--retry-attempts', '--timeout', '--verbose', '--workers', '-d/-f', '127.0.0.1', 'Server stopped.', 'Starting server...', 'Stopping server...', 'auto_port', 'daemon', 'download_dir', 'force', 'gunicorn', 'host', 'port', 'restart', 'retry_attempts', 'serve', 'server_port', 'start', 'stop', 'timeout', 'verbose', 'workers']
