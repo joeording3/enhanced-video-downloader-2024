@@ -4,13 +4,9 @@ from __future__ import annotations
 
 import json
 from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 from click.testing import CliRunner
-
-# Move commonly used imports to top to satisfy import-at-top rules
-from unittest.mock import Mock
-
 import pytest
 import requests
 
