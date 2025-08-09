@@ -155,28 +155,29 @@ describe("youtube_enhance", () => {
         expect(btn.style.left).toBe("1820px"); // 1920 - 100
       });
 
-      it("preserves custom top position when not 10px", () => {
+      it("preserves custom top position when not 10px and leaves left unchanged", () => {
         btn.style.top = "50px";
         enhanceYouTubeButton(btn);
 
         expect(btn.style.top).toBe("50px");
-        expect(btn.style.left).toBe("1820px"); // 1920 - 100
+        // When a custom top is set, we don't force left; allow empty if not previously set
+        expect(btn.style.left).toBe("");
       });
 
-      it("preserves custom top position when set to 0px", () => {
+      it("preserves custom top position when set to 0px and leaves left unchanged", () => {
         btn.style.top = "0px";
         enhanceYouTubeButton(btn);
 
         expect(btn.style.top).toBe("0px");
-        expect(btn.style.left).toBe("1820px"); // 1920 - 100
+        expect(btn.style.left).toBe("");
       });
 
-      it("preserves custom top position when set to 100px", () => {
+      it("preserves custom top position when set to 100px and leaves left unchanged", () => {
         btn.style.top = "100px";
         enhanceYouTubeButton(btn);
 
         expect(btn.style.top).toBe("100px");
-        expect(btn.style.left).toBe("1820px"); // 1920 - 100
+        expect(btn.style.left).toBe("");
       });
 
       it("calculates left position based on window width", () => {

@@ -100,6 +100,7 @@
                       title="Choose folder"
                       aria-label="Choose Download Folder"
                       class="btn btn--primary"
+                      id="settings-folder-picker"
                     >
                       Choose
                     </button>
@@ -229,7 +230,7 @@
                   id="settings-resume-downloads"
                   class="btn btn--primary"
                 >
-                  <span class="btn-icon">Play</span>
+                  <span>Play</span>
                   Resume Partial Downloads
                 </button>
                 <button
@@ -237,15 +238,24 @@
                   id="settings-clear-history"
                   class="btn btn--secondary"
                 >
-                  <span class="btn-icon">Delete</span>
+                  <span>Delete</span>
                   Clear History
+                </button>
+                <button
+                  type="button"
+                  id="settings-clear-positions"
+                  class="btn btn--secondary"
+                  title="Clear all stored positions of the on-page download button across sites"
+                >
+                  <span>Reset</span>
+                  Clear Button Positions
                 </button>
                 <button
                   type="button"
                   id="restart-server"
                   class="btn btn--secondary"
                 >
-                  <span class="btn-icon">Restart</span>
+                  <span>Restart</span>
                   Restart Server
                 </button>
               </div>
@@ -255,7 +265,7 @@
           <!-- Save Button -->
           <div class="save-section">
             <button type="submit" id="save-settings" class="btn btn--primary">
-              <span class="btn-icon">Save</span>
+              <span>Save</span>
               Save Settings
             </button>
             <div id="settings-status" class="status-message"></div>
@@ -317,7 +327,6 @@
                 </label>
               </div>
             </div>
-            <div id="log-display" role="log" aria-live="polite"></div>
             <textarea id="logViewerTextarea" readonly></textarea>
           </div>
         </section>

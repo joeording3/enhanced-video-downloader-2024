@@ -1,4 +1,0 @@
-# file: /Users/josephording/myscripts/Enhanced Video Downloader/server/cli/history.py
-# hypothesis_version: 6.137.1
-
-[200, '%Y-%m-%d %H:%M:%S', '+00:00', '-', '--domain', '--force', '--json', '--limit', '--status', 'Operation cancelled.', 'Z', 'action', 'all', 'as_json', 'clear', 'completed', 'domain', 'error', 'failed', 'history', 'list', 'list_history', 'queued', 'server_port', 'status', 'timestamp', 'total_items']

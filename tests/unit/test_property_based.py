@@ -5,6 +5,7 @@ These tests use property-based testing to verify that functions maintain
 invariants and handle edge cases correctly across a wide range of inputs.
 """
 
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
@@ -29,6 +30,11 @@ settings.register_profile(
     deadline=None,
     verbosity=0,
 )
+settings.load_profile("default")
+
+# Ensure all filesystem effects from property-based tests happen under a safe tmp directory
+SAFE_TEST_BASE_DIR = Path("tmp") / "hypothesis_download_dirs"
+SAFE_TEST_BASE_DIR.mkdir(parents=True, exist_ok=True)
 
 # --- URL and Domain Testing Strategies ---
 
@@ -118,12 +124,18 @@ def config_values(draw: st.DrawFn) -> tuple[str, str]:
     elif key in ["log_level", "console_log_level"]:
         value = draw(st.sampled_from(["debug", "info", "warning", "error", "critical"]))
     elif key in ["download_dir", "log_file"]:
-        # For path-related keys, avoid invalid characters
-        value = draw(
-            st.text(min_size=1, max_size=100).filter(
-                lambda x: "\x00" not in x and not any(c in x for c in ["<", ">", ":", '"', "|", "?", "*"])
-            )
+        # Generate path-like values that are safely nested under tmp/hypothesis_download_dirs
+        safe_name = draw(
+            st.text(
+                min_size=1,
+                max_size=50,
+                alphabet=st.characters(
+                    whitelist_categories=("Lu", "Ll", "Nd"),
+                    whitelist_characters=["-", "_", "."],
+                ),
+            ).filter(lambda s: s not in {".", ".."})
         )
+        value = str(SAFE_TEST_BASE_DIR / safe_name)
     else:
         # For other keys, avoid null characters but allow other text
         value = draw(st.text(min_size=1, max_size=100).filter(lambda x: "\x00" not in x))
@@ -142,6 +154,20 @@ def invalid_config_values(draw: st.DrawFn) -> tuple[str, str]:
         )
     elif key in ["log_level", "console_log_level"]:
         value = draw(st.text().filter(lambda x: x not in ["debug", "info", "warning", "error", "critical"]))
+    elif key in ["download_dir", "log_file"]:
+        # Even for invalid cases, keep any directories created confined to the safe base dir
+        # Use a nested path to simulate complex/possibly invalid inputs without touching repo root
+        nested_part = draw(
+            st.text(
+                min_size=1,
+                max_size=20,
+                alphabet=st.characters(
+                    whitelist_categories=("Lu", "Ll", "Nd"),
+                    whitelist_characters=["-", "_"],
+                ),
+            )
+        )
+        value = str(SAFE_TEST_BASE_DIR / "invalid" / nested_part)
     else:
         value = draw(st.text())
 

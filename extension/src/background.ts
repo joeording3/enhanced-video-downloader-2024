@@ -58,6 +58,22 @@ const isTestEnvironment =
 // --- END CONSTANTS AND STORAGE KEYS ---
 
 // Utility logging functions - now using centralized logger
+const applyConsoleLogLevelFromStorage = async (): Promise<void> => {
+  try {
+    const res = await chrome.storage.local.get(STORAGE_KEYS.SERVER_CONFIG);
+    const cfg = (res as any)[STORAGE_KEYS.SERVER_CONFIG] || {};
+    const level = (cfg.log_level as any) || (cfg.console_log_level as any) || "info";
+    if (typeof level === "string") {
+      logger.setLevel(level.toLowerCase() as any);
+    }
+  } catch {
+    // ignore
+  }
+};
+
+// Initialize console log level at startup
+applyConsoleLogLevelFromStorage();
+
 const log = (...args: any[]): void => {
   logger.info(args.join(" "), { component: "background" });
 };
@@ -94,9 +110,19 @@ const storageService: StorageService = {
     return result[_configStorageKey] || {};
   },
   async setConfig(config: Partial<ServerConfig>): Promise<void> {
+    // Merge with existing config and persist
     const currentConfig = await this.getConfig();
-    const newConfig = { ...currentConfig, ...config };
-    return chrome.storage.local.set({ [_configStorageKey]: newConfig });
+    const newConfig: Partial<ServerConfig> = { ...currentConfig, ...config };
+    await chrome.storage.local.set({ [_configStorageKey]: newConfig });
+    // Apply log level immediately so the UI reflects persistence without reload
+    try {
+      const level = (newConfig.log_level as any) || (newConfig.console_log_level as any);
+      if (typeof level === "string") {
+        logger.setLevel(level.toLowerCase() as any);
+      }
+    } catch {
+      /* ignore */
+    }
   },
   async getPort(): Promise<number | null> {
     const result = await chrome.storage.local.get(_portStorageKey);
@@ -431,19 +457,27 @@ const checkServerStatus = async (port: number): Promise<boolean> =>
       return false;
     }
 
-    // Fetch server status with timeout
+    // Fetch server status with timeout, with localhost fallback and robust error handling
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), PORT_CHECK_TIMEOUT);
-    let response: Response;
+    let response: Response | undefined;
     try {
-      response = await fetch("http://127.0.0.1:" + port + "/health", {
-        signal: controller.signal,
-      });
+      // Try 127.0.0.1 first
+      response = await fetch(`http://127.0.0.1:${port}/api/health`, { signal: controller.signal });
+    } catch {
+      try {
+        // Fallback to localhost
+        response = await fetch(`http://localhost:${port}/api/health`, {
+          signal: controller.signal,
+        });
+      } catch {
+        response = undefined;
+      }
     } finally {
       clearTimeout(timeoutId);
     }
 
-    if (response.ok) {
+    if (response && response.ok) {
       const data = await response.json();
       // Verify the server is our app by checking app_name
       if (data.app_name === expectedAppName) {
@@ -463,11 +497,14 @@ const checkServerStatus = async (port: number): Promise<boolean> =>
         );
         stateManager.updateServerState({ status: "disconnected" });
       }
-    } else {
+    } else if (response) {
       logger.warn(
         "Server check failed on port " + port + ": " + response.status,
         CentralizedLogger.contexts.background.serverCheck(port)
       );
+      stateManager.updateServerState({ status: "disconnected" });
+    } else {
+      // No response (network/timeout). Treat as disconnected quietly.
       stateManager.updateServerState({ status: "disconnected" });
     }
 
@@ -757,9 +794,13 @@ const addOrUpdateHistory = async (
     // Save updated history
     await chrome.storage.local.set({ [_historyStorageKey]: limitedHistory });
 
-    // Notify other components about history update
+    // Notify other components about history update (ignore when no listeners)
     try {
-      chrome.runtime.sendMessage({ type: "historyUpdated" });
+      const maybePromise = chrome.runtime.sendMessage({ type: "historyUpdated" });
+      // In some environments sendMessage may return a Promise; guard against unhandled rejections
+      if (maybePromise && typeof (maybePromise as any).catch === "function") {
+        (maybePromise as any).catch(() => {});
+      }
     } catch (e) {
       // Ignore errors if no listeners are available
     }
@@ -774,9 +815,12 @@ const clearDownloadHistory = async (): Promise<void> => {
   try {
     await chrome.storage.local.set({ [_historyStorageKey]: [] });
 
-    // Notify other components about history update
+    // Notify other components about history update (ignore when no listeners)
     try {
-      chrome.runtime.sendMessage({ type: "historyUpdated" });
+      const maybePromise = chrome.runtime.sendMessage({ type: "historyUpdated" });
+      if (maybePromise && typeof (maybePromise as any).catch === "function") {
+        (maybePromise as any).catch(() => {});
+      }
     } catch (e) {
       // Ignore errors if no listeners are available
     }
@@ -849,6 +893,16 @@ const sendDownloadRequest = async (
         result.source_url,
         result.title || pageTitle
       );
+
+      // Also reflect in the extension's queue UI for immediate feedback
+      try {
+        if (!downloadQueue.includes(videoUrl)) {
+          downloadQueue.push(videoUrl);
+          _updateQueueAndBadge();
+        }
+      } catch {
+        /* ignore UI update issues */
+      }
     }
 
     return result;
@@ -908,6 +962,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       switch (message.type) {
         case "downloadVideo": {
           log("Received download request for:", message.url);
+          // Ensure we have a server port; if not, try to discover it immediately
+          let effectivePort = port;
+          if (!effectivePort) {
+            try {
+              effectivePort = await findServerPort(true);
+            } catch (e) {
+              // ignore and fall through to error response below
+            }
+          }
+
+          // If still no port, return a clear error right away
+          if (!effectivePort) {
+            sendResponse({ status: "error", message: "Server not available" });
+            break;
+          }
+
           const response = await sendDownloadRequest(
             message.url,
             sender.tab?.id,
@@ -952,7 +1022,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
 
         case "getConfig":
-          // This logic remains untouched for now
+          // Fetch server config when a port is known; otherwise return current cached state
           if (port) {
             const config = await fetchServerConfig(port);
             sendResponse({ status: "success", data: config });
@@ -973,7 +1043,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
 
         case "restartServer":
-          // This logic remains untouched
+          // Request server restart via API and trigger port rediscovery
           log("Received restart request");
           if (port) {
             try {
@@ -1017,6 +1087,99 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             }
           } else {
             sendResponse({ status: "error", message: "Server not available" });
+          }
+          break;
+        }
+
+        case "getLogs": {
+          if (!port) {
+            sendResponse({ status: "error", message: "Server not available" });
+            break;
+          }
+          try {
+            const params = new URLSearchParams();
+            if (typeof message.lines === "number" && message.lines >= 0)
+              params.set("lines", String(message.lines));
+            if (typeof message.recent === "boolean")
+              params.set("recent", message.recent ? "true" : "false");
+
+            const qs = params.toString() ? `?${params.toString()}` : "";
+            const candidates = [
+              // Preferred new paths under /api
+              `http://127.0.0.1:${port}/api/logs${qs}`,
+              `http://localhost:${port}/api/logs${qs}`,
+              // Backward-compatible paths without /api
+              `http://127.0.0.1:${port}/logs${qs}`,
+              `http://localhost:${port}/logs${qs}`,
+            ];
+
+            let text: string | null = null;
+            let lastStatus: number | null = null;
+            for (const url of candidates) {
+              try {
+                const r = await fetch(url);
+                lastStatus = r.status;
+                if (r.ok) {
+                  text = await r.text();
+                  break;
+                }
+              } catch {
+                // try next
+              }
+            }
+
+            if (text === null) {
+              sendResponse({
+                status: "error",
+                message: "Failed to fetch logs: " + (lastStatus ?? "network error"),
+              });
+              break;
+            }
+            sendResponse({ status: "success", data: text });
+          } catch (e) {
+            sendResponse({ status: "error", message: (e as Error).message });
+          }
+          break;
+        }
+
+        case "clearLogs": {
+          if (!port) {
+            sendResponse({ status: "error", message: "Server not available" });
+            break;
+          }
+          try {
+            const candidates = [
+              // Preferred new paths under /api
+              `http://127.0.0.1:${port}/api/logs/clear`,
+              `http://localhost:${port}/api/logs/clear`,
+              // Backward-compatible paths without /api
+              `http://127.0.0.1:${port}/logs/clear`,
+              `http://localhost:${port}/logs/clear`,
+            ];
+            let ok = false;
+            let lastStatus: number | null = null;
+            for (const url of candidates) {
+              try {
+                const r = await fetch(url, { method: "POST" });
+                lastStatus = r.status;
+                if (r.ok) {
+                  ok = true;
+                  break;
+                }
+              } catch {
+                // try next
+              }
+            }
+            if (!ok) {
+              sendResponse({
+                status: "error",
+                message: "Failed to clear logs: " + (lastStatus ?? "network error"),
+              });
+              break;
+            }
+            sendResponse({ status: "success" });
+          } catch (e) {
+            sendResponse({ status: "error", message: (e as Error).message });
           }
           break;
         }

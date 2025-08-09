@@ -30,7 +30,7 @@ download_bp = Blueprint("download_api", __name__, url_prefix="/api")
 logger = logging.getLogger(__name__)
 
 # Rate limiting storage
-_rate_limit_storage = defaultdict(list)
+_rate_limit_storage: defaultdict[str, list[float]] = defaultdict(list)
 _RATE_LIMIT_WINDOW = 60  # 1 minute window
 _MAX_REQUESTS_PER_WINDOW = 10  # Max 10 requests per minute per IP
 
@@ -58,9 +58,7 @@ def check_rate_limit(ip_address: str) -> bool:
     window_start = current_time - _RATE_LIMIT_WINDOW
 
     # Clean old entries
-    _rate_limit_storage[ip_address] = [
-        timestamp for timestamp in _rate_limit_storage[ip_address] if timestamp > window_start
-    ]
+    _rate_limit_storage[ip_address] = [ts for ts in _rate_limit_storage[ip_address] if ts > window_start]
 
     # Check if limit exceeded
     if len(_rate_limit_storage[ip_address]) >= _MAX_REQUESTS_PER_WINDOW:
@@ -132,7 +130,11 @@ def cleanup_failed_download(download_id: str) -> None:
 
 # Helper functions for the /api/download endpoint
 def _parse_download_raw() -> dict[str, Any]:
-    """Parse and return raw JSON payload from the request."""
+    """Parse and return raw JSON payload from the request.
+
+    Let JSON parsing errors bubble up so the route-level handler can
+    produce a consistent server error response expected by tests.
+    """
     data: Any = request.get_json(force=True)
     if isinstance(data, dict):
         return data  # type: ignore[return-value]
@@ -269,8 +271,8 @@ def _cleanup_cancel_partfiles(download_id: str) -> None:
             path = Path(download_dir)
             for pf in path.glob(f"{prefix}*.part"):
                 pf.unlink()
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug(f"Failed to clean cancel partfiles for {download_id}: {e}")
 
 
 def _download_error_response(message: str, error_type: str, download_id: str, status_code: int) -> tuple[Response, int]:
@@ -356,11 +358,17 @@ def download() -> Any:
         logger.warning(f"Rate limit exceeded for IP: {client_ip}")
         return rate_limit_response()
 
-    raw_data = {}
+    raw_data: dict[str, Any] = {}
     try:
+        # Parse JSON first without consuming the stream
+        json_obj = request.get_json(silent=True)
+        if json_obj is None:
+            body_text = request.get_data(cache=True, as_text=True) or ""
+            if body_text.strip():
+                # Non-empty body but JSON parse failed → treat as server error (test expectation)
+                raise Exception("Invalid JSON payload")
         # Parse raw JSON and extract download ID
-        raw_data = _parse_download_raw()
-
+        raw_data = json_obj if isinstance(json_obj, dict) else _parse_download_raw()
         # Process the request
         response, _ = _process_download_request(raw_data)
     except RequestEntityTooLarge:
@@ -409,9 +417,9 @@ def gallery_dl() -> Any:
         logger.warning(f"Rate limit exceeded for IP: {client_ip}")
         return rate_limit_response()
 
-    raw_data = {}
+    raw_data: dict[str, Any] = {}
     try:
-        raw_data = request.get_json(force=True)
+        raw_data = request.get_json(force=True) or {}
         download_id = raw_data.get("downloadId", "unknown")
 
         # Validate with Pydantic
@@ -461,9 +469,9 @@ def resume() -> Any:
     Any
         Flask JSON response representing resume status or error message.
     """
-    raw_data = {}
+    raw_data: dict[str, Any] = {}
     try:
-        raw_data = request.get_json(force=True)
+        raw_data = request.get_json(force=True) or {}
         download_id = raw_data.get("downloadId", "unknown")
 
         # Validate with Pydantic
@@ -668,11 +676,6 @@ def _process_priority_request(download_id: str, data: dict[str, Any]) -> tuple[R
         errors = [err.get("msg") for err in e.errors()]
         return _priority_response("error", f"Invalid priority value: {errors}", download_id, 400)
 
-    # Stub mode: if using legacy progress_data, update stub
-    if download_id in progress_data:
-        progress_data[download_id]["priority"] = pr.priority
-        return _priority_response("success", f"Priority for {download_id} set to {pr.priority}", download_id, 200)
-
     # Process mode: adjust OS process priority
     proc = download_process_registry.get(download_id)
     if not proc:
@@ -723,13 +726,13 @@ def perform_background_cleanup() -> None:
 
         # Clean up orphaned temp files
         temp_files_cleaned = 0
-        temp_files_to_clean = []
+        temp_files_to_clean: list[str] = []
 
         # Collect temp files to clean up
         for download_id, temp_files in list(download_tempfile_registry.items()):
             if download_id not in download_process_registry:
                 # Process is gone but temp files remain
-                temp_files_to_clean.extend(temp_files)
+                temp_files_to_clean.extend(list(temp_files))
                 del download_tempfile_registry[download_id]
 
         # Clean up temp files (moved try-except outside loop for performance)
@@ -750,8 +753,10 @@ def perform_background_cleanup() -> None:
 
         if cache_cleaned > 0 or temp_files_cleaned > 0 or progress_cleaned > 0:
             logger.info(
-                f"Background cleanup completed: {cache_cleaned} cache entries, "
-                f"{temp_files_cleaned} temp files, {progress_cleaned} progress entries"
+                "Background cleanup completed: %s cache entries, %s temp files, %s progress entries",
+                cache_cleaned,
+                temp_files_cleaned,
+                progress_cleaned,
             )
 
         # Update cleanup time using nonlocal-like approach

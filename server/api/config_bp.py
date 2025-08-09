@@ -6,7 +6,7 @@ via GET and POST requests with Pydantic validation.
 """
 
 import logging
-from typing import Any
+from typing import Any, cast
 
 from flask import Blueprint, jsonify, request
 from flask.wrappers import Response
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 # Helper functions to simplify route logic
-def _handle_preflight() -> "tuple[Response, int]":
+def _handle_preflight() -> tuple[Response, int]:
     """Handle CORS preflight requests."""
     response = jsonify(success=True)
     response.headers.add("Access-Control-Allow-Origin", "*")
@@ -27,13 +27,13 @@ def _handle_preflight() -> "tuple[Response, int]":
     return response, 200
 
 
-def _handle_load_error(e: Exception) -> "tuple[Response, int]":
+def _handle_load_error(e: Exception) -> tuple[Response, int]:
     """Handle configuration loading errors."""
     logger.error(f"Failed to load configuration: {e}")
     return jsonify({"success": False, "error": "Failed to load server configuration."}), 500
 
 
-def _handle_get_config(cfg: Config) -> "tuple[Response, int]":
+def _handle_get_config(cfg: Config) -> tuple[Response, int]:
     """Handle GET config requests."""
     try:
         return jsonify(cfg.as_dict()), 200
@@ -42,7 +42,7 @@ def _handle_get_config(cfg: Config) -> "tuple[Response, int]":
         return jsonify({"success": False, "error": "Error retrieving configuration."}), 500
 
 
-def _validate_post_data() -> tuple[dict[str, Any], tuple[Response, int] | None]:  # type: ignore[return-value]
+def _validate_post_data() -> tuple[dict[str, Any], tuple[Response, int] | None]:
     """Validate POST request data and return (data, error_response) or (data, None)."""
     if not request.is_json:
         return {}, (jsonify({"success": False, "error": "Content-Type must be application/json"}), 415)
@@ -58,10 +58,11 @@ def _validate_post_data() -> tuple[dict[str, Any], tuple[Response, int] | None]:
     if not isinstance(data, dict):
         return {}, (jsonify({"success": False, "error": "expected an object"}), 400)
 
-    return data, None
+    typed_data: dict[str, Any] = cast(dict[str, Any], data)
+    return typed_data, None
 
 
-def _handle_post_config(cfg: Config) -> "tuple[Response, int]":
+def _handle_post_config(cfg: Config) -> tuple[Response, int]:
     """Handle POST config update requests."""
     data, error = _validate_post_data()
     if error:

@@ -38,8 +38,9 @@ export class CentralizedLogger implements Logger {
   private logCallbacks: Set<(entry: LogEntry) => void> = new Set();
 
   private constructor() {
-    // Set up console logging in development
-    if (typeof process !== "undefined" && process.env.NODE_ENV === "development") {
+    // Mirror logs to browser console when running inside the extension runtime
+    // (service worker, options, popup). This ensures visibility regardless of build env.
+    if (typeof chrome !== "undefined" && (chrome as any).runtime) {
       this.onLog(entry => {
         const prefix = `[${entry.context.component}]`;
         const timestamp = entry.timestamp.toISOString();

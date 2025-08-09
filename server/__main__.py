@@ -128,7 +128,7 @@ def save_download_state() -> None:
             if progress_data:
                 logger.info(f"Saving state for {len(progress_data)} active downloads")
                 # Save the state - could write to a file for persistence if needed
-                # For now we just log it, as the built-in history mechanism should capture completed downloads
+                # Log active download statuses; the built-in history captures completed downloads
                 for download_id, data in progress_data.items():
                     logger.info(f"Download {download_id} status: {data.get('status', 'unknown')}")
     except Exception:
@@ -209,7 +209,7 @@ def find_orphaned_processes(port: int) -> "list[int]":
             except (psutil.NoSuchProcess, psutil.AccessDenied):  # noqa: PERF203
                 continue
     except Exception:
-        pass
+        logger.debug("Error while scanning processes for orphaned PIDs", exc_info=True)
     return orphaned_pids
 
 
@@ -359,7 +359,7 @@ def _cleanup_orphaned_processes(port: int) -> None:
                 if pid != os.getpid():
                     kill_process(pid)
     except Exception:
-        pass
+        logger.debug("Failed during orphaned process cleanup", exc_info=True)
 
 
 def _prepare_server_lock(cfg: Config, host: str, port: int) -> "tuple[TextIO, int]":
@@ -378,9 +378,9 @@ def _prepare_server_lock(cfg: Config, host: str, port: int) -> "tuple[TextIO, in
                     cfg.set("server_port", final_port)
                     cfg.save()
                 else:
-                    pass
+                    logger.debug("No alternative port available despite conflict")
     except Exception:
-        pass
+        logger.debug("Error preparing server lock/port", exc_info=True)
     lock_path = get_lock_file_path()
     lock_handle = create_lock_file(lock_path, final_port)
     return lock_handle, final_port

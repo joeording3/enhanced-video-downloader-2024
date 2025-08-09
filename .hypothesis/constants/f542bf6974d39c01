@@ -1,4 +1,0 @@
-# file: /Users/josephording/myscripts/Enhanced Video Downloader/server/cli_commands/__init__.py
-# hypothesis_version: 6.137.1
-
-['restart_command', 'resume', 'status', 'stop_command', 'system_maintenance']

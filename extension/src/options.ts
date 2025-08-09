@@ -3,7 +3,8 @@
  * Handles extension settings, configuration, and user preferences.
  */
 
-import { logger, safeParse } from "./lib/utils";
+import { safeParse } from "./lib/utils";
+import { logger } from "./core/logger";
 import { Theme, ServerConfig } from "./types";
 import { clearHistoryAndNotify, fetchHistory, renderHistoryItems } from "./history";
 import { getServerPort, getPortRange } from "./core/constants";
@@ -46,15 +47,21 @@ export function updateOptionsServerStatus(status: "connected" | "disconnected" |
   if (indicator && text) {
     // Remove all status classes
     indicator.classList.remove("connected", "disconnected");
+    text.classList.remove("status-connected", "status-disconnected");
 
     switch (status) {
       case "connected":
         indicator.classList.add("connected");
-        text.textContent = "Connected";
+        text.classList.add("status-connected");
+        chrome.storage.local.get("serverPort", res => {
+          const port = res.serverPort || "?";
+          (text as HTMLElement).textContent = `Server: Connected @ ${port}`;
+        });
         break;
       case "disconnected":
         indicator.classList.add("disconnected");
-        text.textContent = "Disconnected";
+        text.classList.add("status-disconnected");
+        (text as HTMLElement).textContent = "Server: Disconnected";
         break;
       case "checking":
         text.textContent = "Checking...";
@@ -68,6 +75,16 @@ export function updateOptionsServerStatus(status: "connected" | "disconnected" |
  * This function runs when the options page is loaded.
  */
 export function initOptionsPage(): void {
+  // Apply console log level from stored config to reflect user selection
+  chrome.storage.local.get("serverConfig", res => {
+    const cfg = res.serverConfig || {};
+    const level = cfg.console_log_level || cfg.log_level || "info";
+    try {
+      logger.setLevel(String(level).toLowerCase() as any);
+    } catch {
+      /* ignore */
+    }
+  });
   // Initialize theme first
   initializeOptionsTheme().catch(error => {
     console.error("Error initializing theme:", error);
@@ -79,8 +96,9 @@ export function initOptionsPage(): void {
   setupInfoMessages();
   setupTabNavigation();
   setupMessageListener();
+  setupLogsUI();
   loadErrorHistory();
-  logger.debug("Options page initialized");
+  logger.debug("Options page initialized", { component: "options" });
 }
 
 /**
@@ -90,22 +108,35 @@ export function initOptionsPage(): void {
 export function loadSettings(): void {
   // First try to load from storage
   chrome.storage.local.get(["serverConfig"], result => {
-    if (result.serverConfig) {
+    const hadLocalConfig = Boolean(result.serverConfig);
+    if (hadLocalConfig) {
       populateFormFields(result.serverConfig);
     }
 
     // Then try to get latest from server
     chrome.runtime.sendMessage({ type: "getConfig" }, response => {
       if (chrome.runtime.lastError) {
-        logger.error("Error getting config:", chrome.runtime.lastError.message);
+        logger.error(
+          "Error getting config:",
+          { component: "options" },
+          chrome.runtime.lastError.message as any
+        );
         // Do not proceed if there's an error
         return;
       }
       if (response && response.status === "success" && response.data) {
-        populateFormFields(response.data);
-        logger.debug("Loaded settings from server");
+        // If we already had a local config (just saved or previously cached),
+        // prefer that and avoid overwriting the user's selections from storage.
+        if (!hadLocalConfig) {
+          populateFormFields(response.data);
+        }
+        logger.debug("Loaded settings from server", { component: "options" });
       } else {
-        logger.warn("Could not load settings from server:", response?.message);
+        logger.warn(
+          "Could not load settings from server:",
+          { component: "options" },
+          response?.message as any
+        );
       }
     });
   });
@@ -216,6 +247,43 @@ export function setupEventListeners(): void {
           );
         }
       });
+    });
+  }
+
+  // Clear all stored button positions across hosts
+  const clearPositionsButton = document.getElementById("settings-clear-positions");
+  if (clearPositionsButton) {
+    clearPositionsButton.addEventListener("click", async () => {
+      try {
+        // Fetch all storage, remove keys that look like hostnames (contain a dot) with x/y/hidden
+        const all = await chrome.storage.local.get(null as any);
+        const keysToRemove: string[] = [];
+        for (const [key, value] of Object.entries(all)) {
+          // Heuristic: hostname-like keys or keys with position schema
+          const looksLikeHost = key.includes(".");
+          const v: any = value;
+          const looksLikePosition =
+            v && typeof v === "object" && "x" in v && "y" in v && "hidden" in v;
+          if (looksLikeHost && looksLikePosition) {
+            keysToRemove.push(key);
+          }
+        }
+        if (keysToRemove.length === 0) {
+          setStatus("settings-status", "No stored button positions found to clear");
+          return;
+        }
+        await new Promise<void>(resolve =>
+          (chrome.storage.local as any).remove(keysToRemove, () => resolve())
+        );
+        setStatus(
+          "settings-status",
+          `Cleared ${keysToRemove.length} stored button position${
+            keysToRemove.length === 1 ? "" : "s"
+          }`
+        );
+      } catch (e) {
+        setStatus("settings-status", "Failed to clear button positions", true);
+      }
     });
   }
 }
@@ -652,6 +720,159 @@ export function setupMessageListener(): void {
 }
 
 /**
+ * Wire up the logs viewer controls and initial load.
+ */
+export function setupLogsUI(): void {
+  const refreshBtn = document.getElementById("log-refresh");
+  const clearBtn = document.getElementById("log-clear");
+  const limitSelect = document.getElementById("log-limit") as HTMLSelectElement | null;
+  const recentFirstCheckbox = document.getElementById(
+    "log-recent-first"
+  ) as HTMLInputElement | null;
+  const filterWerkzeugCheckbox = document.getElementById(
+    "log-filter-werkzeug"
+  ) as HTMLInputElement | null;
+  const displayDiv = document.getElementById("log-display");
+  const textarea = document.getElementById("logViewerTextarea") as HTMLTextAreaElement | null;
+  const autoCheckbox = document.getElementById("log-toggle-auto") as HTMLInputElement | null;
+
+  if (!displayDiv && !textarea) {
+    return;
+  }
+
+  let autoTimer: number | null = null;
+
+  // Load persisted log viewer preferences
+  (async () => {
+    try {
+      const res = await chrome.storage.local.get("logViewerPrefs");
+      const prefs = (res as any).logViewerPrefs || {};
+      if (recentFirstCheckbox && typeof prefs.recentFirst === "boolean") {
+        recentFirstCheckbox.checked = prefs.recentFirst;
+      }
+      if (limitSelect && typeof prefs.limit === "number") {
+        const v = String(prefs.limit);
+        if (Array.from(limitSelect.options).some(o => o.value === v)) {
+          limitSelect.value = v;
+        }
+      }
+      if (autoCheckbox && typeof prefs.auto === "boolean") {
+        autoCheckbox.checked = prefs.auto;
+      }
+      if (filterWerkzeugCheckbox && typeof prefs.filterWerkzeug === "boolean") {
+        filterWerkzeugCheckbox.checked = prefs.filterWerkzeug;
+      }
+    } catch {
+      // ignore
+    }
+  })();
+
+  const persistPrefs = (): void => {
+    const prefs = {
+      recentFirst: !!recentFirstCheckbox?.checked,
+      limit: limitSelect ? parseInt(limitSelect.value, 10) : 500,
+      auto: !!autoCheckbox?.checked,
+      filterWerkzeug: !!filterWerkzeugCheckbox?.checked,
+    };
+    try {
+      chrome.storage.local.set({ logViewerPrefs: prefs });
+    } catch {
+      // ignore
+    }
+  };
+
+  const applyFilters = (text: string): string => {
+    let t = text;
+    // Suppress server log clear/rotation banner lines
+    t = t
+      .split("\n")
+      .filter(line => !/^\s*Log file cleared and archived to /i.test(line))
+      .join("\n");
+    if (filterWerkzeugCheckbox?.checked) {
+      t = t
+        .split("\n")
+        .filter(line => !/werkzeug/i.test(line))
+        .join("\n");
+    }
+    return t;
+  };
+
+  const renderLogs = (text: string): void => {
+    const filtered = applyFilters(text);
+    if (textarea) {
+      textarea.value = filtered;
+    }
+    if (displayDiv) {
+      displayDiv.textContent = "";
+      const pre = document.createElement("pre");
+      pre.textContent = filtered || "(no logs)";
+      displayDiv.appendChild(pre);
+    }
+  };
+
+  const fetchAndRender = (): void => {
+    const lines = limitSelect ? parseInt(limitSelect.value, 10) : 500;
+    const recent = recentFirstCheckbox ? !!recentFirstCheckbox.checked : true;
+    chrome.runtime.sendMessage({ type: "getLogs", lines, recent }, (response: any) => {
+      if (chrome.runtime.lastError) {
+        renderLogs("Error: " + chrome.runtime.lastError.message);
+        return;
+      }
+      if (response && response.status === "success") {
+        renderLogs(response.data || "");
+      } else {
+        renderLogs("Error: " + (response?.message || "Failed to fetch logs"));
+      }
+    });
+  };
+
+  refreshBtn?.addEventListener("click", () => {
+    persistPrefs();
+    fetchAndRender();
+  });
+  limitSelect?.addEventListener("change", () => {
+    persistPrefs();
+    fetchAndRender();
+  });
+  recentFirstCheckbox?.addEventListener("change", () => {
+    persistPrefs();
+    fetchAndRender();
+  });
+  filterWerkzeugCheckbox?.addEventListener("change", () => {
+    persistPrefs();
+    fetchAndRender();
+  });
+
+  clearBtn?.addEventListener("click", () => {
+    chrome.runtime.sendMessage({ type: "clearLogs" }, (response: any) => {
+      if (chrome.runtime.lastError) {
+        renderLogs("Error: " + chrome.runtime.lastError.message);
+        return;
+      }
+      if (response && response.status === "success") {
+        fetchAndRender();
+      } else {
+        renderLogs("Error: " + (response?.message || "Failed to clear logs"));
+      }
+    });
+  });
+
+  autoCheckbox?.addEventListener("change", () => {
+    if (autoTimer) {
+      window.clearInterval(autoTimer);
+      autoTimer = null;
+    }
+    if (autoCheckbox.checked) {
+      autoTimer = window.setInterval(fetchAndRender, 3000);
+    }
+    persistPrefs();
+  });
+
+  // Initial load
+  fetchAndRender();
+}
+
+/**
  * Saves the current form settings to storage and server with enhanced visual feedback.
  */
 export async function saveSettings(event: Event): Promise<void> {
@@ -681,7 +902,8 @@ export async function saveSettings(event: Event): Promise<void> {
       debug_mode: formData.get("enable-debug") === "on",
       enable_history: formData.get("enable-history") === "on",
       log_level: formData.get("log-level") as string,
-      console_log_level: "info", // Default console log level
+      // Persist console log level in storage if present in UI in the future; for now, mirror log_level
+      console_log_level: ((formData.get("log-level") as string) || "info") as any,
       yt_dlp_options: {
         format: formData.get("ytdlp-format") as string,
       },
@@ -716,12 +938,32 @@ export async function saveSettings(event: Event): Promise<void> {
       setStatus("settings-status", "Settings saved successfully!", false);
 
       // Log the successful save
-      logger.log("Settings saved successfully", { config });
+      logger.info(
+        "Settings saved successfully",
+        { component: "options", operation: "configSave" },
+        { config }
+      );
+
+      // Persist a normalized copy of config to storage so Options always reloads exact values
+      try {
+        await new Promise<void>((resolve, reject) => {
+          chrome.storage.local.set({ serverConfig: config }, () => {
+            if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+            else resolve();
+          });
+        });
+      } catch {
+        // swallow
+      }
     } else {
       throw new Error(response?.message || "Failed to save settings to server");
     }
   } catch (error) {
-    logger.error("Failed to save settings:", error);
+    logger.error(
+      "Failed to save settings:",
+      { component: "options", operation: "configSave" },
+      error as any
+    );
     setStatus(
       "settings-status",
       "Error saving settings: " + (error instanceof Error ? error.message : "Unknown error"),
@@ -856,9 +1098,12 @@ export async function selectDownloadDirectory(): Promise<void> {
     }
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
-      logger.log("User aborted directory selection.");
+      logger.info("User aborted directory selection.", {
+        component: "options",
+        operation: "selectDownloadDirectory",
+      });
     } else {
-      logger.error("Error selecting directory:", error);
+      logger.error("Error selecting directory:", { component: "options" }, error);
       setStatus(
         "settings-status",
         "Failed to select directory. Please manually enter the path.",

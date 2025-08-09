@@ -1,4 +1,0 @@
-# file: /Users/josephording/myscripts/Enhanced Video Downloader/server/api/logs_manage_bp.py
-# hypothesis_version: 6.137.1
-
-[404, 500, '%Y%m%d_%H%M%S', '/logs/clear', 'POST', 'log_path', 'logs', 'logs_manage_bp', 'server_output.log', 'text/plain', 'utf-8', 'w']

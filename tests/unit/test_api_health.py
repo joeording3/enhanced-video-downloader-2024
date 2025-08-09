@@ -16,7 +16,7 @@ from server.api.health_bp import health, health_bp
 def app() -> Flask:
     """Create a test Flask application with the health blueprint."""
     app = Flask(__name__)
-    app.register_blueprint(health_bp)
+    app.register_blueprint(health_bp, url_prefix="/api")
     return app
 
 
@@ -31,7 +31,7 @@ class TestHealthEndpoint:
 
     def test_health_get_success(self, client: FlaskClient) -> None:
         """Test successful health check with GET method."""
-        response = client.get("/health")
+        response = client.get("/api/health")
 
         assert response.status_code == 200
         data = response.get_json()
@@ -40,7 +40,7 @@ class TestHealthEndpoint:
 
     def test_health_options_success(self, client: FlaskClient) -> None:
         """Test successful health check with OPTIONS method."""
-        response = client.options("/health")
+        response = client.options("/api/health")
 
         assert response.status_code == 200
         data = response.get_json()
@@ -49,19 +49,19 @@ class TestHealthEndpoint:
 
     def test_health_post_not_allowed(self, client: FlaskClient) -> None:
         """Test that POST method is not allowed."""
-        response = client.post("/health")
+        response = client.post("/api/health")
 
         assert response.status_code == 405  # Method Not Allowed
 
     def test_health_put_not_allowed(self, client: FlaskClient) -> None:
         """Test that PUT method is not allowed."""
-        response = client.put("/health")
+        response = client.put("/api/health")
 
         assert response.status_code == 405  # Method Not Allowed
 
     def test_health_delete_not_allowed(self, client: FlaskClient) -> None:
         """Test that DELETE method is not allowed."""
-        response = client.delete("/health")
+        response = client.delete("/api/health")
 
         assert response.status_code == 405  # Method Not Allowed
 
@@ -72,7 +72,7 @@ class TestHealthEndpoint:
 
         # Check that the route is registered
         rules = [rule.rule for rule in app.url_map.iter_rules()]
-        assert "/health" in rules
+        assert "/api/health" in rules
 
     def test_health_function_exists(self) -> None:
         """Test that the health function exists and is callable."""
@@ -82,4 +82,4 @@ class TestHealthEndpoint:
     def test_health_blueprint_name(self) -> None:
         """Test that the blueprint has the correct name."""
         assert health_bp.name == "health"
-        assert health_bp.url_prefix is None  # No prefix for this blueprint
+        # Blueprint itself has no intrinsic prefix; mounted under /api in app

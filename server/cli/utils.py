@@ -55,9 +55,51 @@ def clean_log_files() -> int:
 
 
 def run_cleanup() -> dict[str, Any]:
-    """Clean up temporary files and partial downloads; return summary dict."""
-    # Default stub: return empty cleanup results. Override in tests via patch.
-    return {}
+    """Clean up temporary files and partial downloads; return summary dict.
+
+    This implementation scans the configured download directory and removes
+    temporary cache files created by downloaders. Currently, it handles:
+    - Partial download files: "*.part"
+    - yt-dlp cache/lock files: "*.ytdl"
+
+    Returns a structured summary consumed by the cleanup CLI command.
+    """
+    try:
+        cfg = load_config()
+        download_dir_value = cfg.get_value("download_dir", None)
+    except Exception:
+        # If configuration cannot be loaded, return empty results gracefully
+        return {"temp_files": 0, "partial_downloads": 0}
+
+    if not download_dir_value:
+        return {"temp_files": 0, "partial_downloads": 0}
+
+    base_dir = Path(str(download_dir_value))
+    if not base_dir.exists() or not base_dir.is_dir():
+        return {"temp_files": 0, "partial_downloads": 0}
+
+    temp_files_removed = 0  # *.ytdl
+    partial_removed = 0  # *.part
+
+    # Remove .part files (partial downloads)
+    for part_file in base_dir.rglob("*.part"):
+        try:
+            part_file.unlink()
+            partial_removed += 1
+        except Exception:  # noqa: PERF203
+            # Best-effort cleanup; ignore individual file errors
+            continue
+
+    # Remove .ytdl files (yt-dlp temp/cache/lock files)
+    for ytdl_file in base_dir.rglob("*.ytdl"):
+        try:
+            ytdl_file.unlink()
+            temp_files_removed += 1
+        except Exception:  # noqa: PERF203
+            # Best-effort cleanup; ignore individual file errors
+            continue
+
+    return {"temp_files": temp_files_removed, "partial_downloads": partial_removed}
 
 
 @click.group(name="config", invoke_without_command=True)
@@ -450,18 +492,15 @@ def _validate_updates(updates: dict[str, Any], config_data: Config) -> list[str]
 
         elif key == "download_dir":
             # Accept only string-like paths; otherwise, surface a validation error instead of crashing
-            try:
-                if not isinstance(value, (str, Path)):
-                    raise TypeError("download_dir must be a string path")
-                path = Path(value)
-            except Exception:
+            if not isinstance(value, str | Path):
                 errors.append(f"Invalid download directory value: {value}")
-            else:
-                if not path.exists():
-                    try:
-                        path.mkdir(parents=True, exist_ok=True)
-                    except OSError:
-                        errors.append(f"Cannot create download directory: {value}")
+                continue
+            path = Path(value)
+            if not path.exists():
+                try:
+                    path.mkdir(parents=True, exist_ok=True)
+                except OSError:
+                    errors.append(f"Cannot create download directory: {value}")
 
     return errors
 

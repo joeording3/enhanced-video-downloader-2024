@@ -1,4 +1,0 @@
-# file: /Users/josephording/myscripts/Enhanced Video Downloader/server/cli/download.py
-# hypothesis_version: 6.137.1
-
-[1.0, 100, 200, '\n Failed URLs:', ' No downloads found.', '#', '-', '--active-only', '--concurrent', '--continue-on-error', '--delay', '--failed-only', '--format', '--is-playlist', '--output-dir', '--referrer', '--user-agent', '/resume', 'Downloading', 'Output format.', 'Unknown', 'Unknown Title', 'batch', 'best', 'cancel', 'download', 'downloadId', 'download_dir', 'download_id', 'downloading', 'downloads', 'error', 'failed', 'format', 'id', 'incomplete', 'is_playlist', 'json', 'list', 'list[dict[str, Any]]', 'message', 'partials', 'priority', 'queued', 'referrer', 'resume', 'server_port', 'status', 'table', 'title', 'type', 'unknown', 'url', 'urls_file', 'user_agent']

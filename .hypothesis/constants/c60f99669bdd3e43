@@ -1,4 +1,0 @@
-# file: /Users/josephording/myscripts/Enhanced Video Downloader/server/cli_resume_helpers.py
-# hypothesis_version: 6.137.1
-
-['*.download', '*.part', '*.ytdl', '.', 'webpage_url']

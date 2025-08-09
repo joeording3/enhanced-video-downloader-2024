@@ -646,7 +646,7 @@ Returns server path information for debugging.
 
 ## Health & Maintenance API
 
-### GET /health
+### GET /api/health
 
 Returns server health status.
 
@@ -776,7 +776,5 @@ The API endpoints have excellent test coverage:
 
 ---
 
-**Last Updated**: 2025-01-27  
-**API Version**: 1.0  
-**Test Coverage**: Excellent (90-100% for API modules)  
-**Quality Status**: High (comprehensive testing and error handling)
+**Last Updated**: 2025-01-27 **API Version**: 1.0 **Test Coverage**: Excellent (90-100% for API
+modules) **Quality Status**: High (comprehensive testing and error handling)

@@ -1062,7 +1062,9 @@ test.describe("Chrome Extension E2E Tests", () => {
       });
       const renderTime = Date.now() - renderStart;
 
-      expect(renderTime).toBeLessThan(100); // Should render in under 100ms
+      // Allow a higher threshold on slower engines (e.g., Firefox CI) while keeping a strict default
+      const threshold = process.env.CI_BROWSER === "firefox" ? 350 : 100;
+      expect(renderTime).toBeLessThan(threshold);
     });
   });
 

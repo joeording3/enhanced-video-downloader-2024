@@ -43,9 +43,14 @@ def create_app(config: Config) -> Flask:
     Returns:
         Flask app instance.
     """
-    setup_logging(config.get_value("log_level", "INFO"))
-    # Serve extension UI static files under /ui
+    # Establish project root and default log file path
     project_root = Path(__file__).resolve().parent.parent
+    default_log_path = str(project_root / "server_output.log")
+
+    # Initialize logging with file output to a stable, known path so /logs works
+    setup_logging(config.get_value("log_level", "INFO"), default_log_path)
+
+    # Serve extension UI static files under /ui
     ui_dir = project_root / "extension" / "ui"
     app = Flask(__name__, static_folder=str(ui_dir), static_url_path="/ui")
 
@@ -80,11 +85,15 @@ def create_app(config: Config) -> Flask:
             413,
         )
 
+    # Explicit reference to satisfy static analyzers that this handler is used
+    _ = handle_request_entity_too_large
+
     # Register blueprints
     app.register_blueprint(download_bp)
     app.register_blueprint(config_bp)
     app.register_blueprint(status_bp)
-    app.register_blueprint(health_bp)  # Register without prefix for /health
+    # Register health under /api for a single, consistent API surface
+    app.register_blueprint(health_bp, url_prefix="/api")
     app.register_blueprint(history_bp)
     app.register_blueprint(restart_bp)
     app.register_blueprint(logs_bp)

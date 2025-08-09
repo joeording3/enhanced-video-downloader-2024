@@ -7,10 +7,64 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- Code Quality: Eliminated remaining pyright warnings by tightening types in `config_bp.py` and
+  explicitly referencing nested Flask error handler in `__init__.py`. Fixed implicit string
+  concatenation in `download_bp.py` and cleaned import ordering in CLI status command.
+- Frontend: Standardized API usage to current endpoints (`/api/health`, `/api/logs`,
+  `/api/logs/clear`). Updated tests to reflect non-throwing error handling and contrast-aware button
+  styling. Removed legacy log endpoint fallbacks and adjusted YouTube enhancement positioning
+  expectations.
+
+- Backend cleanup: Removed deprecated legacy modules and unified helpers
+
+  - Dropped `server/video_downloader_server.py` legacy shim (now raises ImportError); use
+    `python -m server` or `videodownloader-server` CLI
+  - Removed `server/cli_commands/lifecycle.py` shims (now raises ImportError); use consolidated
+    commands in `server/cli_main.py`
+  - Unified port discovery by delegating `server/cli_helpers.find_available_port` to
+    `server/utils.find_available_port`
+
+- CLI: `videodownloader-server stop` now terminates all running server instances discovered on the
+  system, not just the one referenced by the lock file. This improves reliability when multiple
+  instances are started (e.g., via foreground and daemon runs). Use `--force` to immediately kill if
+  graceful termination times out.
+
+- CLI Utils: Implemented `run_cleanup()` to remove `*.part` and `*.ytdl` artifacts using configured
+  download directory. Added tests for normal and missing-dir cases. Minor logging tweaks in API
+  cleanup paths to avoid silent failures.
+
+- Resume: Implemented real `gallery-dl` resume path in CLI helpers. The resume logic now builds a
+  `gallery-dl` command from provided options (bool → `--flag`, scalar → `--flag value`, list →
+  repeated flags), forces `--continue` by default, respects `--directory`, and returns success based
+  on the subprocess exit code. Added a unit test to validate command construction and success
+  handling via subprocess mocking. README updated to describe gallery resume behavior.
+
+### Removed
+
+- Deprecated UI stylesheet `extension/ui/styles.css` removed. UI now uses modular styles:
+  `variables.css`, `components.css`, `base.css`, and `themes.css`.
+
+### Fixed
+
+- Options page Choose button wired to directory picker (`settings-folder-picker`), aligning with
+  current implementation in `options.ts`.
+
+### Testing & Tooling
+
+- Constrain Hypothesis property tests to write any generated directories under
+  `tmp/hypothesis_download_dirs` and explicitly load a Hypothesis profile storing examples in
+  `.hypothesis/examples`, preventing junk folders at repo root.
+- Update `Makefile` junk folder checker to ignore `.benchmarks` (created by benchmarking), aligning
+  with the cleanup script's critical folders.
+
 ### Security
 
-- Add standard security headers to all responses (X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy, CSP)
-- Configure CORS for local usage/extension contexts (permissive by default; recommend restricting in production)
+- Add standard security headers to all responses (X-Content-Type-Options, X-Frame-Options,
+  X-XSS-Protection, Referrer-Policy, CSP)
+- Configure CORS for local usage/extension contexts (permissive by default; recommend restricting in
+  production)
 - Enforce request size limits (16MB) with JSON 413 responses
 - Add simple in-memory rate limiting for download endpoints (10 req/min per IP)
 

@@ -142,7 +142,7 @@ Enhanced Video Downloader/
 │   └── ui/                      # HTML/CSS for popup & options
 ├── server/                       # Python Flask server & CLI
 │   ├── __main__.py              # Flask entrypoint
-│   ├── video_downloader_server.py
+│   ├── video_downloader_server.py  # Deprecated legacy entrypoint (removed)
 │   ├── api/                     # Flask Blueprints for endpoints
 │   ├── cli.py                   # Click group entrypoint (legacy)
 │   ├── cli/                     # Modular CLI commands
@@ -153,7 +153,7 @@ Enhanced Video Downloader/
 │   │   ├── status.py            # Status check commands (server, downloads)
 │   │   ├── utils.py             # Utility commands (config, logs, cleanup)
 │   │   └── resume.py            # Resume commands (incomplete, failed)
-│   ├── cli_commands/            # Legacy CLI subcommands
+│   ├── cli_commands/            # Legacy CLI subcommands (removed; use consolidated CLI in `server/cli_main.py`)
 │   │   └── system_maintenance.py  # System maintenance commands (resume incomplete/failed, clear history/cache)
 │   ├── cli_helpers.py           # Shared helpers for CLI commands
 │   ├── cli_resume_helpers.py    # Resume-specific CLI helpers

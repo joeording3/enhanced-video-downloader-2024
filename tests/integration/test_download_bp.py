@@ -257,15 +257,23 @@ def test_set_priority_success(monkeypatch: MonkeyPatch, client: FlaskClient) -> 
     :param monkeypatch: Pytest monkeypatch fixture
     :param client: Flask test client fixture
     """
-    from server.api.download_bp import progress_data
+    from server.api.download_bp import download_process_registry
 
-    monkeypatch.setitem(progress_data, "p123", {})
+    class DummyProc:
+        def __init__(self) -> None:
+            self.priority: int | None = None
+
+        def nice(self, value: int) -> None:
+            self.priority = value
+
+    dummy = DummyProc()
+    monkeypatch.setitem(download_process_registry, "p123", dummy)
     response = client.post("/api/download/p123/priority", json={"priority": 7})
     assert response.status_code == 200
     data = response.get_json()
     assert data["status"] == "success"
-    assert "set to 7" in data.get("message", "")
-    assert progress_data["p123"]["priority"] == 7
+    assert data.get("priority") == 7
+    assert dummy.priority == 7
 
 
 def test_validation_error_response(client: FlaskClient) -> None:

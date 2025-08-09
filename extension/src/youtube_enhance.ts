@@ -38,13 +38,11 @@ export function enhanceYouTubeButton(btn: HTMLElement | null | undefined): void 
     // Add CSS class for enhanced YouTube styling
     btn.classList.add("youtube-enhanced");
 
-    // Position in a more visible area for YouTube if not specifically placed by user
-    if (!btn.style.top || btn.style.top === "10px") {
-      // Move button to a more visible position if it's at the default
+    // Only adjust the default placement (fresh inject). Respect persisted user position.
+    const isDefaultTop = !btn.style.top || btn.style.top === "10px";
+    const isDefaultLeft = !btn.style.left || btn.style.left === "10px";
+    if (isDefaultTop && isDefaultLeft) {
       btn.style.top = "70px"; // Below the YouTube header
-      btn.style.left = String(window.innerWidth - 100) + "px"; // Right side with margin
-    } else {
-      // If button has a custom top position, still set the left position
       btn.style.left = String(window.innerWidth - 100) + "px"; // Right side with margin
     }
   }

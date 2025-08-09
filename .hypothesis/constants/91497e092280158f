@@ -1,4 +1,0 @@
-# file: /Users/josephording/myscripts/Enhanced Video Downloader/server/api/debug_bp.py
-# hypothesis_version: 6.137.1
-
-['*.log', '/debug/paths', 'GET', 'config_content', 'config_exists', 'config_path', 'current_working_dir', 'debug_bp', 'environment-only', 'error', 'exists', 'log_files', 'logging_config', 'logs', 'path', 'project_root', 'readable', 'root_level', 'server', 'server_output.log', 'size', 'success', 'test_log_access.log', 'test_write', 'utf-8', 'w', 'writable']

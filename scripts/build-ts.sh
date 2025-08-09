@@ -1,30 +1,62 @@
-#!/bin/bash
-
-# Build TypeScript files with esbuild
+#!/usr/bin/env bash
+set -euo pipefail
 
 echo "Building TypeScript files..."
 
-# Ensure dist directory exists
+# Ensure dist directory exists and is clean
+rm -rf extension/dist
 mkdir -p extension/dist
 
-# Run TypeScript type checking
+# Run TypeScript type checking only (no emit)
 echo "Running TypeScript type checking..."
-npx tsc --noEmit
+npx tsc --project extension/tsconfig.json --noEmit
 
-# Build each module with esbuild
-echo "Building with esbuild..."
-npx esbuild extension/src/background.ts --bundle --format=esm --outfile=extension/dist/background.js
-# Bundle content script as IIFE for content_scripts compatibility
-npx esbuild extension/src/content.ts --bundle --format=iife --outfile=extension/dist/content.js
-# Bundle YouTube enhance script as IIFE for content_scripts compatibility
-npx esbuild extension/src/youtube_enhance.ts --bundle --format=iife --outfile=extension/dist/youtube_enhance.js
-npx esbuild extension/src/popup.ts --bundle --format=esm --outfile=extension/dist/popup.js
-npx esbuild extension/src/options.ts --bundle --format=esm --outfile=extension/dist/options.js
-npx esbuild extension/src/history.ts --bundle --format=esm --outfile=extension/dist/history.js
+echo "Bundling with esbuild..."
 
-# Copy other files if needed
+# Common esbuild flags
+ESBUILD_COMMON_FLAGS=(
+  --bundle
+  --platform=browser
+  --target=es2020
+  --sourcemap
+)
+
+# Service worker (MV3) must be ESM
+npx esbuild extension/src/background.ts \
+  "${ESBUILD_COMMON_FLAGS[@]}" \
+  --format=esm \
+  --outfile=extension/dist/background.js
+
+# Content scripts should be IIFE
+npx esbuild extension/src/content.ts \
+  "${ESBUILD_COMMON_FLAGS[@]}" \
+  --format=iife \
+  --outfile=extension/dist/content.js
+
+npx esbuild extension/src/youtube_enhance.ts \
+  "${ESBUILD_COMMON_FLAGS[@]}" \
+  --format=iife \
+  --outfile=extension/dist/youtube_enhance.js
+
+# Extension pages can be ESM
+npx esbuild extension/src/popup.ts \
+  "${ESBUILD_COMMON_FLAGS[@]}" \
+  --format=esm \
+  --outfile=extension/dist/popup.js
+
+npx esbuild extension/src/options.ts \
+  "${ESBUILD_COMMON_FLAGS[@]}" \
+  --format=esm \
+  --outfile=extension/dist/options.js
+
+npx esbuild extension/src/history.ts \
+  "${ESBUILD_COMMON_FLAGS[@]}" \
+  --format=esm \
+  --outfile=extension/dist/history.js
+
+# Copy HTML and CSS assets
 echo "Copying static files..."
-cp extension/ui/*.html extension/dist/
+node scripts/copy-html.js | cat
 cp extension/ui/*.css extension/dist/
 
-echo "TypeScript build complete!" 
+echo "TypeScript build complete!"

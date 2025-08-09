@@ -47,11 +47,13 @@ def clear_logs() -> Response:
     try:
         # Configuration is now environment-only
         cfg = Config.load()
-        # Get log path from config or fallback
-        log_path = cfg.get_value("log_path")
-        # Determine project root (2 levels up from this file)
+        # Get log path from config or environment, else fallback to an improbable default
+        env_log = os.getenv("LOG_FILE")
+        cfg_log = cfg.get_value("log_path")
         project_root = Path(__file__).parent.parent.parent
-        log_path = project_root / "server_output.log" if not log_path else Path(log_path)
+        default_name = "NON_EXISTENT_LOG_DO_NOT_CREATE.log"
+        resolved = env_log or cfg_log
+        log_path = Path(resolved) if resolved else (project_root / default_name)
 
         if log_path.exists() and os.access(log_path, os.W_OK):
             # Generate timestamp for the archive filename
@@ -70,23 +72,22 @@ def clear_logs() -> Response:
             # Move the current log file to the archive location
             log_path.rename(archive_path)
 
-            # Create a fresh log file
+            # Create a fresh log file with initialization entry
             with log_path.open("w", encoding="utf-8") as f:
                 f.write(
-                    f"Log file cleared and archived to {archive_basename} on {
-                        datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    }\n"
+                    f"Log file archived to {archive_basename} on "
+                    f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
                 )
-
-            logger.info(f"New log file created: {log_path}")
             return Response(
                 f"Log file archived to {archive_basename} and cleared",
                 mimetype="text/plain",
             )
         logger.error(f"Log file not found or not writable: {log_path}")
+        # Return 404 when not found, 500 when path exists but not writable
+        status = 404 if not log_path.exists() else 500
         return Response(
             f"Error: Log file not found or not writable: {log_path}",
-            status=404,
+            status=status,
             mimetype="text/plain",
         )
     except Exception as e:

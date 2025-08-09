@@ -176,7 +176,7 @@ describe("Background Script - Core Functions", () => {
       const result = await checkServerStatus(getServerPort());
       expect(result).toBe(true);
       expect(mockFetch).toHaveBeenCalledWith(
-        `http://127.0.0.1:${getServerPort()}/health`,
+        `http://127.0.0.1:${getServerPort()}/api/health`,
         expect.objectContaining({ signal: expect.anything() })
       );
     });
@@ -191,18 +191,14 @@ describe("Background Script - Core Functions", () => {
       expect(result).toBe(false);
     });
 
-    it("checkServerStatus should throw error for network error", async () => {
+    it("checkServerStatus returns false on network error (no throw)", async () => {
       // Mock fetch to throw an error that will be caught by error handler
       mockFetch.mockImplementation(() => {
         throw new Error("Network error");
       });
 
-      // The centralized error handler re-throws errors, so we expect this to throw
-      await expect(checkServerStatus(getServerPort())).rejects.toThrow("Network error");
-
-      // The error handler logs to console.error, not the centralized logger
-      // We just verify the function throws as expected
-      expect(true).toBe(true);
+      const result = await checkServerStatus(getServerPort());
+      expect(result).toBe(false);
     });
 
     it("checkServerStatus should return false when fetch is not available", async () => {
@@ -226,7 +222,7 @@ describe("Background Script - Core Functions", () => {
       expect(result).toBe(false);
     });
 
-    it("checkServerStatus should throw AbortError", async () => {
+    it("checkServerStatus returns false on AbortError (no throw)", async () => {
       // Mock fetch to throw an AbortError that will be caught by error handler
       mockFetch.mockImplementation(() => {
         const abortError = new Error("AbortError");
@@ -234,12 +230,8 @@ describe("Background Script - Core Functions", () => {
         throw abortError;
       });
 
-      // The centralized error handler re-throws errors, so we expect this to throw
-      await expect(checkServerStatus(getServerPort())).rejects.toThrow("AbortError");
-
-      // The error handler logs to console.error, not the centralized logger
-      // We just verify the function throws as expected
-      expect(true).toBe(true);
+      const result = await checkServerStatus(getServerPort());
+      expect(result).toBe(false);
     });
 
     it("checkServerStatus should handle storage errors", async () => {
@@ -450,18 +442,14 @@ describe("Background Script - Core Functions", () => {
       }).not.toThrow();
     });
 
-    it("should handle fetch errors in server operations", async () => {
+    it("should handle fetch errors in server operations (no throw)", async () => {
       // Mock fetch to throw an error that will be caught by error handler
       mockFetch.mockImplementation(() => {
         throw new Error("Network error");
       });
 
-      // The centralized error handler re-throws errors, so we expect this to throw
-      await expect(checkServerStatus(getServerPort())).rejects.toThrow("Network error");
-
-      // The error handler logs to console.error, not the centralized logger
-      // We just verify the function throws as expected
-      expect(true).toBe(true);
+      const result = await checkServerStatus(getServerPort());
+      expect(result).toBe(false);
     });
   });
 

@@ -1,4 +1,0 @@
-# file: /Users/josephording/myscripts/Enhanced Video Downloader/server/api/config_bp.py
-# hypothesis_version: 6.137.1
-
-[200, 400, 405, 415, 500, '*', '/api', '/config', 'GET', 'GET,POST,OPTIONS', 'Invalid JSON', 'Method not allowed.', 'No data provided', 'OPTIONS', 'POST', 'config_api', 'error', 'expected an object', 'message', 'new_config', 'success']

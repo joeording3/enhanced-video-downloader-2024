@@ -146,11 +146,11 @@ generate-ignores:
 
 # Fast JS unit tests (extension)
 test-js-fast:
-	npm run test:extension:ts
+	npm test
 
 # Slow JS tests with coverage (extension E2E)
 test-js-slow:
-	npm run test:extension:coverage
+	npm run test:coverage
 
 # Python integration tests (API smoke tests)
 test-integration:
@@ -271,7 +271,7 @@ mutmut: mutmut-quick
 
 check-junk-folders:
 	@echo "Checking for junk folders in root..."
-	@junk_folders=$$(find . -maxdepth 1 -type d -empty ! -name . ! -name tmp ! -name .git ! -name node_modules ! -name extension ! -name server ! -name tests ! -name scripts ! -name coverage ! -name logs ! -name config ! -name reports ! -name bin ! -name mutants ! -name htmlcov ! -name _metadata ! -name trend ! -name true ! -name .venv ! -name .cursor ! -name .pytest_cache ! -name .mypy_cache ! -name .ruff_cache ! -name .hypothesis ! -name coverage); \
+    @junk_folders=$$(find . -maxdepth 1 -type d -empty ! -name . ! -name tmp ! -name .git ! -name node_modules ! -name extension ! -name server ! -name tests ! -name scripts ! -name coverage ! -name logs ! -name config ! -name reports ! -name bin ! -name mutants ! -name htmlcov ! -name _metadata ! -name trend ! -name true ! -name .venv ! -name .cursor ! -name .pytest_cache ! -name .mypy_cache ! -name .ruff_cache ! -name .hypothesis ! -name .benchmarks ! -name coverage); \
 	if [ -n "$$junk_folders" ]; then \
 	  echo "Junk folders found in root:"; \
 	  echo "$$junk_folders"; \

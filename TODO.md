@@ -1,40 +1,42 @@
 # Enhanced Video Downloader - TODO
 
-## CRITICAL TESTING WEAKNESSES - IMMEDIATE ACTION REQUIRED
+Urgent Tasks:
 
-### Executive Summary
+- [/] log viewer on options page not working - no logs displayed
+  <!-- working-on: options logs viewer wired to background API -->
+- [/] 'choose' button to set download directory now wired (added id `settings-folder-picker` in
+  `extension/ui/options.html`)
+- [ ] nothing at all in browser console for options page or background service
+- [/] Implement `run_cleanup()` in `server/cli/utils.py` and add tests
+- [/] Replace silent `pass` blocks with logging/handling in:
+  - `server/cli_helpers.py` (loops and maintenance utils)
+  - `server/cli_main.py` (loop around verification)
+  - `server/api/download_bp.py` (partial file cleanup)
+  - `server/api/status_bp.py` (average speed computation)
+  - `server/__main__.py` (process scanning and config save)
+  - `server/lock.py` (unlink/parse/read errors)
 
-Analysis has identified **3 critical weaknesses** in the testing setup that require immediate
-attention:
+Legacy/Stub Cleanup:
 
-1. **Critically Low Mutation Testing Scores** (38.24% JS/TS, Python baseline not established)
-2. **Inconsistent Test Organization and Duplication** (121 test files, scattered locations)
-3. **Inadequate Integration and E2E Test Coverage** (45.34% overall coverage)
+- [/] Remove legacy priority stub path from `server/api/download_bp.py`; update tests to
+  process-based priority
+- [/] Remove gallery-dl resume placeholder log in `server/cli_helpers.py` or implement actual resume
+  via gallery-dl API
+- [/] Drop legacy PID-only lock format handling in `server/lock.py:get_lock_pid` once migration
+  confirmed; update callers
+- [/] Cleaned up "for now" comment in `server/__main__.py` to reflect current behavior
+- [/] Remove legacy port compatibility helpers in `server/constants.py` if unused (`LEGACY_PORTS`,
+  `normalize_legacy_port`, `get_port_config`)
+- [/] Remove legacy frontend fallbacks for logs endpoints; standardize on `/api/logs` and
+  `/api/logs/clear`
+- [/] Audit `server/cli_commands/lifecycle.py` legacy shims; remove if not referenced
+- [/] Review `server/video_downloader_server.py` compatibility shim; remove if WSGI entrypoints
+  cover all use cases
+- [ ] Consider unifying `find_available_port` usage (prefer `server/utils.py`) and remove duplicates
+- [/] Removed deprecated `extension/ui/styles.css` (legacy styles) – project now uses
+  `variables.css`, `components.css`, `base.css`, and `themes.css`
 
-### Priority 1: Fix Mutation Testing Scores [CRITICAL]
-
-**Current State**:
-
-- JavaScript/TypeScript: **85.46%** mutation score (target: 80%, minimum: 70%) - **TARGET
-  EXCEEDED!**
-- Python: **73%** test coverage for ytdlp module (target: 80%, gap: 7%) - **SIGNIFICANT
-  IMPROVEMENT**
-- **ALL JS/TS MODULES EXCEED TARGETS**: background-logic.ts (87.36%), validation-service.ts
-  (87.57%), background-helpers.ts (72.06%)
-- **PYTHON PROGRESS**: Added 15+ comprehensive test classes for ytdlp module (73% coverage)
-- **PYTHON PROGRESS**: Added 15+ comprehensive test classes for cli.utils module (64% coverage)
-
-#### 1.1 **Establish Python Mutation Testing Baseline** [WEEK 1] - **COMPLETED**
-
-- [x] Run initial `mutmut run` to establish baseline
-- [x] Analyze results and identify low-scoring modules
-- [x] Document baseline scores for all Python modules
-- [x] Set up CI enforcement for 80% mutation score threshold
-- [x] Create targeted improvement plan for Python modules below 80%
-
-**BASELINE ESTABLISHED**: 60.63% mutation score (target: 80%, gap: 19.37%)
-
-#### 1.2 **Fix Critical JavaScript/TypeScript Modules** [WEEK 1-2]
+## 1.2 Fix Critical JavaScript/TypeScript Modules [WEEK 1-2]
 
 **background-logic.ts (87.36% → EXCEEDED 70% target by 17%)**
 
@@ -45,19 +47,6 @@ attention:
 - [x] Add integration tests for helper function usage (progress callbacks, storage service
       integration)
 - [x] Verify Chrome API interactions are properly mocked and tested
-
-**validation-service.ts (87.57% → EXCEEDED 70% target by 17%)**
-
-- [x] Add tests for validation edge cases and error conditions (boundary conditions, null/undefined
-      handling)
-- [x] Test custom validator functions with various inputs (success, failure with/without error
-      messages)
-- [x] Add tests for field registration and configuration (common fields, min/max mapping for text
-      types)
-- [x] Test validation result aggregation and error handling (multiple field validation, error
-      collection)
-- [x] Verify validation context and options handling (optional chaining, undefined properties)
-- [x] Add comprehensive tests for built-in validators (number, text, select with all edge cases)
 
 **background-helpers.ts (72.06% → target 70%)** **ALREADY ABOVE TARGET**
 
@@ -73,7 +62,7 @@ attention:
 - [ ] Test startup/shutdown procedures
 - [ ] Verify message passing between components
 
-#### 1.3 **Improve Test Quality Patterns** [WEEK 2-3]
+### 1.3 Improve Test Quality Patterns [WEEK 2-3]
 
 - [ ] Replace stub-only assertions with behavior verification
 - [ ] Add realistic in-memory shims for file I/O and network calls
@@ -81,7 +70,7 @@ attention:
 - [ ] Add boundary value and edge case testing
 - [ ] Create shared test utilities for common patterns
 
-#### 1.4 **Set Up Continuous Monitoring** [WEEK 1]
+### 1.4 Set Up Continuous Monitoring [WEEK 1]
 
 - [ ] Configure CI to fail on mutation score drops below 70% (JS/TS) and 80% (Python)
 - [ ] Set up weekly mutation testing reports
@@ -159,29 +148,6 @@ attention:
 - [ ] Add concurrent download testing
 - [ ] Test extension performance with large datasets
 - [ ] Add resource usage monitoring tests
-
-### Success Metrics and Targets
-
-#### Mutation Testing Targets
-
-- **JavaScript/TypeScript**: 38.24% → 80% (minimum 70%)
-- **Python**: Establish baseline → 80%
-- **Critical Modules**: All modules ≥70% mutation score
-
-#### Coverage Targets
-
-- **Overall Coverage**: 45.34% → 80%
-- **Frontend Coverage**: 64.08% → 80%
-- **Backend Coverage**: 83.0% → 80% (maintain)
-- **E2E Test Ratio**: Increase from 117 to 300+ E2E tests
-
-#### Quality Targets
-
-- **Test Execution Time**: <60 seconds for unit tests
-- **Test Reliability**: 0 flaky tests
-- **Test Maintainability**: Consistent patterns across all tests
-
-### Implementation Timeline
 
 #### Week 1: Foundation
 
@@ -291,6 +257,9 @@ attention:
 - [ ] Monitor for new type ignore patterns
 - [ ] Ensure new test files maintain docstring standards
 - [ ] Track third-party library type stub availability
+- [x] Prevent Hypothesis tests from creating junk folders in repo root by confining generated paths
+      to `tmp/hypothesis_download_dirs` and loading a local Hypothesis profile; updated `Makefile`
+      junk check to ignore `.benchmarks`
 
 ### Success Metrics to Track
 
@@ -315,10 +284,10 @@ attention:
 
 ### Frontend Development
 
-- [x] Eliminate redundancy and improve coverage in frontend test suite to 80%
-- [x] Fix older test files that need updates to align with the current implementation
-- [x] Create comprehensive test coverage for core modules
-- [x] Implement shared test utilities to reduce redundancy
+- [/] Eliminate redundancy and improve coverage in frontend test suite to 80%
+- [/] Fix older test files that need updates to align with the current implementation
+- [/] Create comprehensive test coverage for core modules
+- [/] Implement shared test utilities to reduce redundancy
 
 ### Backend Development
 
@@ -354,8 +323,8 @@ attention:
 
 ### Testing
 
-- [x] Frontend test suite optimization (COMPLETED)
-- [x] E2E test fixes and updates (COMPLETED)
+- [/] Frontend test suite optimization
+- [/] E2E test fixes and updates
 - [ ] Backend API testing
 - [ ] Integration testing
 - [ ] Performance testing

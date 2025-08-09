@@ -244,7 +244,8 @@ describe("Options Script Unit Tests", () => {
       const indicator = document.getElementById("server-status-indicator");
       const text = document.getElementById("server-status-text");
       expect(indicator?.classList.contains("connected")).toBe(true);
-      expect(text?.textContent).toBe("Connected");
+      // Text includes prefix and port placeholder per current implementation
+      expect(text?.textContent).toMatch(/^Server: Connected @/);
     });
 
     it("should update server status to disconnected", () => {
@@ -252,7 +253,7 @@ describe("Options Script Unit Tests", () => {
       const indicator = document.getElementById("server-status-indicator");
       const text = document.getElementById("server-status-text");
       expect(indicator?.classList.contains("disconnected")).toBe(true);
-      expect(text?.textContent).toBe("Disconnected");
+      expect(text?.textContent).toBe("Server: Disconnected");
     });
   });
 

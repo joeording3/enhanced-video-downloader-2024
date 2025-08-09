@@ -21,7 +21,7 @@ def app():
 def test_security_headers_present(app):
     """Responses should include common security headers added by after_request hook."""
     with app.test_client() as client:
-        resp = client.get("/health")
+        resp = client.get("/api/health")
         assert resp.status_code == 200
 
         # Security headers
@@ -35,7 +35,7 @@ def test_security_headers_present(app):
 def test_cors_allows_localhost_request(app):
     """CORS should allow localhost origins per configuration."""
     with app.test_client() as client:
-        resp = client.get("/health", headers={"Origin": "http://localhost:5001"})
+        resp = client.get("/api/health", headers={"Origin": "http://localhost:5001"})
         assert resp.status_code == 200
         # Header presence indicates CORS processing; value may be reflected origin
         assert resp.headers.get("Access-Control-Allow-Origin") in {

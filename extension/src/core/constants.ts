@@ -294,15 +294,6 @@ const CENTRAL_PORT_CONFIG = {
   },
 } as const;
 
-// Legacy port mappings for backward compatibility
-const LEGACY_PORTS: Record<string, number> = {
-  "5000": 5013, // Map old default to new default
-  "5001": 5001, // Keep client port
-  "5005": 5006, // Map old test port to new test port
-  "5010": 5010, // Keep docker port
-  "5013": 5013, // Keep current default
-};
-
 // Port validation constants
 export const MIN_PORT = 1024;
 export const MAX_PORT = 65535;
@@ -358,9 +349,7 @@ export function isValidPort(port: number): boolean {
   return MIN_PORT <= port && port <= MAX_PORT;
 }
 
-export function normalizeLegacyPort(port: number): number {
-  return LEGACY_PORTS[port.toString()] || port;
-}
+// Legacy port normalization removed; use centralized config directly
 
 // Backward compatibility - maintain existing constants for gradual migration
 export const DEFAULT_SERVER_PORT = getServerPort();

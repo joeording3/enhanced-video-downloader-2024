@@ -1,4 +1,0 @@
-# file: /Users/josephording/myscripts/Enhanced Video Downloader/server/disable_launchagents.py
-# hypothesis_version: 6.137.1
-
-['%(message)s', '%Y-%m-%d %H:%M:%S', '.DISABLED', '/Library/', 'Label', '__main__', 'bootout', 'defaults', 'enhanced', 'joeording', 'josephording', 'launchctl', 'read', 'stop', 'system', 'unload', 'user/$(id -u)', 'video_downloader', 'y']

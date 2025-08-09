@@ -1,3 +1,15 @@
+import { logger } from "./core/logger";
+
+// Align popup console logging level once from stored config
+chrome.storage.local.get("serverConfig", res => {
+  const cfg = (res as any).serverConfig || {};
+  const level = cfg.console_log_level || cfg.log_level || "info";
+  try {
+    logger.setLevel(String(level).toLowerCase() as any);
+  } catch {
+    // ignore
+  }
+});
 /**
  * Enhanced Video Downloader - Popup Script
  * Handles popup UI interactions and server communication
@@ -514,15 +526,21 @@ export function updatePopupServerStatus(status: "connected" | "disconnected" | "
   if (indicator && text) {
     // Remove all status classes
     indicator.classList.remove("connected", "disconnected");
+    text.classList.remove("status-connected", "status-disconnected");
 
     switch (status) {
       case "connected":
         indicator.classList.add("connected");
-        text.textContent = "Connected";
+        text.classList.add("status-connected");
+        chrome.storage.local.get("serverPort", res => {
+          const port = res.serverPort || "?";
+          (text as HTMLElement).textContent = `Server: Connected @ ${port}`;
+        });
         break;
       case "disconnected":
         indicator.classList.add("disconnected");
-        text.textContent = "Disconnected";
+        text.classList.add("status-disconnected");
+        (text as HTMLElement).textContent = "Server: Disconnected";
         break;
       case "checking":
         text.textContent = "Checking...";
@@ -544,6 +562,49 @@ export async function initPopup(): Promise<void> {
   if (settingsButton) {
     settingsButton.addEventListener("click", () => {
       (chrome.runtime as any).openOptionsPage();
+    });
+  }
+
+  // Helper to send a message to the active tab's content script
+  const sendToActiveTab = (message: any, callback?: (response: any) => void): void => {
+    try {
+      chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+        const tabId = tabs && tabs[0] && tabs[0].id;
+        if (tabId !== undefined) {
+          chrome.tabs.sendMessage(tabId, message, resp => {
+            // Swallow lastError; content script may not be injected on internal pages
+            if (callback) callback(resp);
+          });
+        } else if (callback) {
+          callback(undefined);
+        }
+      });
+    } catch {
+      if (callback) callback(undefined);
+    }
+  };
+
+  // Wire HIDE/SHOW toggle
+  const toggleBtn = document.getElementById(
+    "toggle-enhanced-download-button"
+  ) as HTMLButtonElement | null;
+  if (toggleBtn) {
+    toggleBtn.addEventListener("click", () => {
+      const currentlyHiding = toggleBtn.textContent?.trim().toUpperCase() === "HIDE";
+      const newHidden = currentlyHiding; // if showing, next action hides
+      sendToActiveTab({ type: "toggleButtonVisibility", hidden: newHidden }, () => {
+        toggleBtn.textContent = newHidden ? "SHOW" : "HIDE";
+      });
+    });
+  }
+
+  // Wire RESET position
+  const resetBtn = document.getElementById("reset-button-position") as HTMLButtonElement | null;
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      sendToActiveTab({ type: "resetButtonPosition" }, () => {
+        // no-op
+      });
     });
   }
 

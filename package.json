@@ -21,7 +21,7 @@
     "build:check-manifest": "node -e \"console.log('Manifest validation:', JSON.parse(require('fs').readFileSync('manifest.json', 'utf8')).manifest_version ? 'PASS' : 'FAIL')\"",
     "build:css": "npm run css:purge && npm run css:minify",
     "build:html": "node scripts/copy-html.js",
-    "build:ts": "cd extension && tsc",
+    "build:ts": "bash scripts/build-ts.sh",
     "css:purge": "purgecss --css extension/ui/*.css --content extension/ui/*.html extension/src/**/*.ts extension/src/**/*.js --output extension/ui/optimized/",
     "css:minify": "node scripts/minify-css.js",
     "css:optimize": "npm run css:purge && npm run css:minify && npm run css:analyze",

@@ -117,7 +117,8 @@ def _enhance_status_data(status: dict[str, Any]) -> dict[str, Any]:
                 enhanced_status["average_speed_bytes"] = avg_speed
                 enhanced_status["average_speed_human"] = _format_bytes(avg_speed)
         except Exception:
-            pass
+            # If parsing or averaging fails, keep status enhancement graceful
+            enhanced_status["average_speed_bytes"] = None
 
     # Add progress history summary
     if enhanced_status.get("history"):

@@ -15,7 +15,7 @@ from collections.abc import Callable
 from contextlib import closing
 from functools import wraps
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Any, ParamSpec, TypeVar
 from urllib.parse import urlparse
 
 # It's better to get the logger from the current Flask app context if used within
@@ -23,7 +23,7 @@ from urllib.parse import urlparse
 # logger is fine.
 log = logging.getLogger(__name__)
 
-# Type variable for cached functions
+P = ParamSpec("P")
 T = TypeVar("T")
 
 # Cache for frequently accessed data
@@ -32,7 +32,7 @@ _cache_timestamps: dict[str, float] = {}
 _cache_ttl = 300  # 5 minutes default TTL
 
 
-def cache_result(ttl_seconds: int = 300) -> Callable[[Callable[..., T]], Callable[..., T]]:
+def cache_result(ttl_seconds: int = 300) -> Callable[[Callable[P, T]], Callable[P, T]]:
     """
     Cache function results with TTL.
 
@@ -43,9 +43,9 @@ def cache_result(ttl_seconds: int = 300) -> Callable[[Callable[..., T]], Callabl
         Decorated function with caching
     """
 
-    def decorator(func: Callable[..., T]) -> Callable[..., T]:
+    def decorator(func: Callable[P, T]) -> Callable[P, T]:
         @wraps(func)
-        def wrapper(*args, **kwargs) -> T:
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
             # Create cache key from function name and arguments
             cache_key = f"{func.__name__}:{hash(str(args) + str(sorted(kwargs.items())))}"
 

@@ -42,6 +42,7 @@ from server.lock import get_lock_file_path
 from server.lock import get_lock_pid as _get_lock_pid
 from server.lock import get_lock_pid_port as _get_lock_pid_port
 from server.lock import remove_lock_file as _remove_lock
+from server.utils import find_available_port as core_find_available_port
 
 # Alias derive_resume_url for backward compatibility and tests
 _derive_resume_url = derive_resume_url
@@ -116,26 +117,13 @@ def remove_lock_file_cli() -> None:
     remove_lock_file()
 
 
-def check_port_available(port: int) -> bool:
-    """
-    Check if a TCP port is available for binding.
+def _range_count(start_port: int, end_port: int) -> int:
+    """Compute inclusive port count from start to end."""
+    return max(0, (end_port - start_port) + 1)
 
-    Parameters
-    ----------
-    port : int
-        Port number to test.
 
-    Returns
-    -------
-    bool
-        True if the port can be bound (is free), False otherwise.
-    """
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind(("127.0.0.1", port))
-            return True
-    except OSError:
-        return False
+class InvalidPortRangeError(RuntimeError):
+    """Raised when an invalid port range is provided to discovery helpers."""
 
 
 def create_lock_file(port: int) -> None:
@@ -741,9 +729,49 @@ def _resume_with_downloader(
             with yt_dlp.YoutubeDL(opts) as ydl:  # type: ignore[import-untyped]
                 ydl.download([url])
             return True
-        # Note: gallery-dl API usage may vary
-        # This is a simplified example
-        logger.info(f"Gallery-dl resume not fully implemented for: {url}")
+        if downloader_type == "gallery-dl":
+            # Build gallery-dl command from options
+            cmd: list[str] = ["gallery-dl"]
+            # Map opts to flags: bool -> --key, scalar -> --key value, list -> repeated
+
+            def _append_option(k: str, v: Any) -> None:
+                key = f"--{k}"
+                if isinstance(v, bool):
+                    if v:
+                        cmd.append(key)
+                elif isinstance(v, str | int | float):
+                    cmd.extend([key, str(v)])
+                elif isinstance(v, list | tuple):
+                    for item in v:
+                        cmd.extend([key, str(item)])
+                # ignore None/unknown types silently
+
+            # Ensure continuation is enabled by default
+            if not isinstance(opts.get("continue"), bool) or opts.get("continue") is not True:
+                opts = {**opts, "continue": True}
+
+            # Apply known options first for stable ordering
+            if "directory" in opts and opts["directory"] is not None:
+                _append_option("directory", opts["directory"])  # type: ignore[arg-type]
+            if "continue" in opts:
+                _append_option("continue", opts["continue"])  # type: ignore[arg-type]
+
+            # Append remaining options (excluding ones we already handled)
+            for k, v in opts.items():
+                if k in {"directory", "continue"}:
+                    continue
+                _append_option(str(k), v)
+
+            # Finally, the URL
+            cmd.append(url)
+
+            logger.info(f"Attempting gallery-dl resume for: {url}")
+            proc = subprocess.run(cmd, check=False, capture_output=True, text=True)
+            if proc.returncode == 0:
+                logger.debug(proc.stdout)
+                return True
+            logger.warning(f"gallery-dl resume failed (code {proc.returncode}): {proc.stderr.strip()}")
+            return False
     except Exception:
         logger.exception("Error resuming with {downloader_type}: {url}")
         return False
@@ -773,11 +801,11 @@ def tail_server_logs() -> None:
                 while True:
                     line = f.readline()
                     if line:
-                        pass
+                        click.echo(line.rstrip("\n"))
                     else:
                         time.sleep(0.5)
             except KeyboardInterrupt:
-                pass
+                helper_log.info("Stopped following server logs (KeyboardInterrupt)")
 
 
 def disable_launchagents() -> None:
@@ -806,7 +834,7 @@ def disable_launchagents() -> None:
             with contextlib.suppress(Exception):
                 subprocess.run(["systemctl", "--user", "disable", "evd.service"], check=True)
     else:
-        pass
+        helper_log.info("Launch agent management is not supported on this OS; skipping")
 
 
 def wait_for_server_start_cli(port: int, host: str = "127.0.0.1", timeout: int = 15) -> bool:
@@ -972,7 +1000,7 @@ def _read_locked_processes() -> list[psutil.Process]:
                 if _match_server_process(proc):
                     procs.append(proc)
         except Exception:
-            pass
+            helper_log.debug("Failed reading locked process info from lock file", exc_info=True)
     return procs
 
 
@@ -1009,10 +1037,6 @@ def find_server_processes() -> list[psutil.Process]:
 
 
 # New function needed by serve.py
-class NoAvailablePortError(RuntimeError):
-    """Raised when no available port is found in the specified range."""
-
-
 def find_available_port(start_port: int, end_port: int) -> int:
     """
     Find an available port in the specified range.
@@ -1034,11 +1058,12 @@ def find_available_port(start_port: int, end_port: int) -> int:
     RuntimeError
         If no available port is found in the range.
     """
-    for port in range(start_port, end_port + 1):
-        if check_port_available(port):
-            return port
-
-    raise NoAvailablePortError
+    count = _range_count(start_port, end_port)
+    if count <= 0:
+        # Invalid range, end must be >= start
+        raise InvalidPortRangeError
+    # Delegate to centralized implementation in server.utils for single source of truth
+    return core_find_available_port(start_port, count, host="127.0.0.1")
 
 
 # New function needed by serve.py
@@ -1375,13 +1400,13 @@ def _maintenance_clear_cache(download_dir: Path | None, log: logging.Logger) -> 
                 part_file.unlink()
                 count_part += 1
             except Exception:  # noqa: PERF203
-                pass
+                log.debug(f"Failed to remove part file: {part_file}", exc_info=True)
         for ytdl_file in download_dir.rglob("*.ytdl"):
             try:
                 ytdl_file.unlink()
                 count_ytdl += 1
             except Exception:  # noqa: PERF203
-                pass
+                log.debug(f"Failed to remove ytdlp temp file: {ytdl_file}", exc_info=True)
     log.info(f"Cleared {count_part} .part files and {count_ytdl} .ytdl files from {download_dir}.")
 
 

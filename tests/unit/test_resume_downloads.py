@@ -1,9 +1,10 @@
 """Unit tests for resume download logic and helpers."""
 
+import json
 import logging
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from flask import Flask
 
@@ -15,6 +16,37 @@ from server.downloads.resume import (
     handle_resume_download,
     resume_all_incomplete_downloads,
 )
+
+
+def _write_info_json(base: Path, stem: str, url: str) -> None:
+    (base / f"{stem}.info.json").write_text(json.dumps({"webpage_url": url}))
+
+
+def test_resume_scans_part_and_ytdl(tmp_path: Path, monkeypatch: Any) -> None:
+    """Ensure both .part and .ytdl files are considered for resume."""
+    dl = tmp_path / "dl"
+    dl.mkdir()
+    (dl / "video1.part").write_text("")
+    (dl / "video2.ytdl").write_text("")
+    _write_info_json(dl, "video1", "https://example.com/v1")
+    _write_info_json(dl, "video2", "https://example.com/v2")
+
+    calls: list[str] = []
+
+    class DummyApp:
+        config: ClassVar[dict[str, str]] = {"DOWNLOAD_DIR": str(dl)}
+
+    monkeypatch.setattr("server.downloads.resume.current_app", DummyApp(), raising=False)
+
+    def fake_handle(data: dict[str, Any]) -> None:
+        calls.append(data.get("url", ""))
+
+    monkeypatch.setattr("server.downloads.resume.handle_ytdlp_download", fake_handle)
+
+    result = resume_all_incomplete_downloads()
+
+    assert result["status"] == "success"
+    assert sorted(calls) == ["https://example.com/v1", "https://example.com/v2"]
 
 
 def test_actual_resume_logic_not_implemented(tmp_path: Path, caplog: Any) -> None:

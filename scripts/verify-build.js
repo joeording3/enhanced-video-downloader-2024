@@ -2,7 +2,7 @@
 
 const fs = require("fs");
 
-// Required files for the extension build
+// Required files for the extension build (post-esbuild bundling)
 const requiredFiles = [
   // HTML files
   "extension/dist/popup.html",
@@ -14,31 +14,13 @@ const requiredFiles = [
   "extension/dist/options.css",
   "extension/dist/options-logs.css",
 
-  // JavaScript files
+  // Bundled JavaScript entrypoints
   "extension/dist/background.js",
   "extension/dist/content.js",
   "extension/dist/popup.js",
   "extension/dist/options.js",
   "extension/dist/history.js",
   "extension/dist/youtube_enhance.js",
-  "extension/dist/background-logic.js",
-  "extension/dist/background-helpers.js",
-
-  // Core modules
-  "extension/dist/core/constants.js",
-  "extension/dist/core/dom-manager.js",
-  "extension/dist/core/error-handler.js",
-  "extension/dist/core/logger.js",
-  "extension/dist/core/state-manager.js",
-  "extension/dist/core/validation-service.js",
-
-  // Lib modules
-  "extension/dist/lib/event-manager.js",
-  "extension/dist/lib/performance-utils.js",
-  "extension/dist/lib/utils.js",
-
-  // Types
-  "extension/dist/types/index.js",
 ];
 
 // Icon files
@@ -92,10 +74,14 @@ if (allFilesPresent) {
 
 // Additional checks
 try {
-  // Check if background.js has proper exports
+  // Check that the background bundle contains no bare relative imports (should be fully bundled)
   const backgroundContent = fs.readFileSync("extension/dist/background.js", "utf8");
-  if (!backgroundContent.includes("export")) {
-    console.log("WARNING: background.js may be missing exports");
+  const hasBareRelativeImports = /import\s+[^'"\n]+from\s+['"]\.\//.test(backgroundContent);
+  if (hasBareRelativeImports) {
+    console.log(
+      "ERROR: background.js contains relative imports. Ensure bundling succeeded to avoid MV3 registration failures."
+    );
+    process.exit(1);
   }
 
   // Check if CSS files are not empty

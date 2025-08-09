@@ -60,14 +60,6 @@ CENTRAL_PORT_CONFIG = {
     },
 }
 
-# Legacy port mappings for backward compatibility
-LEGACY_PORTS = {
-    "5000": 5013,  # Map old default to new default
-    "5001": 5001,  # Keep client port
-    "5005": 5006,  # Map old test port to new test port
-    "5010": 5010,  # Keep docker port
-    "5013": 5013,  # Keep current default
-}
 
 # Port validation constants
 MIN_PORT = 1024
@@ -168,14 +160,7 @@ def is_valid_port(port: int) -> bool:
     return MIN_PORT <= port <= MAX_PORT
 
 
-def normalize_legacy_port(port: int) -> int:
-    """
-    Normalize legacy port numbers to current defaults.
-
-    :param port: Legacy port number
-    :returns: Normalized port number
-    """
-    return LEGACY_PORTS.get(str(port), port)
+# Legacy normalization removed; use current centralized config exclusively
 
 
 # Backward compatibility - maintain existing constants for gradual migration
@@ -187,68 +172,4 @@ TEST_SERVER_PORT = get_test_server_port()
 TEST_CLIENT_PORT = get_test_client_port()
 TEST_PORT_RANGE_START, TEST_PORT_RANGE_END = get_test_port_range()
 
-# Environment-specific port mappings (deprecated - use get_current_port_config() instead)
-PORT_CONFIG = {
-    "development": {
-        "server_port": DEFAULT_SERVER_PORT,
-        "client_port": DEFAULT_CLIENT_PORT,
-        "port_range_start": DEFAULT_PORT_RANGE_START,
-        "port_range_end": DEFAULT_PORT_RANGE_END,
-    },
-    "testing": {
-        "server_port": TEST_SERVER_PORT,
-        "client_port": TEST_CLIENT_PORT,
-        "port_range_start": TEST_PORT_RANGE_START,
-        "port_range_end": TEST_PORT_RANGE_END,
-    },
-    "production": {
-        "server_port": DEFAULT_DOCKER_PORT,
-        "client_port": DEFAULT_CLIENT_PORT,
-        "port_range_start": DEFAULT_PORT_RANGE_START,
-        "port_range_end": DEFAULT_PORT_RANGE_END,
-    },
-}
-
-
-# Legacy functions for backward compatibility
-def get_port_config(environment: str = "development") -> dict[str, Any]:
-    """
-    Get port configuration for the specified environment.
-
-    :param environment: Environment name ('development', 'testing', 'production')
-    :returns: Dictionary containing port configuration for the environment
-    """
-    return PORT_CONFIG.get(environment, PORT_CONFIG["development"])
-
-
-def get_default_server_port(environment: str = "development") -> int:
-    """
-    Get the default server port for the specified environment.
-
-    :param environment: Environment name ('development', 'testing', 'production')
-    :returns: Default server port number
-    """
-    config = get_port_config(environment)
-    return config["server_port"]
-
-
-def get_default_client_port(environment: str = "development") -> int:
-    """
-    Get the default client port for the specified environment.
-
-    :param environment: Environment name ('development', 'testing', 'production')
-    :returns: Default client port number
-    """
-    config = get_port_config(environment)
-    return config["client_port"]
-
-
-def get_port_range_for_env(environment: str = "development") -> "tuple[int, int]":
-    """
-    Get the port range for the specified environment.
-
-    :param environment: Environment name ('development', 'testing', 'production')
-    :returns: Tuple of (start_port, end_port)
-    """
-    config = get_port_config(environment)
-    return config["port_range_start"], config["port_range_end"]
+# Deprecated environment-specific helpers removed; rely on get_current_port_config()
