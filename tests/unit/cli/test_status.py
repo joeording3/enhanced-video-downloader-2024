@@ -76,7 +76,6 @@ def test_status_downloads_errors(monkeypatch: Any) -> None:
     result = runner.invoke(mod.downloads, [])
     assert result.exit_code != 0
 
-"""
 
 
 class TestStatusHelperFunctions:
