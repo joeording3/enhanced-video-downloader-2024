@@ -742,6 +742,45 @@ export function setupLogsUI(): void {
 
   let autoTimer: number | null = null;
 
+  // Load persisted log viewer preferences
+  (async () => {
+    try {
+      const res = await chrome.storage.local.get("logViewerPrefs");
+      const prefs = (res as any).logViewerPrefs || {};
+      if (recentFirstCheckbox && typeof prefs.recentFirst === "boolean") {
+        recentFirstCheckbox.checked = prefs.recentFirst;
+      }
+      if (limitSelect && typeof prefs.limit === "number") {
+        const v = String(prefs.limit);
+        if (Array.from(limitSelect.options).some(o => o.value === v)) {
+          limitSelect.value = v;
+        }
+      }
+      if (autoCheckbox && typeof prefs.auto === "boolean") {
+        autoCheckbox.checked = prefs.auto;
+      }
+      if (filterWerkzeugCheckbox && typeof prefs.filterWerkzeug === "boolean") {
+        filterWerkzeugCheckbox.checked = prefs.filterWerkzeug;
+      }
+    } catch {
+      // ignore
+    }
+  })();
+
+  const persistPrefs = (): void => {
+    const prefs = {
+      recentFirst: !!recentFirstCheckbox?.checked,
+      limit: limitSelect ? parseInt(limitSelect.value, 10) : 500,
+      auto: !!autoCheckbox?.checked,
+      filterWerkzeug: !!filterWerkzeugCheckbox?.checked,
+    };
+    try {
+      chrome.storage.local.set({ logViewerPrefs: prefs });
+    } catch {
+      // ignore
+    }
+  };
+
   const applyFilters = (text: string): string => {
     let t = text;
     if (filterWerkzeugCheckbox?.checked) {
@@ -782,10 +821,22 @@ export function setupLogsUI(): void {
     });
   };
 
-  refreshBtn?.addEventListener("click", fetchAndRender);
-  limitSelect?.addEventListener("change", fetchAndRender);
-  recentFirstCheckbox?.addEventListener("change", fetchAndRender);
-  filterWerkzeugCheckbox?.addEventListener("change", fetchAndRender);
+  refreshBtn?.addEventListener("click", () => {
+    persistPrefs();
+    fetchAndRender();
+  });
+  limitSelect?.addEventListener("change", () => {
+    persistPrefs();
+    fetchAndRender();
+  });
+  recentFirstCheckbox?.addEventListener("change", () => {
+    persistPrefs();
+    fetchAndRender();
+  });
+  filterWerkzeugCheckbox?.addEventListener("change", () => {
+    persistPrefs();
+    fetchAndRender();
+  });
 
   clearBtn?.addEventListener("click", () => {
     chrome.runtime.sendMessage({ type: "clearLogs" }, (response: any) => {
@@ -809,6 +860,7 @@ export function setupLogsUI(): void {
     if (autoCheckbox.checked) {
       autoTimer = window.setInterval(fetchAndRender, 3000);
     }
+    persistPrefs();
   });
 
   // Initial load
@@ -845,7 +897,8 @@ export async function saveSettings(event: Event): Promise<void> {
       debug_mode: formData.get("enable-debug") === "on",
       enable_history: formData.get("enable-history") === "on",
       log_level: formData.get("log-level") as string,
-      console_log_level: "info", // Default console log level
+      // Persist console log level in storage if present in UI in the future; for now, mirror log_level
+      console_log_level: ((formData.get("log-level") as string) || "info") as any,
       yt_dlp_options: {
         format: formData.get("ytdlp-format") as string,
       },
@@ -885,6 +938,18 @@ export async function saveSettings(event: Event): Promise<void> {
         { component: "options", operation: "configSave" },
         { config }
       );
+
+      // Persist a normalized copy of config to storage so Options always reloads exact values
+      try {
+        await new Promise<void>((resolve, reject) => {
+          chrome.storage.local.set({ serverConfig: config }, () => {
+            if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+            else resolve();
+          });
+        });
+      } catch {
+        // swallow
+      }
     } else {
       throw new Error(response?.message || "Failed to save settings to server");
     }
