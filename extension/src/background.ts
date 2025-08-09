@@ -1047,26 +1047,40 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           log("Received restart request");
           if (port) {
             try {
-              const res = await fetch("http://127.0.0.1:" + port + "/api/restart", {
-                method: "POST",
-              });
-              if (res.ok) {
+              const base = "http://127.0.0.1:" + port;
+              let ok = false;
+              let lastStatus: number | null = null;
+              // 1) Dev restart
+              try {
+                const r1 = await fetch(base + "/api/restart", { method: "POST" });
+                lastStatus = r1.status;
+                ok = r1.ok;
+              } catch {
+                ok = false;
+              }
+              // 2) Managed restart fallback (supervisor/systemd/launchctl)
+              if (!ok) {
+                try {
+                  const r2 = await fetch(base + "/api/restart/managed", { method: "POST" });
+                  lastStatus = r2.status;
+                  ok = r2.ok;
+                } catch {
+                  ok = false;
+                }
+              }
+              if (ok) {
                 sendResponse({ status: "success" });
-                // Server will be gone, so trigger a new scan after a short delay
                 if (!isTestEnvironment) {
                   setTimeout(() => findServerPort(true), 2000);
                 }
               } else {
                 sendResponse({
                   status: "error",
-                  message: "Server returned status " + res.status,
+                  message: "Server returned status " + (lastStatus ?? "network error"),
                 });
               }
             } catch (e) {
-              sendResponse({
-                status: "error",
-                message: (e as Error).message,
-              });
+              sendResponse({ status: "error", message: (e as Error).message });
             }
           } else {
             sendResponse({ status: "error", message: "Server not found" });

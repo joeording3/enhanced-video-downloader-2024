@@ -157,6 +157,10 @@ export function populateFormFields(config: ServerConfig): void {
     logLevel: document.getElementById("settings-log-level") as HTMLSelectElement,
     ytdlpFormat: document.getElementById("settings-ytdlp-format") as HTMLSelectElement,
     allowPlaylists: document.getElementById("settings-allow-playlists") as HTMLInputElement,
+    logFile: document.getElementById("settings-log-file") as HTMLInputElement,
+    evdGunicorn: document.getElementById("settings-evd-gunicorn") as HTMLInputElement,
+    evdWorkers: document.getElementById("settings-evd-workers") as HTMLInputElement,
+    evdVerbose: document.getElementById("settings-evd-verbose") as HTMLInputElement,
   };
 
   if (elements.port && config.server_port !== undefined && config.server_port !== null) {
@@ -179,6 +183,22 @@ export function populateFormFields(config: ServerConfig): void {
   }
   if (elements.allowPlaylists) {
     elements.allowPlaylists.checked = config.allow_playlists ?? false;
+  }
+  if (elements.logFile && (config as any).log_file) {
+    elements.logFile.value = (config as any).log_file as string;
+  }
+  if (elements.evdGunicorn && (config as any).evd_gunicorn !== undefined) {
+    elements.evdGunicorn.checked = Boolean((config as any).evd_gunicorn);
+  }
+  if (elements.evdVerbose && (config as any).evd_verbose !== undefined) {
+    elements.evdVerbose.checked = Boolean((config as any).evd_verbose);
+  }
+  if (
+    elements.evdWorkers &&
+    (config as any).evd_workers !== undefined &&
+    (config as any).evd_workers !== null
+  ) {
+    elements.evdWorkers.value = String((config as any).evd_workers);
   }
 
   // Trigger validation after populating
@@ -896,7 +916,7 @@ export async function saveSettings(event: Event): Promise<void> {
     // Collect form data
     const formData = new FormData(event.target as HTMLFormElement);
 
-    const config: ServerConfig = {
+    const config: ServerConfig & Record<string, any> = {
       server_port: parseInt(formData.get("server-port") as string, 10),
       download_dir: formData.get("download-dir") as string,
       debug_mode: formData.get("enable-debug") === "on",
@@ -909,6 +929,19 @@ export async function saveSettings(event: Event): Promise<void> {
       },
       allow_playlists: formData.get("allow-playlists") === "on",
     };
+
+    // Include env-backed runtime settings
+    const logFile = formData.get("log-file") as string | null;
+    const evdGunicorn = formData.get("evd-gunicorn") === "on";
+    const evdVerbose = formData.get("evd-verbose") === "on";
+    const evdWorkersRaw = formData.get("evd-workers") as string | null;
+    const evdWorkers = evdWorkersRaw ? parseInt(evdWorkersRaw, 10) : undefined;
+    if (logFile) (config as any).log_file = logFile;
+    (config as any).evd_gunicorn = evdGunicorn;
+    (config as any).evd_verbose = evdVerbose;
+    if (!Number.isNaN(evdWorkers as any) && evdWorkers !== undefined) {
+      (config as any).evd_workers = evdWorkers;
+    }
 
     // Save to local storage first
     await new Promise<void>((resolve, reject) => {

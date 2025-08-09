@@ -668,12 +668,13 @@ def _determine_downloader_and_url(part_file: Path, logger: logging.Logger) -> tu
 def _extract_url_from_file(file_path: Path, logger: logging.Logger) -> str | None:
     """Extract URL from various file types."""
     try:
-        if file_path.suffix == ".info.json":
+        # Path.suffix returns only the last extension; use name check for compound suffixes
+        if file_path.name.endswith(".info.json"):
             with file_path.open() as f:
                 metadata = json.load(f)
                 result = metadata.get("webpage_url") or metadata.get("url")
                 return result if isinstance(result, str) else None
-        elif file_path.suffix == ".description":
+        if file_path.suffix == ".description":
             with file_path.open() as f:
                 content = f.read()
                 # Look for URL patterns in description
@@ -682,8 +683,7 @@ def _extract_url_from_file(file_path: Path, logger: logging.Logger) -> str | Non
                     return url_match.group(0)
     except Exception:
         logger.debug(f"Error extracting URL from {file_path}")
-    else:
-        return None
+    return None
 
 
 def _build_resume_options(downloader_type: str, url: str, download_dir: Path, priority: int | None) -> dict[str, Any]:

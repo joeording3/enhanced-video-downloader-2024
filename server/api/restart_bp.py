@@ -1,11 +1,15 @@
 """
-Provide blueprint for server restart API endpoint.
+Provide blueprint for server restart API endpoints.
 
-This module defines an endpoint to restart the development server by shutting down
-the Werkzeug server if available.
+This module defines endpoints to restart the server in two modes:
+- Development restart: shuts down the Werkzeug server when available
+- Managed restart: invokes an external supervisor/systemd/launchctl command
 """
 
 import logging
+import os
+import platform
+import subprocess
 from typing import Any
 
 from flask import Blueprint, jsonify, request
@@ -59,3 +63,76 @@ def restart_server_route() -> Any:
     except Exception as e:
         log.error(f"Error during server shutdown for restart: {e}", exc_info=True)
         return jsonify({"success": False, "error": f"Error during shutdown: {e}"}), 500
+
+
+def _build_managed_restart_commands() -> list[list[str]]:
+    """Construct candidate restart commands based on environment and platform."""
+    commands: list[list[str]] = []
+    # Highest priority: explicit command
+    explicit = os.getenv("EVD_RESTART_COMMAND")
+    if explicit:
+        # Use shell execution for complex commands
+        commands.append(["/bin/sh", "-c", explicit])
+
+    system = platform.system().lower()
+    # systemd (user) service
+    systemd_service = os.getenv("EVD_SYSTEMD_SERVICE")
+    if systemd_service:
+        commands.append(["systemctl", "--user", "restart", systemd_service])
+
+    # supervisor program
+    supervisor_program = os.getenv("EVD_SUPERVISOR_PROGRAM")
+    if supervisor_program:
+        commands.append(["supervisorctl", "restart", supervisor_program])
+
+    # macOS launchctl
+    launchctl_label = os.getenv("EVD_LAUNCHCTL_LABEL")
+    if system == "darwin" and launchctl_label:
+        uid = str(os.getuid())
+        commands.append(["launchctl", "kickstart", "-k", f"gui/{uid}/{launchctl_label}"])
+
+    return commands
+
+
+@restart_bp.route("/restart/managed", methods=["POST", "OPTIONS"])
+def managed_restart_route() -> Any:
+    """Attempt to restart the server via an external process manager."""
+    if request.method == "OPTIONS":
+        return "", 204
+
+    log.info("Received /restart/managed request")
+    candidates = _build_managed_restart_commands()
+    if not candidates:
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": "No managed restart command configured. Set EVD_RESTART_COMMAND or a supported service env var.",
+                }
+            ),
+            400,
+        )
+
+    last_error: str | None = None
+    for cmd in candidates:
+        try:
+            log.info("Attempting managed restart command: %s", " ".join(cmd))
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=10, check=False)
+            if proc.returncode == 0:
+                return (
+                    jsonify({"success": True, "message": "Managed restart command executed."}),
+                    200,
+                )
+            last_error = f"exit {proc.returncode}: {(proc.stderr or proc.stdout).strip()}"
+        except Exception as e:  # noqa: PERF203
+            last_error = str(e)
+
+    return (
+        jsonify(
+            {
+                "status": "error",
+                "message": f"All managed restart attempts failed: {last_error or 'unknown error'}",
+            }
+        ),
+        500,
+    )

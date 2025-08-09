@@ -46,10 +46,7 @@ def logs() -> Response:
     # - In real repo: honor env override if provided; otherwise 404 placeholder
     # - In tests (stubbed project_root, no pyproject): ignore env override and use server_output.log
     if real_repo:
-        if env_log:
-            log_path = Path(env_log)
-        else:
-            log_path = project_root / "__no_such_log_file__.log"
+        log_path = Path(env_log) if env_log else project_root / "__no_such_log_file__.log"
     else:
         # In tests with stubbed project_root: use legacy server_output.log
         log_path = project_root / "server_output.log"

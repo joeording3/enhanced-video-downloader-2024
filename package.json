@@ -31,7 +31,6 @@
     "profile:performance": "node scripts/profile_performance.js",
     "optimize:all": "npm run analyze:bundle && npm run optimize:tree-shaking && npm run profile:performance",
     "test:mutation:js": "stryker run",
-    "test:mutation:js": "stryker run",
     "test:mutation:js:debug": "stryker run --logLevel debug --fileLogLevel trace",
     "test:mutation:js:analyze": "stryker run --reporter html --reporter clear-text",
     "test:playwright": "playwright test",
