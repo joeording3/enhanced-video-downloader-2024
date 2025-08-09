@@ -110,9 +110,19 @@ const storageService: StorageService = {
     return result[_configStorageKey] || {};
   },
   async setConfig(config: Partial<ServerConfig>): Promise<void> {
+    // Merge with existing config and persist
     const currentConfig = await this.getConfig();
-    const newConfig = { ...currentConfig, ...config };
-    return chrome.storage.local.set({ [_configStorageKey]: newConfig });
+    const newConfig: Partial<ServerConfig> = { ...currentConfig, ...config };
+    await chrome.storage.local.set({ [_configStorageKey]: newConfig });
+    // Apply log level immediately so the UI reflects persistence without reload
+    try {
+      const level = (newConfig.log_level as any) || (newConfig.console_log_level as any);
+      if (typeof level === "string") {
+        logger.setLevel(level.toLowerCase() as any);
+      }
+    } catch {
+      /* ignore */
+    }
   },
   async getPort(): Promise<number | null> {
     const result = await chrome.storage.local.get(_portStorageKey);

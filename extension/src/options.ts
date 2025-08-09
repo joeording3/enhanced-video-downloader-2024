@@ -108,7 +108,8 @@ export function initOptionsPage(): void {
 export function loadSettings(): void {
   // First try to load from storage
   chrome.storage.local.get(["serverConfig"], result => {
-    if (result.serverConfig) {
+    const hadLocalConfig = Boolean(result.serverConfig);
+    if (hadLocalConfig) {
       populateFormFields(result.serverConfig);
     }
 
@@ -124,7 +125,11 @@ export function loadSettings(): void {
         return;
       }
       if (response && response.status === "success" && response.data) {
-        populateFormFields(response.data);
+        // If we already had a local config (just saved or previously cached),
+        // prefer that and avoid overwriting the user's selections from storage.
+        if (!hadLocalConfig) {
+          populateFormFields(response.data);
+        }
         logger.debug("Loaded settings from server", { component: "options" });
       } else {
         logger.warn(
