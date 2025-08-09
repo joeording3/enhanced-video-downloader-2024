@@ -8,6 +8,21 @@ from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
 
+# Move commonly used imports to top to satisfy import-at-top rules
+from unittest.mock import Mock
+
+import pytest
+import requests
+
+from server.cli.status import (
+    downloads_command,
+    find_server_processes_cli,
+    get_active_downloads,
+    server_command,
+    status_command,
+)
+from server.constants import get_server_port
+
 
 def test_status_server_no_processes_json(monkeypatch: Any) -> None:
     from server.cli import status as mod
@@ -61,21 +76,7 @@ def test_status_downloads_errors(monkeypatch: Any) -> None:
     result = runner.invoke(mod.downloads, [])
     assert result.exit_code != 0
 
-"""Simplified unit tests for server.cli.status module."""
-
-from unittest.mock import Mock
-
-import pytest
-import requests
-
-from server.cli.status import (
-    downloads_command,
-    find_server_processes_cli,
-    get_active_downloads,
-    server_command,
-    status_command,
-)
-from server.constants import get_server_port
+"""
 
 
 class TestStatusHelperFunctions:

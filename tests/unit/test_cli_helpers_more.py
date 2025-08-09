@@ -1,5 +1,4 @@
 """Additional high-yield unit tests for server.cli_helpers to raise coverage."""
-        
 from __future__ import annotations
 
 import os
@@ -221,21 +220,19 @@ class TestDownloaderHelpers:
                 return self
 
             def __exit__(self, *_a):
-                return None
+                return False
 
             def download(self, urls):
                 if urls and urls[0].endswith("/1"):
-                    return None
+                    return
                 raise RuntimeError("boom")
 
         monkeypatch.setattr(h, "yt_dlp", type("_M", (), {"YoutubeDL": FakeYDL}))
         # Simple build opts func
-        
+
         def build_opts(url: str, tmpl: str, extra: dict | None) -> dict:
             return {"outtmpl": tmpl, "urls": [url]}
         res = h._process_resume_batch(["id1", "id2"], tmp_path, build_opts, logging.getLogger(__name__), None)
         assert res["resumed"] == 1
         assert res["failed"] == 1
         assert set(res["non_resumable"]) == {"id2"}
-
-

@@ -89,13 +89,13 @@ def create_app(config: Config) -> Flask:
     _ = handle_request_entity_too_large
 
     @app.errorhandler(400)
-    def handle_bad_request(error: Exception) -> tuple[FlaskResponse, int]:
+    def handle_bad_request(_error: Exception) -> tuple[FlaskResponse, int]:
         """Return sanitized JSON for bad requests on API routes (400)."""
         # Only return JSON for API routes; otherwise, fall through to default handling
         if request.path.startswith("/api"):
             return jsonify({"status": "error", "message": "Bad request", "error_type": "BAD_REQUEST"}), 400
         # Log and return minimal message for non-API paths
-        app.logger.debug("Bad request on non-API path: %s", request.path, exc_info=True)
+        app.logger.debug("Bad request on non-API path: %s", request.path)
         return jsonify({"status": "error", "message": "Bad request"}), 400
 
     @app.errorhandler(404)
