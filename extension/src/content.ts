@@ -365,7 +365,7 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
             return;
           }
 
-          if (response && response.status === "success") {
+          if (response && (response.status === "success" || response.status === "queued")) {
             // Success feedback
             btn.classList.remove("download-sending");
             btn.classList.add("download-success");

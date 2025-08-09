@@ -784,9 +784,13 @@ const addOrUpdateHistory = async (
     // Save updated history
     await chrome.storage.local.set({ [_historyStorageKey]: limitedHistory });
 
-    // Notify other components about history update
+    // Notify other components about history update (ignore when no listeners)
     try {
-      chrome.runtime.sendMessage({ type: "historyUpdated" });
+      const maybePromise = chrome.runtime.sendMessage({ type: "historyUpdated" });
+      // In some environments sendMessage may return a Promise; guard against unhandled rejections
+      if (maybePromise && typeof (maybePromise as any).catch === "function") {
+        (maybePromise as any).catch(() => {});
+      }
     } catch (e) {
       // Ignore errors if no listeners are available
     }
@@ -801,9 +805,12 @@ const clearDownloadHistory = async (): Promise<void> => {
   try {
     await chrome.storage.local.set({ [_historyStorageKey]: [] });
 
-    // Notify other components about history update
+    // Notify other components about history update (ignore when no listeners)
     try {
-      chrome.runtime.sendMessage({ type: "historyUpdated" });
+      const maybePromise = chrome.runtime.sendMessage({ type: "historyUpdated" });
+      if (maybePromise && typeof (maybePromise as any).catch === "function") {
+        (maybePromise as any).catch(() => {});
+      }
     } catch (e) {
       // Ignore errors if no listeners are available
     }
