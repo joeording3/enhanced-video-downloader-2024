@@ -935,6 +935,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       switch (message.type) {
         case "downloadVideo": {
           log("Received download request for:", message.url);
+          // Ensure we have a server port; if not, try to discover it immediately
+          let effectivePort = port;
+          if (!effectivePort) {
+            try {
+              effectivePort = await findServerPort(true);
+            } catch (e) {
+              // ignore and fall through to error response below
+            }
+          }
+
+          // If still no port, return a clear error right away
+          if (!effectivePort) {
+            sendResponse({ status: "error", message: "Server not available" });
+            break;
+          }
+
           const response = await sendDownloadRequest(
             message.url,
             sender.tab?.id,
@@ -979,7 +995,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
 
         case "getConfig":
-          // This logic remains untouched for now
+          // Fetch server config when a port is known; otherwise return current cached state
           if (port) {
             const config = await fetchServerConfig(port);
             sendResponse({ status: "success", data: config });
@@ -1000,7 +1016,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
 
         case "restartServer":
-          // This logic remains untouched
+          // Request server restart via API and trigger port rediscovery
           log("Received restart request");
           if (port) {
             try {
