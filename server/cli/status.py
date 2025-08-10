@@ -69,21 +69,13 @@ def server_command(as_json: bool) -> None:
         click.echo(json.dumps(json_processes, indent=2))
         return
 
-    # Show server details in human-readable multi-line format (PID/Port/Uptime)
-    # Tests for `server_command` expect separate lines, while `status_group` prints summaries.
+    # Show server details in single-line format expected by tests
     for proc in processes:
         pid = proc.get("pid")
         port = proc.get("port")
-        uptime = proc.get("uptime")
-        version = proc.get("version")
-        click.echo(f"PID {pid}")
-        click.echo(f"Port {port}")
-        if isinstance(uptime, int | float):
-            hours, remainder = divmod(uptime, 3600)
-            minutes, seconds = divmod(remainder, 60)
-            click.echo(f"Uptime: {int(hours)}h {int(minutes)}m {int(seconds)}s")
-        if version:
-            click.echo(f"Version: {version}")
+        uptime_raw = proc.get("uptime")
+        uptime_value = int(uptime_raw) if isinstance(uptime_raw, (int, float)) else "unknown"
+        click.echo(f"PID {pid}, port {port}, uptime {uptime_value}s")
 
 
 # Helper to fetch active downloads (used by downloads_command)
@@ -166,20 +158,14 @@ def status_group(ctx: click.Context) -> None:
         ctx.exit(0)
 
 
-# Define a separate server command for the status_group that delegates to the module-level server alias
-server_group = click.Command(
-    name="server",
-    params=server_command.params,
-    callback=server_command.callback,
-    help=server_command.help,
-)
-status_group.add_command(server_group)
+# Register the same server command under the group for CLI usage
+status_group.add_command(server_command)
 status_group.add_command(downloads_command)
 
 
 # Expose the main command for registration
 status_command = status_group
 
-# Aliases for tests: click.Command instances for direct invocation
-server = server_command
+# Aliases for tests: expose group as `server` to run summary when invoked directly
+server = status_group
 downloads = downloads_command
