@@ -325,8 +325,8 @@ def test_cancel_command(mock_get_config: Any, mock_is_running: Any, mock_post: A
 
     assert result.exit_code == 0
     mock_post.assert_called_once()
-    # Check URL contains the download ID
-    assert mock_post.call_args[0][0] == f"http://127.0.0.1:{get_server_port()}/download/download123/cancel"
+    # Check URL contains the download ID (now under /api)
+    assert mock_post.call_args[0][0] == f"http://127.0.0.1:{get_server_port()}/api/download/download123/cancel"
 
 
 @patch("server.cli.download.requests.post")
@@ -348,8 +348,8 @@ def test_priority_command(mock_get_config: Any, mock_is_running: Any, mock_post:
 
     assert result.exit_code == 0
     mock_post.assert_called_once()
-    # Check URL contains the download ID
-    assert mock_post.call_args[0][0] == f"http://127.0.0.1:{get_server_port()}/download/download123/priority"
+    # Check URL contains the download ID (now under /api)
+    assert mock_post.call_args[0][0] == f"http://127.0.0.1:{get_server_port()}/api/download/download123/priority"
     # Check request body contains the priority
     request_json = mock_post.call_args[1]["json"]
     assert request_json["priority"] == 5
