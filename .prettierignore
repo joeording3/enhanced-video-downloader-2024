@@ -72,8 +72,6 @@ reports/
 server.lock
 temp/
 test-results/
-tests/extension/test_extension_ui_e2e.js
-tests/extension/test_extension_ui_e2e.spec.ts
 tmp/
 tmp_*/
 uv.lock

@@ -155,6 +155,34 @@ describe("discoverServerPort", () => {
     expect(progressCallback).toHaveBeenCalled();
   });
 
+  it("reports progress for exact multiple of batch size without extra iteration", async () => {
+    storageService.getPort.mockResolvedValue(null);
+    const progressCallback = jest.fn();
+
+    // Choose a range of exactly 10 ports; with batchSize=5 this should be 2 batches
+    const testDefaultPort = 1000;
+    const testMaxPort = 1009; // inclusive → 10 ports total
+
+    const checkStatus = jest.fn().mockImplementation(port => Promise.resolve(port === testMaxPort));
+
+    const port = await discoverServerPort(
+      storageService,
+      checkStatus,
+      testDefaultPort,
+      testMaxPort,
+      false,
+      2000,
+      progressCallback
+    );
+
+    expect(port).toBe(testMaxPort);
+    // Progress is only reported for batches that did not find a port
+    expect(progressCallback).toHaveBeenCalledTimes(1);
+    expect(progressCallback).toHaveBeenNthCalledWith(1, 5, 10);
+    // Ensure only the two batches were executed (5 + 5 checks) and no extra iteration occurred
+    expect(checkStatus).toHaveBeenCalledTimes(10);
+  });
+
   it("handles error during port checking", async () => {
     storageService.getPort.mockResolvedValue(null);
 
@@ -280,6 +308,19 @@ describe("handleSetConfig", () => {
       "[BG Logic] Error in handleSetConfig:",
       "An unknown error occurred."
     );
+
+    consoleSpy.mockRestore();
+  });
+
+  it("surfaces explicit Timeout error message from API service", async () => {
+    const timeoutError = new Error("Timeout");
+    apiService.saveConfig.mockRejectedValue(timeoutError);
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    const result = await handleSetConfig(9090, mockConfig, apiService, storageService);
+
+    expect(result).toEqual({ status: "error", message: "Timeout" });
+    expect(consoleSpy).toHaveBeenCalledWith("[BG Logic] Error in handleSetConfig:", "Timeout");
 
     consoleSpy.mockRestore();
   });

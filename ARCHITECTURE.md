@@ -152,7 +152,7 @@ Enhanced Video Downloader/
 │   └── ui/                      # HTML/CSS for popup & options
 ├── server/                       # Python Flask server & CLI
 │   ├── __main__.py              # Flask entrypoint
-│   ├── video_downloader_server.py  # Deprecated legacy entrypoint (removed)
+│   ├── video_downloader_server.py  # Deprecated legacy entrypoint (raises ImportError)
 │   ├── api/                     # Flask Blueprints for endpoints
 │   ├── cli.py                   # Click group entrypoint (legacy)
 │   ├── cli/                     # Modular CLI commands
@@ -163,8 +163,8 @@ Enhanced Video Downloader/
 │   │   ├── status.py            # Status check commands (server, downloads)
 │   │   ├── utils.py             # Utility commands (config, logs, cleanup)
 │   │   └── resume.py            # Resume commands (incomplete, failed)
-│   ├── cli_commands/            # Legacy CLI subcommands (removed; use consolidated CLI in `server/cli_main.py`)
-│   │   └── system_maintenance.py  # System maintenance commands (resume incomplete/failed, clear history/cache)
+│   ├── cli_commands/            # Legacy CLI subcommands (compat imports only)
+│   │   └── system_maintenance.py  # System maintenance commands (legacy path retained)
 │   ├── cli_helpers.py           # Shared helpers for CLI commands
 │   ├── cli_resume_helpers.py    # Resume-specific CLI helpers
 │   ├── downloads/               # yt-dlp wrapper logic
@@ -540,17 +540,11 @@ Adoption status:
 
 ### Audit Reports
 
-- **[reports/playwright_quality_audit_report.md](reports/playwright_quality_audit_report.md)** -
-  Playwright E2E testing quality audit
-  
-  Note: Legacy modules have been addressed; the older `reports/legacy_modules_audit.md` report was
-  removed after migrating important context into this architecture document and the changelog.
+- Consolidated: Playwright E2E audit details now live in `tests/testing.md` (removed standalone report)
 - **[reports/test_docstring_audit_report.md](reports/test_docstring_audit_report.md)** - Test
   documentation audit results
 - **[reports/type_ignore_audit_report.md](reports/type_ignore_audit_report.md)** - Type ignore usage
   audit and cleanup
-
-Note: Test suite audit content has been consolidated into `tests/testing.md` under the Test Audit & Coverage Metrics section.
 
 ### CI/CD Documentation
 

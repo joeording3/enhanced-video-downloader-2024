@@ -44,6 +44,7 @@ Urgent Tasks:
   - [/] Implemented background periodic polling of `/api/status` and broadcasting `downloadStatusUpdate`.
 - [ ] History API unused by extension. Extension persists history only in `chrome.storage`; consider syncing with `/api/history` for enriched entries or document local-only behavior. Files: `extension/src/history.ts`, `server/api/history_bp.py`.
   - [/] Implemented best-effort history sync: append entries and clear via `/api/history` when `serverPort` is known.
+  - [x] Consolidate Playwright E2E audit details into `tests/testing.md`; remove outdated `reports/playwright_quality_audit_report.md` and update references in `README.md` and `ARCHITECTURE.md`.
 - [ ] Debug API (`GET /debug/paths`) is dev-only and unused in UI; optionally surface in Options “Debug” tab or leave as internal.
 
 Legacy/Stub Cleanup:

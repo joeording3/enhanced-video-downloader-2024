@@ -31,6 +31,7 @@ __pycache__/
 build/
 dist/
 docs/_build/
+extension/dist/
 jest-cache/
 
 # System files
@@ -78,6 +79,7 @@ coverage_html/
 docs/.doctrees/
 ehthumbs.db
 etc/
+extension-instrumented/
 htmlcov/
 jest-coverage/
 logs/
@@ -92,4 +94,3 @@ tmp/
 tmp_*/
 uv.lock
 venv/
-.hypothesis/*

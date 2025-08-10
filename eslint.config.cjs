@@ -58,7 +58,6 @@ module.exports = defineConfig([
       "**/reports/**",
       "**/server.lock",
       "**/stryker.conf.js",
-
       "**/tsconfig.json",
       "**/uv.lock",
       "**/venv/**",

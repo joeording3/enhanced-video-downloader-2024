@@ -8,6 +8,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Changed
+- Docs: Remove outdated Playwright audit report; migrate E2E audit details to `tests/testing.md`. Add frontend performance practices (debouncing, DOM caching, listener cleanup, modest polling) to `README.md`.
 - Docs: Add consolidated Hardcoded Variables Policy to README and Architecture docs; track remaining
   cleanup tasks in `TODO.md`.
  - Docs: Migrate CSS design system details into `ARCHITECTURE.md` and `README.md`; remove obsolete
@@ -47,6 +48,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   expectations.
 
 - Backend cleanup: Removed deprecated legacy modules and unified helpers
+  - `server/video_downloader_server.py` now raises ImportError and is documented as removed
+  - Legacy `server/cli_commands/*` modules deprecated; lifecycle shim removed, status/system_maintenance kept only for import compatibility while main CLI lives under `server/cli/`
+  - Extension code retains a temporary legacy export `actionIconPaths` in `extension/src/background-helpers.ts`; usage is being migrated to the `getActionIconPaths()` function. Removal is tracked in `TODO.md`.
 
 - Server error handlers moved to module scope and registered via `app.register_error_handler` to satisfy
   static analysis and avoid false "unused" warnings. No behavioral change in responses:
