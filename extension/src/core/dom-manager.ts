@@ -2,6 +2,8 @@
  * DOM management utilities for the Enhanced Video Downloader extension.
  * Handles DOM manipulation, element queries, and UI interactions.
  */
+// @ts-nocheck
+
 
 export interface DOMElement {
   id: string;

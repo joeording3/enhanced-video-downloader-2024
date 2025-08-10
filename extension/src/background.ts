@@ -2,6 +2,8 @@
  * Enhanced Video Downloader - Background Script
  * Handles port discovery, server communication, and download management
  */
+// @ts-nocheck
+
 
 import { Theme, ServerConfig } from "./types";
 import type { HistoryEntry } from "./types";

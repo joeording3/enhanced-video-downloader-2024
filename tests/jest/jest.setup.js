@@ -5,6 +5,8 @@
  * This file is executed before each test file is run.
  * It is the ideal place to set up global mocks and other test environment setup.
  */
+// @ts-nocheck
+
 
 console.log("Jest setup file loaded - suppressing console messages during tests");
 

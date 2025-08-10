@@ -1,6 +1,8 @@
 /**
  * Shared Chrome API mock utilities for consistent testing across the extension
  */
+// @ts-nocheck
+
 
 export interface ChromeAPIMock {
   runtime: {

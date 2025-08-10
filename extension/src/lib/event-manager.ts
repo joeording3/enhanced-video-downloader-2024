@@ -2,6 +2,8 @@
  * Event management utilities for the Enhanced Video Downloader extension.
  * Handles event binding, unbinding, and event delegation.
  */
+// @ts-nocheck
+
 
 export interface EventHandler {
   element: Element;

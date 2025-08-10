@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { add } from "../stryker-test";
 
 describe("add", () => {

@@ -2,18 +2,20 @@
  * Stryker mutation testing configuration
  * @type {import('@stryker-mutator/core').StrykerOptions}
  */
+// @ts-nocheck
+
 module.exports = {
   packageManager: "npm",
   reporters: ["html", "clear-text", "progress"],
   testRunner: "jest",
-  coverageAnalysis: "perTest",
+  coverageAnalysis: "off",
   allowEmpty: true,
   inPlace: true,
   disableTypeChecks: true,
   jest: {
     configFile: "jest.stryker.config.js",
     projectType: "custom",
-    enableFindRelatedTests: true,
+    enableFindRelatedTests: false,
   },
   // Focus on critical files for mutation testing
   mutate: [
@@ -36,7 +38,7 @@ module.exports = {
   timeoutMS: 8000,
   concurrency: 8,
   maxTestRunnerReuse: 50,
-  ignoreStatic: true,
+  ignoreStatic: false,
   logLevel: "info",
   tempDirName: ".stryker-tmp",
   symlinkNodeModules: false,

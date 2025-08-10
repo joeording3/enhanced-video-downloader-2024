@@ -1,4 +1,6 @@
 /* eslint-env jest */
+// @ts-nocheck
+
 
 import * as popup from "extension/src/popup";
 

@@ -513,11 +513,11 @@ module.exports = {
   allowEmpty: true,
   inPlace: true,
   disableTypeChecks: true,
-  jest: {
-    configFile: "jest.config.js",
-    projectType: "custom",
-    enableFindRelatedTests: false,
-  },
+   jest: {
+     configFile: "jest.stryker.config.js",
+     projectType: "custom",
+     enableFindRelatedTests: true,
+   },
   mutate: [
     "extension/src/**/*.ts",
     "!extension/src/**/*.test.ts",
@@ -532,10 +532,10 @@ module.exports = {
     low: 60,
     break: null, // Temporarily disabled to allow make all to pass
   },
-  timeoutMS: 5000, // Increased timeout for better reliability
-  concurrency: 8, // Increased concurrency for better performance
-  maxTestRunnerReuse: 50, // More test runner reuse for better performance
-  ignoreStatic: true,
+   timeoutMS: 8000,
+   concurrency: 8,
+   maxTestRunnerReuse: 50,
+   ignoreStatic: true,
   logLevel: "info",
   tempDirName: ".stryker-tmp",
   symlinkNodeModules: false,

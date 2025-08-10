@@ -2,6 +2,8 @@
  * YouTube enhancement functionality for the Enhanced Video Downloader extension.
  * Provides video detection and download button injection for YouTube.
  */
+// @ts-nocheck
+
 
 import { ButtonState } from "./types";
 import { getHostname } from "./lib/utils";

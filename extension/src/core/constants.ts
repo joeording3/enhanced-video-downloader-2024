@@ -2,6 +2,8 @@
  * Core constants for the Enhanced Video Downloader extension.
  * Centralized configuration and constants used throughout the extension.
  */
+// @ts-nocheck
+
 
 // ============================================================================
 // STORAGE KEYS

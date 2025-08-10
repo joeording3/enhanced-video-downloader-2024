@@ -19,6 +19,7 @@ Urgent Tasks:
   `extension/ui/options.html`)
 - [/] Implement `run_cleanup()` in `server/cli/utils.py` and add tests
 - [/] Align JSON error semantics across endpoints; document in README and CHANGELOG <!-- working-on: api-json-errors -->
+- [/] Server log noise reductions and fixes: standardized JSON parsing errors in `server/api/download_bp.py`, completed error logging in `server/api/logs_bp.py`, ensured restart and resume modules log with appropriate levels; verified via tests.
 - [/] Replace silent `pass` blocks with logging/handling in:
   - `server/cli_helpers.py` (loops and maintenance utils)
   - `server/cli_main.py` (loop around verification)
@@ -167,6 +168,7 @@ Legacy/Stub Cleanup:
 - [ ] Set up weekly mutation testing reports
 - [ ] Create automated alerts for score regressions
 - [ ] Implement pre-commit hooks for critical files
+  - [/] Add fast Stryker script `test:mutation:js:fast` and wire to lint-staged
 
 ### Priority 2: Consolidate Test Organization [HIGH]
 

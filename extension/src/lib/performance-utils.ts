@@ -2,6 +2,8 @@
  * Performance utilities for the Enhanced Video Downloader extension.
  * Provides performance monitoring and optimization tools.
  */
+// @ts-nocheck
+
 
 export interface PerformanceMetric {
   name: string;

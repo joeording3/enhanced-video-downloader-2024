@@ -80,8 +80,8 @@ Enhanced Video Downloader/
 │   │   ├── status.py         # Status check commands
 │   │   ├── utils.py          # Utility commands
 │   │   └── resume.py         # Resume commands
-│   ├── cli_commands/         # Legacy CLI subcommands (removed; use `server/cli_main.py`)
-│   │   └── system_maintenance.py # System maintenance commands
+│   ├── cli_commands/         # Legacy CLI subcommands (compat imports only)
+│   │   └── system_maintenance.py # System maintenance commands (legacy path retained)
 │   ├── cli_helpers.py        # Shared helpers for CLI commands
 │   ├── cli_resume_helpers.py # Resume-specific CLI helpers
 │   ├── api/                  # Flask Blueprints
@@ -98,7 +98,7 @@ Enhanced Video Downloader/
 │   ├── logging_setup.py      # Logging configuration
 │   ├── schemas.py            # Pydantic schemas
 │   ├── utils.py              # Shared helper functions
-│   └── video_downloader_server.py  # Deprecated legacy entrypoint (removed)
+│   └── video_downloader_server.py  # Deprecated legacy entrypoint (raises ImportError)
 ├── tests/                    # Test files
 │   ├── extension/            # Extension unit tests (Jest + Playwright)
 │   ├── integration/          # Integration tests
@@ -151,6 +151,13 @@ Enhanced Video Downloader/
 - **[extension/src/extension-overview.md](extension/src/extension-overview.md)** - TypeScript
   refactoring overview, build process, and testing setup
 
+#### CSS design system (UI)
+
+- Files under `extension/ui/`:
+  - `variables.css` (design tokens), `base.css` (base rules), `components.css` (buttons, inputs, status), `themes.css` (light/dark)
+- Use CSS variables everywhere; avoid hardcoded hex or spacing values.
+- Prefer component classes like `btn btn--primary`; legacy `styles.css` is removed.
+
 ### Testing Documentation
 
 - **[tests/testing.md](tests/testing.md)** - Comprehensive testing guide, coverage metrics, mutation
@@ -158,18 +165,16 @@ Enhanced Video Downloader/
 
 ### Audit Reports
 
-- **[reports/test_audit_summary.md](reports/test_audit_summary.md)** - Test suite audit results and
-  cleanup summary
 - **[reports/css_audit_summary.md](reports/css_audit_summary.md)** - CSS audit and optimization
   results
-- **[reports/playwright_quality_audit_report.md](reports/playwright_quality_audit_report.md)** -
-  Playwright E2E testing quality audit
 - **[reports/legacy_modules_audit.md](reports/legacy_modules_audit.md)** - Legacy module
   identification and migration plan
 - **[reports/test_docstring_audit_report.md](reports/test_docstring_audit_report.md)** - Test
   documentation audit results
 - **[reports/type_ignore_audit_report.md](reports/type_ignore_audit_report.md)** - Type ignore usage
   audit and cleanup
+
+Note: Test suite and Playwright E2E audit details now live in `tests/testing.md` (Test Audit & Coverage Metrics). The old standalone audit reports have been removed.
 
 ### CI/CD Documentation
 
@@ -245,10 +250,10 @@ videodownloader-server stop
 # Force stop (immediately kills processes if graceful stop times out)
 videodownloader-server stop --force
 
-# Restart the server
+# Restart the server (reuses previous mode/flags if not provided)
 videodownloader-server restart
 
-# Restart in foreground mode
+# Restart in foreground mode (overrides previous mode)
 videodownloader-server restart --fg
 
 # Restart with force option (to handle cases where another instance might be running)
@@ -312,6 +317,8 @@ For production deployments, it's recommended to use Gunicorn:
 ```bash
 gunicorn --workers=4 --bind=0.0.0.0:<SERVER_PORT> server:create_app()
 ```
+
+Note: When using the CLI to start with `--gunicorn` or daemon/foreground mode, these settings are recorded and reused on `videodownloader-server restart` unless you provide explicit overrides. Metadata is stored at `server/data/server.lock.json` alongside the lock file.
 
 ### Using Docker
 
@@ -406,6 +413,12 @@ gunicorn --workers=4 --bind=0.0.0.0:<SERVER_PORT> server:create_app()
 - Remaining follow-ups for popup/options (tracked in `TODO.md`): migrate any remaining direct
   `document.getElementById`/`querySelector` calls to `domManager`, replace `console.*` usages with
   `logger`, and unify field validation through `validationService`.
+
+- Performance practices implemented:
+  - Debounced UI updates for frequent state changes (e.g., queue/badge updates)
+  - Cached DOM lookups and class-based styling via `domManager`
+  - Event listeners added/removed appropriately (e.g., drag handlers) to avoid leaks
+  - Background status polling at a modest 3s interval to feed UI without flooding the server
 
 ## Usage
 

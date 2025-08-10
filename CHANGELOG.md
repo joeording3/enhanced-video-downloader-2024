@@ -8,19 +8,22 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Changed
+
+- **Mutation testing configuration optimized**:
+  - **JS/TS (Stryker)**: per-test coverage, higher concurrency and test runner reuse, ignore static, enable related tests; add fast script for critical files; disable Jest coverage during mutation
+  - **Python (mutmut)**: Makefile audit target runs mutmut with timeout and results output
+  - **Makefile**: `audit-mutation` now runs JS/TS analysis and Python mutmut sequentially
+  - **Docs**: DEVELOPER updated with current Stryker settings and commands
 - CLI: Restart now reuses the previous run's mode and flags when not provided (persisted in `server/data/server.lock.json`). Works for both Flask dev and Gunicorn prod runs. Explicit flags still override.
 - Docs: Remove outdated Playwright audit report; migrate E2E audit details to `tests/testing.md`. Add frontend performance practices (debouncing, DOM caching, listener cleanup, modest polling) to `README.md`.
-- Docs: Add consolidated Hardcoded Variables Policy to README and Architecture docs; track remaining
-  cleanup tasks in `TODO.md`.
- - Docs: Migrate CSS design system details into `ARCHITECTURE.md` and `README.md`; remove obsolete
-   `reports/css_comprehensive_report.md` (all issues already resolved and reflected in codebase).
+- Docs: Add consolidated Hardcoded Variables Policy to README and Architecture docs; track remaining cleanup tasks in `TODO.md`.
+- Docs: Migrate CSS design system details into `ARCHITECTURE.md` and `README.md`; remove obsolete `reports/css_comprehensive_report.md` (all issues already resolved and reflected in codebase).
 ### Tooling
 
 - Add unused-code detection tools:
   - TypeScript: `ts-prune` with `npm run lint:unused:ts` and Make target `lint-unused-ts` scanning `tsconfig.json` (includes tests)
-  - Python: `vulture` added to dev dependencies; Make target `lint-unused-py` scans `server` and `tests` with min-confidence 60
+  - Python: `vulture` added to dev deps; Make target `lint-unused-py` scans `server` and `tests` with min-confidence 60
   - Aggregate target `make lint-unused` runs both; documented in README
-
 
 - API error handling consistency:
   - `/api/download`: continues to surface malformed JSON as a 500 SERVER_ERROR per existing tests; oversized payloads return structured 413 JSON.

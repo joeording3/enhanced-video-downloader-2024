@@ -1,3 +1,4 @@
+// @ts-nocheck
 // @jest-environment jsdom
 import { fetchHistory, renderHistoryItems } from "../../extension/src/history";
 

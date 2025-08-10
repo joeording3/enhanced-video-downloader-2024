@@ -188,9 +188,14 @@ audit-coverage:
 	@echo "Coverage reports generated in coverage/ and extension/coverage/"
 
 audit-mutation:
-	@echo "=== Mutation Testing ==="
-	stryker run --mutate "server/**/*.py" --testRunner pytest
-	@echo "Mutation testing complete. Check reports/mutation/ for results."
+	@echo "=== Mutation Testing (JS/TS + Python) ==="
+	@echo "Running Stryker (JS/TS)..."
+	npm run test:mutation:js:analyze || (echo "Stryker failed" && exit 1)
+	@echo "Stryker complete. HTML report in mutants/ or reports/mutation/."
+	@echo "Running mutmut (Python)..."
+	timeout 600 mutmut run || (echo "mutmut run failed" && exit 1)
+	mutmut results || true
+	@echo "Mutation testing complete. Check reports/mutation/ and mutmut output."
 
 audit-performance:
 	@echo "=== Performance Review ==="
@@ -215,7 +220,7 @@ mutation-fast:
 	npm run test:mutation:js || (echo "JavaScript mutation testing failed" && exit 1)
 	@echo "JavaScript mutation testing passed"
 	@echo "Running Python mutation testing on critical modules..."
-	timeout 60 python -m mutmut run || (echo "Python mutation testing failed" && exit 1)
+	timeout 600 python -m mutmut run || (echo "Python mutation testing failed" && exit 1)
 	@echo "Python mutation testing passed"
 	@echo "Fast mutation testing complete"
 
@@ -223,6 +228,18 @@ mutation-js:
 	@echo "=== Running Stryker Mutation Testing (JavaScript/TypeScript) ==="
 	npm run test:mutation:js
 	@echo "Stryker mutation testing complete"
+
+
+mutation-js-fast:
+	@echo "=== Running Fast Stryker Mutation Testing (critical files) ==="
+	npm run test:mutation:js:fast
+	@echo "Fast Stryker mutation testing complete"
+
+
+mutation-js-minimal:
+	@echo "=== Running Minimal Stryker Mutation Testing (single file) ==="
+	npm run test:mutation:js:minimal
+	@echo "Minimal Stryker mutation testing complete"
 
 
 

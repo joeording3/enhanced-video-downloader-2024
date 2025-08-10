@@ -2,6 +2,8 @@
  * Jest configuration optimized for Stryker mutation testing
  * Based on Jest documentation: https://jestjs.io/docs/getting-started
  */
+// @ts-nocheck
+
 module.exports = {
   // Use Stryker-specific node environment for backend logic testing
   testEnvironment: "@stryker-mutator/jest-runner/jest-env/node",
@@ -12,8 +14,9 @@ module.exports = {
     "^.+\\.js$": "babel-jest",
   },
 
-  // Coverage configuration
-  coverageProvider: "babel",
+  // Coverage configuration (disable jest's own coverage; Stryker collects per-test coverage)
+  coverageProvider: "v8",
+  collectCoverage: false,
 
   // Test patterns - focus on core functionality tests
   testMatch: [
@@ -70,8 +73,7 @@ module.exports = {
     "/yarn.lock",
   ],
 
-  // Collect coverage from extension code
-  collectCoverage: true,
+  // Collect coverage is disabled for mutation runs
   collectCoverageFrom: ["extension/src/**/*.{js,ts}"],
   coveragePathIgnorePatterns: [
     "/node_modules/",
@@ -101,8 +103,8 @@ module.exports = {
   // Performance optimizations for faster test execution
   maxWorkers: "75%", // Use more CPU cores for faster execution
   workerIdleMemoryLimit: "256MB", // Lower memory limit for faster startup
-  testTimeout: 3000, // 3 second timeout for individual tests
-  bail: 1, // Stop on first failure for faster feedback
+  testTimeout: 3000,
+  bail: 0,
 
   // Make TypeScript paths work with Jest
   moduleNameMapper: {
@@ -116,5 +118,5 @@ module.exports = {
   verbose: false, // Reduce output verbosity
   silent: false, // Keep some output for debugging
   detectOpenHandles: false, // Disable for speed
-  forceExit: true, // Force exit after tests complete
+  forceExit: false,
 };

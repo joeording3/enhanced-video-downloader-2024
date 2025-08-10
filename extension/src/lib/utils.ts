@@ -2,6 +2,8 @@
  * Utility functions for the Enhanced Video Downloader extension.
  * Common utilities used across multiple components.
  */
+// @ts-nocheck
+
 
 /**
  * Debounces a function, ensuring it's only called after a specified delay

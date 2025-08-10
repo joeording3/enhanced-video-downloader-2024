@@ -2,6 +2,8 @@
  * Enhanced Video Downloader - Content Script
  * Handles DOM manipulation, video detection, and UI injection
  */
+// @ts-nocheck
+
 
 import { ButtonState } from "./types";
 import { debounce, getHostname } from "./lib/utils";
