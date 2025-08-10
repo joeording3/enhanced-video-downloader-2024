@@ -29,6 +29,16 @@ These components communicate over HTTP (localhost) and via Chrome messaging APIs
   - Stryker (JS/TS mutation testing)
   - Mutmut (Python mutation testing)
 
+## Configuration & Constants
+
+- Ports are centralized in `server/constants.py` and mirrored in `extension/src/core/constants.ts`.
+  Use provided accessors (e.g., `get_server_port`, `get_port_range`) rather than literals.
+- The extension defines `NETWORK_CONSTANTS` for base URL, timeouts, and endpoints. Code should build
+  URLs using `SERVER_BASE_URL` plus the port and endpoint constants to avoid scattering string
+  literals.
+- Server bind addresses and CLI defaults are intentionally loopback-only for local operation. Any
+  environment-specific overrides should be surfaced via configuration, not hardcoded.
+
 ## Code Quality Standards
 
 ### Type Safety
@@ -517,8 +527,6 @@ Adoption status:
 
 ### Audit Reports
 
-- **[reports/test_audit_summary.md](reports/test_audit_summary.md)** - Test suite audit results and
-  cleanup summary
 - **[reports/css_audit_summary.md](reports/css_audit_summary.md)** - CSS audit and optimization
   results
 - **[reports/hardcoded_variables_summary.md](reports/hardcoded_variables_summary.md)** - Hardcoded
@@ -531,6 +539,8 @@ Adoption status:
   documentation audit results
 - **[reports/type_ignore_audit_report.md](reports/type_ignore_audit_report.md)** - Type ignore usage
   audit and cleanup
+
+Note: Test suite audit content has been consolidated into `tests/testing.md` under the Test Audit & Coverage Metrics section.
 
 ### CI/CD Documentation
 

@@ -69,6 +69,20 @@ Legacy/Stub Cleanup:
 - [/] CSS audit: migrated inline styles to classes, unified visibility helpers.
   <!-- working-on: css refactor - visibility classes and contrast variants -->
 
+### Hardcoded Variables Cleanup
+
+- [ ] Replace hardcoded fetch URLs in `extension/src/background.ts` with compositions of
+      `NETWORK_CONSTANTS.SERVER_BASE_URL`, discovered port, and endpoint constants from
+      `extension/src/core/constants.ts`.
+- [ ] Audit extension code to remove duplicated `"/api/..."` strings; import and use endpoint
+      constants instead.
+- [ ] Replace hardcoded lock path in `server/cli/serve.py` (`/tmp/videodownloader.lock`) with the
+      centralized lock path helpers from `server/lock.py` (e.g., `get_lock_file_path`) to ensure
+      cross-platform behavior.
+- [ ] Review server/CLI default host strings; keep loopback binds but ensure they are centralized and
+      documented.
+- [ ] Document any remaining, justified literals (tests/manifest permissions) in README policy.
+
 ### Frontend centralized services follow-ups
 
 - [ ] Replace direct DOM queries in `extension/src/popup.ts` and `extension/src/options.ts` with

@@ -8,6 +8,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Changed
+- Docs: Add consolidated Hardcoded Variables Policy to README and Architecture docs; track remaining
+  cleanup tasks in `TODO.md`.
 ### Tooling
 
 - Add unused-code detection tools:
@@ -79,6 +81,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   handling via subprocess mocking. README updated to describe gallery resume behavior.
 
 ### Removed
+- Reports: Removed outdated `reports/hardcoded_variables_audit_report.md` and
+  `reports/hardcoded_variables_summary.md` after migrating key guidance to project docs.
 
 - Deprecated UI stylesheet `extension/ui/styles.css` removed. UI now uses modular styles:
   `variables.css`, `components.css`, `base.css`, and `themes.css`.
