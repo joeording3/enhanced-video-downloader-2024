@@ -1,8 +1,6 @@
 /**
  * Shared test helpers for consistent testing patterns across the extension
  */
-// @ts-nocheck
-
 
 import { CentralizedLogger } from "../../../extension/src/core/logger";
 import { ExtensionStateManager } from "../../../extension/src/core/state-manager";

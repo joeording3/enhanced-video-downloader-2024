@@ -1,6 +1,4 @@
 /* eslint-env jest */
-// @ts-nocheck
-
 
 import { debounce, isSignificantVideo } from "../../extension/src/content";
 

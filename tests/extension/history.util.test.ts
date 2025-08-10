@@ -6,8 +6,6 @@
  *
  * Uses jest.isolateModules to ensure clean state between tests.
  */
-// @ts-nocheck
-
 
 import type { HistoryEntry } from "extension/src/types";
 

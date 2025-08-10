@@ -189,15 +189,9 @@ export function populateFormFields(config: ServerConfig): void {
     debugMode: document.getElementById("settings-enable-debug") as HTMLInputElement,
     enableHistory: document.getElementById("settings-enable-history") as HTMLInputElement,
     logLevel: document.getElementById("settings-log-level") as HTMLSelectElement,
-    consoleLogLevel: document.getElementById(
-      "settings-console-log-level"
-    ) as HTMLSelectElement | null,
     ytdlpFormat: document.getElementById("settings-ytdlp-format") as HTMLSelectElement,
     allowPlaylists: document.getElementById("settings-allow-playlists") as HTMLInputElement,
     logFile: document.getElementById("settings-log-file") as HTMLInputElement,
-    maxConcurrent: document.getElementById(
-      "settings-max-concurrent-downloads"
-    ) as HTMLInputElement | null,
     ytdlpConcurrent: document.getElementById(
       "settings-ytdlp-concurrent-fragments"
     ) as HTMLInputElement,
@@ -218,9 +212,6 @@ export function populateFormFields(config: ServerConfig): void {
   if (elements.logLevel && config.log_level) {
     elements.logLevel.value = config.log_level;
   }
-  if (elements.consoleLogLevel && (config as any).console_log_level) {
-    elements.consoleLogLevel.value = String((config as any).console_log_level);
-  }
   if (elements.ytdlpFormat && config.yt_dlp_options?.format) {
     elements.ytdlpFormat.value = config.yt_dlp_options.format;
   }
@@ -229,9 +220,6 @@ export function populateFormFields(config: ServerConfig): void {
   }
   if (elements.logFile && (config as any).log_file) {
     elements.logFile.value = (config as any).log_file as string;
-  }
-  if (elements.maxConcurrent && (config as any).max_concurrent_downloads) {
-    elements.maxConcurrent.value = String((config as any).max_concurrent_downloads);
   }
   // Populate yt-dlp concurrent fragments from config or env overlay
   const conc =
@@ -986,10 +974,8 @@ export async function saveSettings(event: Event): Promise<void> {
       debug_mode: formData.get("enable-debug") === "on",
       enable_history: formData.get("enable-history") === "on",
       log_level: formData.get("log-level") as string,
-      // Use dedicated console log level if present, otherwise mirror log_level
-      console_log_level: ((formData.get("console-log-level") as string) ||
-        (formData.get("log-level") as string) ||
-        "info") as any,
+      // Persist console log level in storage if present in UI in the future; for now, mirror log_level
+      console_log_level: ((formData.get("log-level") as string) || "info") as any,
       yt_dlp_options: {
         format: formData.get("ytdlp-format") as string,
         concurrent_fragments: (() => {
@@ -1004,14 +990,6 @@ export async function saveSettings(event: Event): Promise<void> {
     // Include env-backed runtime settings
     const logFile = formData.get("log-file") as string | null;
     if (logFile) (config as any).log_file = logFile;
-    // Include max concurrent downloads if provided
-    const maxConcRaw = formData.get("max-concurrent-downloads") as string | null;
-    if (maxConcRaw) {
-      const mc = parseInt(maxConcRaw, 10);
-      if (Number.isFinite(mc) && mc >= 1) {
-        (config as any).max_concurrent_downloads = mc;
-      }
-    }
     // Gunicorn UI removed; workers forced to 1 in backend
 
     // Save to local storage first

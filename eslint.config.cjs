@@ -1,5 +1,4 @@
 // @ts-nocheck
-//
 // eslint.config.cjs
 const { defineConfig } = require("eslint/config");
 const js = require("@eslint/js");
@@ -174,10 +173,6 @@ module.exports = defineConfig([
       "@typescript-eslint/no-var-requires": "off",
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-non-null-assertion": "off",
-      // Allow ts-nocheck pragmas and relax formatting rules in tests
-      "@typescript-eslint/ban-ts-comment": "off",
-      "prettier/prettier": "off",
-      "no-empty": "off",
     },
   },
 
@@ -211,18 +206,6 @@ module.exports = defineConfig([
       "@typescript-eslint/explicit-function-return-type": "off",
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-non-null-assertion": "off",
-    },
-  },
-  // Node scripts and config shims overrides
-  {
-    files: [
-      "scripts/**/*.js",
-      "jest.stryker.config.js",
-      "playwright.config.js",
-      "tests/jest/jest.setup.js",
-    ],
-    rules: {
-      "@typescript-eslint/ban-ts-comment": "off",
     },
   },
 ]);

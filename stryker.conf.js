@@ -2,16 +2,13 @@
  * Stryker mutation testing configuration
  * @type {import('@stryker-mutator/core').StrykerOptions}
  */
-// @ts-nocheck
-
 module.exports = {
   packageManager: "npm",
   reporters: ["html", "clear-text", "progress"],
   testRunner: "jest",
   coverageAnalysis: "off",
   allowEmpty: true,
-  // Do not mutate files in-place; Stryker will work in its .stryker-tmp sandbox
-  inPlace: false,
+  inPlace: true,
   disableTypeChecks: true,
   jest: {
     configFile: "jest.stryker.config.js",

@@ -598,48 +598,6 @@ export async function initPopup(): Promise<void> {
     });
   }
 
-  // Wire main DOWNLOAD button to queue the current page URL
-  const enhancedDownloadBtn = document.getElementById(
-    "enhanced-download-button"
-  ) as HTMLButtonElement | null;
-  if (enhancedDownloadBtn) {
-    enhancedDownloadBtn.addEventListener("click", () => {
-      try {
-        chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
-          const tab = tabs && tabs[0];
-          const url = (tab && tab.url) || "";
-          if (!url) {
-            setStatus("Unable to detect active tab URL", true, 4000);
-            return;
-          }
-
-          // Provide quick UI feedback
-          enhancedDownloadBtn.disabled = true;
-
-          chrome.runtime.sendMessage({ type: "downloadVideo", url }, (response: any) => {
-            enhancedDownloadBtn.disabled = false;
-            if (chrome.runtime.lastError) {
-              setStatus(
-                "Request failed: " + chrome.runtime.lastError.message,
-                true,
-                4000
-              );
-              return;
-            }
-
-            if (response && (response.status === "success" || response.status === "queued")) {
-              setStatus("Queued", false, 2000);
-            } else {
-              setStatus(response?.message || "Failed to queue download", true, 4000);
-            }
-          });
-        });
-      } catch (e) {
-        setStatus("Unexpected error while initiating download", true, 4000);
-      }
-    });
-  }
-
   // Helper to send a message to the active tab's content script
   const sendToActiveTab = (message: any, callback?: (response: any) => void): void => {
     try {
