@@ -6,7 +6,7 @@ Provides the application factory to create the Flask app.
 import os
 from pathlib import Path
 
-from flask import Flask, jsonify, request
+from flask import Flask, current_app, jsonify, request
 from flask.wrappers import Response as FlaskResponse
 from flask_cors import CORS
 
@@ -33,6 +33,63 @@ def add_security_headers(response: FlaskResponse) -> FlaskResponse:
         "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
     )
     return response
+
+
+def handle_request_entity_too_large(_error: Exception) -> tuple[FlaskResponse, int]:
+    """Return JSON for request size limit violations (413)."""
+    return (
+        jsonify(
+            {
+                "status": "error",
+                "message": "Request entity too large",
+                "error_type": "REQUEST_ENTITY_TOO_LARGE",
+            }
+        ),
+        413,
+    )
+
+
+def handle_bad_request(_error: Exception) -> tuple[FlaskResponse, int]:
+    """Return sanitized JSON for bad requests on API routes (400)."""
+    if request.path.startswith("/api"):
+        return jsonify({"status": "error", "message": "Bad request", "error_type": "BAD_REQUEST"}), 400
+    # Log and return minimal message for non-API paths
+    current_app.logger.debug("Bad request on non-API path: %s", request.path)
+    return jsonify({"status": "error", "message": "Bad request"}), 400
+
+
+def handle_not_found(_error: Exception) -> tuple[FlaskResponse, int]:
+    """Return JSON for not found errors on API routes (404)."""
+    if request.path.startswith("/api"):
+        return jsonify({"status": "error", "message": "Not found", "error_type": "NOT_FOUND"}), 404
+    return jsonify({"status": "error", "message": "Not found"}), 404
+
+
+def handle_method_not_allowed(_error: Exception) -> tuple[FlaskResponse, int]:
+    """Return JSON for method not allowed on API routes (405)."""
+    if request.path.startswith("/api"):
+        return (
+            jsonify({"status": "error", "message": "Method not allowed", "error_type": "METHOD_NOT_ALLOWED"}),
+            405,
+        )
+    return jsonify({"status": "error", "message": "Method not allowed"}), 405
+
+
+def handle_internal_error(error: Exception) -> tuple[FlaskResponse, int]:
+    """Return sanitized JSON for internal server errors on API routes (500)."""
+    current_app.logger.exception("Unhandled server error: %s", error)
+    if request.path.startswith("/api"):
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": "Internal server error",
+                    "error_type": "INTERNAL_SERVER_ERROR",
+                }
+            ),
+            500,
+        )
+    return jsonify({"status": "error", "message": "Internal server error"}), 500
 
 
 def create_app(config: Config) -> Flask:
@@ -75,66 +132,12 @@ def create_app(config: Config) -> Flask:
     # Add security headers to all responses
     app.after_request(add_security_headers)
 
-    # Error handlers
-    @app.errorhandler(413)
-    def handle_request_entity_too_large(_error: Exception) -> tuple[FlaskResponse, int]:
-        """Return JSON for request size limit violations (413)."""
-        return (
-            jsonify(
-                {
-                    "status": "error",
-                    "message": "Request entity too large",
-                    "error_type": "REQUEST_ENTITY_TOO_LARGE",
-                }
-            ),
-            413,
-        )
-
-    # Explicit reference to satisfy static analyzers that this handler is used
-    _ = handle_request_entity_too_large
-
-    @app.errorhandler(400)
-    def handle_bad_request(_error: Exception) -> tuple[FlaskResponse, int]:
-        """Return sanitized JSON for bad requests on API routes (400)."""
-        # Only return JSON for API routes; otherwise, fall through to default handling
-        if request.path.startswith("/api"):
-            return jsonify({"status": "error", "message": "Bad request", "error_type": "BAD_REQUEST"}), 400
-        # Log and return minimal message for non-API paths
-        app.logger.debug("Bad request on non-API path: %s", request.path)
-        return jsonify({"status": "error", "message": "Bad request"}), 400
-
-    @app.errorhandler(404)
-    def handle_not_found(_error: Exception) -> tuple[FlaskResponse, int]:
-        """Return JSON for not found errors on API routes (404)."""
-        if request.path.startswith("/api"):
-            return jsonify({"status": "error", "message": "Not found", "error_type": "NOT_FOUND"}), 404
-        return jsonify({"status": "error", "message": "Not found"}), 404
-
-    @app.errorhandler(405)
-    def handle_method_not_allowed(_error: Exception) -> tuple[FlaskResponse, int]:
-        """Return JSON for method not allowed on API routes (405)."""
-        if request.path.startswith("/api"):
-            return jsonify(
-                {"status": "error", "message": "Method not allowed", "error_type": "METHOD_NOT_ALLOWED"}
-            ), 405
-        return jsonify({"status": "error", "message": "Method not allowed"}), 405
-
-    @app.errorhandler(500)
-    def handle_internal_error(error: Exception) -> tuple[FlaskResponse, int]:
-        """Return sanitized JSON for internal server errors on API routes (500)."""
-        app.logger.exception("Unhandled server error: %s", error)
-        if request.path.startswith("/api"):
-            return (
-                jsonify(
-                    {
-                        "status": "error",
-                        "message": "Internal server error",
-                        "error_type": "INTERNAL_SERVER_ERROR",
-                    }
-                ),
-                500,
-            )
-        return jsonify({"status": "error", "message": "Internal server error"}), 500
+    # Error handlers (registered at module scope for static analysis friendliness)
+    app.register_error_handler(413, handle_request_entity_too_large)
+    app.register_error_handler(400, handle_bad_request)
+    app.register_error_handler(404, handle_not_found)
+    app.register_error_handler(405, handle_method_not_allowed)
+    app.register_error_handler(500, handle_internal_error)
 
     # Register blueprints
     app.register_blueprint(download_bp)
@@ -144,8 +147,17 @@ def create_app(config: Config) -> Flask:
     app.register_blueprint(health_bp, url_prefix="/api")
     app.register_blueprint(history_bp)
     app.register_blueprint(restart_bp)
-    app.register_blueprint(logs_bp)
-    app.register_blueprint(logs_manage_bp)
+    # Mount logs under /api for consistent client paths
+    app.register_blueprint(logs_bp, url_prefix="/api")
+    app.register_blueprint(logs_manage_bp, url_prefix="/api")
+
+    # Backward-compatible aliases for legacy non-/api paths expected by tests and older clients
+    from .api.logs_bp import logs as logs_route
+    from .api.logs_manage_bp import clear_logs as clear_logs_route
+
+    app.add_url_rule("/logs", view_func=logs_route, methods=["GET", "OPTIONS"])  # alias
+    app.add_url_rule("/logs/", view_func=logs_route, methods=["GET", "OPTIONS"])  # alias with slash
+    app.add_url_rule("/logs/clear", view_func=clear_logs_route, methods=["POST"])  # alias
     app.register_blueprint(debug_bp)
 
     # Explicitly support integration path for history endpoint
