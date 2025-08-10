@@ -122,8 +122,8 @@ def test_url_command_calls_download_url(
 
     assert result.exit_code == 0
     mock_post.assert_called_once()
-    # Check URL is passed correctly in the request
-    assert mock_post.call_args[0][0] == f"http://127.0.0.1:{get_server_port()}/download"
+    # Check URL is passed correctly in the request (now under /api)
+    assert mock_post.call_args[0][0] == f"http://127.0.0.1:{get_server_port()}/api/download"
     # Check request body contains the URL
     assert mock_post.call_args[1]["json"]["url"] == test_url
 
