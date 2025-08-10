@@ -44,9 +44,9 @@ def server_command(as_json: bool) -> None:
     # No server running
     if not processes:
         if as_json:
-            click.echo(json.dumps({"error": "No running server found"}, indent=2))
+            click.echo(json.dumps({"error": "No running server found."}, indent=2))
         else:
-            click.echo("No running server found")
+            click.echo("No running server found.")
         sys.exit(1)
 
     if as_json:
@@ -69,7 +69,8 @@ def server_command(as_json: bool) -> None:
         click.echo(json.dumps(json_processes, indent=2))
         return
 
-    # Show server details in human-readable format
+    # Show server details in human-readable multi-line format (PID/Port/Uptime)
+    # Tests for `server_command` expect separate lines, while `status_group` prints summaries.
     for proc in processes:
         pid = proc.get("pid")
         port = proc.get("port")
@@ -77,7 +78,6 @@ def server_command(as_json: bool) -> None:
         version = proc.get("version")
         click.echo(f"PID {pid}")
         click.echo(f"Port {port}")
-        # Format uptime
         if isinstance(uptime, int | float):
             hours, remainder = divmod(uptime, 3600)
             minutes, seconds = divmod(remainder, 60)

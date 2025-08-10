@@ -1,4 +1,8 @@
-"""System Maintenance CLI command for Enhanced Video Downloader server."""
+"""System maintenance CLI commands for Enhanced Video Downloader server.
+
+This module consolidates system-related commands that were previously under
+`server/cli_commands`. Backward-compatibility shims have been removed.
+"""
 
 import logging
 from pathlib import Path
@@ -9,7 +13,6 @@ from server.cli_helpers import perform_system_maintenance
 from server.config import Config
 
 log = logging.getLogger(__name__)
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
 @click.command("system_maintenance")
@@ -43,27 +46,7 @@ def system_maintenance(
     clear_history: bool,
     clear_cache: bool,
 ) -> None:
-    """
-    Perform system maintenance tasks such as resuming downloads and clearing history/cache.
-
-    Parameters
-    ----------
-    ctx : click.Context
-        Click context object.
-    maintenance_resume_incomplete_flag : bool
-        Flag to resume incomplete downloads during maintenance.
-    maintenance_resume_failed_flag : bool
-        Flag to resume failed downloads from history during maintenance.
-    clear_history : bool
-        Flag to clear the download history file.
-    clear_cache : bool
-        Flag to clear temporary cache files (e.g., .part, .ytdl).
-
-    Returns
-    -------
-    None
-        This function does not return a value.
-    """
+    """Perform system maintenance tasks such as resuming downloads and clearing history/cache."""
     log.info("Starting system maintenance...")
     cfg = Config.load()
     download_dir_str = cfg.get_value("download_dir")
@@ -77,10 +60,11 @@ def system_maintenance(
             clear_cache,
         ]
     ):
-        log.info("No maintenance tasks specified. Use options like --resume-incomplete, --clear-history, etc.")
+        log.info(
+            "No maintenance tasks specified. Use options like --resume-incomplete, --clear-history, etc."
+        )
         return
 
-    # Perform the selected maintenance tasks
     perform_system_maintenance(
         download_dir,
         maintenance_resume_incomplete_flag,
@@ -89,3 +73,4 @@ def system_maintenance(
         clear_cache,
         log,
     )
+

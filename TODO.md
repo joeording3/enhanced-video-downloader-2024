@@ -20,6 +20,7 @@ Urgent Tasks:
 - [/] Implement `run_cleanup()` in `server/cli/utils.py` and add tests
 - [/] Align JSON error semantics across endpoints; document in README and CHANGELOG <!-- working-on: api-json-errors -->
 - [/] Server log noise reductions and fixes: standardized JSON parsing errors in `server/api/download_bp.py`, completed error logging in `server/api/logs_bp.py`, ensured restart and resume modules log with appropriate levels; verified via tests.
+ - [/] Centralize log-path resolution via `server/logging_setup.resolve_log_path` and update `server/api/logs_bp.py` and `server/api/logs_manage_bp.py` to use it; document precedence in README. Tighten `_validate_lines` message while preserving client response text.
 - [/] Replace silent `pass` blocks with logging/handling in:
   - `server/cli_helpers.py` (loops and maintenance utils)
   - `server/cli_main.py` (loop around verification)

@@ -12,6 +12,8 @@ from pathlib import Path
 
 from flask import Blueprint, Response, request
 
+from server.logging_setup import resolve_log_path
+
 logs_bp = Blueprint("logs", __name__)
 logger = logging.getLogger(__name__)
 
@@ -33,23 +35,15 @@ def logs() -> Response:
         lines = int(request.args.get("lines", 100))
         _validate_lines(lines)
     except ValueError:
+        # Preserve client-facing error for tests/clients
         return Response("Invalid 'lines' parameter", status=400, mimetype="text/plain")
 
     recent = request.args.get("recent", "false").lower() in ("1", "true", "yes")
 
     project_root = Path(__file__).parent.parent.parent
     env_log = os.getenv("LOG_FILE")
-    # Detect whether we are running under the actual repository root
-    real_repo = (project_root / "pyproject.toml").exists()
-
-    # Behavior:
-    # - In real repo: honor env override if provided; otherwise 404 placeholder
-    # - In tests (stubbed project_root, no pyproject): ignore env override and use server_output.log
-    if real_repo:
-        log_path = Path(env_log) if env_log else project_root / "__no_such_log_file__.log"
-    else:
-        # In tests with stubbed project_root: use legacy server_output.log
-        log_path = project_root / "server_output.log"
+    # Centralized resolution preserves legacy behavior
+    log_path = resolve_log_path(project_root, env_log, None, purpose="read")
 
     if not log_path.exists() or not log_path.is_file():
         logger.error(f"Log file not found: {log_path}")

@@ -25,7 +25,7 @@ from server.cli.download import (
     url_command,
 )
 from server.cli.resume import cli_resume_incomplete, resume_failed_cmd, resume_group
-from server.cli_commands.status import status
+from server.cli.status import server as status
 from server.cli_main import _cli_load_config, _cli_set_logging, cli, main
 from server.cli_resume_helpers import derive_resume_url, get_part_files, validate_scan_directory
 from server.constants import get_server_port
@@ -210,7 +210,7 @@ class TestStatusCommand:
             {"pid": 12346, "port": 8081, "uptime": 1800},
         ]
 
-        with patch("server.cli_commands.status.find_server_processes_cli", return_value=mock_procs):
+        with patch("server.cli.status.find_server_processes_cli", return_value=mock_procs):
             runner = click.testing.CliRunner()
             result = runner.invoke(status)
 
@@ -221,7 +221,7 @@ class TestStatusCommand:
 
     def test_status_command_with_no_server(self):
         """Test status command when no server is running."""
-        with patch("server.cli_commands.status.find_server_processes_cli", return_value=[]):
+        with patch("server.cli.status.find_server_processes_cli", return_value=[]):
             runner = click.testing.CliRunner()
             result = runner.invoke(status)
 
@@ -235,7 +235,7 @@ class TestStatusCommand:
             {"pid": 12345, "port": 8080, "uptime": None},
         ]
 
-        with patch("server.cli_commands.status.find_server_processes_cli", return_value=mock_procs):
+        with patch("server.cli.status.find_server_processes_cli", return_value=mock_procs):
             runner = click.testing.CliRunner()
             result = runner.invoke(status)
 
@@ -276,7 +276,7 @@ class TestSystemMaintenanceCommand:
 
     def test_system_maintenance_command_exists(self):
         """Test that system maintenance command exists."""
-        from server.cli_commands.system_maintenance import system_maintenance
+        from server.cli.system import system_maintenance
 
         assert callable(system_maintenance)
 

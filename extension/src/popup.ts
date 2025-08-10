@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { logger } from "./core/logger";
 
 // Align popup console logging level once from stored config

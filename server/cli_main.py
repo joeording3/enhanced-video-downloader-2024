@@ -22,7 +22,7 @@ import click
 import psutil
 
 # Import enhanced config functions from utils
-from server.cli_commands.system_maintenance import system_maintenance
+from server.cli.system import system_maintenance
 
 # Register scaffolded CLI subcommands
 from server.cli_helpers import (
@@ -953,7 +953,7 @@ def _cli_error_already_running(pid: int, host: str, port: int) -> None:
 
 
 # Execution helpers for start_server
-def _cli_execute_daemon(cmd: list[str], host: str, port: int, metadata: dict[str, Any]) -> None:
+def _cli_execute_daemon(cmd: list[str], host: str, port: int) -> None:
     """Execute server start in daemon mode."""
     try:
         process = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
@@ -977,7 +977,7 @@ def _cli_execute_daemon(cmd: list[str], host: str, port: int, metadata: dict[str
         log.exception("Failed to start server as daemon")
 
 
-def _cli_execute_foreground(cmd: list[str], _host: str, _port: int, metadata: dict[str, Any]) -> None:
+def _cli_execute_foreground(cmd: list[str], _host: str, _port: int) -> None:
     """Execute server start in foreground mode."""
     try:
         command_str = " ".join(cmd)
@@ -1199,9 +1199,10 @@ def _run_restart_server_enhanced(
         try:
             from click.core import ParameterSource
             src = ctx.get_parameter_source(name)
-            return src in (ParameterSource.COMMANDLINE, ParameterSource.ENVIRONMENT)
         except Exception:
             return False
+        else:
+            return src in (ParameterSource.COMMANDLINE, ParameterSource.ENVIRONMENT)
 
     # Derive defaults from prior metadata if not provided by user
     if not _provided("host") and isinstance(prior_meta.get("host"), str):

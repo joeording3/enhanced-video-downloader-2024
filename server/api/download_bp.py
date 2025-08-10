@@ -362,7 +362,7 @@ def download() -> Any:
     try:
         # Parse JSON first without consuming the stream; if this yields None or non-dict,
         # fallback to strict parsing which will raise on invalid JSON and be handled uniformly below.
-        json_obj = request.get_json(silent=True)
+        json_obj: Any = request.get_json(silent=True)
         raw_data = json_obj if isinstance(json_obj, dict) else _parse_download_raw()
         # Process the request
         response, _ = _process_download_request(raw_data)
@@ -415,7 +415,7 @@ def gallery_dl() -> Any:
     raw_data: dict[str, Any] = {}
     try:
         # Avoid automatic 400 on bad JSON; treat as server error per tests
-        json_obj = request.get_json(silent=True)
+        json_obj: Any = request.get_json(silent=True)
         if not isinstance(json_obj, dict):
             return _download_error_response("Server error: Invalid JSON payload", "SERVER_ERROR", "unknown", 500)
         raw_data = json_obj

@@ -12,6 +12,7 @@ from pathlib import Path
 from flask import Blueprint, Response
 
 from server.config import Config
+from server.logging_setup import resolve_log_path
 
 logs_manage_bp = Blueprint("logs_manage_bp", __name__)
 logger = logging.getLogger(__name__)
@@ -47,13 +48,11 @@ def clear_logs() -> Response:
     try:
         # Configuration is now environment-only
         cfg = Config.load()
-        # Get log path from config or environment, else fallback to an improbable default
+        # Resolve path centrally: env > config > improbable default
         env_log = os.getenv("LOG_FILE")
         cfg_log = cfg.get_value("log_path")
         project_root = Path(__file__).parent.parent.parent
-        default_name = "NON_EXISTENT_LOG_DO_NOT_CREATE.log"
-        resolved = env_log or cfg_log
-        log_path = Path(resolved) if resolved else (project_root / default_name)
+        log_path = resolve_log_path(project_root, env_log, cfg_log, purpose="manage")
 
         if log_path.exists() and os.access(log_path, os.W_OK):
             # Generate timestamp for the archive filename

@@ -163,7 +163,7 @@ Enhanced Video Downloader/
 │   │   ├── status.py            # Status check commands (server, downloads)
 │   │   ├── utils.py             # Utility commands (config, logs, cleanup)
 │   │   └── resume.py            # Resume commands (incomplete, failed)
-│   ├── cli_commands/            # Legacy CLI subcommands (compat imports only)
+│   ├── cli/                     # Consolidated CLI modules (download, history, status, utils, system)
 │   │   └── system_maintenance.py  # System maintenance commands (legacy path retained)
 │   ├── cli_helpers.py           # Shared helpers for CLI commands
 │   ├── cli_resume_helpers.py    # Resume-specific CLI helpers

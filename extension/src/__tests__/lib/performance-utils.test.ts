@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { debounce, throttle, memoize, DOMBatcher, Cache } from "../../lib/performance-utils";
 
 describe("Performance Utils Tests", () => {

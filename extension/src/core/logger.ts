@@ -2,8 +2,6 @@
  * Centralized logging system for the Enhanced Video Downloader extension.
  * Provides consistent logging across all components with structured output.
  */
-// @ts-nocheck
-
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
 

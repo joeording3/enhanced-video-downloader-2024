@@ -78,7 +78,6 @@ packages = [
     "server.api",
     "server.downloads",
     "server.cli",
-    "server.cli_commands",
 ]
 
 # uv-specific configuration

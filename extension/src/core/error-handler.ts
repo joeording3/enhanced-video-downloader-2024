@@ -2,8 +2,6 @@
  * Centralized error handling for the Enhanced Video Downloader extension.
  * Provides consistent error handling and logging across all components.
  */
-// @ts-nocheck
-
 
 export interface ErrorInfo {
   component: string;

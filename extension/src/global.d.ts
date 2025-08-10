@@ -2,8 +2,6 @@
  * Global type definitions for the Enhanced Video Downloader extension.
  * Declares global types and interfaces used throughout the extension.
  */
-// @ts-nocheck
-
 
 // Global type declarations
 

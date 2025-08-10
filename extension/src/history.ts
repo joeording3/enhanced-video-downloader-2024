@@ -2,8 +2,6 @@
  * History management for the Enhanced Video Downloader extension.
  * Handles download history storage, retrieval, and display.
  */
-// @ts-nocheck
-
 
 import { HistoryEntry } from "./types";
 

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { initPopup } from "../../extension/src/popup";
 
 declare const global: any;

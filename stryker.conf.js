@@ -2,8 +2,6 @@
  * Stryker mutation testing configuration
  * @type {import('@stryker-mutator/core').StrykerOptions}
  */
-// @ts-nocheck
-
 module.exports = {
   packageManager: "npm",
   reporters: ["html", "clear-text", "progress"],

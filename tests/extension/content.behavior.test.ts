@@ -1,6 +1,4 @@
 /* eslint-env jest */
-// @ts-nocheck
-
 
 /**
  * @jest-environment jsdom

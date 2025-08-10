@@ -1,6 +1,4 @@
 /* eslint-env jest */
-// @ts-nocheck
-
 
 import { setStatus, applyPopupTheme } from "extension/src/popup";
 

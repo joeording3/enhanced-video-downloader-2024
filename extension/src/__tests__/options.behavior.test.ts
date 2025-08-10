@@ -1,8 +1,6 @@
 /**
  * Options page behavior tests: load/save/log viewer/error history/theme interactions
  */
-// @ts-nocheck
-
 
 import {
   initOptionsPage,

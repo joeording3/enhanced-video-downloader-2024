@@ -2,8 +2,6 @@
  * Options page functionality for the Enhanced Video Downloader extension.
  * Handles extension settings, configuration, and user preferences.
  */
-// @ts-nocheck
-
 
 import { safeParse } from "./lib/utils";
 import { logger } from "./core/logger";

@@ -2,8 +2,6 @@
  * Type definitions for the Enhanced Video Downloader extension.
  * Centralized type definitions used throughout the extension.
  */
-// @ts-nocheck
-
 
 // Button state for position and visibility
 export interface ButtonState {

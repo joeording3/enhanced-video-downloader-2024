@@ -1,6 +1,4 @@
 /* eslint-env jest */
-// @ts-nocheck
-
 
 import { applyThemeToActionIcon, actionIconPaths, getActionIconPaths } from "../background-helpers";
 import { Theme } from "../types";

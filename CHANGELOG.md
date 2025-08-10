@@ -10,7 +10,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 
 - **Mutation testing configuration optimized**:
-  - **JS/TS (Stryker)**: per-test coverage, higher concurrency and test runner reuse, ignore static, enable related tests; add fast script for critical files; disable Jest coverage during mutation
+  - **JS/TS (Stryker)**: coverageAnalysis off for stability, higher concurrency and test runner reuse, ignoreStatic disabled for compatibility; add fast/minimal scripts; disable Jest coverage during mutation
   - **Python (mutmut)**: Makefile audit target runs mutmut with timeout and results output
   - **Makefile**: `audit-mutation` now runs JS/TS analysis and Python mutmut sequentially
   - **Docs**: DEVELOPER updated with current Stryker settings and commands
@@ -52,8 +52,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   expectations.
 
 - Backend cleanup: Removed deprecated legacy modules and unified helpers
+- Logging path handling:
+  - Centralized log-path resolution in `server/logging_setup.resolve_log_path` used by `/api/logs` and `/api/logs/clear` to eliminate duplication while preserving test behavior.
+  - Documented log path precedence in README: `LOG_FILE` env → config `log_path` → defaults.
+  - Improved internal validation message for `lines` parameter in logs endpoint without changing client-facing error text.
   - `server/video_downloader_server.py` now raises ImportError and is documented as removed
-  - Legacy `server/cli_commands/*` modules deprecated; lifecycle shim removed, status/system_maintenance kept only for import compatibility while main CLI lives under `server/cli/`
+  - Removed legacy `server/cli_commands/*` package entirely; migrated `system_maintenance` to `server/cli/system.py`; updated imports/tests; all CLI now under `server/cli/*`.
   - Extension code retains a temporary legacy export `actionIconPaths` in `extension/src/background-helpers.ts`; usage is being migrated to the `getActionIconPaths()` function. Removal is tracked in `TODO.md`.
 
 - Server error handlers moved to module scope and registered via `app.register_error_handler` to satisfy

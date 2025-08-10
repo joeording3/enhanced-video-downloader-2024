@@ -33,7 +33,7 @@
     "test:mutation:js": "stryker run",
     "test:mutation:js:fast": "stryker run --mutate \"extension/src/background-logic.ts,extension/src/background-helpers.ts,extension/src/core/validation-service.ts\"",
     "test:mutation:js:debug": "stryker run --logLevel debug --fileLogLevel trace",
-    "test:mutation:js:analyze": "stryker run --reporter html --reporter clear-text",
+    "test:mutation:js:analyze": "stryker run",
     "test:mutation:js:minimal": "stryker run --mutate extension/src/background-logic.ts",
     "test:mutation:py": "mutmut run",
     "test:mutation:py:fast": "mutmut run",
