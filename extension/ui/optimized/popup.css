@@ -107,6 +107,19 @@ h2 {
   background-color: var(--input-bg); /* Use input-bg for list background */
 }
 
+#download-status li,
+#download-history li {
+  padding: var(--space-md);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.9em;
+  color: var(--text-color);
+}
+
+#download-status li:last-child,
+#download-history li:last-child {
+  border-bottom: none;
+}
+
 /* Status text styling for list items - Now using shared styles from styles.css */
 
 /* Progress bar (if used in popup) */

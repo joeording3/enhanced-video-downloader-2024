@@ -54,6 +54,11 @@ h1 img {
   z-index: 1000; /* Ensure it's on top */
 }
 
+body.dark-theme .theme-toggle {
+  background-color: rgb(255 255 255 / 10%);
+  color: var(--text-primary-dark);
+}
+
 /* Settings Groups */
 .settings-group {
   margin-bottom: var(--space-xl);
@@ -62,6 +67,10 @@ h1 img {
   background-color: var(--bg-quaternary-light);
   overflow: hidden;
   transition: var(--transition-normal);
+}
+
+body.dark-theme .settings-group {
+  background-color: var(--bg-tertiary-dark);
 }
 
 .settings-group.hidden {
@@ -81,6 +90,12 @@ h1 img {
   gap: var(--space-sm);
 }
 
+body.dark-theme .section-title {
+  background-color: var(--bg-quaternary-dark);
+  color: var(--text-primary-dark);
+  border-bottom-color: var(--border-secondary-dark);
+}
+
 .section-content {
   padding: var(--space-xl);
 }
@@ -93,6 +108,10 @@ h1 img {
   background-color: var(--container-bg);
 }
 
+body.dark-theme .settings-section {
+  background-color: var(--container-bg);
+}
+
 .settings-section:last-child {
   margin-bottom: 0;
 }
@@ -102,6 +121,10 @@ h1 img {
   margin-bottom: var(--space-sm);
   font-weight: var(--font-weight-bold);
   color: var(--text-tertiary-light);
+}
+
+body.dark-theme .settings-section label {
+  color: var(--text-secondary-dark);
 }
 
 .required-indicator {
@@ -129,8 +152,20 @@ select {
 }
 
 /* Override any conflicting styles from styles.css */
+body.dark-theme .settings-row input[type="text"],
+body.dark-theme .settings-row input[type="number"],
+body.dark-theme select {
+  background-color: var(--bg-input-dark) !important;
+  color: var(--text-primary-dark) !important;
+  border-color: var(--border-secondary-dark) !important;
+}
 
 /* Also override the general input rules from styles.css */
+body.dark-theme input[type="number"] {
+  background-color: var(--bg-input-dark) !important;
+  color: var(--text-primary-dark) !important;
+  border-color: var(--border-secondary-dark) !important;
+}
 
 .settings-row input:focus,
 select:focus {
@@ -180,6 +215,13 @@ select:focus {
   gap: 6px;
 }
 
+body.dark-theme .format-info,
+body.dark-theme .log-level-info {
+  background-color: var(--notification-success-bg-dark);
+  border-color: var(--notification-success-border-dark);
+  color: var(--notification-success-text-dark);
+}
+
 .info-icon {
   font-size: var(--font-size-md);
 }
@@ -205,6 +247,10 @@ select:focus {
   background-color: var(--bg-tertiary);
 }
 
+body.dark-theme .checkbox-item:hover {
+  background-color: var(--bg-tertiary-dark);
+}
+
 .checkbox-item input[type="checkbox"] {
   margin: 0;
   margin-top: var(--space-xs);
@@ -224,6 +270,10 @@ select:focus {
   font-weight: var(--font-weight-normal);
 }
 
+body.dark-theme .checkbox-hint {
+  color: var(--text-secondary-dark);
+}
+
 /* Action Buttons */
 .settings-actions {
   display: flex;
@@ -237,12 +287,6 @@ select:focus {
 /* Button icons now use component classes */
 
 /* Save Section */
-.save-section {
-  text-align: center;
-  margin-top: var(--space-xl);
-  padding-top: var(--space-lg);
-  border-top: 2px solid var(--border-color);
-}
 
 /* Save button now uses .btn component classes */
 
@@ -263,10 +307,22 @@ select:focus {
   border: 1px solid var(--notification-success-border);
 }
 
+body.dark-theme .status-message.success {
+  background-color: var(--notification-success-bg-dark);
+  color: var(--notification-success-text-dark);
+  border-color: var(--notification-success-border-dark);
+}
+
 .status-message.error {
   background-color: var(--notification-error-bg);
   color: var(--notification-error-text);
   border: 1px solid var(--notification-error-border);
+}
+
+body.dark-theme .status-message.error {
+  background-color: var(--notification-error-bg-dark);
+  color: var(--notification-error-text-dark);
+  border-color: var(--notification-error-border-dark);
 }
 
 /* Settings Hints */
@@ -275,6 +331,10 @@ select:focus {
   font-size: 0.9em;
   margin-top: var(--space-xs);
   font-style: italic;
+}
+
+body.dark-theme .settings-hint {
+  color: var(--text-secondary-dark);
 }
 
 /* File Input */
@@ -318,6 +378,10 @@ legend {
   font-size: var(--font-size-lg);
 }
 
+body.dark-theme legend {
+  color: var(--text-primary-dark);
+}
+
 /* Footer */
 #disclaimer {
   text-align: center;
@@ -326,6 +390,10 @@ legend {
   margin-top: var(--space-xl);
   padding-top: var(--space-lg);
   border-top: 1px solid var(--border-color);
+}
+
+body.dark-theme #disclaimer {
+  color: var(--text-secondary-dark);
 }
 
 /* Log Container Enhancements */
@@ -354,6 +422,10 @@ legend {
   color: var(--text-tertiary-light);
 }
 
+body.dark-theme #log-title {
+  color: var(--text-primary-dark);
+}
+
 #log-controls button {
   padding: var(--space-xs) var(--space-md);
   background-color: var(--disabled);
@@ -376,6 +448,12 @@ legend {
   white-space: pre-wrap;
 }
 
+body.dark-theme #log-display {
+  background-color: var(--bg-secondary-dark);
+  border-color: var(--border-color);
+  color: var(--text-primary-dark);
+}
+
 #logViewerTextarea {
   width: 100%;
   height: 200px;
@@ -389,10 +467,20 @@ legend {
   resize: vertical;
 }
 
+body.dark-theme #logViewerTextarea {
+  background-color: var(--bg-secondary-dark);
+  border-color: var(--border-color);
+  color: var(--text-primary-dark);
+}
+
 /* Validation States */
 input.invalid {
   border-color: var(--error);
   box-shadow: 0 0 0 2px rgb(220 53 69 / 10%);
+}
+
+body.dark-theme input.invalid {
+  box-shadow: 0 0 0 2px rgb(220 53 69 / 20%);
 }
 
 input.valid {
@@ -400,7 +488,21 @@ input.valid {
   box-shadow: 0 0 0 2px rgb(40 167 69 / 10%);
 }
 
+body.dark-theme input.valid {
+  box-shadow: 0 0 0 2px rgb(40 167 69 / 20%);
+}
+
 /* Select Enhancements */
+body.dark-theme select {
+  background-color: var(--bg-input-dark);
+  color: var(--text-primary-dark);
+  border-color: var(--border-secondary-dark);
+}
+
+body.dark-theme select option {
+  background-color: var(--bg-input-dark);
+  color: var(--text-primary-dark);
+}
 
 /* Status Classes - Now using standardized selectors from styles.css */
 

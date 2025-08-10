@@ -82,6 +82,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - Documented log path precedence in README: `LOG_FILE` env → config `log_path` → defaults.
   - Improved internal validation message for `lines` parameter in logs endpoint without changing
     client-facing error text.
+  - On startup, the server now writes an explicit INFO line `Server starting on <host>:<port>` to the
+    active log file. When running under Gunicorn via CLI helpers, Gunicorn access and error logs are
+    wired by default to the same file (`accesslog`/`errorlog`), ensuring a single source of logs.
   - `server/video_downloader_server.py` now raises ImportError and is documented as removed
   - Removed legacy `server/cli_commands/*` package entirely; migrated `system_maintenance` to
     `server/cli/system.py`; updated imports/tests; all CLI now under `server/cli/*`.

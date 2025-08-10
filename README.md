@@ -379,13 +379,18 @@ Note: When using the CLI to start with `--gunicorn` or daemon/foreground mode, t
 
 ### Options Page
 
-- **Server Configuration**: Set download directory, server port, and other settings
+- **Server Configuration**: Set download directory, server port, and other settings. The
+  "Runtime (requires restart)" note is now part of this section, and the "Save Settings" and
+  "Restart Server" buttons live here to keep related actions together.
 - **Theme Toggle**: Switch between light and dark themes
 - **Log Display**: View server logs with different verbosity levels
 - **Log File Path**: The log viewer reads from the server's current log file path exposed via
   `/api/config` as `log_file`. If `LOG_FILE` is not set in the environment, the server sets it at
   startup to a stable default path `server_output.log` in the project root. You can override this
   path from the Options page (Log File field) or by setting `LOG_FILE` in your shell or `.env`.
+  The server writes a startup line to this file on boot: `Server starting on <host>:<port>`.
+  When running under Gunicorn via the CLI helpers, Gunicorn's access and error logs are also
+  wired by default to the same log file.
 
   Log path precedence:
   - `LOG_FILE` environment variable (if set)

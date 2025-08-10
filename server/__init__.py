@@ -3,6 +3,7 @@
 Provides the application factory to create the Flask app.
 """
 
+import logging
 import os
 from pathlib import Path
 
@@ -112,6 +113,39 @@ def create_app(config: Config) -> Flask:
     # Initialize logging with file output to a stable, known path so /logs works
     setup_logging(config.get_value("log_level", "INFO"), default_log_path)
 
+    # Ensure Werkzeug request logs flow into our file logger instead of stderr
+    try:
+        werk_log = logging.getLogger("werkzeug")
+        werk_log.setLevel(logging.INFO)
+        # Remove any existing stream handlers that write to stderr/stdout
+        werk_log.handlers.clear()
+        # Let messages propagate to root (which has our file handler)
+        werk_log.propagate = True
+    except Exception:
+        pass
+
+    # Log a clear startup/initialization message so the log file is never empty
+    try:
+        app_logger = logging.getLogger(__name__)
+        # Best-effort host/port from config; binding may be controlled by WSGI server
+        host_for_log = getattr(config, "server_host", "127.0.0.1")
+        port_for_log = getattr(config, "server_port", None)
+        if port_for_log is None:
+            # Fallback to constants if needed
+            try:
+                from .constants import get_server_port
+
+                port_for_log = get_server_port()
+            except Exception:
+                port_for_log = "unknown"
+        active_log_path = os.getenv("LOG_FILE", default_log_path)
+        app_logger.info(
+            f"Server application initialized for {host_for_log}:{port_for_log} | log_file={active_log_path}"
+        )
+    except Exception:
+        # Do not block startup on logging issues
+        pass
+
     # Serve extension UI static files under /ui
     ui_dir = project_root / "extension" / "ui"
     app = Flask(__name__, static_folder=str(ui_dir), static_url_path="/ui")
@@ -131,6 +165,19 @@ def create_app(config: Config) -> Flask:
 
     # Add security headers to all responses
     app.after_request(add_security_headers)
+
+    # Log API requests (method, path, status) at INFO to ensure visibility in file logs
+    @app.after_request  # type: ignore[misc]
+    def _log_api_requests(response: FlaskResponse) -> FlaskResponse:
+        try:
+            if request.path.startswith("/api"):
+                logging.getLogger("server.request").info(
+                    "%s %s -> %s", request.method, request.path, response.status_code
+                )
+        except Exception:
+            # Never block responses due to logging issues
+            pass
+        return response
 
     # Error handlers (registered at module scope for static analysis friendliness)
     app.register_error_handler(413, handle_request_entity_too_large)

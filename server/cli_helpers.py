@@ -1106,10 +1106,20 @@ def run_gunicorn_server(port: int, workers: int, daemon: bool) -> None:
         config = Config.load()
         app = create_app(config)
 
+        # Resolve a single log file path and wire Gunicorn to it by default
+        from .logging_setup import resolve_log_path
+        project_root = Path(__file__).parent.parent
+        env_log = os.getenv("LOG_FILE")
+        cfg_log = config.get_value("log_path")
+        log_path = resolve_log_path(project_root, env_log, cfg_log, purpose="manage")
+
         options = {
             "bind": f"127.0.0.1:{port}",
             "workers": workers,
             "daemon": daemon,
+            "accesslog": str(log_path),
+            "errorlog": str(log_path),
+            "loglevel": "info",
         }
 
         GunicornApp(app, options).run()

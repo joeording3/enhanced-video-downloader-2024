@@ -34,6 +34,8 @@ Urgent Tasks:
 - [/] Server log noise reductions and fixes: standardized JSON parsing errors in
   `server/api/download_bp.py`, completed error logging in `server/api/logs_bp.py`, ensured restart
   and resume modules log with appropriate levels; verified via tests.
+- [x] Add explicit startup INFO log line and wire Gunicorn access/error logs to the same log file by
+  default via CLI helpers. Update README and CHANGELOG to document behavior.
 - [/] Centralize log-path resolution via `server/logging_setup.resolve_log_path` and update
   `server/api/logs_bp.py` and `server/api/logs_manage_bp.py` to use it; document precedence in
   README. Tighten `_validate_lines` message while preserving client response text.

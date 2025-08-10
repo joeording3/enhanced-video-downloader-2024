@@ -29,3 +29,9 @@
   resize: vertical;
   overflow-y: auto;
 }
+
+body.dark-theme #logViewerTextarea {
+  background-color: var(--bg-secondary-dark);
+  color: var(--text-primary-dark);
+  border-color: var(--border-secondary-dark);
+}
