@@ -50,8 +50,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   cleanup paths to avoid silent failures.
 
 - Logging/cleanup tweaks:
+
   - `server/downloads/ytdlp.py`: log debug when `model_dump` conversion fails for `yt_dlp_options`.
-  - `server/config.py`: handle invalid `YTDLP_CONCURRENT_FRAGMENTS` gracefully when collecting env data.
+  - `server/config.py`: handle invalid `YTDLP_CONCURRENT_FRAGMENTS` gracefully when collecting env
+    data.
   - `server/cli/serve.py`: `_ServeApp.run` logs a debug message instead of a bare no-op.
 
 - Resume: Implemented real `gallery-dl` resume path in CLI helpers. The resume logic now builds a
