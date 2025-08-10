@@ -80,7 +80,7 @@ Enhanced Video Downloader/
 │   │   ├── status.py         # Status check commands
 │   │   ├── utils.py          # Utility commands
 │   │   └── resume.py         # Resume commands
-│   ├── cli_commands/         # Legacy CLI subcommands (compat imports only)
+│   ├── cli/                  # Active consolidated CLI modules
 │   │   └── system_maintenance.py # System maintenance commands (legacy path retained)
 │   ├── cli_helpers.py        # Shared helpers for CLI commands
 │   ├── cli_resume_helpers.py # Resume-specific CLI helpers
@@ -154,8 +154,7 @@ Enhanced Video Downloader/
 #### CSS design system (UI)
 
 - Files under `extension/ui/`:
-  - `variables.css` (design tokens), `base.css` (base rules), `components.css` (buttons, inputs,
-    status), `themes.css` (light/dark)
+  - `variables.css` (design tokens), `base.css` (base rules), `components.css` (buttons, inputs, status), `themes.css` (light/dark)
 - Use CSS variables everywhere; avoid hardcoded hex or spacing values.
 - Prefer component classes like `btn btn--primary`; legacy `styles.css` is removed.
 
@@ -175,8 +174,7 @@ Enhanced Video Downloader/
 - **[reports/type_ignore_audit_report.md](reports/type_ignore_audit_report.md)** - Type ignore usage
   audit and cleanup
 
-Note: Test suite and Playwright E2E audit details now live in `tests/testing.md` (Test Audit &
-Coverage Metrics). The old standalone audit reports have been removed.
+Note: Test suite and Playwright E2E audit details now live in `tests/testing.md` (Test Audit & Coverage Metrics). The old standalone audit reports have been removed.
 
 ### CI/CD Documentation
 
@@ -320,9 +318,7 @@ For production deployments, it's recommended to use Gunicorn:
 gunicorn --workers=4 --bind=0.0.0.0:<SERVER_PORT> server:create_app()
 ```
 
-Note: When using the CLI to start with `--gunicorn` or daemon/foreground mode, these settings are
-recorded and reused on `videodownloader-server restart` unless you provide explicit overrides.
-Metadata is stored at `server/data/server.lock.json` alongside the lock file.
+Note: When using the CLI to start with `--gunicorn` or daemon/foreground mode, these settings are recorded and reused on `videodownloader-server restart` unless you provide explicit overrides. Metadata is stored at `server/data/server.lock.json` alongside the lock file.
 
 ### Using Docker
 
@@ -390,6 +386,12 @@ Metadata is stored at `server/data/server.lock.json` alongside the lock file.
   `/api/config` as `log_file`. If `LOG_FILE` is not set in the environment, the server sets it at
   startup to a stable default path `server_output.log` in the project root. You can override this
   path from the Options page (Log File field) or by setting `LOG_FILE` in your shell or `.env`.
+
+  Log path precedence:
+  - `LOG_FILE` environment variable (if set)
+  - Config value `log_path` (for management operations like clearing/archiving)
+  - Default fallback: `<project_root>/server_output.log` for reading logs; an improbable
+    placeholder name for management if neither env nor config is provided
 - **Error History**: Browse past download errors with detailed troubleshooting information
 - **Server Status**: Real-time server connectivity status
 - **Settings Persistence**: All settings are automatically saved and restored
@@ -464,6 +466,13 @@ and includes:
   `LOG_FILE` at startup to `<project_root>/server_output.log` so the Options page can display the
   active path. You can update it via the Options page or by setting `LOG_FILE` in the environment
   (persisted to `.env` when changed via the API/CLI).
+
+Log path resolution details
+- Read operations (`GET /api/logs`): In a normal repo, `LOG_FILE` is honored if set; otherwise a
+  placeholder path triggers a 404 until configured. In tests (no `pyproject.toml`), reads default to
+  `<project_root>/server_output.log`.
+- Manage operations (`POST /api/logs/clear`): `LOG_FILE` takes precedence; if not set, the config
+  `log_path` is used; if neither is available, an improbable placeholder path is used.
 - `YTDLP_CONCURRENT_FRAGMENTS`: Integer, controls yt-dlp's per-download fragment concurrency for
   HLS/DASH streams. Valid range: 1–16. Default: 4. Higher values can improve throughput on fast
   networks but increase CPU/disk usage. This maps to `yt_dlp_options.concurrent_fragments` and can
@@ -711,8 +720,8 @@ For complete API documentation, see `server/api/api.md`.
 ### Error semantics (JSON parsing)
 
 - `/api/download`: If the request body claims JSON but is malformed, the endpoint returns a 500 JSON
-  error with `error_type: SERVER_ERROR` (test-suite compatible). Oversized payloads return 413 with
-  a structured JSON error.
+  error with `error_type: SERVER_ERROR` (test-suite compatible). Oversized payloads return 413 with a
+  structured JSON error.
 - `/api/gallery-dl` and `/api/resume`: Malformed JSON is treated as a server error (500) with a
   standardized JSON body (consistent with integration tests).
 
