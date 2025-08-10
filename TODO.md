@@ -26,6 +26,12 @@ Urgent Tasks:
   - `server/__main__.py` (process scanning and config save)
   - `server/lock.py` (unlink/parse/read errors)
 
+### Bundle Size Optimization (from latest analysis)
+
+- [ ] Split background script into smaller modules
+- [ ] Implement lazy loading for content script
+- [ ] Use dynamic imports for options page
+
 ### Wiring Audit Findings (Backend/UI/CLI integration)
 
 - [ ] Options: `resumeDownloads` button sends `chrome.runtime.sendMessage({ type: "resumeDownloads" })` but background has no handler. Add background handler to POST `/api/resume` and return result. Files: `extension/src/background.ts`, tests in `extension/src/__tests__/`.
