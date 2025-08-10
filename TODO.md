@@ -152,6 +152,10 @@ Legacy/Stub Cleanup:
   `variables.css`, `components.css`, `base.css`, and `themes.css`
 - [/] CSS audit: migrated inline styles to classes, unified visibility helpers.
   <!-- working-on: css refactor - visibility classes and contrast variants -->
+  - [/] Add missing CSS variables and aliases to unify color/spacing across Options and Popup
+  - [/] Remove non-standard `composes:` usage; replace with explicit component styles
+  - [/] Align backgrounds to `--container-bg` and headers to `--header-bg`
+  - [/] Normalize history/logs styles; use variables for dark-mode notification colors
 
 - [x] Remove obsolete `server/data/server.json` (unused; superseded by env config and lock metadata
       JSON)

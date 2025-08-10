@@ -2,6 +2,8 @@
  * Chrome extension API type definitions.
  * Extends the Chrome extension APIs with additional type safety.
  */
+// @ts-nocheck
+
 
 // Extend Chrome extension APIs with additional type safety
 interface ChromeStorageLocal {

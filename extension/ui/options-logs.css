@@ -18,7 +18,15 @@
 
 /* Use .btn component class instead of custom button styles */
 .button-style-checkbox {
-  composes: btn btn--secondary btn--small;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-secondary);
+  background: var(--bg-button);
+  color: var(--text-color);
+  font-size: var(--font-size-sm);
 }
 
 .log-options label {

@@ -345,6 +345,9 @@ Adoption status:
   - Keep `@keyframes` defined once (in `components.css`)
   - Scrollbar styling defined once; do not duplicate across files
   - Use `btn btn--primary` and other component classes; legacy `styles.css` is removed
+  - Popup and Options consistently use `--container-bg` for surfaces and `--header-bg` for section
+    headers. Text colors standardized via `--label-text`/`--text-secondary`. Non-standard CSS
+    `composes:` has been removed in favor of explicit component classes.
 
 ## Data Flow
 

@@ -66,6 +66,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `evd-visible`, `evd-on-dark`, `evd-on-light`), unified z-index variable (`--z-max`), and
   consolidated floating button states into `content.css`. Updated TS to toggle classes instead of
   setting inline `display`/`opacity`.
+  - Added missing CSS variables and dark-theme notification aliases; removed non-standard `composes:`
+    in CSS, replacing with explicit component styles. Unified list/log backgrounds to
+    `--container-bg`, headers to `--header-bg`, and standardized text colors using `--label-text` and
+    `--text-secondary`.
 - Code Quality: Eliminated remaining pyright warnings by tightening types in `config_bp.py` and
   explicitly referencing nested Flask error handler in `__init__.py`. Fixed implicit string
   concatenation in `download_bp.py` and cleaned import ordering in CLI status command.

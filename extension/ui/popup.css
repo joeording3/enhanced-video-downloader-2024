@@ -11,11 +11,11 @@
 /* History item specific styles */
 .history-item-timestamp {
   font-size: var(--font-size-sm);
-  color: var(--text-quaternary-light);
+  color: var(--text-muted);
 }
 
 .history-item-detail {
-  color: var(--text-tertiary-light);
+  color: var(--text-secondary);
 }
 
 .history-item-error {
@@ -121,7 +121,7 @@ h2 {
   overflow-y: auto;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  background-color: var(--input-bg); /* Use input-bg for list background */
+  background-color: var(--container-bg);
 }
 
 #download-status li,

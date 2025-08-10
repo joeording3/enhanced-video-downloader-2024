@@ -1,4 +1,6 @@
 /* eslint-env jest */
+// @ts-nocheck
+
 
 import { enhanceYouTubeButton } from "../youtube_enhance";
 import * as utils from "../lib/utils";

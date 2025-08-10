@@ -64,7 +64,7 @@ body.dark-theme .theme-toggle {
   margin-bottom: var(--space-xl);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-xl);
-  background-color: var(--bg-quaternary-light);
+  background-color: var(--container-bg);
   overflow: hidden;
   transition: var(--transition-normal);
 }
@@ -85,8 +85,8 @@ body.dark-theme .settings-group {
 .section-title {
   margin: 0;
   padding: var(--space-lg) var(--space-xl);
-  background-color: var(--bg-quaternary-light);
-  color: var(--text-tertiary-light);
+  background-color: var(--header-bg);
+  color: var(--text-color);
   font-size: var(--font-size-xl);
   font-weight: 600;
   border-bottom: 1px solid var(--border-color);
@@ -96,8 +96,8 @@ body.dark-theme .settings-group {
 }
 
 body.dark-theme .section-title {
-  background-color: var(--bg-quaternary-dark);
-  color: var(--text-primary-dark);
+  background-color: var(--header-bg);
+  color: var(--text-color);
   border-bottom-color: var(--border-secondary-dark);
 }
 
@@ -125,7 +125,7 @@ body.dark-theme .settings-section {
   display: block;
   margin-bottom: var(--space-sm);
   font-weight: var(--font-weight-bold);
-  color: var(--text-tertiary-light);
+  color: var(--label-text);
 }
 
 body.dark-theme .settings-section label {
@@ -448,7 +448,7 @@ body.dark-theme #log-title {
 }
 
 #log-display {
-  background-color: var(--bg-quaternary-light);
+  background-color: var(--container-bg);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   padding: var(--space-lg);
@@ -473,7 +473,7 @@ body.dark-theme #log-display {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   padding: var(--space-md);
-  background-color: var(--bg-quaternary-light);
+  background-color: var(--container-bg);
   color: var(--text-color);
   resize: vertical;
 }
