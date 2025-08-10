@@ -105,6 +105,8 @@ Legacy/Stub Cleanup:
 - [/] CSS audit: migrated inline styles to classes, unified visibility helpers.
   <!-- working-on: css refactor - visibility classes and contrast variants -->
 
+- [x] Remove obsolete `server/data/server.json` (unused; superseded by env config and lock metadata JSON)
+
 ### Hardcoded Variables Cleanup
 
 - [ ] Replace hardcoded fetch URLs in `extension/src/background.ts` with compositions of

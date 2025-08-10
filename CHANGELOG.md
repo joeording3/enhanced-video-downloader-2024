@@ -102,6 +102,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Outdated test audit reports removed: `reports/test_audit_report.md`, `reports/test_audit_summary.md`. Details consolidated in `tests/testing.md` (Test Audit & Coverage Metrics).
 
+- Server: Removed obsolete `server/data/server.json` (unused; configuration is env-based and runtime metadata is stored in `server/data/server.lock.json`).
+
 - Testing docs: Consolidated `background-logic.ts` mutation analysis into `tests/testing.md`; removed outdated `reports/mutation_analysis_report.md` in favor of the living testing document.
 
 ### Fixed
