@@ -77,7 +77,9 @@ class TestHistoryHelperFunctions:
         assert len(entries) == 1
         assert total == 1
 
-        mock_get.assert_called_once_with(f"http://127.0.0.1:{get_server_port()}/history", params={}, timeout=10)
+        mock_get.assert_called_once_with(
+            f"http://127.0.0.1:{get_server_port()}/api/history", params={}, timeout=10
+        )
 
     @patch("requests.get")
     @patch("click.echo")
@@ -93,7 +95,7 @@ class TestHistoryHelperFunctions:
         assert len(entries) == 1
 
         mock_get.assert_called_once_with(
-            f"http://127.0.0.1:{get_server_port()}/history",
+            f"http://127.0.0.1:{get_server_port()}/api/history",
             params={"status": "completed", "domain": "youtube"},
             timeout=10,
         )
@@ -255,7 +257,9 @@ class TestHistoryFunctionality:
         port = _get_server_port_or_exit()  # This should return 8080
 
         # Simulate the HTTP request
-        response = requests.post(f"http://127.0.0.1:{port}/history", json={"action": "clear"}, timeout=10)
+        response = requests.post(
+            f"http://127.0.0.1:{port}/api/history", json={"action": "clear"}, timeout=10
+        )
 
         if response.status_code == 200:
             mock_echo("Download history cleared successfully.")
@@ -263,7 +267,7 @@ class TestHistoryFunctionality:
         from server.constants import get_server_port
 
         mock_post.assert_called_once_with(
-            f"http://127.0.0.1:{get_server_port()}/history", json={"action": "clear"}, timeout=10
+            f"http://127.0.0.1:{get_server_port()}/api/history", json={"action": "clear"}, timeout=10
         )
         mock_echo.assert_called_with("Download history cleared successfully.")
 
