@@ -214,7 +214,7 @@ def _collect_env_data() -> dict[str, Any]:
         try:
             env_data.setdefault("yt_dlp_options", {})
             env_data["yt_dlp_options"]["concurrent_fragments"] = int(ytdlp_conc)
-    except Exception:
-        # Ignore invalid or non-integer env override; keep defaults
-        return env_data
+        except Exception:
+            # Ignore invalid or non-integer env override; keep defaults
+            pass
     return env_data
