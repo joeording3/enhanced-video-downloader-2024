@@ -1,8 +1,6 @@
 /**
  * Unit tests for options page UI logic functions
  */
-// @ts-nocheck
-
 
 import {
   validatePort,

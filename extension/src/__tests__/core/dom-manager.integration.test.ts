@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { DOMManager } from "../../core/dom-manager";
 
 describe("DOM Manager Tests", () => {

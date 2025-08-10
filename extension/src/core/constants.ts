@@ -2,71 +2,26 @@
  * Core constants for the Enhanced Video Downloader extension.
  * Centralized configuration and constants used throughout the extension.
  */
-// @ts-nocheck
-
 
 // ============================================================================
 // STORAGE KEYS
 // ============================================================================
-function stryNS_9fa48() {
-  var g = typeof globalThis === 'object' && globalThis && globalThis.Math === Math && globalThis || new Function("return this")();
-  var ns = g.__stryker__ || (g.__stryker__ = {});
-  if (ns.activeMutant === undefined && g.process && g.process.env && g.process.env.__STRYKER_ACTIVE_MUTANT__) {
-    ns.activeMutant = g.process.env.__STRYKER_ACTIVE_MUTANT__;
-  }
-  function retrieveNS() {
-    return ns;
-  }
-  stryNS_9fa48 = retrieveNS;
-  return retrieveNS();
-}
-stryNS_9fa48();
-function stryCov_9fa48() {
-  var ns = stryNS_9fa48();
-  var cov = ns.mutantCoverage || (ns.mutantCoverage = {
-    static: {},
-    perTest: {}
-  });
-  function cover() {
-    var c = cov.static;
-    if (ns.currentTestId) {
-      c = cov.perTest[ns.currentTestId] = cov.perTest[ns.currentTestId] || {};
-    }
-    var a = arguments;
-    for (var i = 0; i < a.length; i++) {
-      c[a[i]] = (c[a[i]] || 0) + 1;
-    }
-  }
-  stryCov_9fa48 = cover;
-  cover.apply(null, arguments);
-}
-function stryMutAct_9fa48(id) {
-  var ns = stryNS_9fa48();
-  function isActive(id) {
-    if (ns.activeMutant === id) {
-      if (ns.hitCount !== void 0 && ++ns.hitCount > ns.hitLimit) {
-        throw new Error('Stryker: Hit count limit reached (' + ns.hitCount + ')');
-      }
-      return true;
-    }
-    return false;
-  }
-  stryMutAct_9fa48 = isActive;
-  return isActive(id);
-}
+
 export const STORAGE_KEYS = {
   // Server configuration
   SERVER_CONFIG: "serverConfig",
   SERVER_PORT: "serverPort",
   SERVER_STATUS: "serverOnlineStatus",
   NETWORK_STATUS: "networkOnlineStatus",
+
   // Download management
   DOWNLOAD_HISTORY: "downloadHistory",
   DOWNLOAD_QUEUE: "downloadQueue",
+
   // UI configuration
   THEME: "theme",
   BUTTON_STATE: "buttonState",
-  HISTORY_ENABLED: "isHistoryEnabled"
+  HISTORY_ENABLED: "isHistoryEnabled",
 } as const;
 
 // ============================================================================
@@ -78,22 +33,19 @@ export const UI_CONSTANTS = {
   BUTTON_ID_PREFIX: "evd-download-button-",
   DRAG_HANDLE_CLASS: "evd-drag-handle",
   BUTTON_TEXT: "DOWNLOAD",
+
   // Interaction thresholds
-  CLICK_THRESHOLD: 200,
-  // Max time in ms to be considered a click
-  DEBOUNCE_DELAY: 300,
-  // Debounce delay for UI updates
+  CLICK_THRESHOLD: 200, // Max time in ms to be considered a click
+  DEBOUNCE_DELAY: 300, // Debounce delay for UI updates
 
   // Video detection
   MIN_VIDEO_WIDTH: 200,
   MIN_VIDEO_HEIGHT: 150,
-  VIDEO_CHECK_INTERVAL: 2000,
-  // Interval for checking for new videos
-  MAX_VIDEO_CHECKS: 5,
-  // Maximum number of checks if no videos are found initially
+  VIDEO_CHECK_INTERVAL: 2000, // Interval for checking for new videos
+  MAX_VIDEO_CHECKS: 5, // Maximum number of checks if no videos are found initially
 
   // Element creation
-  DEFAULT_Z_INDEX: "2147483647" // Maximum z-index value
+  DEFAULT_Z_INDEX: "2147483647", // Maximum z-index value
 } as const;
 
 // ============================================================================
@@ -102,20 +54,18 @@ export const UI_CONSTANTS = {
 
 export const NETWORK_CONSTANTS = {
   // Server communication
-  SERVER_CHECK_TIMEOUT: 2000,
-  // Timeout for individual port status checks (ms)
-  SERVER_CHECK_INTERVAL: 5000,
-  // ms, for periodic server status checks
-  MAX_PORT_BACKOFF_INTERVAL: 60000,
-  // Cap at 1 minute
+  SERVER_CHECK_TIMEOUT: 2000, // Timeout for individual port status checks (ms)
+  SERVER_CHECK_INTERVAL: 5000, // ms, for periodic server status checks
+  MAX_PORT_BACKOFF_INTERVAL: 60000, // Cap at 1 minute
 
   // API endpoints
   HEALTH_ENDPOINT: "/health",
   CONFIG_ENDPOINT: "/api/config",
   RESTART_ENDPOINT: "/api/restart",
   DOWNLOAD_ENDPOINT: "/api/download",
+
   // Server base URL
-  SERVER_BASE_URL: "http://127.0.0.1"
+  SERVER_BASE_URL: "http://127.0.0.1",
 } as const;
 
 // ============================================================================
@@ -124,16 +74,14 @@ export const NETWORK_CONSTANTS = {
 
 export const CONFIG_CONSTANTS = {
   // Config refresh
-  CONFIG_REFRESH_INTERVAL_COUNT: 6,
-  // Refresh config every 6 * 5s = 30s
+  CONFIG_REFRESH_INTERVAL_COUNT: 6, // Refresh config every 6 * 5s = 30s
 
   // Port discovery
-  BATCH_SIZE: 5,
-  // Number of ports to check in parallel
+  BATCH_SIZE: 5, // Number of ports to check in parallel
 
   // History pagination
   DEFAULT_PAGE_SIZE: 10,
-  MAX_HISTORY_ITEMS: 100
+  MAX_HISTORY_ITEMS: 100,
 } as const;
 
 // ============================================================================
@@ -142,7 +90,14 @@ export const CONFIG_CONSTANTS = {
 
 export const DOM_SELECTORS = {
   // Video detection
-  VIDEO_SELECTORS: ["video", 'iframe[src*="youtube.com"]', 'iframe[src*="vimeo.com"]', 'iframe[src*="dailymotion.com"]', 'iframe[src*="twitch.tv"]'].join(", "),
+  VIDEO_SELECTORS: [
+    "video",
+    'iframe[src*="youtube.com"]',
+    'iframe[src*="vimeo.com"]',
+    'iframe[src*="dailymotion.com"]',
+    'iframe[src*="twitch.tv"]',
+  ].join(", "),
+
   // UI elements
   STATUS_INDICATOR: "#server-status-indicator",
   STATUS_TEXT: "#server-status-text",
@@ -150,7 +105,7 @@ export const DOM_SELECTORS = {
   DOWNLOAD_STATUS: "#download-status",
   CONFIG_ERROR_DISPLAY: "#config-error-display",
   SERVER_PORT_DISPLAY: "#server-port-display",
-  DOWNLOAD_DIR_DISPLAY: "#download-dir-display"
+  DOWNLOAD_DIR_DISPLAY: "#download-dir-display",
 } as const;
 
 // ============================================================================
@@ -162,10 +117,11 @@ export const CSS_CLASSES = {
   DOWNLOAD_SENDING: "download-sending",
   DOWNLOAD_SUCCESS: "download-success",
   DOWNLOAD_ERROR: "download-error",
+
   // UI states
   HIDDEN: "hidden",
   DRAG_HANDLE: "evd-drag-handle",
-  DOWNLOAD_BUTTON: "download-button"
+  DOWNLOAD_BUTTON: "download-button",
 } as const;
 
 // ============================================================================
@@ -180,15 +136,17 @@ export const MESSAGE_TYPES = {
   TOGGLE_HISTORY: "toggleHistory",
   GET_HISTORY: "getHistory",
   SET_CONFIG: "setConfig",
+
   // Server operations
   GET_SERVER_STATUS: "getServerStatus",
   RESTART_SERVER: "restartServer",
   PAUSE_DOWNLOAD: "pauseDownload",
   RESUME_DOWNLOAD: "resumeDownload",
   CANCEL_DOWNLOAD: "cancelDownload",
+
   // UI updates
   SERVER_STATUS_UPDATE: "serverStatusUpdate",
-  SERVER_DISCOVERED: "serverDiscovered"
+  SERVER_DISCOVERED: "serverDiscovered",
 } as const;
 
 // ============================================================================
@@ -198,7 +156,7 @@ export const MESSAGE_TYPES = {
 export const THEME_CONSTANTS = {
   LIGHT: "light",
   DARK: "dark",
-  DEFAULT: "light"
+  DEFAULT: "light",
 } as const;
 
 // ============================================================================
@@ -210,13 +168,14 @@ export const STATUS_CONSTANTS = {
   CONNECTED: "connected",
   DISCONNECTED: "disconnected",
   CHECKING: "checking",
+
   // Download status
   QUEUED: "queued",
   DOWNLOADING: "downloading",
   COMPLETED: "completed",
   FAILED: "failed",
   PAUSED: "paused",
-  CANCELLED: "cancelled"
+  CANCELLED: "cancelled",
 } as const;
 
 // ============================================================================
@@ -229,17 +188,20 @@ export const ERROR_MESSAGES = {
   SERVER_NOT_FOUND: "Server not found",
   SERVER_CHECK_FAILED: "Server check failed",
   SERVER_TIMEOUT: "Server check timeout",
+
   // Download errors
   DOWNLOAD_FAILED: "Download failed",
   INVALID_URL: "Invalid URL format",
   BLOB_URL_FALLBACK: "Using page URL instead of blob URL",
+
   // Storage errors
   STORAGE_ERROR: "Failed to access storage",
   CONFIG_LOAD_ERROR: "Failed to load configuration",
   CONFIG_SAVE_ERROR: "Failed to save configuration",
+
   // UI errors
   ELEMENT_NOT_FOUND: "Element not found",
-  INJECTION_FAILED: "Failed to inject element"
+  INJECTION_FAILED: "Failed to inject element",
 } as const;
 
 // ============================================================================
@@ -250,15 +212,17 @@ export const SUCCESS_MESSAGES = {
   // Server messages
   SERVER_CONNECTED: "Server Connected",
   SERVER_DISCONNECTED: "Server Disconnected",
+
   // Download messages
   DOWNLOAD_STARTED: "Download started",
   DOWNLOAD_COMPLETED: "Download completed",
   DOWNLOAD_PAUSED: "Download paused",
   DOWNLOAD_RESUMED: "Download resumed",
   DOWNLOAD_CANCELLED: "Download cancelled",
+
   // Configuration messages
   CONFIG_SAVED: "Configuration saved",
-  THEME_UPDATED: "Theme updated"
+  THEME_UPDATED: "Theme updated",
 } as const;
 
 // ============================================================================
@@ -268,14 +232,17 @@ export const SUCCESS_MESSAGES = {
 export const NOTIFICATION_MESSAGES = {
   // Server notifications
   SERVER_CONNECTED_DETAIL: "Enhanced Video Downloader server is now online on port {port}.",
-  SERVER_DISCONNECTED_DETAIL: "The Enhanced Video Downloader server is not available. Downloads won't work until it's reconnected.",
+  SERVER_DISCONNECTED_DETAIL:
+    "The Enhanced Video Downloader server is not available. Downloads won't work until it's reconnected.",
+
   // Download notifications
   DOWNLOAD_QUEUED: "Video queued for download",
   DOWNLOAD_STARTED: "Download started successfully",
   DOWNLOAD_FAILED: "Download failed. Please try again.",
+
   // Configuration notifications
   CONFIG_UPDATED: "Configuration updated successfully",
-  THEME_CHANGED: "Theme changed successfully"
+  THEME_CHANGED: "Theme changed successfully",
 } as const;
 
 // ============================================================================
@@ -284,14 +251,9 @@ export const NOTIFICATION_MESSAGES = {
 
 // Environment detection
 function getEnvironment(): string {
-  if (stryMutAct_9fa48("1821")) {
-    {}
-  } else {
-    stryCov_9fa48("1821");
-    // In browser environment, we can't easily detect environment
-    // Default to development, but could be overridden by extension options
-    return stryMutAct_9fa48("1822") ? "" : (stryCov_9fa48("1822"), "development");
-  }
+  // In browser environment, we can't easily detect environment
+  // Default to development, but could be overridden by extension options
+  return "development";
 }
 
 // Central Port Configuration
@@ -306,7 +268,7 @@ const CENTRAL_PORT_CONFIG = {
     test_server_port: 5006,
     test_client_port: 5002,
     test_port_range_start: 5000,
-    test_port_range_end: 5010
+    test_port_range_end: 5010,
   },
   testing: {
     server_port: 5006,
@@ -317,7 +279,7 @@ const CENTRAL_PORT_CONFIG = {
     test_server_port: 5006,
     test_client_port: 5002,
     test_port_range_start: 5000,
-    test_port_range_end: 5010
+    test_port_range_end: 5010,
   },
   production: {
     server_port: 5010,
@@ -328,8 +290,8 @@ const CENTRAL_PORT_CONFIG = {
     test_server_port: 5006,
     test_client_port: 5002,
     test_port_range_start: 5000,
-    test_port_range_end: 5010
-  }
+    test_port_range_end: 5010,
+  },
 } as const;
 
 // Port validation constants
@@ -341,85 +303,50 @@ const CURRENT_ENVIRONMENT = getEnvironment();
 
 // Get current port configuration
 function getCurrentPortConfig() {
-  if (stryMutAct_9fa48("1823")) {
-    {}
-  } else {
-    stryCov_9fa48("1823");
-    return stryMutAct_9fa48("1826") ? CENTRAL_PORT_CONFIG[CURRENT_ENVIRONMENT as keyof typeof CENTRAL_PORT_CONFIG] && CENTRAL_PORT_CONFIG.development : stryMutAct_9fa48("1825") ? false : stryMutAct_9fa48("1824") ? true : (stryCov_9fa48("1824", "1825", "1826"), CENTRAL_PORT_CONFIG[CURRENT_ENVIRONMENT as keyof typeof CENTRAL_PORT_CONFIG] || CENTRAL_PORT_CONFIG.development);
-  }
+  return (
+    CENTRAL_PORT_CONFIG[CURRENT_ENVIRONMENT as keyof typeof CENTRAL_PORT_CONFIG] ||
+    CENTRAL_PORT_CONFIG.development
+  );
 }
 
 // Convenience functions for accessing specific ports
 export function getServerPort(): number {
-  if (stryMutAct_9fa48("1827")) {
-    {}
-  } else {
-    stryCov_9fa48("1827");
-    const config = getCurrentPortConfig();
-    return config.server_port;
-  }
+  const config = getCurrentPortConfig();
+  return config.server_port;
 }
+
 export function getClientPort(): number {
-  if (stryMutAct_9fa48("1828")) {
-    {}
-  } else {
-    stryCov_9fa48("1828");
-    const config = getCurrentPortConfig();
-    return config.client_port;
-  }
+  const config = getCurrentPortConfig();
+  return config.client_port;
 }
+
 export function getPortRange(): [number, number] {
-  if (stryMutAct_9fa48("1829")) {
-    {}
-  } else {
-    stryCov_9fa48("1829");
-    const config = getCurrentPortConfig();
-    return stryMutAct_9fa48("1830") ? [] : (stryCov_9fa48("1830"), [config.port_range_start, config.port_range_end]);
-  }
+  const config = getCurrentPortConfig();
+  return [config.port_range_start, config.port_range_end];
 }
+
 export function getTestServerPort(): number {
-  if (stryMutAct_9fa48("1831")) {
-    {}
-  } else {
-    stryCov_9fa48("1831");
-    const config = getCurrentPortConfig();
-    return config.test_server_port;
-  }
+  const config = getCurrentPortConfig();
+  return config.test_server_port;
 }
+
 export function getTestClientPort(): number {
-  if (stryMutAct_9fa48("1832")) {
-    {}
-  } else {
-    stryCov_9fa48("1832");
-    const config = getCurrentPortConfig();
-    return config.test_client_port;
-  }
+  const config = getCurrentPortConfig();
+  return config.test_client_port;
 }
+
 export function getTestPortRange(): [number, number] {
-  if (stryMutAct_9fa48("1833")) {
-    {}
-  } else {
-    stryCov_9fa48("1833");
-    const config = getCurrentPortConfig();
-    return stryMutAct_9fa48("1834") ? [] : (stryCov_9fa48("1834"), [config.test_port_range_start, config.test_port_range_end]);
-  }
+  const config = getCurrentPortConfig();
+  return [config.test_port_range_start, config.test_port_range_end];
 }
+
 export function getDockerPort(): number {
-  if (stryMutAct_9fa48("1835")) {
-    {}
-  } else {
-    stryCov_9fa48("1835");
-    const config = getCurrentPortConfig();
-    return config.docker_port;
-  }
+  const config = getCurrentPortConfig();
+  return config.docker_port;
 }
+
 export function isValidPort(port: number): boolean {
-  if (stryMutAct_9fa48("1836")) {
-    {}
-  } else {
-    stryCov_9fa48("1836");
-    return stryMutAct_9fa48("1839") ? MIN_PORT <= port || port <= MAX_PORT : stryMutAct_9fa48("1838") ? false : stryMutAct_9fa48("1837") ? true : (stryCov_9fa48("1837", "1838", "1839"), (stryMutAct_9fa48("1842") ? MIN_PORT > port : stryMutAct_9fa48("1841") ? MIN_PORT < port : stryMutAct_9fa48("1840") ? true : (stryCov_9fa48("1840", "1841", "1842"), MIN_PORT <= port)) && (stryMutAct_9fa48("1845") ? port > MAX_PORT : stryMutAct_9fa48("1844") ? port < MAX_PORT : stryMutAct_9fa48("1843") ? true : (stryCov_9fa48("1843", "1844", "1845"), port <= MAX_PORT)));
-  }
+  return MIN_PORT <= port && port <= MAX_PORT;
 }
 
 // Legacy port normalization removed; use centralized config directly
@@ -444,61 +371,41 @@ export const CURRENT_ENV = CURRENT_ENVIRONMENT;
 /**
  * Get a notification message with placeholders replaced
  */
-export function getNotificationMessage(messageKey: keyof typeof NOTIFICATION_MESSAGES, replacements: Record<string, string | number> = {}): string {
-  if (stryMutAct_9fa48("1846")) {
-    {}
-  } else {
-    stryCov_9fa48("1846");
-    let message = NOTIFICATION_MESSAGES[messageKey] as string;
-    for (const [key, value] of Object.entries(replacements)) {
-      if (stryMutAct_9fa48("1847")) {
-        {}
-      } else {
-        stryCov_9fa48("1847");
-        message = message.replace(new RegExp(stryMutAct_9fa48("1848") ? `` : (stryCov_9fa48("1848"), `{${key}}`), stryMutAct_9fa48("1849") ? "" : (stryCov_9fa48("1849"), "g")), String(value));
-      }
-    }
-    return message;
+export function getNotificationMessage(
+  messageKey: keyof typeof NOTIFICATION_MESSAGES,
+  replacements: Record<string, string | number> = {}
+): string {
+  let message = NOTIFICATION_MESSAGES[messageKey] as string;
+
+  for (const [key, value] of Object.entries(replacements)) {
+    message = message.replace(new RegExp(`{${key}}`, "g"), String(value));
   }
+
+  return message;
 }
 
 /**
  * Get a storage key with optional prefix
  */
 export function getStorageKey(key: keyof typeof STORAGE_KEYS, prefix?: string): string {
-  if (stryMutAct_9fa48("1850")) {
-    {}
-  } else {
-    stryCov_9fa48("1850");
-    const storageKey = STORAGE_KEYS[key];
-    return prefix ? stryMutAct_9fa48("1851") ? `` : (stryCov_9fa48("1851"), `${prefix}_${storageKey}`) : storageKey;
-  }
+  const storageKey = STORAGE_KEYS[key];
+  return prefix ? `${prefix}_${storageKey}` : storageKey;
 }
 
 /**
  * Get a CSS selector with optional context
  */
 export function getCSSSelector(selectorKey: keyof typeof DOM_SELECTORS, context?: string): string {
-  if (stryMutAct_9fa48("1852")) {
-    {}
-  } else {
-    stryCov_9fa48("1852");
-    const selector = DOM_SELECTORS[selectorKey];
-    return context ? stryMutAct_9fa48("1853") ? `` : (stryCov_9fa48("1853"), `${context} ${selector}`) : selector;
-  }
+  const selector = DOM_SELECTORS[selectorKey];
+  return context ? `${context} ${selector}` : selector;
 }
 
 /**
  * Get a message type with optional namespace
  */
 export function getMessageType(typeKey: keyof typeof MESSAGE_TYPES, namespace?: string): string {
-  if (stryMutAct_9fa48("1854")) {
-    {}
-  } else {
-    stryCov_9fa48("1854");
-    const messageType = MESSAGE_TYPES[typeKey];
-    return namespace ? stryMutAct_9fa48("1855") ? `` : (stryCov_9fa48("1855"), `${namespace}:${messageType}`) : messageType;
-  }
+  const messageType = MESSAGE_TYPES[typeKey];
+  return namespace ? `${namespace}:${messageType}` : messageType;
 }
 
 // ============================================================================

@@ -1,4 +1,3 @@
-// @ts-nocheck
 // eslint-env jest
 /**
  * Headless browser tests for Chrome extension UI using Playwright.
@@ -19,11 +18,7 @@ const isCoverage = process.env.PLAYWRIGHT_COVERAGE === "true";
 const _v8toIstanbul = require("v8-to-istanbul");
 const { createCoverageMap: _createCoverageMap } = require("istanbul-lib-coverage");
 // Import centralized port configuration
-const {
-  getServerPort,
-  getClientPort,
-  _getPortRange,
-} = require("../extension/src/constants");
+const { getServerPort, getClientPort, _getPortRange } = require("../extension/src/constants");
 
 // Increase default Jest timeout and declare dynamic server port
 jest.setTimeout(120000);
@@ -40,7 +35,7 @@ describe("Chrome Extension UI E2E", () => {
 
   beforeAll(async () => {
     // Start Express static server for extension files
-    await new Promise((resolve) => {
+    await new Promise(resolve => {
       const app = express();
       const baseDir = path.resolve(__dirname, "../../extension");
       // When collecting coverage, serve instrumented JS first, then static UI/assets
@@ -57,7 +52,7 @@ describe("Chrome Extension UI E2E", () => {
         console.log(`[E2E] Server listening on port ${serverPort}`);
         resolve();
       });
-      srv.on("error", (err) => {
+      srv.on("error", err => {
         server = srv;
         console.error("[E2E] Server failed to start:", err);
         // Fallback to assigned port if available
@@ -104,10 +99,7 @@ describe("Chrome Extension UI E2E", () => {
       const coverage = await page.evaluate(() => window.__coverage__);
       const outDir = path.resolve(__dirname, "../../coverage/frontend");
       fs.mkdirSync(outDir, { recursive: true });
-      fs.writeFileSync(
-        path.join(outDir, "playwright-coverage.json"),
-        JSON.stringify(coverage)
-      );
+      fs.writeFileSync(path.join(outDir, "playwright-coverage.json"), JSON.stringify(coverage));
     }
     if (browser) {
       await browser.close();
@@ -161,15 +153,11 @@ describe("Chrome Extension UI E2E", () => {
     const optionsPath = `${UI_BASE}/options.html`;
     await page.goto(optionsPath);
     await page.waitForSelector("#theme-toggle");
-    const initialIsDark = await page.evaluate(() =>
-      document.body.classList.contains("dark-theme")
-    );
+    const initialIsDark = await page.evaluate(() => document.body.classList.contains("dark-theme"));
     // Click theme toggle
     await page.click("#theme-toggle");
     // Verify theme class toggled
-    const newIsDark = await page.evaluate(() =>
-      document.body.classList.contains("dark-theme")
-    );
+    const newIsDark = await page.evaluate(() => document.body.classList.contains("dark-theme"));
     expect(newIsDark).toBe(!initialIsDark);
   }, 30000);
 
@@ -196,13 +184,11 @@ describe("Chrome Extension UI E2E", () => {
                 cb({});
               }
             },
-            onMessage: { addListener: (_fn) => { } },
+            onMessage: { addListener: _fn => {} },
           },
           tabs: {
-            query: () =>
-              Promise.resolve([{ id: 1, url: "https://example.com/video" }]),
-            sendMessage: (_tabId, _msg, cb) =>
-              cb({ hidden: false, disabled: false }),
+            query: () => Promise.resolve([{ id: 1, url: "https://example.com/video" }]),
+            sendMessage: (_tabId, _msg, cb) => cb({ hidden: false, disabled: false }),
           },
           storage: {
             local: {
@@ -228,7 +214,7 @@ describe("Chrome Extension UI E2E", () => {
             lastError: undefined,
             // Listeners registered via onMessage.addListener
             _listeners: [],
-            addListener: function (_fn) { },
+            addListener: function (_fn) {},
             onMessage: {
               _listeners: [],
               addListener(fn) {
@@ -250,7 +236,7 @@ describe("Chrome Extension UI E2E", () => {
                 });
               } else if (msg.type === "pauseDownload") {
                 // Simulate sending status update to paused
-                this.onMessage._listeners.forEach((fn) =>
+                this.onMessage._listeners.forEach(fn =>
                   fn({
                     type: "downloadStatusUpdate",
                     data: {
@@ -267,7 +253,7 @@ describe("Chrome Extension UI E2E", () => {
                 cb({});
               } else if (msg.type === "resumeDownload") {
                 // Simulate sending status update to downloading
-                this.onMessage._listeners.forEach((fn) =>
+                this.onMessage._listeners.forEach(fn =>
                   fn({
                     type: "downloadStatusUpdate",
                     data: {
@@ -286,8 +272,7 @@ describe("Chrome Extension UI E2E", () => {
             },
           },
           tabs: {
-            query: () =>
-              Promise.resolve([{ id: 1, url: "https://example.com/video1" }]),
+            query: () => Promise.resolve([{ id: 1, url: "https://example.com/video1" }]),
           },
           storage: {
             local: { get: (_keys, cb) => cb({ extensionConfig: {} }) },
@@ -296,9 +281,7 @@ describe("Chrome Extension UI E2E", () => {
         // Wire onMessage.addListener alias
         // No-op assignment for compatibility
         window.chrome.runtime.onMessage.addListener =
-          window.chrome.runtime.onMessage.addListener.bind(
-            window.chrome.runtime.onMessage
-          );
+          window.chrome.runtime.onMessage.addListener.bind(window.chrome.runtime.onMessage);
       });
       // Navigate to popup
       const popupPath = `${UI_BASE}/popup.html`;
@@ -338,7 +321,7 @@ describe("Chrome Extension UI E2E", () => {
                 cb({ active: {}, queue: ["video2"] });
               } else if (msg.type === "cancelDownload") {
                 // Simulate removal of queued item
-                this.onMessage._listeners.forEach((fn) =>
+                this.onMessage._listeners.forEach(fn =>
                   fn({ type: "queueUpdated", active: {}, queue: [] })
                 );
                 cb({});
@@ -346,8 +329,7 @@ describe("Chrome Extension UI E2E", () => {
             },
           },
           tabs: {
-            query: () =>
-              Promise.resolve([{ id: 1, url: "https://example.com/video2" }]),
+            query: () => Promise.resolve([{ id: 1, url: "https://example.com/video2" }]),
           },
           storage: {
             local: { get: (_keys, cb) => cb({ extensionConfig: {} }) },
@@ -355,9 +337,7 @@ describe("Chrome Extension UI E2E", () => {
         };
         // Wire onMessage listener
         window.chrome.runtime.onMessage.addListener =
-          window.chrome.runtime.onMessage.addListener.bind(
-            window.chrome.runtime.onMessage
-          );
+          window.chrome.runtime.onMessage.addListener.bind(window.chrome.runtime.onMessage);
       });
       const popupPath = `${UI_BASE}/popup.html`;
       await page.goto(popupPath);
@@ -368,10 +348,7 @@ describe("Chrome Extension UI E2E", () => {
       await page.click(".cancel-button");
       // After cancel, no-downloads message should appear
       await page.waitForSelector(".no-downloads-message");
-      const noDownloadsText = await page.$eval(
-        ".no-downloads-message",
-        (el) => el.textContent
-      );
+      const noDownloadsText = await page.$eval(".no-downloads-message", el => el.textContent);
       expect(noDownloadsText).toMatch(/No active or queued downloads\./);
     }, 60000);
     it("T4: View download history", async () => {
@@ -415,13 +392,11 @@ describe("Chrome Extension UI E2E", () => {
             },
           },
           tabs: {
-            query: () =>
-              Promise.resolve([{ id: 1, url: "https://example.com" }]),
+            query: () => Promise.resolve([{ id: 1, url: "https://example.com" }]),
           },
         };
         // Ensure messaging for initial active downloads
-        window.chrome.runtime.sendMessage = (msg, cb) =>
-          cb({ active: {}, queue: [] });
+        window.chrome.runtime.sendMessage = (msg, cb) => cb({ active: {}, queue: [] });
       });
       const popupPath = `${UI_BASE}/popup.html`;
       await page.goto(popupPath);
@@ -430,13 +405,10 @@ describe("Chrome Extension UI E2E", () => {
       const items = await page.$$("#download-history .history-item");
       expect(items.length).toBe(2);
       // Check the first (newest) item's title and status
-      const firstTitle = await page.evaluate(
-        (el) => el.querySelector("b").textContent,
-        items[0]
-      );
+      const firstTitle = await page.evaluate(el => el.querySelector("b").textContent, items[0]);
       expect(firstTitle).toBe("New Video");
       const statusText = await page.evaluate(
-        (el) => el.querySelectorAll("b")[1].textContent,
+        el => el.querySelectorAll("b")[1].textContent,
         items[0]
       );
       expect(statusText).toBe("failed");
@@ -460,7 +432,7 @@ describe("Chrome Extension UI E2E", () => {
                 cb({});
               }
             },
-            onMessage: { addListener: (_fn) => { } },
+            onMessage: { addListener: _fn => {} },
           },
           storage: {
             local: {
@@ -482,8 +454,7 @@ describe("Chrome Extension UI E2E", () => {
             },
           },
           tabs: {
-            query: () =>
-              Promise.resolve([{ id: 1, url: "https://example.com" }]),
+            query: () => Promise.resolve([{ id: 1, url: "https://example.com" }]),
           },
         };
       });
@@ -495,10 +466,7 @@ describe("Chrome Extension UI E2E", () => {
       await page.type("#settings-server-port", getClientPort().toString());
       // Validate inline port error
       await page.waitForFunction(
-        () =>
-          document
-            .getElementById("settings-status")
-            .textContent.includes("Invalid Port"),
+        () => document.getElementById("settings-status").textContent.includes("Invalid Port"),
         { timeout: 60000 }
       );
     }, 60000);
@@ -539,8 +507,7 @@ describe("Chrome Extension UI E2E", () => {
             },
           },
           tabs: {
-            query: () =>
-              Promise.resolve([{ id: 1, url: "https://example.com" }]),
+            query: () => Promise.resolve([{ id: 1, url: "https://example.com" }]),
           },
         };
       });
@@ -558,10 +525,7 @@ describe("Chrome Extension UI E2E", () => {
             .textContent.includes("Settings saved successfully!"),
         { timeout: 30000 }
       );
-      const statusText = await page.$eval(
-        "#settings-status",
-        (el) => el.textContent
-      );
+      const statusText = await page.$eval("#settings-status", el => el.textContent);
       expect(statusText).toBe("Settings saved successfully!");
     }, 30000);
     it("T7: View and filter logs", async () => {
@@ -583,7 +547,7 @@ describe("Chrome Extension UI E2E", () => {
                 cb({});
               }
             },
-            onMessage: { addListener: (_fn) => { } },
+            onMessage: { addListener: _fn => {} },
           },
           storage: {
             local: {
@@ -605,8 +569,7 @@ describe("Chrome Extension UI E2E", () => {
             },
           },
           tabs: {
-            query: () =>
-              Promise.resolve([{ id: 1, url: "https://example.com" }]),
+            query: () => Promise.resolve([{ id: 1, url: "https://example.com" }]),
           },
         };
         // Stub fetch to return logs directly
@@ -624,24 +587,17 @@ describe("Chrome Extension UI E2E", () => {
       await page.click("#log-refresh");
       await page.waitForSelector("#logViewerTextarea", { timeout: 60000 });
       await page.waitForFunction(
-        () =>
-          document
-            .querySelector("#logViewerTextarea")
-            .value.includes("First line"),
+        () => document.querySelector("#logViewerTextarea").value.includes("First line"),
         { timeout: 60000 }
       );
-      const logs = await page.$eval("#logViewerTextarea", (el) => el.value);
+      const logs = await page.$eval("#logViewerTextarea", el => el.value);
       expect(logs).toContain("ERROR Second line");
       // Clear logs and verify
       await page.click("#log-clear");
-      await page.waitForFunction(
-        () => document.querySelector("#logViewerTextarea").value === "",
-        { timeout: 60000 }
-      );
-      const statusText = await page.$eval(
-        "#log-display",
-        (el) => el.textContent
-      );
+      await page.waitForFunction(() => document.querySelector("#logViewerTextarea").value === "", {
+        timeout: 60000,
+      });
+      const statusText = await page.$eval("#log-display", el => el.textContent);
       expect(statusText).toBe("Logs cleared by user.");
     }, 60000);
     it("T8: Simulate network/server/download/permission errors", async () => {
@@ -664,13 +620,11 @@ describe("Chrome Extension UI E2E", () => {
                 if (cb) cb();
               }
             },
-            onMessage: { addListener: (_fn) => { } },
+            onMessage: { addListener: _fn => {} },
           },
           tabs: {
-            query: () =>
-              Promise.resolve([{ id: 1, url: "https://example.com" }]),
-            sendMessage: (_tabId, _msg, cb) =>
-              cb({ hidden: false, disabled: false }),
+            query: () => Promise.resolve([{ id: 1, url: "https://example.com" }]),
+            sendMessage: (_tabId, _msg, cb) => cb({ hidden: false, disabled: false }),
           },
           storage: {
             local: { get: (_keys, cb) => cb({ extensionConfig: {} }) },
@@ -684,7 +638,7 @@ describe("Chrome Extension UI E2E", () => {
         const el = document.getElementById("status");
         return el && el.textContent.includes("Network unreachable");
       });
-      let text = await page.$eval("#status", (el) => el.textContent.trim());
+      let text = await page.$eval("#status", el => el.textContent.trim());
       expect(text).toContain("Network unreachable");
       // Scenario 2: Server-side error response
       await page.evaluate(() => {
@@ -700,7 +654,7 @@ describe("Chrome Extension UI E2E", () => {
         const statusEl = document.getElementById("status");
         return statusEl && statusEl.textContent.includes("Server error occurred");
       });
-      text = await page.$eval("#status", (el) => el.textContent);
+      text = await page.$eval("#status", el => el.textContent);
       expect(text).toContain("Server error occurred");
     }, 60000);
 
@@ -723,8 +677,7 @@ describe("Chrome Extension UI E2E", () => {
             };
             window.chrome.tabs.query = () =>
               Promise.resolve([{ id: 1, url: "https://example.com" }]);
-            window.chrome.storage.local.get = (_keys, cb) =>
-              cb({ extensionConfig: {} });
+            window.chrome.storage.local.get = (_keys, cb) => cb({ extensionConfig: {} });
           });
           await page.goto(popupPath);
           await page.click("#enhanced-download-button");
@@ -791,8 +744,7 @@ describe("Chrome Extension UI E2E", () => {
             },
           },
           tabs: {
-            query: () =>
-              Promise.resolve([{ id: 1, url: "https://example.com/video" }]),
+            query: () => Promise.resolve([{ id: 1, url: "https://example.com/video" }]),
           },
           storage: {
             local: {
@@ -817,21 +769,15 @@ describe("Chrome Extension UI E2E", () => {
 
       // Verify control labels are intuitive
       if (pauseBtn) {
-        const pauseText = await page.evaluate((el) => el.textContent, pauseBtn);
+        const pauseText = await page.evaluate(el => el.textContent, pauseBtn);
         expect(pauseText.toLowerCase()).toContain("pause");
       }
       if (resumeBtn) {
-        const resumeText = await page.evaluate(
-          (el) => el.textContent,
-          resumeBtn
-        );
+        const resumeText = await page.evaluate(el => el.textContent, resumeBtn);
         expect(resumeText.toLowerCase()).toContain("resume");
       }
       if (cancelBtn) {
-        const cancelText = await page.evaluate(
-          (el) => el.textContent,
-          cancelBtn
-        );
+        const cancelText = await page.evaluate(el => el.textContent, cancelBtn);
         expect(cancelText.toLowerCase()).toContain("cancel");
       }
 
@@ -844,10 +790,7 @@ describe("Chrome Extension UI E2E", () => {
 
         // Test that drag handles are visually distinct
         const firstHandle = dragHandles[0];
-        const cursor = await page.evaluate(
-          (el) => getComputedStyle(el).cursor,
-          firstHandle
-        );
+        const cursor = await page.evaluate(el => getComputedStyle(el).cursor, firstHandle);
         expect(cursor).toBe("grab");
       }
 
@@ -867,10 +810,7 @@ describe("Chrome Extension UI E2E", () => {
           // Test Help link functionality
           const helpLink = await page.$(".error-help-link");
           if (helpLink) {
-            const helpText = await page.evaluate(
-              (el) => el.textContent,
-              helpLink
-            );
+            const helpText = await page.evaluate(el => el.textContent, helpLink);
             expect(helpText.toLowerCase()).toContain("help");
 
             // Verify help link opens options page (stub the openOptionsPage call)
@@ -880,9 +820,7 @@ describe("Chrome Extension UI E2E", () => {
               };
             });
             await helpLink.click();
-            const optionsOpened = await page.evaluate(
-              () => window._optionsPageOpened
-            );
+            const optionsOpened = await page.evaluate(() => window._optionsPageOpened);
             expect(optionsOpened).toBe(true);
           }
         }
@@ -895,10 +833,7 @@ describe("Chrome Extension UI E2E", () => {
       // Check that status messages are clear
       const statusEl = await page.$("#status");
       if (statusEl) {
-        const statusText = await page.evaluate(
-          (el) => el.textContent,
-          statusEl
-        );
+        const statusText = await page.evaluate(el => el.textContent, statusEl);
         expect(statusText.length).toBeGreaterThan(0);
       }
 
@@ -908,10 +843,7 @@ describe("Chrome Extension UI E2E", () => {
 
       const historyHeading = await page.$("#history-heading");
       if (historyHeading) {
-        const headingText = await page.evaluate(
-          (el) => el.textContent,
-          historyHeading
-        );
+        const headingText = await page.evaluate(el => el.textContent, historyHeading);
         expect(headingText.toLowerCase()).toContain("history");
       }
     }, 60000);
@@ -938,7 +870,7 @@ describe("Chrome Extension UI E2E", () => {
                 cb({});
               }
             },
-            onMessage: { addListener: (_fn) => { } },
+            onMessage: { addListener: _fn => {} },
           },
           storage: {
             local: {
@@ -974,16 +906,14 @@ describe("Chrome Extension UI E2E", () => {
             },
           },
           tabs: {
-            query: () =>
-              Promise.resolve([{ id: 1, url: "https://example.com" }]),
+            query: () => Promise.resolve([{ id: 1, url: "https://example.com" }]),
           },
         };
         // Stub fetch for logs
         window.fetch = () =>
           Promise.resolve({
             ok: true,
-            text: () =>
-              Promise.resolve("INFO Test log line 1\nERROR Test log line 2\n"),
+            text: () => Promise.resolve("INFO Test log line 1\nERROR Test log line 2\n"),
           });
       });
       await page.goto(optionsPath);
@@ -1005,14 +935,10 @@ describe("Chrome Extension UI E2E", () => {
       await page.waitForSelector("#logs-section:not([style*='display: none'])");
 
       await errorHistoryTab.click();
-      await page.waitForSelector(
-        "#error-history-section:not([style*='display: none'])"
-      );
+      await page.waitForSelector("#error-history-section:not([style*='display: none'])");
 
       await generalTab.click();
-      await page.waitForSelector(
-        "#general-section:not([style*='display: none'])"
-      );
+      await page.waitForSelector("#general-section:not([style*='display: none'])");
 
       // 2. Modify settings and test inline validation
       const portInput = await page.$("#settings-server-port");
@@ -1022,10 +948,7 @@ describe("Chrome Extension UI E2E", () => {
       await portInput.click({ clickCount: 3 });
       await portInput.type(getClientPort().toString()); // Invalid port
       await page.waitForFunction(
-        () =>
-          document
-            .getElementById("settings-status")
-            .textContent.includes("Invalid Port"),
+        () => document.getElementById("settings-status").textContent.includes("Invalid Port"),
         { timeout: 30000 }
       );
 
@@ -1054,25 +977,19 @@ describe("Chrome Extension UI E2E", () => {
       await refreshBtn.click();
       await page.waitForSelector("#logViewerTextarea");
       await page.waitForFunction(
-        () =>
-          document
-            .querySelector("#logViewerTextarea")
-            .value.includes("Test log line"),
+        () => document.querySelector("#logViewerTextarea").value.includes("Test log line"),
         { timeout: 30000 }
       );
 
       // Test clear functionality
       await clearBtn.click();
-      await page.waitForFunction(
-        () => document.querySelector("#logViewerTextarea").value === "",
-        { timeout: 30000 }
-      );
+      await page.waitForFunction(() => document.querySelector("#logViewerTextarea").value === "", {
+        timeout: 30000,
+      });
 
       // 4. Inspect Error History list
       await errorHistoryTab.click();
-      await page.waitForSelector(
-        "#error-history-section:not([style*='display: none'])"
-      );
+      await page.waitForSelector("#error-history-section:not([style*='display: none'])");
 
       const errorHistoryItems = await page.$$(".error-history-item");
       expect(errorHistoryItems.length).toBeGreaterThan(0);
@@ -1080,10 +997,7 @@ describe("Chrome Extension UI E2E", () => {
       // Verify error history entries display correctly
       if (errorHistoryItems.length > 0) {
         const firstItem = errorHistoryItems[0];
-        const errorText = await page.evaluate(
-          (el) => el.textContent,
-          firstItem
-        );
+        const errorText = await page.evaluate(el => el.textContent, firstItem);
         expect(errorText).toContain("Network error");
         expect(errorText).toContain("video1.mp4");
       }
@@ -1099,9 +1013,7 @@ describe("Chrome Extension UI E2E", () => {
       await themeToggle.click();
       await page.waitForTimeout(100); // Wait for theme change
 
-      const newTheme = await page.evaluate(() =>
-        document.body.classList.contains("dark-theme")
-      );
+      const newTheme = await page.evaluate(() => document.body.classList.contains("dark-theme"));
       expect(newTheme).toBe(!initialTheme);
 
       // 6. Verify all controls are clear and consistent
@@ -1115,10 +1027,7 @@ describe("Chrome Extension UI E2E", () => {
       // Verify save status feedback
       const statusEl = await page.$("#settings-status");
       if (statusEl) {
-        const statusText = await page.evaluate(
-          (el) => el.textContent,
-          statusEl
-        );
+        const statusText = await page.evaluate(el => el.textContent, statusEl);
         expect(statusText.length).toBeGreaterThan(0);
       }
 
@@ -1129,18 +1038,12 @@ describe("Chrome Extension UI E2E", () => {
         const nextBtn = await page.$(".pagination-next");
 
         if (prevBtn) {
-          const prevDisabled = await page.evaluate(
-            (el) => el.disabled,
-            prevBtn
-          );
+          const prevDisabled = await page.evaluate(el => el.disabled, prevBtn);
           expect(typeof prevDisabled).toBe("boolean");
         }
 
         if (nextBtn) {
-          const nextDisabled = await page.evaluate(
-            (el) => el.disabled,
-            nextBtn
-          );
+          const nextDisabled = await page.evaluate(el => el.disabled, nextBtn);
           expect(typeof nextDisabled).toBe("boolean");
         }
       }
@@ -1161,7 +1064,7 @@ describe("Chrome Extension UI E2E", () => {
           runtime: {
             sendMessage: (_msg, cb) => cb && cb(),
             lastError: undefined,
-            onMessage: { addListener: () => { } },
+            onMessage: { addListener: () => {} },
           },
           tabs: {
             query: () => Promise.resolve([]),
@@ -1183,7 +1086,7 @@ describe("Chrome Extension UI E2E", () => {
       });
       // Manually initialize content script
       await page.evaluate(() => {
-        if (typeof window.init === 'function') {
+        if (typeof window.init === "function") {
           window.init();
         }
       });

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { ValidationService } from "../../core/validation-service";
 
 describe("Validation Service Tests", () => {

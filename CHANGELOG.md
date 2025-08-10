@@ -10,24 +10,39 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 
 - **Mutation testing configuration optimized**:
-  - **JS/TS (Stryker)**: coverageAnalysis off for stability, higher concurrency and test runner reuse, ignoreStatic disabled for compatibility; add fast/minimal scripts; disable Jest coverage during mutation
+  - **JS/TS (Stryker)**: coverageAnalysis off for stability, higher concurrency and test runner
+    reuse, ignoreStatic disabled for compatibility; add fast/minimal scripts; disable Jest coverage
+    during mutation
   - **Python (mutmut)**: Makefile audit target runs mutmut with timeout and results output
   - **Makefile**: `audit-mutation` now runs JS/TS analysis and Python mutmut sequentially
   - **Docs**: DEVELOPER updated with current Stryker settings and commands
-- CLI: Restart now reuses the previous run's mode and flags when not provided (persisted in `server/data/server.lock.json`). Works for both Flask dev and Gunicorn prod runs. Explicit flags still override.
-- Docs: Remove outdated Playwright audit report; migrate E2E audit details to `tests/testing.md`. Add frontend performance practices (debouncing, DOM caching, listener cleanup, modest polling) to `README.md`.
-- Docs: Add consolidated Hardcoded Variables Policy to README and Architecture docs; track remaining cleanup tasks in `TODO.md`.
-- Docs: Migrate CSS design system details into `ARCHITECTURE.md` and `README.md`; remove obsolete `reports/css_comprehensive_report.md` (all issues already resolved and reflected in codebase).
+- CLI: Restart now reuses the previous run's mode and flags when not provided (persisted in
+  `server/data/server.lock.json`). Works for both Flask dev and Gunicorn prod runs. Explicit flags
+  still override.
+- Docs: Remove outdated Playwright audit report; migrate E2E audit details to `tests/testing.md`.
+  Add frontend performance practices (debouncing, DOM caching, listener cleanup, modest polling) to
+  `README.md`.
+- Docs: Add consolidated Hardcoded Variables Policy to README and Architecture docs; track remaining
+  cleanup tasks in `TODO.md`.
+- Docs: Migrate CSS design system details into `ARCHITECTURE.md` and `README.md`; remove obsolete
+  `reports/css_comprehensive_report.md` (all issues already resolved and reflected in codebase).
+
 ### Tooling
 
 - Add unused-code detection tools:
-  - TypeScript: `ts-prune` with `npm run lint:unused:ts` and Make target `lint-unused-ts` scanning `tsconfig.json` (includes tests)
-  - Python: `vulture` added to dev deps; Make target `lint-unused-py` scans `server` and `tests` with min-confidence 60
+
+  - TypeScript: `ts-prune` with `npm run lint:unused:ts` and Make target `lint-unused-ts` scanning
+    `tsconfig.json` (includes tests)
+  - Python: `vulture` added to dev deps; Make target `lint-unused-py` scans `server` and `tests`
+    with min-confidence 60
   - Aggregate target `make lint-unused` runs both; documented in README
 
 - API error handling consistency:
-  - `/api/download`: continues to surface malformed JSON as a 500 SERVER_ERROR per existing tests; oversized payloads return structured 413 JSON.
-  - `/api/gallery-dl` and `/api/resume`: treat malformed JSON as 500 SERVER_ERROR (not 400), aligning integration tests; return standardized JSON bodies.
+
+  - `/api/download`: continues to surface malformed JSON as a 500 SERVER_ERROR per existing tests;
+    oversized payloads return structured 413 JSON.
+  - `/api/gallery-dl` and `/api/resume`: treat malformed JSON as 500 SERVER_ERROR (not 400),
+    aligning integration tests; return standardized JSON bodies.
 
 - Backend: Ensure `LOG_FILE` env is set at startup to the active default `server_output.log` path
   when not provided, so `/api/config` returns `log_file` and the Options UI field
@@ -53,15 +68,22 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Backend cleanup: Removed deprecated legacy modules and unified helpers
 - Logging path handling:
-  - Centralized log-path resolution in `server/logging_setup.resolve_log_path` used by `/api/logs` and `/api/logs/clear` to eliminate duplication while preserving test behavior.
-  - Documented log path precedence in README: `LOG_FILE` env → config `log_path` → defaults.
-  - Improved internal validation message for `lines` parameter in logs endpoint without changing client-facing error text.
-  - `server/video_downloader_server.py` now raises ImportError and is documented as removed
-  - Removed legacy `server/cli_commands/*` package entirely; migrated `system_maintenance` to `server/cli/system.py`; updated imports/tests; all CLI now under `server/cli/*`.
-  - Extension code retains a temporary legacy export `actionIconPaths` in `extension/src/background-helpers.ts`; usage is being migrated to the `getActionIconPaths()` function. Removal is tracked in `TODO.md`.
 
-- Server error handlers moved to module scope and registered via `app.register_error_handler` to satisfy
-  static analysis and avoid false "unused" warnings. No behavioral change in responses:
+  - Centralized log-path resolution in `server/logging_setup.resolve_log_path` used by `/api/logs`
+    and `/api/logs/clear` to eliminate duplication while preserving test behavior.
+  - Documented log path precedence in README: `LOG_FILE` env → config `log_path` → defaults.
+  - Improved internal validation message for `lines` parameter in logs endpoint without changing
+    client-facing error text.
+  - `server/video_downloader_server.py` now raises ImportError and is documented as removed
+  - Removed legacy `server/cli_commands/*` package entirely; migrated `system_maintenance` to
+    `server/cli/system.py`; updated imports/tests; all CLI now under `server/cli/*`.
+  - Extension code retains a temporary legacy export `actionIconPaths` in
+    `extension/src/background-helpers.ts`; usage is being migrated to the `getActionIconPaths()`
+    function. Removal is tracked in `TODO.md`.
+
+- Server error handlers moved to module scope and registered via `app.register_error_handler` to
+  satisfy static analysis and avoid false "unused" warnings. No behavioral change in responses:
+
   - 400, 404, 405, 413, 500 JSON structures preserved
   - Handlers now live at module scope in `server/__init__.py`
 
@@ -95,20 +117,25 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   handling via subprocess mocking. README updated to describe gallery resume behavior.
 
 ### Removed
+
 - Reports: Removed outdated `reports/hardcoded_variables_audit_report.md` and
   `reports/hardcoded_variables_summary.md` after migrating key guidance to project docs.
 
 - Deprecated UI stylesheet `extension/ui/styles.css` removed. UI now uses modular styles:
   `variables.css`, `components.css`, `base.css`, and `themes.css`.
 
-- Obsolete report removed: `reports/css_comprehensive_report.md` (content consolidated into permanent
-  docs; verification confirms no remaining open items).
+- Obsolete report removed: `reports/css_comprehensive_report.md` (content consolidated into
+  permanent docs; verification confirms no remaining open items).
 
-- Outdated test audit reports removed: `reports/test_audit_report.md`, `reports/test_audit_summary.md`. Details consolidated in `tests/testing.md` (Test Audit & Coverage Metrics).
+- Outdated test audit reports removed: `reports/test_audit_report.md`,
+  `reports/test_audit_summary.md`. Details consolidated in `tests/testing.md` (Test Audit & Coverage
+  Metrics).
 
-- Server: Removed obsolete `server/data/server.json` (unused; configuration is env-based and runtime metadata is stored in `server/data/server.lock.json`).
+- Server: Removed obsolete `server/data/server.json` (unused; configuration is env-based and runtime
+  metadata is stored in `server/data/server.lock.json`).
 
-- Testing docs: Consolidated `background-logic.ts` mutation analysis into `tests/testing.md`; removed outdated `reports/mutation_analysis_report.md` in favor of the living testing document.
+- Testing docs: Consolidated `background-logic.ts` mutation analysis into `tests/testing.md`;
+  removed outdated `reports/mutation_analysis_report.md` in favor of the living testing document.
 
 ### Fixed
 
@@ -276,6 +303,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   docs
 - **Quality Metrics**: Preserved important metrics and achievements in permanent documentation
 - **Audit Report Cleanup**: Removed standalone audit reports after information migration
+
 ### Documentation
 
 - Consolidated frontend optimization findings into `ARCHITECTURE.md` and `README.md` (centralized

@@ -439,7 +439,7 @@ def gallery_dl() -> Any:
         download_id = raw_data.get("downloadId", "unknown")
 
         # Validate with Pydantic
-        gallery_request = GalleryDLRequest(**raw_data)
+        gallery_request = GalleryDLRequest(**cast(dict[str, Any], raw_data))
         validated_data = gallery_request.model_dump()
 
         logger.debug(f"Processing gallery-dl request [{download_id}]: {validated_data}")
@@ -495,7 +495,7 @@ def resume() -> Any:
         download_id = raw_data.get("downloadId", "unknown")
 
         # Validate with Pydantic
-        resume_request = ResumeRequest(**raw_data)
+        resume_request = ResumeRequest(**cast(dict[str, Any], raw_data))
         validated_data = resume_request.model_dump()
 
         logger.debug(f"Processing resume request [{download_id}]: {validated_data}")

@@ -3,24 +3,37 @@
 Urgent Tasks:
 
 - [/] log viewer on options page not working - no logs displayed
-- [x] Remove outdated test audit reports (`reports/test_audit_report.md`, `reports/test_audit_summary.md`); migrated content into `tests/testing.md` and removed references in `README.md` and `ARCHITECTURE.md`.
-- [x] Remove outdated `reports/test_audit_report.md`; migrate key notes into `tests/testing.md` and keep `reports/test_audit_summary.md`.
-- [x] Remove outdated `reports/mutation_analysis_report.md`; migrate key actionable notes into `tests/testing.md` under Mutation Testing Status.
+- [x] Remove outdated test audit reports (`reports/test_audit_report.md`,
+      `reports/test_audit_summary.md`); migrated content into `tests/testing.md` and removed
+      references in `README.md` and `ARCHITECTURE.md`.
+- [x] Remove outdated `reports/test_audit_report.md`; migrate key notes into `tests/testing.md` and
+      keep `reports/test_audit_summary.md`.
+- [x] Remove outdated `reports/mutation_analysis_report.md`; migrate key actionable notes into
+      `tests/testing.md` under Mutation Testing Status.
 - [ ] Add unused-code checks to CI and local workflows
   <!-- working-on: unused-code checks (ts-prune, vulture) -->
+
   - [x] Add ts-prune scripts and Make targets
   - [x] Add vulture to dev deps and Make target scanning `server` and `tests`
   - [ ] Wire into `make all`/`check` gates and CI once noise baseline is reviewed
 
   <!-- working-on: options logs viewer wired to background API -->
-- [/] Prevent stale lock file from affecting CLI status tests by removing `server/data/server.lock` before `make test-py`
-- [/] Enhance CLI restart: reuse previous run mode/flags automatically when not provided (persisted in `server/data/server.lock.json`)
+
+- [/] Prevent stale lock file from affecting CLI status tests by removing `server/data/server.lock`
+  before `make test-py`
+- [/] Enhance CLI restart: reuse previous run mode/flags automatically when not provided (persisted
+  in `server/data/server.lock.json`)
 - [/] 'choose' button to set download directory now wired (added id `settings-folder-picker` in
   `extension/ui/options.html`)
 - [/] Implement `run_cleanup()` in `server/cli/utils.py` and add tests
-- [/] Align JSON error semantics across endpoints; document in README and CHANGELOG <!-- working-on: api-json-errors -->
-- [/] Server log noise reductions and fixes: standardized JSON parsing errors in `server/api/download_bp.py`, completed error logging in `server/api/logs_bp.py`, ensured restart and resume modules log with appropriate levels; verified via tests.
- - [/] Centralize log-path resolution via `server/logging_setup.resolve_log_path` and update `server/api/logs_bp.py` and `server/api/logs_manage_bp.py` to use it; document precedence in README. Tighten `_validate_lines` message while preserving client response text.
+- [/] Align JSON error semantics across endpoints; document in README and CHANGELOG
+  <!-- working-on: api-json-errors -->
+- [/] Server log noise reductions and fixes: standardized JSON parsing errors in
+  `server/api/download_bp.py`, completed error logging in `server/api/logs_bp.py`, ensured restart
+  and resume modules log with appropriate levels; verified via tests.
+- [/] Centralize log-path resolution via `server/logging_setup.resolve_log_path` and update
+  `server/api/logs_bp.py` and `server/api/logs_manage_bp.py` to use it; document precedence in
+  README. Tighten `_validate_lines` message while preserving client response text.
 - [/] Replace silent `pass` blocks with logging/handling in:
   - `server/cli_helpers.py` (loops and maintenance utils)
   - `server/cli_main.py` (loop around verification)
@@ -38,6 +51,7 @@ Urgent Tasks:
 ### Unused Code Cleanup (from latest report)
 
 - **TypeScript**
+
   - [ ] De-export internal-only symbols in `extension/src/core/constants.ts`.
   - [ ] De-export `updateToggleButtonState` in `extension/src/popup.ts` if not used externally.
   - [ ] Audit `extension/src/types/index.ts`; keep only the intended public API exported.
@@ -45,15 +59,16 @@ Urgent Tasks:
   - [ ] Add a ts-prune ignore list (`ts-prune.json`) for intentional public exports.
 
 - **Python**
-  - [ ] Add `reports/vulture_whitelist.py` listing Flask routes and Click commands
-        to reduce false positives from decorators/dynamic registration.
-  - [ ] Update Makefile unused-code target to use the whitelist and raise
-        `--min-confidence 80` after initial cleanup.
-  - [ ] Remove or deprecate unused CLI helpers in `server/cli_helpers.py` and
-        `server/cli_main.py` once verified unused.
+
+  - [ ] Add `reports/vulture_whitelist.py` listing Flask routes and Click commands to reduce false
+        positives from decorators/dynamic registration.
+  - [ ] Update Makefile unused-code target to use the whitelist and raise `--min-confidence 80`
+        after initial cleanup.
+  - [ ] Remove or deprecate unused CLI helpers in `server/cli_helpers.py` and `server/cli_main.py`
+        once verified unused.
   - [ ] Collapse duplicate/migrated constants in `server/constants.py`.
-  - [ ] Remove unreferenced validators/fields in `server/schemas.py`, or ensure
-        they are referenced by pydantic models.
+  - [ ] Remove unreferenced validators/fields in `server/schemas.py`, or ensure they are referenced
+        by pydantic models.
 
 - **Automation and CI**
   - [ ] Keep `make lint-unused` non-blocking during triage.
@@ -62,24 +77,51 @@ Urgent Tasks:
 
 ### Wiring Audit Findings (Backend/UI/CLI integration)
 
-- [ ] Options: `resumeDownloads` button sends `chrome.runtime.sendMessage({ type: "resumeDownloads" })` but background has no handler. Add background handler to POST `/api/resume` and return result. Files: `extension/src/background.ts`, tests in `extension/src/__tests__/`.
+- [ ] Options: `resumeDownloads` button sends
+      `chrome.runtime.sendMessage({ type: "resumeDownloads" })` but background has no handler. Add
+      background handler to POST `/api/resume` and return result. Files:
+      `extension/src/background.ts`, tests in `extension/src/__tests__/`.
   - [/] Implemented background handler for `resumeDownloads` to POST `/api/resume`.
-- [ ] Popup: `getConfig` response shape mismatch. `popup.ts` expects `response.serverConfig`, background returns `{ status, data }`. Normalize to `data` in `popup.ts` (`loadConfig`, `updateDownloadDirDisplay`, `updatePortDisplay`). Files: `extension/src/popup.ts`.
+- [ ] Popup: `getConfig` response shape mismatch. `popup.ts` expects `response.serverConfig`,
+      background returns `{ status, data }`. Normalize to `data` in `popup.ts` (`loadConfig`,
+      `updateDownloadDirDisplay`, `updatePortDisplay`). Files: `extension/src/popup.ts`.
   - [/] Normalized popup config access to use `response.data || response.serverConfig`.
-- [ ] Logs endpoints not standardized under `/api`. Server exposes `/logs` and `/logs/clear` (no `/api`), background tries `/api/logs` first. Either (prefer) mount `logs_bp` and `logs_manage_bp` under `/api` in `server/__init__.py` or (fallback) keep BG candidates but update README to reflect reality. Files: `server/__init__.py`, `server/api/logs_bp.py`, `server/api/logs_manage_bp.py`, `README.md`.
+- [ ] Logs endpoints not standardized under `/api`. Server exposes `/logs` and `/logs/clear` (no
+      `/api`), background tries `/api/logs` first. Either (prefer) mount `logs_bp` and
+      `logs_manage_bp` under `/api` in `server/__init__.py` or (fallback) keep BG candidates but
+      update README to reflect reality. Files: `server/__init__.py`, `server/api/logs_bp.py`,
+      `server/api/logs_manage_bp.py`, `README.md`.
   - [/] Mounted `logs_bp` and `logs_manage_bp` under `/api` in `server/__init__.py`.
-- [ ] CLI calls non-API paths. Update `server/cli/*.py` to use `/api/*` endpoints: `/api/download`, `/api/status`, `/api/resume`, `/api/download/<id>/{cancel,pause,resume,priority}`. Files: `server/cli/download.py`, `server/cli/status.py`, `server/cli/history.py`.
-  - [/] Updated CLI endpoints to `/api/*` in `server/cli/download.py`, `server/cli/status.py`, and `server/cli/history.py`.
-- [ ] GalleryDL API not wired in UI. Backend supports `POST /api/gallery-dl` and `use_gallery_dl` flag, but extension never triggers it. Add UI toggle/logic or document as server-only. Files: `extension/src/popup.ts` (or options), `extension/src/background.ts`.
-  - [/] Added optional Options UI hook (`settings-gallery-download`) wiring: sends `galleryDownload` to background; background posts to `/api/gallery-dl`.
-- [ ] Priority API not surfaced in UI. Backend `POST /api/download/<id>/priority` exists; add control in popup active item UI or drop endpoint. Files: `extension/src/popup.ts`, `server/api/download_bp.py` (if dropping).
-  - [/] Background added `setPriority` message case; popup UI control added in `createActiveListItem()`.
-- [ ] Status API unused by extension. Popup listens for `downloadStatusUpdate` but no sender exists; BG does not poll `/api/status`. Either implement periodic polling and broadcast, or remove listener. Files: `extension/src/background.ts`, `extension/src/popup.ts`.
-  - [/] Implemented background periodic polling of `/api/status` and broadcasting `downloadStatusUpdate`.
-- [ ] History API unused by extension. Extension persists history only in `chrome.storage`; consider syncing with `/api/history` for enriched entries or document local-only behavior. Files: `extension/src/history.ts`, `server/api/history_bp.py`.
-  - [/] Implemented best-effort history sync: append entries and clear via `/api/history` when `serverPort` is known.
-  - [x] Consolidate Playwright E2E audit details into `tests/testing.md`; remove outdated `reports/playwright_quality_audit_report.md` and update references in `README.md` and `ARCHITECTURE.md`.
-- [ ] Debug API (`GET /debug/paths`) is dev-only and unused in UI; optionally surface in Options “Debug” tab or leave as internal.
+- [ ] CLI calls non-API paths. Update `server/cli/*.py` to use `/api/*` endpoints: `/api/download`,
+      `/api/status`, `/api/resume`, `/api/download/<id>/{cancel,pause,resume,priority}`. Files:
+      `server/cli/download.py`, `server/cli/status.py`, `server/cli/history.py`.
+  - [/] Updated CLI endpoints to `/api/*` in `server/cli/download.py`, `server/cli/status.py`, and
+    `server/cli/history.py`.
+- [ ] GalleryDL API not wired in UI. Backend supports `POST /api/gallery-dl` and `use_gallery_dl`
+      flag, but extension never triggers it. Add UI toggle/logic or document as server-only. Files:
+      `extension/src/popup.ts` (or options), `extension/src/background.ts`.
+  - [/] Added optional Options UI hook (`settings-gallery-download`) wiring: sends `galleryDownload`
+    to background; background posts to `/api/gallery-dl`.
+- [ ] Priority API not surfaced in UI. Backend `POST /api/download/<id>/priority` exists; add
+      control in popup active item UI or drop endpoint. Files: `extension/src/popup.ts`,
+      `server/api/download_bp.py` (if dropping).
+  - [/] Background added `setPriority` message case; popup UI control added in
+    `createActiveListItem()`.
+- [ ] Status API unused by extension. Popup listens for `downloadStatusUpdate` but no sender exists;
+      BG does not poll `/api/status`. Either implement periodic polling and broadcast, or remove
+      listener. Files: `extension/src/background.ts`, `extension/src/popup.ts`.
+  - [/] Implemented background periodic polling of `/api/status` and broadcasting
+    `downloadStatusUpdate`.
+- [ ] History API unused by extension. Extension persists history only in `chrome.storage`; consider
+      syncing with `/api/history` for enriched entries or document local-only behavior. Files:
+      `extension/src/history.ts`, `server/api/history_bp.py`.
+  - [/] Implemented best-effort history sync: append entries and clear via `/api/history` when
+    `serverPort` is known.
+  - [x] Consolidate Playwright E2E audit details into `tests/testing.md`; remove outdated
+        `reports/playwright_quality_audit_report.md` and update references in `README.md` and
+        `ARCHITECTURE.md`.
+- [ ] Debug API (`GET /debug/paths`) is dev-only and unused in UI; optionally surface in Options
+      “Debug” tab or leave as internal.
 
 Legacy/Stub Cleanup:
 
@@ -97,8 +139,8 @@ Legacy/Stub Cleanup:
 - [/] Audit `server/cli_commands/lifecycle.py` legacy shims; remove if not referenced
 - [/] Review `server/video_downloader_server.py` compatibility shim; remove if WSGI entrypoints
   cover all use cases
-- [/] Remove legacy `server/cli_commands/resume.py` (stubbed `failed` subcommand); use
-  maintained `server/cli/resume.py` group instead
+- [/] Remove legacy `server/cli_commands/resume.py` (stubbed `failed` subcommand); use maintained
+  `server/cli/resume.py` group instead
 - [/] Unified `find_available_port` usage (prefer `server/utils.py`) and removed duplicates; CLI
   range-signature wrapper now delegates to `server.utils.find_available_port`
 - [/] Removed deprecated `extension/ui/styles.css` (legacy styles) – project now uses
@@ -106,7 +148,8 @@ Legacy/Stub Cleanup:
 - [/] CSS audit: migrated inline styles to classes, unified visibility helpers.
   <!-- working-on: css refactor - visibility classes and contrast variants -->
 
-- [x] Remove obsolete `server/data/server.json` (unused; superseded by env config and lock metadata JSON)
+- [x] Remove obsolete `server/data/server.json` (unused; superseded by env config and lock metadata
+      JSON)
 
 ### Hardcoded Variables Cleanup
 
@@ -118,18 +161,20 @@ Legacy/Stub Cleanup:
 - [ ] Replace hardcoded lock path in `server/cli/serve.py` (`/tmp/videodownloader.lock`) with the
       centralized lock path helpers from `server/lock.py` (e.g., `get_lock_file_path`) to ensure
       cross-platform behavior.
-- [ ] Review server/CLI default host strings; keep loopback binds but ensure they are centralized and
-      documented.
+- [ ] Review server/CLI default host strings; keep loopback binds but ensure they are centralized
+      and documented.
 - [ ] Document any remaining, justified literals (tests/manifest permissions) in README policy.
 
 ### Frontend centralized services follow-ups
 
 - [ ] Replace direct DOM queries in `extension/src/popup.ts` and `extension/src/options.ts` with
-  `domManager` where practical
+      `domManager` where practical
 - [ ] Replace remaining `console.*` calls in `popup.ts` and `options.ts` with centralized `logger`
-- [ ] Remove `validatePort()` in `extension/src/options.ts` and use `validationService` port validator
+- [ ] Remove `validatePort()` in `extension/src/options.ts` and use `validationService` port
+      validator
 - [x] Recreate and finish CSS design system consolidation (variables, themes, components, base) and
-  ensure imports in `popup.css`, `options.css`, and `content.css` (documented in Architecture/README)
+      ensure imports in `popup.css`, `options.css`, and `content.css` (documented in
+      Architecture/README)
 
 ## 1.2 Fix Critical JavaScript/TypeScript Modules [WEEK 1-2]
 

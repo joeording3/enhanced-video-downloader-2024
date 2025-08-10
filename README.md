@@ -154,7 +154,8 @@ Enhanced Video Downloader/
 #### CSS design system (UI)
 
 - Files under `extension/ui/`:
-  - `variables.css` (design tokens), `base.css` (base rules), `components.css` (buttons, inputs, status), `themes.css` (light/dark)
+  - `variables.css` (design tokens), `base.css` (base rules), `components.css` (buttons, inputs,
+    status), `themes.css` (light/dark)
 - Use CSS variables everywhere; avoid hardcoded hex or spacing values.
 - Prefer component classes like `btn btn--primary`; legacy `styles.css` is removed.
 
@@ -174,7 +175,8 @@ Enhanced Video Downloader/
 - **[reports/type_ignore_audit_report.md](reports/type_ignore_audit_report.md)** - Type ignore usage
   audit and cleanup
 
-Note: Test suite and Playwright E2E audit details now live in `tests/testing.md` (Test Audit & Coverage Metrics). The old standalone audit reports have been removed.
+Note: Test suite and Playwright E2E audit details now live in `tests/testing.md` (Test Audit &
+Coverage Metrics). The old standalone audit reports have been removed.
 
 ### CI/CD Documentation
 
@@ -318,7 +320,9 @@ For production deployments, it's recommended to use Gunicorn:
 gunicorn --workers=4 --bind=0.0.0.0:<SERVER_PORT> server:create_app()
 ```
 
-Note: When using the CLI to start with `--gunicorn` or daemon/foreground mode, these settings are recorded and reused on `videodownloader-server restart` unless you provide explicit overrides. Metadata is stored at `server/data/server.lock.json` alongside the lock file.
+Note: When using the CLI to start with `--gunicorn` or daemon/foreground mode, these settings are
+recorded and reused on `videodownloader-server restart` unless you provide explicit overrides.
+Metadata is stored at `server/data/server.lock.json` alongside the lock file.
 
 ### Using Docker
 
@@ -707,8 +711,8 @@ For complete API documentation, see `server/api/api.md`.
 ### Error semantics (JSON parsing)
 
 - `/api/download`: If the request body claims JSON but is malformed, the endpoint returns a 500 JSON
-  error with `error_type: SERVER_ERROR` (test-suite compatible). Oversized payloads return 413 with a
-  structured JSON error.
+  error with `error_type: SERVER_ERROR` (test-suite compatible). Oversized payloads return 413 with
+  a structured JSON error.
 - `/api/gallery-dl` and `/api/resume`: Malformed JSON is treated as a server error (500) with a
   standardized JSON body (consistent with integration tests).
 

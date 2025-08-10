@@ -364,7 +364,9 @@ Adoption status:
 8. **Extraction Rules**: `server/extraction_rules.py` loads rules from
    `server/config/extraction_rules.json`.
 9. **Lock File**: `server/lock.py` manages lock file at `server/data/server.lock`.
-   - Supplementary metadata (`server/data/server.lock.json`) persists last run parameters (host, port, gunicorn, daemon/foreground, workers, verbose) so `videodownloader-server restart` can reuse prior mode/flags when not explicitly provided.
+   - Supplementary metadata (`server/data/server.lock.json`) persists last run parameters (host,
+     port, gunicorn, daemon/foreground, workers, verbose) so `videodownloader-server restart` can
+     reuse prior mode/flags when not explicitly provided.
 10. **Client Polling**: Popup or background polls `/api/status` for progress updates.
 11. **Cleanup**: Periodic `.part` file cleanup via background thread.
 
@@ -541,7 +543,8 @@ Adoption status:
 
 ### Audit Reports
 
-- Consolidated: Playwright E2E audit details now live in `tests/testing.md` (removed standalone report)
+- Consolidated: Playwright E2E audit details now live in `tests/testing.md` (removed standalone
+  report)
 - **[reports/test_docstring_audit_report.md](reports/test_docstring_audit_report.md)** - Test
   documentation audit results
 - **[reports/type_ignore_audit_report.md](reports/type_ignore_audit_report.md)** - Type ignore usage

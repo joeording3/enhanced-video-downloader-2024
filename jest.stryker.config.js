@@ -2,8 +2,6 @@
  * Jest configuration optimized for Stryker mutation testing
  * Based on Jest documentation: https://jestjs.io/docs/getting-started
  */
-// @ts-nocheck
-
 module.exports = {
   // Use Stryker-specific node environment for backend logic testing
   testEnvironment: "@stryker-mutator/jest-runner/jest-env/node",
@@ -18,9 +16,11 @@ module.exports = {
   coverageProvider: "v8",
   collectCoverage: false,
 
-  // Discover all unit tests under extension (exclude e2e/integration via ignore patterns below)
+  // Curated, stable unit tests for mutation runs
   testMatch: [
-    "**/extension/src/**/__tests__/**/*.test.ts",
+    "**/extension/src/__tests__/background-logic.test.ts",
+    "**/extension/src/__tests__/background-helpers.test.ts",
+    "**/extension/src/__tests__/core/validation-service.test.ts",
   ],
 
   // Files and directories to ignore

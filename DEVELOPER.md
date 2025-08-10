@@ -221,8 +221,10 @@ make lint-unused
 ```
 
 Notes:
+
 - ts-prune scans according to `tsconfig.json` includes; tests are included in the root config.
-- vulture is run with `--min-confidence 60` over `server` and `tests` to keep noise manageable; adjust as needed.
+- vulture is run with `--min-confidence 60` over `server` and `tests` to keep noise manageable;
+  adjust as needed.
 
 ### Comprehensive Quality Checks
 
@@ -513,11 +515,11 @@ module.exports = {
   allowEmpty: true,
   inPlace: true,
   disableTypeChecks: true,
-   jest: {
-     configFile: "jest.stryker.config.js",
-     projectType: "custom",
-     enableFindRelatedTests: false,
-   },
+  jest: {
+    configFile: "jest.stryker.config.js",
+    projectType: "custom",
+    enableFindRelatedTests: false,
+  },
   mutate: [
     "extension/src/**/*.ts",
     "!extension/src/**/*.test.ts",
@@ -532,10 +534,10 @@ module.exports = {
     low: 60,
     break: null, // Temporarily disabled to allow make all to pass
   },
-   timeoutMS: 8000,
-   concurrency: 8,
-   maxTestRunnerReuse: 50,
-   ignoreStatic: false,
+  timeoutMS: 8000,
+  concurrency: 8,
+  maxTestRunnerReuse: 50,
+  ignoreStatic: false,
   logLevel: "info",
   tempDirName: ".stryker-tmp",
   symlinkNodeModules: false,
@@ -1828,6 +1830,7 @@ _Last updated: 2025-01-27_
 
   Note: The legacy modules audit report has been retired. Key actions and outcomes are tracked in
   `CHANGELOG.md` and `TODO.md`.
+
 - **[reports/test_docstring_audit_report.md](reports/test_docstring_audit_report.md)** - Test
   documentation audit results
 - **[reports/type_ignore_audit_report.md](reports/type_ignore_audit_report.md)** - Type ignore usage
