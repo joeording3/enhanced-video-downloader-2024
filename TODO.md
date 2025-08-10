@@ -3,6 +3,7 @@
 Urgent Tasks:
 
 - [/] log viewer on options page not working - no logs displayed
+- [x] Remove outdated test audit reports (`reports/test_audit_report.md`, `reports/test_audit_summary.md`); migrated content into `tests/testing.md` and removed references in `README.md` and `ARCHITECTURE.md`.
 - [x] Remove outdated `reports/test_audit_report.md`; migrate key notes into `tests/testing.md` and keep `reports/test_audit_summary.md`.
 - [ ] Add unused-code checks to CI and local workflows
   <!-- working-on: unused-code checks (ts-prune, vulture) -->

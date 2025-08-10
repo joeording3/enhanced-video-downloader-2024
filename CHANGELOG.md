@@ -87,7 +87,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Deprecated UI stylesheet `extension/ui/styles.css` removed. UI now uses modular styles:
   `variables.css`, `components.css`, `base.css`, and `themes.css`.
 
-- Outdated report `reports/test_audit_report.md` removed. Details migrated into `tests/testing.md`; `reports/test_audit_summary.md` remains as the concise summary.
+- Outdated test audit reports removed: `reports/test_audit_report.md`, `reports/test_audit_summary.md`. Details consolidated in `tests/testing.md` (Test Audit & Coverage Metrics).
 
 ### Fixed
 

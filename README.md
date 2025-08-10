@@ -162,8 +162,6 @@ Enhanced Video Downloader/
   cleanup summary
 - **[reports/css_audit_summary.md](reports/css_audit_summary.md)** - CSS audit and optimization
   results
-- **[reports/hardcoded_variables_summary.md](reports/hardcoded_variables_summary.md)** - Hardcoded
-  variables audit summary
 - **[reports/playwright_quality_audit_report.md](reports/playwright_quality_audit_report.md)** -
   Playwright E2E testing quality audit
 - **[reports/legacy_modules_audit.md](reports/legacy_modules_audit.md)** - Legacy module
@@ -401,6 +399,14 @@ gunicorn --workers=4 --bind=0.0.0.0:<SERVER_PORT> server:create_app()
 
 ---
 
+## Frontend architecture highlights
+
+- Centralized state, validation, DOM access, error handling, and logging live under
+  `extension/src/core/` and are used across background, content, popup, and options scripts.
+- Remaining follow-ups for popup/options (tracked in `TODO.md`): migrate any remaining direct
+  `document.getElementById`/`querySelector` calls to `domManager`, replace `console.*` usages with
+  `logger`, and unify field validation through `validationService`.
+
 ## Usage
 
 ### Configure
@@ -466,6 +472,22 @@ YTDLP_CONCURRENT_FRAGMENTS=8
 ```
 
 ---
+
+### Hardcoded Variables Policy
+
+- Ports: Use centralized accessors in `server/constants.py` and mirrored helpers in
+  `extension/src/core/constants.ts` (e.g., `get_server_port()`, `get_port_range()`), never literals.
+- Hosts: Use the centralized base host from `NETWORK_CONSTANTS.SERVER_BASE_URL` in
+  `extension/src/core/constants.ts` when building URLs. Avoid duplicating `http://127.0.0.1` in
+  fetch calls.
+- API Endpoints: Use endpoint constants (e.g., `CONFIG_ENDPOINT`, `HEALTH_ENDPOINT`,
+  `DOWNLOAD_ENDPOINT`) from `extension/src/core/constants.ts` instead of string literals.
+- File paths: Avoid hardcoded OS-specific paths. Server data/lock files are under `server/data/` by
+  default; tests should prefer `tempfile`/`pytest` tmp dirs.
+- Timeouts: Centralize extension timeouts under `NETWORK_CONSTANTS`; server/CLI timeouts should be
+  configurable or documented constants.
+
+Open items tracked in `TODO.md` under “Hardcoded Variables Cleanup”.
 
 ## Development
 
