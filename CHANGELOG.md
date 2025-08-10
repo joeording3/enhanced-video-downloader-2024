@@ -49,6 +49,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   download directory. Added tests for normal and missing-dir cases. Minor logging tweaks in API
   cleanup paths to avoid silent failures.
 
+- Logging/cleanup tweaks:
+  - `server/downloads/ytdlp.py`: log debug when `model_dump` conversion fails for `yt_dlp_options`.
+  - `server/config.py`: handle invalid `YTDLP_CONCURRENT_FRAGMENTS` gracefully when collecting env data.
+  - `server/cli/serve.py`: `_ServeApp.run` logs a debug message instead of a bare no-op.
+
 - Resume: Implemented real `gallery-dl` resume path in CLI helpers. The resume logic now builds a
   `gallery-dl` command from provided options (bool → `--flag`, scalar → `--flag value`, list →
   repeated flags), forces `--continue` by default, respects `--directory`, and returns success based
