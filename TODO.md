@@ -261,7 +261,8 @@ Legacy/Stub Cleanup:
 - [ ] Track third-party library type stub availability
 - [x] Prevent Hypothesis tests from creating junk folders in repo root by confining generated paths
       to `tmp/hypothesis_download_dirs` and loading a local Hypothesis profile; updated `Makefile`
-      junk check to ignore `.benchmarks`
+      junk check to ignore `.benchmarks`; fixed `Makefile` recipe indentation in
+      `check-junk-folders` to avoid make parsing errors
 
 ### Success Metrics to Track
 

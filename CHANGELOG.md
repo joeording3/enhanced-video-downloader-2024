@@ -79,6 +79,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `.hypothesis/examples`, preventing junk folders at repo root.
 - Update `Makefile` junk folder checker to ignore `.benchmarks` (created by benchmarking), aligning
   with the cleanup script's critical folders.
+- Fixed Makefile `check-junk-folders` recipe indentation to prevent parsing errors; clarified junk
+  folder exclusions.
 
 ### Security
 
