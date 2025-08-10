@@ -72,6 +72,40 @@
                   </div>
                 </div>
               </fieldset>
+              <fieldset>
+                <legend>Runtime Settings</legend>
+                <div class="settings-section">
+                  <label for="settings-log-level">Log Level</label>
+                  <div class="input-group">
+                    <select id="settings-log-level" name="log-level">
+                      <option value="error">Errors Only</option>
+                      <option value="info" selected>Normal</option>
+                      <option value="debug">Verbose</option>
+                    </select>
+                    <div class="validation-message" id="log-level-validation"></div>
+                    <div class="log-level-info" id="log-level-info">
+                      <span class="info-icon">Info</span>
+                      <span class="info-text">Normal level provides essential information</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="settings-section">
+                  <label for="settings-log-file">Log File (server)</label>
+                  <div class="input-group">
+                    <input
+                      type="text"
+                      id="settings-log-file"
+                      name="log-file"
+                      class="input input--text"
+                      placeholder="/path/to/server_output.log"
+                    />
+                    <div class="settings-hint">
+                      Path used by the server /logs endpoint when set
+                    </div>
+                  </div>
+                </div>
+              </fieldset>
                 <!-- Moved from Behavior Settings: Runtime (requires restart) -->
                 <fieldset>
                   <legend>Runtime (requires restart)</legend>
@@ -234,41 +268,7 @@
                   </label>
                 </div>
 
-                <div class="settings-section">
-                  <label for="settings-log-level">Log Level</label>
-                  <div class="input-group">
-                    <select id="settings-log-level" name="log-level">
-                      <option value="error">Errors Only</option>
-                      <option value="info" selected>Normal</option>
-                      <option value="debug">Verbose</option>
-                    </select>
-                    <div
-                      class="validation-message"
-                      id="log-level-validation"
-                    ></div>
-                    <div class="log-level-info" id="log-level-info">
-                      <span class="info-icon">Info</span>
-                      <span class="info-text"
-                        >Normal level provides essential information</span
-                      >
-                    </div>
-                  </div>
-                </div>
-                <div class="settings-section">
-                  <label for="settings-log-file">Log File (server)</label>
-                  <div class="input-group">
-                    <input
-                      type="text"
-                      id="settings-log-file"
-                      name="log-file"
-                      class="input input--text"
-                      placeholder="/path/to/server_output.log"
-                    />
-                    <div class="settings-hint">
-                      Path used by the server /logs endpoint when set
-                    </div>
-                  </div>
-                </div>
+                
               </fieldset>
             </div>
           </section>
