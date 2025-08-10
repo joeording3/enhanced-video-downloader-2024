@@ -32,6 +32,31 @@ Urgent Tasks:
 - [ ] Implement lazy loading for content script
 - [ ] Use dynamic imports for options page
 
+### Unused Code Cleanup (from latest report)
+
+- **TypeScript**
+  - [ ] De-export internal-only symbols in `extension/src/core/constants.ts`.
+  - [ ] De-export `updateToggleButtonState` in `extension/src/popup.ts` if not used externally.
+  - [ ] Audit `extension/src/types/index.ts`; keep only the intended public API exported.
+  - [ ] Document intentional public types in `extension/src/extension-overview.md`.
+  - [ ] Add a ts-prune ignore list (`ts-prune.json`) for intentional public exports.
+
+- **Python**
+  - [ ] Add `reports/vulture_whitelist.py` listing Flask routes and Click commands
+        to reduce false positives from decorators/dynamic registration.
+  - [ ] Update Makefile unused-code target to use the whitelist and raise
+        `--min-confidence 80` after initial cleanup.
+  - [ ] Remove or deprecate unused CLI helpers in `server/cli_helpers.py` and
+        `server/cli_main.py` once verified unused.
+  - [ ] Collapse duplicate/migrated constants in `server/constants.py`.
+  - [ ] Remove unreferenced validators/fields in `server/schemas.py`, or ensure
+        they are referenced by pydantic models.
+
+- **Automation and CI**
+  - [ ] Keep `make lint-unused` non-blocking during triage.
+  - [ ] Add a CI job to run `make lint-unused` and upload `reports/unused_code_report.md`.
+  - [ ] After cleanup, gate CI on `make lint-unused` (warning first, then enforce).
+
 ### Wiring Audit Findings (Backend/UI/CLI integration)
 
 - [ ] Options: `resumeDownloads` button sends `chrome.runtime.sendMessage({ type: "resumeDownloads" })` but background has no handler. Add background handler to POST `/api/resume` and return result. Files: `extension/src/background.ts`, tests in `extension/src/__tests__/`.
