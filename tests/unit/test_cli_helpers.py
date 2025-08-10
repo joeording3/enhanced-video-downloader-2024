@@ -492,7 +492,7 @@ class TestCLIDownloadCommands:
 
         assert result.exit_code == 0
         mock_post.assert_called_once_with(
-            f"http://127.0.0.1:{get_server_port()}/resume", json={"type": "partials"}, timeout=30
+            f"http://127.0.0.1:{get_server_port()}/api/resume", json={"type": "partials"}, timeout=30
         )
 
     def test_cancel_command_help(self, runner: CliRunner) -> None:
