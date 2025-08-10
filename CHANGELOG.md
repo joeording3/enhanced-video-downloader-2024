@@ -8,6 +8,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Changed
+### Tooling
+
+- Add unused-code detection tools:
+  - TypeScript: `ts-prune` with `npm run lint:unused:ts` and Make target `lint-unused-ts` scanning `tsconfig.json` (includes tests)
+  - Python: `vulture` added to dev dependencies; Make target `lint-unused-py` scans `server` and `tests` with min-confidence 60
+  - Aggregate target `make lint-unused` runs both; documented in README
+
 
 - API error handling consistency:
   - `/api/download`: continues to surface malformed JSON as a 500 SERVER_ERROR per existing tests; oversized payloads return structured 413 JSON.

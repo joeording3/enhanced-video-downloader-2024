@@ -429,8 +429,9 @@ and includes:
 - `server_port`: The port the server listens on (default: 5001, but see port discovery).
 - `download_dir`: Directory where downloaded videos are saved (e.g.,
   `/Users/username/Downloads/videos`).
-- `debug_mode`: Boolean, whether to run the server in debug mode (provides more detailed logs,
-  enables Werkzeug reloader). Default: `false`.
+- `debug_mode`: Boolean. Enables server debug features (adds extra request/context logging within
+  debug endpoints and richer diagnostics from `/debug/paths`). Does not change Flask's reloader or
+  run mode; control verbosity via `LOG_LEVEL` and `CONSOLE_LOG_LEVEL`. Default: `false`.
 - `enable_history`: Boolean, whether to save download history. Default: `true`.
 - `log_level`: String, controls server log verbosity. Can be `"debug"`, `"info"`, `"warning"`,
   `"error"`, or `"critical"`. Default: `"info"`.
@@ -666,6 +667,14 @@ The server provides a comprehensive REST API for download management:
 - `POST /api/download/{id}/priority`: Set download priority
 
 For complete API documentation, see `server/api/api.md`.
+
+### Error semantics (JSON parsing)
+
+- `/api/download`: If the request body claims JSON but is malformed, the endpoint returns a 500 JSON
+  error with `error_type: SERVER_ERROR` (test-suite compatible). Oversized payloads return 413 with a
+  structured JSON error.
+- `/api/gallery-dl` and `/api/resume`: Malformed JSON is treated as a server error (500) with a
+  standardized JSON body (consistent with integration tests).
 
 ## Reliability Improvements
 

@@ -3,7 +3,14 @@
 Urgent Tasks:
 
 - [/] log viewer on options page not working - no logs displayed
+- [ ] Add unused-code checks to CI and local workflows
+  <!-- working-on: unused-code checks (ts-prune, vulture) -->
+  - [x] Add ts-prune scripts and Make targets
+  - [x] Add vulture to dev deps and Make target scanning `server` and `tests`
+  - [ ] Wire into `make all`/`check` gates and CI once noise baseline is reviewed
+
   <!-- working-on: options logs viewer wired to background API -->
+  - [/] Prevent stale lock file from affecting CLI status tests by removing `server/data/server.lock` before `make test-py`
 - [/] 'choose' button to set download directory now wired (added id `settings-folder-picker` in
   `extension/ui/options.html`)
 - [/] Implement `run_cleanup()` in `server/cli/utils.py` and add tests
@@ -15,6 +22,18 @@ Urgent Tasks:
   - `server/api/status_bp.py` (average speed computation)
   - `server/__main__.py` (process scanning and config save)
   - `server/lock.py` (unlink/parse/read errors)
+
+### Wiring Audit Findings (Backend/UI/CLI integration)
+
+- [ ] Options: `resumeDownloads` button sends `chrome.runtime.sendMessage({ type: "resumeDownloads" })` but background has no handler. Add background handler to POST `/api/resume` and return result. Files: `extension/src/background.ts`, tests in `extension/src/__tests__/`.
+- [ ] Popup: `getConfig` response shape mismatch. `popup.ts` expects `response.serverConfig`, background returns `{ status, data }`. Normalize to `data` in `popup.ts` (`loadConfig`, `updateDownloadDirDisplay`, `updatePortDisplay`). Files: `extension/src/popup.ts`.
+- [ ] Logs endpoints not standardized under `/api`. Server exposes `/logs` and `/logs/clear` (no `/api`), background tries `/api/logs` first. Either (prefer) mount `logs_bp` and `logs_manage_bp` under `/api` in `server/__init__.py` or (fallback) keep BG candidates but update README to reflect reality. Files: `server/__init__.py`, `server/api/logs_bp.py`, `server/api/logs_manage_bp.py`, `README.md`.
+- [ ] CLI calls non-API paths. Update `server/cli/*.py` to use `/api/*` endpoints: `/api/download`, `/api/status`, `/api/resume`, `/api/download/<id>/{cancel,pause,resume,priority}`. Files: `server/cli/download.py`, `server/cli/status.py`, `server/cli/history.py`.
+- [ ] GalleryDL API not wired in UI. Backend supports `POST /api/gallery-dl` and `use_gallery_dl` flag, but extension never triggers it. Add UI toggle/logic or document as server-only. Files: `extension/src/popup.ts` (or options), `extension/src/background.ts`.
+- [ ] Priority API not surfaced in UI. Backend `POST /api/download/<id>/priority` exists; add control in popup active item UI or drop endpoint. Files: `extension/src/popup.ts`, `server/api/download_bp.py` (if dropping).
+- [ ] Status API unused by extension. Popup listens for `downloadStatusUpdate` but no sender exists; BG does not poll `/api/status`. Either implement periodic polling and broadcast, or remove listener. Files: `extension/src/background.ts`, `extension/src/popup.ts`.
+- [ ] History API unused by extension. Extension persists history only in `chrome.storage`; consider syncing with `/api/history` for enriched entries or document local-only behavior. Files: `extension/src/history.ts`, `server/api/history_bp.py`.
+- [ ] Debug API (`GET /debug/paths`) is dev-only and unused in UI; optionally surface in Options “Debug” tab or leave as internal.
 
 Legacy/Stub Cleanup:
 
@@ -32,6 +51,8 @@ Legacy/Stub Cleanup:
 - [/] Audit `server/cli_commands/lifecycle.py` legacy shims; remove if not referenced
 - [/] Review `server/video_downloader_server.py` compatibility shim; remove if WSGI entrypoints
   cover all use cases
+- [/] Remove legacy `server/cli_commands/resume.py` (stubbed `failed` subcommand); use
+  maintained `server/cli/resume.py` group instead
 - [/] Unified `find_available_port` usage (prefer `server/utils.py`) and removed duplicates; CLI
   range-signature wrapper now delegates to `server.utils.find_available_port`
 - [/] Removed deprecated `extension/ui/styles.css` (legacy styles) – project now uses

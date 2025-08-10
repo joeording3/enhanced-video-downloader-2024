@@ -36,7 +36,9 @@
     "test:playwright": "playwright test",
     "test:playwright:install": "playwright install",
     "test:playwright:headed": "playwright test --headed",
-    "test:playwright:debug": "playwright test --debug"
+    "test:playwright:debug": "playwright test --debug",
+    "lint:unused:ts": "ts-prune -p tsconfig.json --error",
+    "lint:unused:ts:report": "ts-prune -p tsconfig.json"
   },
   "repository": {
     "type": "git",
@@ -86,7 +88,8 @@
     "stylelint": "^16.19.1",
     "stylelint-config-standard": "^38.0.0",
     "ts-jest": "^29.3.4",
-    "v8-to-istanbul": "^9.3.0"
+    "v8-to-istanbul": "^9.3.0",
+    "ts-prune": "^0.10.3"
   },
   "lint-staged": {
     "*.{js,mjs,cjs,ts,jsx,tsx}": [

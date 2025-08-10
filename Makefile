@@ -1,6 +1,6 @@
 # Makefile for Enhanced Video Downloader
 
-.PHONY: all all-continue check install-dev build-js test test-py test-js lint lint-py lint-js lint-md format format-py format-js format-md format-check format-check-py format-check-js format-check-md coverage coverage-py coverage-js clean test-fast test-js-fast test-integration test-js-slow test-slow generate-ignores test-audit audit-coverage audit-mutation audit-performance audit-docs mutation mutation-py mutation-js emoji-check markdown-check check-junk-folders cleanup-junk-folders monitor-junk-folders
+.PHONY: all all-continue check install-dev build-js test test-py test-js lint lint-py lint-js lint-md format format-py format-js format-md format-check format-check-py format-check-js format-check-md coverage coverage-py coverage-js clean test-fast test-js-fast test-integration test-js-slow test-slow generate-ignores test-audit audit-coverage audit-mutation audit-performance audit-docs mutation mutation-py mutation-js emoji-check markdown-check check-junk-folders cleanup-junk-folders monitor-junk-folders lint-unused lint-unused-ts lint-unused-py
 
 all:
 	@echo "=== Running All Quality Checks ==="
@@ -65,6 +65,8 @@ build-js:
 test: test-py test-js test-playwright
 
 test-py:
+	# Ensure no stale server lock interferes with tests
+	rm -f server/data/server.lock
 	pytest tests/unit tests/integration --maxfail=1 --disable-warnings -q --cov=server --cov-report=term-missing --cov-report=xml --cov-report=html
 
 test-js:
@@ -82,6 +84,19 @@ lint-py:
 
 lint-js:
 	npm run lint
+
+# Unused code checks (TypeScript + Python)
+lint-unused: lint-unused-ts lint-unused-py
+
+lint-unused-ts:
+	@echo "=== Checking unused TS exports with ts-prune (including tests) ==="
+	npx ts-prune -p tsconfig.json --error || true
+	@echo "ts-prune check complete"
+
+lint-unused-py:
+	@echo "=== Checking unused Python code with vulture (including tests) ==="
+	@. ./.venv/bin/activate && vulture server tests --min-confidence 60 || true
+	@echo "vulture check complete"
 
 lint-md:
 	@echo "=== Checking Markdown Files ==="

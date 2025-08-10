@@ -63,6 +63,7 @@ dev = [
     "types-requests",
     "mutmut>=2.4.0",
     "hypothesis>=6.0.0",
+    "vulture>=2.13",
 ]
 
 [project.scripts]
