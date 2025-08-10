@@ -1,9 +1,0 @@
-{
-  "host": "hY",
-  "port": 8888,
-  "gunicorn": true,
-  "daemon": false,
-  "workers": 1,
-  "verbose": false,
-  "cmd": "cmd_arg2"
-}
