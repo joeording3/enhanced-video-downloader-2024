@@ -432,6 +432,10 @@ and includes:
   `"error"`, or `"critical"`. Default: `"info"`.
 - `console_log_level`: String, controls console output verbosity. Can be `"debug"`, `"info"`,
   `"warning"`, `"error"`, or `"critical"`. Default: `"warning"` (shows only warnings and errors).
+- `YTDLP_CONCURRENT_FRAGMENTS`: Integer, controls yt-dlp's per-download fragment concurrency for
+  HLS/DASH streams. Valid range: 1–16. Default: 4. Higher values can improve throughput on fast
+  networks but increase CPU/disk usage. This maps to `yt_dlp_options.concurrent_fragments` and can
+  also be tuned from the Options UI.
 
 You can configure these settings through:
 
@@ -439,6 +443,18 @@ You can configure these settings through:
 - The options page
 - Command-line interface: `videodownloader-server config set`
 - Enhanced CLI commands: `videodownloader-server utils config show/set`
+
+### Examples
+
+Set yt-dlp fragment concurrency via environment or .env:
+
+```bash
+# Shell env
+export YTDLP_CONCURRENT_FRAGMENTS=8
+
+# .env file
+YTDLP_CONCURRENT_FRAGMENTS=8
+```
 
 ---
 
