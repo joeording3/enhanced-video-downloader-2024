@@ -443,8 +443,8 @@ def test_list_command_active_only(mock_get_config: Any, mock_is_running: Any, mo
 
     assert result.exit_code == 0
     mock_get.assert_called_once()
-    # The filtering is done in the code, not in the URL
-    assert mock_get.call_args[0][0] == f"http://127.0.0.1:{get_server_port()}/status"
+    # The filtering is done in the code, not in the URL (endpoint now under /api)
+    assert mock_get.call_args[0][0] == f"http://127.0.0.1:{get_server_port()}/api/status"
 
 
 @patch("server.cli.download.requests.get")
@@ -466,8 +466,8 @@ def test_list_command_failed_only(mock_get_config: Any, mock_is_running: Any, mo
 
     assert result.exit_code == 0
     mock_get.assert_called_once()
-    # The filtering is done in the code, not in the URL
-    assert mock_get.call_args[0][0] == f"http://127.0.0.1:{get_server_port()}/status"
+    # The filtering is done in the code, not in the URL (endpoint now under /api)
+    assert mock_get.call_args[0][0] == f"http://127.0.0.1:{get_server_port()}/api/status"
 
 
 @patch("server.cli.download.requests.post")
