@@ -10,6 +10,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 - Docs: Add consolidated Hardcoded Variables Policy to README and Architecture docs; track remaining
   cleanup tasks in `TODO.md`.
+ - Docs: Migrate CSS design system details into `ARCHITECTURE.md` and `README.md`; remove obsolete
+   `reports/css_comprehensive_report.md` (all issues already resolved and reflected in codebase).
 ### Tooling
 
 - Add unused-code detection tools:
@@ -87,7 +89,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Deprecated UI stylesheet `extension/ui/styles.css` removed. UI now uses modular styles:
   `variables.css`, `components.css`, `base.css`, and `themes.css`.
 
+- Obsolete report removed: `reports/css_comprehensive_report.md` (content consolidated into permanent
+  docs; verification confirms no remaining open items).
+
 - Outdated test audit reports removed: `reports/test_audit_report.md`, `reports/test_audit_summary.md`. Details consolidated in `tests/testing.md` (Test Audit & Coverage Metrics).
+
+- Testing docs: Consolidated `background-logic.ts` mutation analysis into `tests/testing.md`; removed outdated `reports/mutation_analysis_report.md` in favor of the living testing document.
 
 ### Fixed
 

@@ -193,6 +193,18 @@ Note: The detailed redundancy audit previously captured in `reports/test_audit_r
   - Fails CI if mutation score falls below 70% (see `break` threshold in config).
 - **Latest Mutation Score:** 38.24% (2025-01-27) - **BELOW THRESHOLD**
 
+#### Background Logic Mutation Coverage Notes (supersedes older per-file report)
+
+The prior standalone analysis for `extension/src/background-logic.ts` (now removed) identified five gaps. Current tests address these areas:
+
+- Error message validation: Tests assert exact console prefix and error messages in `handleSetConfig` failures (see `extension/src/__tests__/background-logic.test.ts` "handles API service error", "handles storage service error", and "handles unknown error type").
+- Timeout handling: Cached-port timeout path is exercised and results verified ("handles timeout during cached port check").
+- Boundary conditions: Batch scanning over a widened range validates loop boundaries and progress callback ("handles batch processing and progress callback").
+- Exception handling: Rejected `checkStatus` calls are handled and return `null` ("handles error during port checking").
+- Null/undefined checks: No-port-found path (undefined intermediate, null return) and successful paths covered ("returns null if no port found").
+
+Note: These notes replace the removed `reports/mutation_analysis_report.md`. All ongoing mutation metrics live in this document.
+
 ### Current Mutation Scores (2025-01-27)
 
 #### JavaScript/TypeScript Files
