@@ -19,6 +19,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - CLI: Restart now reuses the previous run's mode and flags when not provided (persisted in
   `server/data/server.lock.json`). Works for both Flask dev and Gunicorn prod runs. Explicit flags
   still override.
+  - Normalize invalid or unknown hosts during restart/start to `127.0.0.1` to prevent
+    socket.gaierror and ensure auto-port works reliably.
+  - Port-in-use checks now set SO_REUSEADDR to avoid false positives during TIME_WAIT immediately
+    after shutdown, eliminating transient "still in use" warnings on restart.
 - Docs: Remove outdated Playwright audit report; migrate E2E audit details to `tests/testing.md`.
   Add frontend performance practices (debouncing, DOM caching, listener cleanup, modest polling) to
   `README.md`.

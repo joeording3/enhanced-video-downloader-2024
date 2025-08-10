@@ -65,6 +65,8 @@ def is_port_in_use(port: int, host: str = "127.0.0.1") -> bool:
     """Check if a TCP port is in use on a host by attempting bind and listen."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         try:
+            # Allow immediate reuse to avoid false positives from TIME_WAIT sockets
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             # Try binding to the port
             s.bind((host, port))
             try:

@@ -11,6 +11,7 @@ import logging
 import os
 import platform
 import shutil
+import socket
 import subprocess
 import sys
 import time
@@ -157,6 +158,23 @@ def _read_lock_metadata() -> dict[str, str | int | bool | None] | None:
     return None
 
 
+def _normalize_host(host: str | None) -> str:
+    """Return a safe, connectable host string.
+
+    Falls back to '127.0.0.1' if the provided host is empty or cannot be resolved
+    to an IPv4 address. This prevents socket.gaierror during port checks.
+    """
+    if not host or not str(host).strip():
+        return "127.0.0.1"
+    try:
+        # Ensure the host resolves for IPv4; we bind/connect using AF_INET elsewhere
+        socket.getaddrinfo(host, None, family=socket.AF_INET)
+        return host
+    except Exception:
+        log.warning(f"Invalid or unknown host '{host}'; falling back to 127.0.0.1")
+        return "127.0.0.1"
+
+
 def _cli_get_existing_server_status(host: str, port: int) -> tuple[tuple[int, int] | None, bool]:
     """Retrieve server lock PID/port and port-in-use status."""
     pid_port = get_lock_pid_port_cli(LOCK_PATH)
@@ -187,6 +205,9 @@ def _resolve_start_params(
         from server.constants import get_server_port
 
         effective_port = get_server_port()
+
+    # Normalize host to avoid invalid names breaking socket checks
+    effective_host = _normalize_host(effective_host)
 
     # Download directory resolution
     effective_download_dir_str = _resolve_download_dir(cfg, download_dir)
@@ -1360,6 +1381,9 @@ def _verify_restart_success(host: str | None, port: int | None, timeout: int) ->
     if not host or not port:
         log.warning("Cannot verify restart: missing host or port")
         return False
+
+    # Normalize host to ensure verification uses a resolvable address
+    host = _normalize_host(host)
 
     log.info(f"Verifying restart success on {host}:{port}...")
 
