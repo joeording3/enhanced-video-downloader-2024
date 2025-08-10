@@ -105,6 +105,37 @@
                     </div>
                   </div>
                 </div>
+
+                <div class="settings-section">
+                  <label for="settings-console-log-level">Console Log Level</label>
+                  <div class="input-group">
+                    <select id="settings-console-log-level" name="console-log-level">
+                      <option value="debug">Debug</option>
+                      <option value="info" selected>Info</option>
+                      <option value="warning">Warning</option>
+                      <option value="error">Error</option>
+                      <option value="critical">Critical</option>
+                    </select>
+                    <div class="validation-message" id="settings-console-log-level-validation"></div>
+                  </div>
+                </div>
+
+                <div class="settings-section">
+                  <label for="settings-max-concurrent-downloads">Max Concurrent Downloads</label>
+                  <div class="input-group">
+                    <input
+                      type="number"
+                      id="settings-max-concurrent-downloads"
+                      name="max-concurrent-downloads"
+                      class="input input--number"
+                      min="1"
+                      max="10"
+                      placeholder="3"
+                    />
+                    <div class="validation-message" id="settings-max-concurrent-downloads-validation"></div>
+                  </div>
+                  <div class="settings-hint">Controls how many downloads run simultaneously (1–10).</div>
+                </div>
               </fieldset>
                 <!-- Moved from Behavior Settings: Runtime (requires restart) -->
                 <fieldset>
@@ -268,7 +299,7 @@
                   </label>
                 </div>
 
-                
+
               </fieldset>
             </div>
           </section>
