@@ -36,6 +36,8 @@ from server.cli_helpers import (
     wait_for_server_start_cli,
 )
 from server.config import Config
+from server.lock import get_lock_file_path
+from server.utils import find_available_port
 
 
 # Import subcommand modules - using lazy imports to avoid circular dependencies
@@ -66,7 +68,7 @@ PROJECT_ROOT = SCRIPT_DIR.parent  # Correctly assumes cli.py is in server/
 # LOCK_PATH is now defined in server.lock and used via functions from there,
 # but server.cli might still need its own reference for messages or direct checks if any.
 # For consistency, let's use the one from server.lock if possible, or redefine carefully.
-LOCK_PATH = PROJECT_ROOT / "server.lock"  # Defined here for CLI messages, actual ops use server.lock's functions
+LOCK_PATH = get_lock_file_path()
 SERVER_MAIN_SCRIPT = SCRIPT_DIR / "__main__.py"
 
 
@@ -253,6 +255,24 @@ def _run_start_server(
     _cli_set_logging(verbose)
 
     resolved_host, resolved_port, resolved_download_dir = _resolve_start_params(cfg, host, port, download_dir)
+
+    # If requested, automatically find a free port when the desired one is busy
+    if auto_port:
+        pid_port, port_in_use = _cli_get_existing_server_status(resolved_host, resolved_port)
+        if port_in_use and not (pid_port and pid_port[1] == resolved_port):
+            try:
+                # Search up to 99 ports ahead for an open port
+                new_port = find_available_port(resolved_port + 1, 99, host=resolved_host)
+                log.info(
+                    "Auto-port enabled: switching from %s to available port %s on host %s",
+                    resolved_port,
+                    new_port,
+                    resolved_host,
+                )
+                resolved_port = new_port
+            except Exception:
+                log.exception("Auto-port failed to find an available port")
+                # Fall through to normal pre-start checks which will error out
 
     # Environment-controlled defaults when CLI flags are not set
     def _truthy(val: str | None) -> bool:
@@ -505,6 +525,11 @@ def stop_server(_ctx: click.Context, timeout: int, force: bool):
     is_flag=True,
     help="Preserve server state between restarts (downloads, history)",
 )
+@click.option(
+    "--auto-port",
+    is_flag=True,
+    help="Automatically find an available port if the specified port is in use",
+)
 @click.pass_context
 def restart_server_command(
     ctx: click.Context,
@@ -518,6 +543,7 @@ def restart_server_command(
     force: bool,
     timeout: int,
     preserve_state: bool,
+    auto_port: bool,
 ):
     """
     Restart the server with updated settings.
@@ -567,6 +593,7 @@ def restart_server_command(
         force,
         timeout,
         preserve_state,
+        auto_port,
     )
 
 
@@ -1076,6 +1103,7 @@ def _run_restart_server_enhanced(
     force: bool,
     timeout: int,
     preserve_state: bool,
+    auto_port: bool,
 ) -> None:
     """Enhanced restart server logic with state preservation and verification."""
     click.echo(" Restarting Enhanced Video Downloader server...")
@@ -1107,7 +1135,7 @@ def _run_restart_server_enhanced(
         force,
         timeout,
         3,  # retry_attempts
-        False,  # auto_port
+        auto_port,
     )
 
     # Restore state if preserved

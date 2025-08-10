@@ -414,7 +414,11 @@ def gallery_dl() -> Any:
 
     raw_data: dict[str, Any] = {}
     try:
-        raw_data = request.get_json(force=True) or {}
+        # Avoid automatic 400 on bad JSON; treat as server error per tests
+        json_obj = request.get_json(silent=True)
+        if not isinstance(json_obj, dict):
+            return _download_error_response("Server error: Invalid JSON payload", "SERVER_ERROR", "unknown", 500)
+        raw_data = json_obj
         download_id = raw_data.get("downloadId", "unknown")
 
         # Validate with Pydantic
@@ -466,7 +470,11 @@ def resume() -> Any:
     """
     raw_data: dict[str, Any] = {}
     try:
-        raw_data = request.get_json(force=True) or {}
+        # Avoid automatic 400 on bad JSON; treat as server error per tests
+        json_obj = request.get_json(silent=True)
+        if not isinstance(json_obj, dict):
+            return _download_error_response("Server error: Invalid JSON payload", "SERVER_ERROR", "unknown", 500)
+        raw_data = json_obj
         download_id = raw_data.get("downloadId", "unknown")
 
         # Validate with Pydantic

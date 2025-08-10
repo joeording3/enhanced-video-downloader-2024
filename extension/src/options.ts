@@ -154,6 +154,23 @@ export function loadSettings(): void {
           { component: "options" },
           response?.message as any
         );
+        // Even if the fetch failed, the background may have provided cached data
+        // Attempt to populate env-only fields like log_file when available
+        try {
+          const serverData: any = response?.data;
+          const logFileInput = document.getElementById(
+            "settings-log-file"
+          ) as HTMLInputElement | null;
+          if (
+            logFileInput &&
+            typeof serverData?.log_file === "string" &&
+            logFileInput.value.trim() === ""
+          ) {
+            logFileInput.value = serverData.log_file;
+          }
+        } catch {
+          // ignore UI population issues for env-only fields
+        }
       }
     });
   });

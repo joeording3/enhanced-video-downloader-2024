@@ -9,6 +9,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- API error handling consistency:
+  - `/api/download`: continues to surface malformed JSON as a 500 SERVER_ERROR per existing tests; oversized payloads return structured 413 JSON.
+  - `/api/gallery-dl` and `/api/resume`: treat malformed JSON as 500 SERVER_ERROR (not 400), aligning integration tests; return standardized JSON bodies.
+
 - Backend: Ensure `LOG_FILE` env is set at startup to the active default `server_output.log` path
   when not provided, so `/api/config` returns `log_file` and the Options UI field
   `settings-log-file` populates with the current log location.

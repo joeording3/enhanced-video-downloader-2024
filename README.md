@@ -377,6 +377,10 @@ gunicorn --workers=4 --bind=0.0.0.0:<SERVER_PORT> server:create_app()
 - **Server Configuration**: Set download directory, server port, and other settings
 - **Theme Toggle**: Switch between light and dark themes
 - **Log Display**: View server logs with different verbosity levels
+- **Log File Path**: The log viewer reads from the server's current log file path exposed via
+  `/api/config` as `log_file`. If `LOG_FILE` is not set in the environment, the server sets it at
+  startup to a stable default path `server_output.log` in the project root. You can override this
+  path from the Options page (Log File field) or by setting `LOG_FILE` in your shell or `.env`.
 - **Error History**: Browse past download errors with detailed troubleshooting information
 - **Server Status**: Real-time server connectivity status
 - **Settings Persistence**: All settings are automatically saved and restored
@@ -432,6 +436,10 @@ and includes:
   `"error"`, or `"critical"`. Default: `"info"`.
 - `console_log_level`: String, controls console output verbosity. Can be `"debug"`, `"info"`,
   `"warning"`, `"error"`, or `"critical"`. Default: `"warning"` (shows only warnings and errors).
+- `log_file`: File path used by the server's log endpoints. If not provided, the server sets
+  `LOG_FILE` at startup to `<project_root>/server_output.log` so the Options page can display the
+  active path. You can update it via the Options page or by setting `LOG_FILE` in the environment
+  (persisted to `.env` when changed via the API/CLI).
 - `YTDLP_CONCURRENT_FRAGMENTS`: Integer, controls yt-dlp's per-download fragment concurrency for
   HLS/DASH streams. Valid range: 1–16. Default: 4. Higher values can improve throughput on fast
   networks but increase CPU/disk usage. This maps to `yt_dlp_options.concurrent_fragments` and can

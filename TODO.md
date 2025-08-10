@@ -7,6 +7,7 @@ Urgent Tasks:
 - [/] 'choose' button to set download directory now wired (added id `settings-folder-picker` in
   `extension/ui/options.html`)
 - [/] Implement `run_cleanup()` in `server/cli/utils.py` and add tests
+- [/] Align JSON error semantics across endpoints; document in README and CHANGELOG <!-- working-on: api-json-errors -->
 - [/] Replace silent `pass` blocks with logging/handling in:
   - `server/cli_helpers.py` (loops and maintenance utils)
   - `server/cli_main.py` (loop around verification)
