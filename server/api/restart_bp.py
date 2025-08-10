@@ -39,12 +39,13 @@ def restart_server_route() -> Any:
     # It will not work with production servers like Gunicorn/Uvicorn.
     shutdown_func = request.environ.get("werkzeug.server.shutdown")
     if shutdown_func is None:
-        log.error("Server restart failed - could not initialize RestartManager")
+        # Not running under Werkzeug dev server; graceful restart is not supported here
+        log.warning("Server restart not supported: shutdown function not available (Werkzeug-only)")
         return (
             jsonify(
                 {
                     "status": "error",
-                    "message": "Server restart failed - could not initialize RestartManager",
+                    "message": "Server restart not supported: shutdown function not available (Werkzeug-only)",
                 }
             ),
             500,

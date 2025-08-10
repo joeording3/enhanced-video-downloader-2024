@@ -88,6 +88,7 @@
       "description": "Git ignore patterns - subset of common + system + logs + environment",
       "patterns": [
         "common",
+        "extension_specific",
         "system_files",
         "logs_and_temp",
         "test_artifacts",

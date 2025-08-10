@@ -56,7 +56,7 @@ class TestRestartEndpoint:
 
         assert response.status_code == 500
         assert response.json["status"] == "error"
-        assert "could not initialize RestartManager" in response.json["message"]
+        assert "restart not supported" in response.json["message"].lower()
 
     def test_restart_post_shutdown_error(self, client: FlaskClient) -> None:
         """Test restart POST request when shutdown function raises an error."""

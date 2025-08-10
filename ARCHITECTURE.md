@@ -333,6 +333,19 @@ Adoption status:
   - Adopt `domManager` for remaining direct DOM queries in `popup.ts` and `options.ts`
   - Replace remaining `console.*` calls with the centralized `logger`
 
+## CSS design system
+
+- Modular styles under `extension/ui/`:
+  - `variables.css`: tokens for colors, spacing, typography, shadows, z-index
+  - `base.css`: resets/base rules and small utilities (visibility/contrast helpers)
+  - `components.css`: reusable UI components (buttons, inputs, status tags)
+  - `themes.css`: light/dark theme surfaces layered on tokens
+- Guidelines:
+  - Prefer `var(--*)` variables; avoid hardcoded hex/spacing in components
+  - Keep `@keyframes` defined once (in `components.css`)
+  - Scrollbar styling defined once; do not duplicate across files
+  - Use `btn btn--primary` and other component classes; legacy `styles.css` is removed
+
 ## Data Flow
 
 1. **User Action**: Click or drag the DOWNLOAD button in page context (`content.ts`).
@@ -527,14 +540,11 @@ Adoption status:
 
 ### Audit Reports
 
-- **[reports/css_audit_summary.md](reports/css_audit_summary.md)** - CSS audit and optimization
-  results
-- **[reports/hardcoded_variables_summary.md](reports/hardcoded_variables_summary.md)** - Hardcoded
-  variables audit summary
 - **[reports/playwright_quality_audit_report.md](reports/playwright_quality_audit_report.md)** -
   Playwright E2E testing quality audit
-- **[reports/legacy_modules_audit.md](reports/legacy_modules_audit.md)** - Legacy module
-  identification and migration plan
+  
+  Note: Legacy modules have been addressed; the older `reports/legacy_modules_audit.md` report was
+  removed after migrating important context into this architecture document and the changelog.
 - **[reports/test_docstring_audit_report.md](reports/test_docstring_audit_report.md)** - Test
   documentation audit results
 - **[reports/type_ignore_audit_report.md](reports/type_ignore_audit_report.md)** - Type ignore usage

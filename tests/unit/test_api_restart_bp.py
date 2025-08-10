@@ -76,9 +76,8 @@ class TestRestartEndpoints:
             data = response.json
             assert data is not None
             assert data["status"] == "error"
-            assert "Server restart failed" in data["message"]
-            assert "could not initialize RestartManager" in data["message"]
-            mock_log.error.assert_called_once()
+            assert "restart not supported" in data["message"].lower()
+            mock_log.warning.assert_called_once()
 
     def test_restart_endpoint_post_method_shutdown_exception(self):
         """Test restart endpoint with POST method (shutdown exception)."""
@@ -188,7 +187,7 @@ class TestRestartEndpoints:
             response = client.post("/restart", environ_overrides={"werkzeug.server.shutdown": mock_shutdown})
 
             assert response.status_code == 500
-            # Should log the error
+            # Should log the error when shutdown function raises
             mock_log.error.assert_called_once()
 
     def test_restart_endpoint_no_shutdown_logging(self):
@@ -200,8 +199,8 @@ class TestRestartEndpoints:
             response = client.post("/restart")
 
             assert response.status_code == 500
-            # Should log the error
-            mock_log.error.assert_called_once()
+            # Should log a warning for unsupported restart
+            mock_log.warning.assert_called_once()
 
     def test_restart_endpoint_response_structure_success(self):
         """Test restart endpoint response structure (success)."""
@@ -283,8 +282,7 @@ class TestRestartEndpoints:
             assert response.status_code == 500
             data = response.json
             assert data is not None
-            assert "Server restart failed" in data["message"]
-            assert "could not initialize RestartManager" in data["message"]
+            assert "restart not supported" in data["message"].lower()
 
 
 class TestRestartServerRoute:

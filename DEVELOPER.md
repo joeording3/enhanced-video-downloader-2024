@@ -1825,8 +1825,9 @@ _Last updated: 2025-01-27_
   variables audit summary
 - **[reports/playwright_quality_audit_report.md](reports/playwright_quality_audit_report.md)** -
   Playwright E2E testing quality audit
-- **[reports/legacy_modules_audit.md](reports/legacy_modules_audit.md)** - Legacy module
-  identification and migration plan
+  
+  Note: The legacy modules audit report has been retired. Key actions and outcomes are tracked in
+  `CHANGELOG.md` and `TODO.md`.
 - **[reports/test_docstring_audit_report.md](reports/test_docstring_audit_report.md)** - Test
   documentation audit results
 - **[reports/type_ignore_audit_report.md](reports/type_ignore_audit_report.md)** - Type ignore usage

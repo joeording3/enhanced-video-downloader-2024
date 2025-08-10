@@ -91,8 +91,8 @@ Legacy/Stub Cleanup:
   `domManager` where practical
 - [ ] Replace remaining `console.*` calls in `popup.ts` and `options.ts` with centralized `logger`
 - [ ] Remove `validatePort()` in `extension/src/options.ts` and use `validationService` port validator
-- [ ] Recreate and finish CSS design system consolidation (variables, themes, components, base) and
-  ensure imports in `popup.css`, `options.css`, and `content.css`
+- [x] Recreate and finish CSS design system consolidation (variables, themes, components, base) and
+  ensure imports in `popup.css`, `options.css`, and `content.css` (documented in Architecture/README)
 
 ## 1.2 Fix Critical JavaScript/TypeScript Modules [WEEK 1-2]
 
