@@ -76,7 +76,7 @@ test-playwright:
 	npm run test:playwright:install || true
 	npm run test:playwright
 
-lint: lint-py lint-js lint-md emoji-check
+lint: lint-py lint-js lint-md emoji-check lint-unused
 
 lint-py:
 	ruff check .
