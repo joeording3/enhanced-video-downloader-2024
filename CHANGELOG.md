@@ -9,6 +9,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Options page: Consolidated the "Runtime (requires restart)" info block into the
+  "Server Configuration" section and moved the "Save Settings" and "Restart Server" buttons there.
+  This improves discoverability of settings that only apply after restart and keeps related actions
+  together. No functional changes; element IDs unchanged (`#save-settings`, `#restart-server`).
 - **Mutation testing configuration optimized**:
   - **JS/TS (Stryker)**: coverageAnalysis off for stability, higher concurrency and test runner
     reuse, ignoreStatic disabled for compatibility; add fast/minimal scripts; disable Jest coverage

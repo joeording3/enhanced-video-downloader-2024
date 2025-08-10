@@ -1,0 +1,9 @@
+{
+  "host": "127.0.0.1",
+  "port": 9090,
+  "gunicorn": true,
+  "daemon": true,
+  "workers": 1,
+  "verbose": false,
+  "cmd": "gunicorn --workers=1 --bind=127.0.0.1:9090 server.__main__:application --access-logfile - --error-logfile - --log-level info"
+}

@@ -72,6 +72,37 @@
                   </div>
                 </div>
               </fieldset>
+                <!-- Moved from Behavior Settings: Runtime (requires restart) -->
+                <fieldset>
+                  <legend>Runtime (requires restart)</legend>
+                  <!-- Gunicorn controls removed: workers forced to 1 for correctness -->
+                  <div class="settings-hint">
+                    The following settings only take effect after a server restart:
+                  </div>
+                  <ul class="settings-list">
+                    <li>Server Port</li>
+                    <li>Log Level</li>
+                    <li>Console Log Level</li>
+                    <li>Max Concurrent Downloads</li>
+                    <li>Log File Path</li>
+                  </ul>
+                  <div class="settings-hint">
+                    Use the <strong>Restart Server</strong> button below after saving to apply these changes.
+                  </div>
+                </fieldset>
+
+                <!-- Save + Restart controls moved here from the bottom and Actions section -->
+                <div class="settings-actions">
+                  <button type="submit" id="save-settings" class="btn btn--primary">
+                    <span>Save</span>
+                    Save Settings
+                  </button>
+                  <button type="button" id="restart-server" class="btn btn--secondary">
+                    <span>Restart</span>
+                    Restart Server
+                  </button>
+                </div>
+                <div id="settings-status" class="status-message"></div>
             </div>
           </section>
 
@@ -238,23 +269,6 @@
                     </div>
                   </div>
                 </div>
-                <div class="settings-section">
-                  <label>Runtime (requires restart)</label>
-                  <!-- Gunicorn controls removed: workers forced to 1 for correctness -->
-                  <div class="settings-hint">
-                    The following settings only take effect after a server restart:
-                  </div>
-                  <ul class="settings-list">
-                    <li>Server Port</li>
-                    <li>Log Level</li>
-                    <li>Console Log Level</li>
-                    <li>Max Concurrent Downloads</li>
-                    <li>Log File Path</li>
-                  </ul>
-                  <div class="settings-hint">
-                    Use the <strong>Restart Server</strong> button below after saving to apply these changes.
-                  </div>
-                </div>
               </fieldset>
             </div>
           </section>
@@ -289,26 +303,11 @@
                   <span>Reset</span>
                   Clear Button Positions
                 </button>
-                <button
-                  type="button"
-                  id="restart-server"
-                  class="btn btn--secondary"
-                >
-                  <span>Restart</span>
-                  Restart Server
-                </button>
               </div>
             </div>
           </section>
 
-          <!-- Save Button -->
-          <div class="save-section">
-            <button type="submit" id="save-settings" class="btn btn--primary">
-              <span>Save</span>
-              Save Settings
-            </button>
-            <div id="settings-status" class="status-message"></div>
-          </div>
+          <!-- Save Button moved to Server Configuration section -->
         </form>
 
         <!-- Logs Section -->

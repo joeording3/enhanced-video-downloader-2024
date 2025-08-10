@@ -3,6 +3,8 @@
 Urgent Tasks:
 
 - [/] log viewer on options page not working - no logs displayed
+- [x] Options UI: Consolidate "Runtime (requires restart)" settings into the "Server Configuration"
+      section and relocate "Save Settings" and "Restart Server" buttons there for clarity
 - [x] Remove outdated test audit reports (`reports/test_audit_report.md`,
       `reports/test_audit_summary.md`); migrated content into `tests/testing.md` and removed
       references in `README.md` and `ARCHITECTURE.md`.
@@ -43,13 +45,13 @@ Urgent Tasks:
   - `server/__main__.py` (process scanning and config save)
   - `server/lock.py` (unlink/parse/read errors)
 
-### Bundle Size Optimization (from latest analysis)
+## Bundle Size Optimization (from latest analysis)
 
 - [ ] Split background script into smaller modules
 - [ ] Implement lazy loading for content script
 - [ ] Use dynamic imports for options page
 
-### Unused Code Cleanup (from latest report)
+## Unused Code Cleanup (from latest report)
 
 - **TypeScript**
 
