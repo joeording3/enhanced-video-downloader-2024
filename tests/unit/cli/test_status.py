@@ -98,7 +98,9 @@ class TestStatusHelperFunctions:
 
         assert len(result) == 1
         assert result[0]["id"] == "test123"
-        mock_get.assert_called_once_with("http://127.0.0.1:" + str(get_server_port()) + "/status", timeout=10)
+        mock_get.assert_called_once_with(
+            "http://127.0.0.1:" + str(get_server_port()) + "/api/status", timeout=10
+        )
 
     @patch("server.cli.status.is_server_running")
     @patch("click.echo")
