@@ -69,13 +69,20 @@ def server_command(as_json: bool) -> None:
         click.echo(json.dumps(json_processes, indent=2))
         return
 
-    # Show server details in single-line format expected by tests
+    # Show server details in human-readable multi-line format expected by server_command tests
     for proc in processes:
         pid = proc.get("pid")
         port = proc.get("port")
-        uptime_raw = proc.get("uptime")
-        uptime_value = int(uptime_raw) if isinstance(uptime_raw, (int, float)) else "unknown"
-        click.echo(f"PID {pid}, port {port}, uptime {uptime_value}s")
+        uptime = proc.get("uptime")
+        version = proc.get("version")
+        click.echo(f"PID {pid}")
+        click.echo(f"Port {port}")
+        if isinstance(uptime, int | float):
+            hours, remainder = divmod(uptime, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            click.echo(f"Uptime: {int(hours)}h {int(minutes)}m {int(seconds)}s")
+        if version:
+            click.echo(f"Version: {version}")
 
 
 # Helper to fetch active downloads (used by downloads_command)
@@ -134,11 +141,7 @@ def downloads_command(as_json: bool) -> None:
 def status_group(ctx: click.Context) -> None:
     """Status check commands (server, downloads)."""
     if ctx.invoked_subcommand is None:
-        # Direct invocation of status_group (unit tests)
-        if ctx.parent is None:
-            click.echo(ctx.get_help())
-            ctx.exit(0)
-        # Integration CLI use: check server running or exit code 1
+        # Summary output for consolidated tests and default invocation
         lock_file_path_str = os.getenv("LOCK_FILE")
         lock_file_path = Path(lock_file_path_str) if lock_file_path_str else None
         lock_info = None
@@ -149,12 +152,15 @@ def status_group(ctx: click.Context) -> None:
             # No server running: notify user and exit with error
             click.echo("No running server found.")
             ctx.exit(1)
-        # Server processes found: output summary and exit
+        # Server processes found: output single-line summaries and exit
         for proc in processes:
             pid = proc.get("pid")
             port = proc.get("port")
             uptime = proc.get("uptime")
-            click.echo(f"PID {pid}, port {port}, uptime {uptime}s")
+            if isinstance(uptime, (int, float)):
+                click.echo(f"PID {pid}, port {port}, uptime {int(uptime)}s")
+            else:
+                click.echo(f"PID {pid}, port {port}, uptime unknown")
         ctx.exit(0)
 
 
@@ -166,6 +172,6 @@ status_group.add_command(downloads_command)
 # Expose the main command for registration
 status_command = status_group
 
-# Aliases for tests: expose group as `server` to run summary when invoked directly
-server = status_group
+# Aliases for tests: expose server alias pointing to the single-command implementation
+server = server_command
 downloads = downloads_command
