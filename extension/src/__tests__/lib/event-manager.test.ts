@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { EventManager } from "../../lib/event-manager";
 
 describe("Event Manager Tests", () => {

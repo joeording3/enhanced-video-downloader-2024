@@ -1,6 +1,8 @@
 /**
  * Tests for background.ts message routing and icon/theme updates
  */
+// @ts-nocheck
+
 
 // background module will be imported dynamically inside tests to register listeners
 

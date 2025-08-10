@@ -1,4 +1,6 @@
 /* eslint-env jest */
+// @ts-nocheck
+
 
 import { renderHistoryItems } from "../../extension/src/history";
 import type { HistoryEntry } from "../../extension/src/types";

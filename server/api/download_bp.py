@@ -445,7 +445,7 @@ def gallery_dl() -> Any:
         logger.debug(f"Processing gallery-dl request [{download_id}]: {validated_data}")
 
         # Pass to gallery-dl handler
-        return handle_gallery_dl_download(validated_data)
+        return handle_gallery_dl_download(cast(dict[str, Any], validated_data))
 
     except ValidationError as e:
         logger.warning(f"Invalid gallery-dl request: {e}")
@@ -501,7 +501,7 @@ def resume() -> Any:
         logger.debug(f"Processing resume request [{download_id}]: {validated_data}")
 
         # Pass to resume handler
-        return handle_resume_download(validated_data)
+        return handle_resume_download(cast(dict[str, Any], validated_data))
 
     except ValidationError as e:
         logger.warning(f"Invalid resume request: {e}")

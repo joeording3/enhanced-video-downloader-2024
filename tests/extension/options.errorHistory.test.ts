@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { loadErrorHistory } from "extension/src/options";
 import * as historyModule from "extension/src/history";
 

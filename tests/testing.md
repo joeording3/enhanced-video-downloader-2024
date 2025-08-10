@@ -53,7 +53,9 @@ extension UI (via Playwright).
 - `tests/integration`: Integration tests for Python API endpoints and CLI commands.
 - `tests/extension`: UI tests and headless browser tests for the Chrome extension.
 
-Note: Legacy CLI tests under `tests/unit/test_cli_commands.py` have been removed. CLI tests are consolidated in `tests/unit/test_cli_consolidated.py`, and legacy imports under `server/cli_commands/*` intentionally raise ImportError.
+Note: Legacy CLI tests under `tests/unit/test_cli_commands.py` have been removed.
+CLI tests are consolidated in `tests/unit/test_cli_consolidated.py`, and legacy imports
+under `server/cli_commands/*` intentionally raise ImportError.
 
 ### CLI Output Modes (Status Command)
 
@@ -124,7 +126,9 @@ pytest tests/unit/test_<name>.py
 
 ## Test Audit & Coverage Metrics
 
-Note: The detailed redundancy audit previously captured in `reports/test_audit_report.md` has been consolidated into this living document. For a high-level snapshot, see `reports/test_audit_summary.md`.
+Note: The detailed redundancy audit previously captured in `reports/test_audit_report.md`
+has been consolidated into this living document. For a high-level snapshot, see
+`reports/test_audit_summary.md`.
 
 ### Test Responsibility Matrix
 
@@ -207,13 +211,21 @@ Note: The detailed redundancy audit previously captured in `reports/test_audit_r
 
 #### Background Logic Mutation Coverage Notes (supersedes older per-file report)
 
-The prior standalone analysis for `extension/src/background-logic.ts` (now removed) identified five gaps. Current tests address these areas:
+The prior standalone analysis for `extension/src/background-logic.ts` (now removed)
+identified five gaps. Current tests address these areas:
 
-- Error message validation: Tests assert exact console prefix and error messages in `handleSetConfig` failures (see `extension/src/__tests__/background-logic.test.ts` "handles API service error", "handles storage service error", and "handles unknown error type").
-- Timeout handling: Cached-port timeout path is exercised and results verified ("handles timeout during cached port check").
-- Boundary conditions: Batch scanning over a widened range validates loop boundaries and progress callback ("handles batch processing and progress callback").
-- Exception handling: Rejected `checkStatus` calls are handled and return `null` ("handles error during port checking").
-- Null/undefined checks: No-port-found path (undefined intermediate, null return) and successful paths covered ("returns null if no port found").
+- Error message validation: Tests assert exact console prefix and error messages in
+  `handleSetConfig` failures (see `extension/src/__tests__/background-logic.test.ts`
+  "handles API service error", "handles storage service error", and "handles unknown
+  error type").
+- Timeout handling: Cached-port timeout path is exercised and results verified
+  ("handles timeout during cached port check").
+- Boundary conditions: Batch scanning over a widened range validates loop boundaries and
+  progress callback ("handles batch processing and progress callback").
+- Exception handling: Rejected `checkStatus` calls are handled and return `null`
+  ("handles error during port checking").
+- Null/undefined checks: No-port-found path (undefined intermediate, null return) and
+  successful paths covered ("returns null if no port found").
 
 Note: These notes replace the removed `reports/mutation_analysis_report.md`. All ongoing mutation metrics live in this document.
 

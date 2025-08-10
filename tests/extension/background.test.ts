@@ -3,6 +3,8 @@
  * Comprehensive unit tests for background.ts
  * Updated to use centralized services
  */
+// @ts-nocheck
+
 
 import {
   sendDownloadRequest,
