@@ -8,6 +8,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Changed
+- CLI: Restart now reuses the previous run's mode and flags when not provided (persisted in `server/data/server.lock.json`). Works for both Flask dev and Gunicorn prod runs. Explicit flags still override.
 - Docs: Remove outdated Playwright audit report; migrate E2E audit details to `tests/testing.md`. Add frontend performance practices (debouncing, DOM caching, listener cleanup, modest polling) to `README.md`.
 - Docs: Add consolidated Hardcoded Variables Policy to README and Architecture docs; track remaining
   cleanup tasks in `TODO.md`.

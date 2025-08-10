@@ -364,6 +364,7 @@ Adoption status:
 8. **Extraction Rules**: `server/extraction_rules.py` loads rules from
    `server/config/extraction_rules.json`.
 9. **Lock File**: `server/lock.py` manages lock file at `server/data/server.lock`.
+   - Supplementary metadata (`server/data/server.lock.json`) persists last run parameters (host, port, gunicorn, daemon/foreground, workers, verbose) so `videodownloader-server restart` can reuse prior mode/flags when not explicitly provided.
 10. **Client Polling**: Popup or background polls `/api/status` for progress updates.
 11. **Cleanup**: Periodic `.part` file cleanup via background thread.
 

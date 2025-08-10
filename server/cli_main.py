@@ -70,6 +70,7 @@ PROJECT_ROOT = SCRIPT_DIR.parent  # Correctly assumes cli.py is in server/
 # but server.cli might still need its own reference for messages or direct checks if any.
 # For consistency, let's use the one from server.lock if possible, or redefine carefully.
 LOCK_PATH = get_lock_file_path()
+LOCK_META_PATH = LOCK_PATH.with_suffix(".json")
 SERVER_MAIN_SCRIPT = SCRIPT_DIR / "__main__.py"
 
 
@@ -122,6 +123,36 @@ def _resolve_download_dir(cfg: Config, download_dir: str | None) -> str:
     except Exception as e:
         log.warning(f"Could not create default download directory '{default_dl_path}': {e}.")
     return str(default_dl_path)
+
+
+def _write_lock_metadata(metadata: dict[str, Any]) -> None:
+    """Write supplementary metadata for the running server to a JSON file."""
+    try:
+        LOCK_META_PATH.parent.mkdir(parents=True, exist_ok=True)
+        safe_meta = {
+            "host": metadata.get("host"),
+            "port": metadata.get("port"),
+            "gunicorn": bool(metadata.get("gunicorn", False)),
+            "daemon": bool(metadata.get("daemon", False)),
+            "workers": int(metadata.get("workers", 1)) if metadata.get("workers") is not None else None,
+            "verbose": bool(metadata.get("verbose", False)),
+            "cmd": metadata.get("cmd"),
+        }
+        LOCK_META_PATH.write_text(json.dumps(safe_meta, indent=2))
+    except Exception:
+        log.debug("Failed to write lock metadata", exc_info=True)
+
+
+def _read_lock_metadata() -> dict[str, Any] | None:
+    """Read lock metadata JSON if present."""
+    try:
+        if LOCK_META_PATH.exists():
+            data = json.loads(LOCK_META_PATH.read_text())
+            if isinstance(data, dict):
+                return data
+    except Exception:
+        log.debug("Failed to read lock metadata", exc_info=True)
+    return None
 
 
 def _cli_get_existing_server_status(host: str, port: int) -> tuple[tuple[int, int] | None, bool]:
@@ -315,6 +346,18 @@ def _run_start_server(
     _cli_pre_start_checks(resolved_host, resolved_port, force)
 
     cmd = _cli_build_command(cfg, resolved_host, resolved_port, effective_gunicorn, effective_workers)
+
+    start_metadata: dict[str, Any] = {
+        "host": resolved_host,
+        "port": resolved_port,
+        "gunicorn": effective_gunicorn,
+        "workers": effective_workers,
+        "verbose": effective_verbose,
+        "daemon": bool(daemon),
+        "cmd": " ".join(cmd),
+    }
+    # Write metadata ahead of spawning; helpers may exit early (daemon)
+    _write_lock_metadata(start_metadata)
 
     if daemon:
         _cli_execute_daemon(cmd, resolved_host, resolved_port)
@@ -910,7 +953,7 @@ def _cli_error_already_running(pid: int, host: str, port: int) -> None:
 
 
 # Execution helpers for start_server
-def _cli_execute_daemon(cmd: list[str], host: str, port: int) -> None:
+def _cli_execute_daemon(cmd: list[str], host: str, port: int, metadata: dict[str, Any]) -> None:
     """Execute server start in daemon mode."""
     try:
         process = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
@@ -934,7 +977,7 @@ def _cli_execute_daemon(cmd: list[str], host: str, port: int) -> None:
         log.exception("Failed to start server as daemon")
 
 
-def _cli_execute_foreground(cmd: list[str], _host: str, _port: int) -> None:
+def _cli_execute_foreground(cmd: list[str], _host: str, _port: int, metadata: dict[str, Any]) -> None:
     """Execute server start in foreground mode."""
     try:
         command_str = " ".join(cmd)
@@ -1126,6 +1169,10 @@ def _cli_stop_cleanup_enhanced() -> None:
     else:
         log.info("No lock file remaining.")
         click.echo(" No lock file found.")
+    # Clean up metadata file if present
+    with contextlib.suppress(Exception):
+        if LOCK_META_PATH.exists():
+            LOCK_META_PATH.unlink()
 
 
 def _run_restart_server_enhanced(
@@ -1143,6 +1190,33 @@ def _run_restart_server_enhanced(
 ) -> None:
     """Enhanced restart server logic with state preservation and verification."""
     click.echo(" Restarting Enhanced Video Downloader server...")
+
+    # Try to capture current run parameters before stopping the server
+    prior_meta = _read_lock_metadata() or {}
+    # Use Click's parameter source to detect if the user supplied overrides
+
+    def _provided(name: str) -> bool:
+        try:
+            from click.core import ParameterSource
+            src = ctx.get_parameter_source(name)
+            return src in (ParameterSource.COMMANDLINE, ParameterSource.ENVIRONMENT)
+        except Exception:
+            return False
+
+    # Derive defaults from prior metadata if not provided by user
+    if not _provided("host") and isinstance(prior_meta.get("host"), str):
+        host = prior_meta.get("host")  # type: ignore[assignment]
+    if not _provided("port") and isinstance(prior_meta.get("port"), int):
+        port = prior_meta.get("port")  # type: ignore[assignment]
+    if not _provided("gunicorn") and isinstance(prior_meta.get("gunicorn"), bool):
+        gunicorn = bool(prior_meta.get("gunicorn"))  # type: ignore[assignment]
+    if not _provided("workers") and isinstance(prior_meta.get("workers"), int):
+        workers = int(prior_meta.get("workers"))  # type: ignore[assignment]
+    if not _provided("verbose") and isinstance(prior_meta.get("verbose"), bool):
+        verbose = bool(prior_meta.get("verbose"))  # type: ignore[assignment]
+    # For daemon/foreground, only override if neither --daemon nor --fg were given
+    if not _provided("daemon") and not _provided("fg") and isinstance(prior_meta.get("daemon"), bool):
+        daemon = bool(prior_meta.get("daemon"))  # type: ignore[assignment]
 
     # Preserve state if requested
     preserved_state = None

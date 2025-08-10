@@ -13,7 +13,8 @@ Urgent Tasks:
   - [ ] Wire into `make all`/`check` gates and CI once noise baseline is reviewed
 
   <!-- working-on: options logs viewer wired to background API -->
-  - [/] Prevent stale lock file from affecting CLI status tests by removing `server/data/server.lock` before `make test-py`
+- [/] Prevent stale lock file from affecting CLI status tests by removing `server/data/server.lock` before `make test-py`
+- [/] Enhance CLI restart: reuse previous run mode/flags automatically when not provided (persisted in `server/data/server.lock.json`)
 - [/] 'choose' button to set download directory now wired (added id `settings-folder-picker` in
   `extension/ui/options.html`)
 - [/] Implement `run_cleanup()` in `server/cli/utils.py` and add tests

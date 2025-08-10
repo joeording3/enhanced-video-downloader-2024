@@ -6,14 +6,14 @@ module.exports = {
   packageManager: "npm",
   reporters: ["html", "clear-text", "progress"],
   testRunner: "jest",
-  coverageAnalysis: "off",
+  coverageAnalysis: "perTest",
   allowEmpty: true,
   inPlace: true,
   disableTypeChecks: true,
   jest: {
     configFile: "jest.stryker.config.js",
     projectType: "custom",
-    enableFindRelatedTests: false,
+    enableFindRelatedTests: true,
   },
   // Focus on critical files for mutation testing
   mutate: [
@@ -33,10 +33,10 @@ module.exports = {
     break: null, // Temporarily disabled to allow make all to pass
   },
   // Performance optimizations
-  timeoutMS: 10000, // Increased timeout for better reliability
-  concurrency: 4, // Lower concurrency for stability
-  maxTestRunnerReuse: 20, // Moderate test runner reuse for better performance
-  ignoreStatic: false,
+  timeoutMS: 8000,
+  concurrency: 8,
+  maxTestRunnerReuse: 50,
+  ignoreStatic: true,
   logLevel: "info",
   tempDirName: ".stryker-tmp",
   symlinkNodeModules: false,
