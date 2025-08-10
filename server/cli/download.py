@@ -99,7 +99,7 @@ def _download_single_url(
     # Send request to server
     try:
         click.echo(f" Starting download: {url}")
-        response = requests.post(f"http://127.0.0.1:{port}/download", json=download_options, timeout=10)
+        response = requests.post(f"http://127.0.0.1:{port}/api/download", json=download_options, timeout=10)
 
         if response.status_code == 200:
             result = response.json()
@@ -182,7 +182,7 @@ def _download_batch_from_file(
                     download_options["download_dir"] = str(output_dir)
 
                 # Send request
-                response = requests.post(f"http://127.0.0.1:{port}/download", json=download_options, timeout=10)
+                response = requests.post(f"http://127.0.0.1:{port}/api/download", json=download_options, timeout=10)
 
                 if response.status_code == 200:
                     result = response.json()
@@ -252,7 +252,7 @@ def resume_command(type: str) -> None:
     try:
         click.echo(f" Resuming {type} downloads...")
         response = requests.post(
-            f"http://127.0.0.1:{port}{endpoint}",
+            f"http://127.0.0.1:{port}/api{endpoint}",
             json={"type": type},
             timeout=30,  # Resume operations can take longer
         )
@@ -290,7 +290,7 @@ def cancel_command(download_id: str) -> None:
 
     try:
         click.echo(f"  Canceling download: {download_id}")
-        response = requests.post(f"http://127.0.0.1:{port}/download/{download_id}/cancel", timeout=10)
+        response = requests.post(f"http://127.0.0.1:{port}/api/download/{download_id}/cancel", timeout=10)
 
         if response.status_code == 200:
             result = response.json()
@@ -324,7 +324,7 @@ def priority_command(download_id: str, priority: int) -> None:
     try:
         click.echo(f" Setting priority for download {download_id} to {priority}")
         response = requests.post(
-            f"http://127.0.0.1:{port}/download/{download_id}/priority", json={"priority": priority}, timeout=10
+            f"http://127.0.0.1:{port}/api/download/{download_id}/priority", json={"priority": priority}, timeout=10
         )
 
         if response.status_code == 200:
@@ -358,7 +358,7 @@ def list_command(active_only: bool, failed_only: bool, format: str) -> None:
         sys.exit(1)
 
     try:
-        response = requests.get(f"http://127.0.0.1:{port}/status", timeout=10)
+        response = requests.get(f"http://127.0.0.1:{port}/api/status", timeout=10)
 
         if response.status_code == 200:
             result = response.json()

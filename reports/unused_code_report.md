@@ -84,5 +84,3 @@ Week 3:
 
 - ts-prune notable: `popup.ts:updateToggleButtonState`; numerous `core/constants.ts` exports "used in module" only.
 - vulture notable: route handlers in `download_bp.py`, CLI helpers in `cli_helpers.py`, command symbols in `cli_main.py`, constants/validators in `constants.py` and `schemas.py`, plus expected test noise (`pytestmark`, `side_effect`).
-
-

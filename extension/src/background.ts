@@ -46,6 +46,7 @@ const _queueStorageKey = STORAGE_KEYS.DOWNLOAD_QUEUE;
 const _defaultServerPort = getServerPort();
 const _maxPortScan = getPortRange()[1]; // Use the end of the port range
 const _serverCheckInterval = NETWORK_CONSTANTS.SERVER_CHECK_INTERVAL;
+const _statusPollIntervalMs = 3000;
 
 // Expected application name for server identification (from manifest)
 const expectedAppName =
@@ -945,6 +946,29 @@ const initializeExtension = async (): Promise<void> => {
 
     // Initial server status check
     await broadcastServerStatus();
+
+    // Start status polling to feed popup UI
+    if (!isTestEnvironment) {
+      setInterval(async () => {
+        try {
+          const port = await storageService.getPort();
+          if (!port) return;
+          const res = await fetch(`http://127.0.0.1:${port}/api/status`);
+          if (!res.ok) return;
+          const data = await res.json();
+          const active: Record<string, any> = {};
+          Object.entries(data || {}).forEach(([id, obj]) => {
+            active[id] = obj;
+          });
+          chrome.runtime.sendMessage({
+            type: "downloadStatusUpdate",
+            data: { active, queue: downloadQueue },
+          });
+        } catch {
+          // ignore
+        }
+      }, _statusPollIntervalMs);
+    }
   } catch (err: unknown) {
     error("Error during extension initialization:", err);
   } finally {
@@ -1039,6 +1063,80 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         case "getServerStatus": {
           const status = await getServerStatus();
           sendResponse({ status });
+          break;
+        }
+
+        case "resumeDownloads": {
+          // Trigger server-side resume operation
+          if (port) {
+            try {
+              const res = await fetch("http://127.0.0.1:" + port + "/api/resume", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                // Optional payload; server will validate
+                body: JSON.stringify({}),
+              });
+              const json = await res.json();
+              sendResponse(json);
+            } catch (e) {
+              sendResponse({ status: "error", message: (e as Error).message });
+            }
+          } else {
+            sendResponse({ status: "error", message: "Server not available" });
+          }
+          break;
+        }
+
+        case "setPriority": {
+          // Adjust OS priority (nice value) for a download process
+          const downloadId: string | undefined = message.downloadId;
+          const priority: number | undefined = message.priority;
+          if (!downloadId || typeof priority !== "number") {
+            sendResponse({ status: "error", message: "Missing downloadId or priority" });
+            break;
+          }
+          if (port) {
+            try {
+              const res = await fetch(
+                `http://127.0.0.1:${port}/api/download/${downloadId}/priority`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ priority }),
+                }
+              );
+              const json = await res.json();
+              sendResponse(json);
+            } catch (e) {
+              sendResponse({ status: "error", message: (e as Error).message });
+            }
+          } else {
+            sendResponse({ status: "error", message: "Server not available" });
+          }
+          break;
+        }
+
+        case "galleryDownload": {
+          const url: string | undefined = message.url;
+          if (!url) {
+            sendResponse({ status: "error", message: "Missing url" });
+            break;
+          }
+          if (port) {
+            try {
+              const res = await fetch(`http://127.0.0.1:${port}/api/gallery-dl`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ url }),
+              });
+              const json = await res.json();
+              sendResponse(json);
+            } catch (e) {
+              sendResponse({ status: "error", message: (e as Error).message });
+            }
+          } else {
+            sendResponse({ status: "error", message: "Server not available" });
+          }
           break;
         }
 

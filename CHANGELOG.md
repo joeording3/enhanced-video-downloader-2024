@@ -44,6 +44,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Backend cleanup: Removed deprecated legacy modules and unified helpers
 
+- Server error handlers moved to module scope and registered via `app.register_error_handler` to satisfy
+  static analysis and avoid false "unused" warnings. No behavioral change in responses:
+  - 400, 404, 405, 413, 500 JSON structures preserved
+  - Handlers now live at module scope in `server/__init__.py`
+
   - Dropped `server/video_downloader_server.py` legacy shim (now raises ImportError); use
     `python -m server` or `videodownloader-server` CLI
   - Removed `server/cli_commands/lifecycle.py` shims (now raises ImportError); use consolidated
@@ -77,6 +82,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Deprecated UI stylesheet `extension/ui/styles.css` removed. UI now uses modular styles:
   `variables.css`, `components.css`, `base.css`, and `themes.css`.
+
+- Outdated report `reports/test_audit_report.md` removed. Details migrated into `tests/testing.md`; `reports/test_audit_summary.md` remains as the concise summary.
 
 ### Fixed
 

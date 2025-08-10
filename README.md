@@ -484,7 +484,8 @@ make all-continue
 make check
 
 # Individual checks
-make lint          # Run linting for Python and JavaScript
+ make lint          # Run linting for Python and JavaScript
+ make lint-unused   # Detect unused exports (TS) and dead code (Python)
 make lint-py       # Python linting only (Ruff)
 make lint-js       # JavaScript linting only (ESLint)
 make format-check  # Check code formatting without modifying files
@@ -500,7 +501,7 @@ make mutation-js   # JavaScript/TypeScript mutation testing (Stryker)
 make mutation-py   # Python mutation testing (Mutmut)
 
 # Test audit
-make test-audit    # Comprehensive test audit
+ make test-audit    # Comprehensive test audit
 make audit-coverage    # Coverage analysis
 make audit-mutation    # Mutation testing
 make audit-performance # Performance review

@@ -279,7 +279,25 @@ export async function addToHistory(entry: HistoryEntry): Promise<void> {
           resolve();
           return;
         }
-        // Added to history
+        // Attempt to sync to backend history API (best effort)
+        try {
+          chrome.storage.local.get("serverPort", async res => {
+            const port = (res as any).serverPort;
+            if (!port) return;
+            try {
+              await fetch(`http://127.0.0.1:${port}/api/history`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(newEntry),
+              });
+            } catch {
+              // ignore sync errors
+            }
+          });
+        } catch {
+          // ignore
+        }
+        // Added to history locally
         resolve();
       });
     });
@@ -297,7 +315,25 @@ export async function clearHistory(): Promise<void> {
         console.error("[EVD][HISTORY] Error clearing history:", chrome.runtime.lastError.message);
         reject(new Error(chrome.runtime.lastError.message));
       } else {
-        // History cleared
+        // Attempt to clear backend history API as well (best effort)
+        try {
+          chrome.storage.local.get("serverPort", async res => {
+            const port = (res as any).serverPort;
+            if (!port) return;
+            try {
+              await fetch(`http://127.0.0.1:${port}/api/history`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "clear" }),
+              });
+            } catch {
+              // ignore errors
+            }
+          });
+        } catch {
+          // ignore
+        }
+        // History cleared locally
         resolve();
       }
     });

@@ -300,6 +300,29 @@ The project maintains comprehensive documentation across multiple files:
   - `POST /api/restart` (server restart)
   - `GET /api/health` (health check)
 
+### Frontend centralized services
+
+The extension codebase uses centralized, shared services to reduce duplication and improve
+maintainability:
+
+- Centralized state: `extension/src/core/state-manager.ts` — single source of truth with
+  event-driven updates
+- Centralized validation: `extension/src/core/validation-service.ts` — declarative validators by
+  field type
+- Centralized DOM operations: `extension/src/core/dom-manager.ts` — cached queries and named
+  selectors
+- Centralized error handling: `extension/src/core/error-handler.ts` — uniform async/sync handling
+- Centralized logging: `extension/src/core/logger.ts` — context-aware log levels
+
+Adoption status:
+
+- Background and content scripts are fully integrated with the centralized services.
+- Popup and options scripts are largely migrated, but a few items remain and are tracked in
+  `TODO.md`:
+  - Replace `validatePort()` in `extension/src/options.ts` with `validationService`
+  - Adopt `domManager` for remaining direct DOM queries in `popup.ts` and `options.ts`
+  - Replace remaining `console.*` calls with the centralized `logger`
+
 ## Data Flow
 
 1. **User Action**: Click or drag the DOWNLOAD button in page context (`content.ts`).

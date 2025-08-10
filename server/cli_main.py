@@ -5,6 +5,7 @@ This module defines Click commands to manage server lifecycle, downloads,
 configuration, debug utilities, and system maintenance via a unified CLI.
 """
 
+import contextlib
 import json
 import logging
 import os
@@ -913,9 +914,21 @@ def _cli_execute_daemon(cmd: list[str], host: str, port: int) -> None:
     """Execute server start in daemon mode."""
     try:
         process = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+        # Best-effort: record lock file with Gunicorn master PID and port for management commands
+        try:
+            LOCK_PATH.parent.mkdir(parents=True, exist_ok=True)
+            LOCK_PATH.write_text(f"{process.pid}:{port}")
+        except Exception:
+            log.debug("Failed to write lock file for daemonized process", exc_info=True)
         log.info(f"Attempting to start server as a daemon (PID {process.pid}). Waiting for it to become available...")
         if wait_for_server_start_cli(port, host, timeout=20):
             log.info(f"Server started as a daemon (PID {process.pid}) on {host}:{port}.")
+            # Write lock again after successful start to ensure presence
+            try:
+                LOCK_PATH.parent.mkdir(parents=True, exist_ok=True)
+                LOCK_PATH.write_text(f"{process.pid}:{port}")
+            except Exception:
+                log.debug("Failed to write lock file post-start", exc_info=True)
         sys.exit(0)
     except Exception:
         log.exception("Failed to start server as daemon")
@@ -927,6 +940,12 @@ def _cli_execute_foreground(cmd: list[str], _host: str, _port: int) -> None:
         command_str = " ".join(cmd)
         log.info(f"Running server in foreground. Command: {command_str}")
         server_process = subprocess.Popen(cmd)
+        # Best-effort: write lock file for foreground process as well
+        try:
+            LOCK_PATH.parent.mkdir(parents=True, exist_ok=True)
+            LOCK_PATH.write_text(f"{server_process.pid}:{_port}")
+        except Exception:
+            log.debug("Failed to write lock file for foreground process", exc_info=True)
 
         server_process.wait()
     except KeyboardInterrupt:
@@ -981,6 +1000,23 @@ def _cli_stop_pre_checks() -> list[psutil.Process]:
                     pid_to_process.setdefault(pid, proc_obj)
         except Exception:
             log.warning(f"Cannot add process PID {pid} from lock file.")
+
+    # Fallback: scan for any process listening on the configured server port
+    try:
+        cfg = Config.load()
+        fallback_port = cfg.get_value("server_port")
+        if isinstance(fallback_port, int):
+            for proc in psutil.process_iter(["pid"]):
+                try:
+                    if not proc.is_running():
+                        continue
+                    conns = proc.net_connections(kind="inet")  # type: ignore[attr-defined]
+                    if any(getattr(c.laddr, "port", None) == fallback_port for c in conns):
+                        pid_to_process.setdefault(proc.pid, proc)
+                except Exception:
+                    continue
+    except Exception:
+        log.debug("Fallback port scan failed during stop pre-checks", exc_info=True)
 
     entities: list[psutil.Process] = list(pid_to_process.values())
 
@@ -1118,11 +1154,51 @@ def _run_restart_server_enhanced(
     click.echo("  Stopping current server instance...")
     _run_stop_server_enhanced(timeout=10, force=False)
 
-    # Wait a moment for cleanup
-    time.sleep(2)
+    # Wait a short moment for cleanup, then ensure the port is really free
+    time.sleep(1)
+    try:
+        cfg = _cli_load_config(ctx)
+        h, p, _ = _resolve_start_params(cfg, host, port, None)
+        if not _wait_for_port_release(h, p, timeout=5):
+            click.echo(f"  Warning: Port {h}:{p} still appears in use after stop; retrying forced cleanup...")
+            # Attempt an extra round of cleanup for any lingering processes bound to the port
+            # Scan processes and terminate those listening on the target port
+            for proc in psutil.process_iter(["pid"]):
+                # Safely retrieve network connections; skip process on failure
+                conns = ()
+                with contextlib.suppress(Exception):
+                    conns = proc.net_connections(kind="inet")  # type: ignore[attr-defined]
+                if not conns:
+                    continue
+
+                if any(getattr(c.laddr, "port", None) == p for c in conns):
+                    terminated = False
+                    with contextlib.suppress(Exception):
+                        proc.terminate()
+                        proc.wait(timeout=2)
+                        terminated = True
+                    if not terminated:
+                        with contextlib.suppress(Exception):
+                            proc.kill()
+            # Final wait
+            _wait_for_port_release(h, p, timeout=3)
+    except Exception:
+        # Non-fatal; proceed to start sequence regardless
+        pass
 
     # Start the server with enhanced options
     click.echo("  Starting server with new configuration...")
+    # If target port is occupied by a different application, force auto-port just for this restart
+    try:
+        cfg = _cli_load_config(ctx)
+        resolved_host, resolved_port, _ = _resolve_start_params(cfg, host, port, None)
+        pid_port, port_in_use = _cli_get_existing_server_status(resolved_host, resolved_port)
+        if port_in_use and not pid_port:
+            auto_port = True
+    except Exception:
+        # Fall back to provided auto_port flag
+        pass
+
     _run_start_server(
         ctx,
         daemon,
@@ -1191,10 +1267,14 @@ def _restore_server_state(state: dict[str, Any]) -> None:
 def _verify_restart_success(host: str | None, port: int | None, timeout: int) -> bool:
     """Verify that the restart was successful by checking server availability."""
     if not host or not port:
-        # Use default values if not specified
+        # Use configured values if not specified
         cfg = Config.load()
-        host = host or cfg.host
-        port = port or cfg.port
+        with contextlib.suppress(Exception):
+            host = host or cfg.get_value("server_host", "127.0.0.1")
+        if not host:
+            host = "127.0.0.1"
+        with contextlib.suppress(Exception):
+            port = port or cfg.get_value("server_port")
 
     # Ensure we have valid values
     if not host or not port:
@@ -1215,6 +1295,20 @@ def _verify_restart_success(host: str | None, port: int | None, timeout: int) ->
 
     log.warning("Restart verification failed.")
     return False
+
+
+def _wait_for_port_release(host: str, port: int, timeout: int = 5) -> bool:
+    """Wait up to timeout seconds for a TCP port to become free."""
+    start_ts = time.time()
+    while time.time() - start_ts < timeout:
+        try:
+            if not is_port_in_use(port, host):
+                return True
+        except Exception:
+            # If the check fails, be conservative and wait
+            pass
+        time.sleep(0.5)
+    return not is_port_in_use(port, host)
 
 
 def _run_server_status_enhanced(ctx: click.Context, detailed: bool, json_output: bool) -> None:

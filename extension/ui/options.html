@@ -241,7 +241,19 @@
                 <div class="settings-section">
                   <label>Runtime (requires restart)</label>
                   <!-- Gunicorn controls removed: workers forced to 1 for correctness -->
-                  <div class="settings-hint">Changes apply on server restart</div>
+                  <div class="settings-hint">
+                    The following settings only take effect after a server restart:
+                  </div>
+                  <ul class="settings-list">
+                    <li>Server Port</li>
+                    <li>Log Level</li>
+                    <li>Console Log Level</li>
+                    <li>Max Concurrent Downloads</li>
+                    <li>Log File Path</li>
+                  </ul>
+                  <div class="settings-hint">
+                    Use the <strong>Restart Server</strong> button below after saving to apply these changes.
+                  </div>
                 </div>
               </fieldset>
             </div>

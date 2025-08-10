@@ -230,8 +230,10 @@ export function loadAndRenderHistory(
 export async function loadConfig(): Promise<any> {
   return new Promise(resolve => {
     chrome.runtime.sendMessage({ type: "getConfig" }, (response: any) => {
-      if (!chrome.runtime.lastError && response && response.serverConfig) {
-        resolve(response.serverConfig);
+      if (!chrome.runtime.lastError && response && (response.data || response.serverConfig)) {
+        // Normalize to .data (background returns { status, data })
+        const cfg = response.data || response.serverConfig;
+        resolve(cfg);
       } else {
         chrome.storage.local.get("extensionConfig", (result: any) => {
           resolve(result.extensionConfig);
@@ -247,8 +249,9 @@ export async function updateDownloadDirDisplay(): Promise<void> {
   if (!el) return;
   return new Promise(resolve => {
     chrome.runtime.sendMessage({ type: "getConfig" }, (response: any) => {
-      if (!chrome.runtime.lastError && response && response.serverConfig) {
-        el.textContent = "Saving to: " + response.serverConfig.download_dir;
+      if (!chrome.runtime.lastError && response && (response.data || response.serverConfig)) {
+        const cfg = response.data || response.serverConfig;
+        el.textContent = "Saving to: " + (cfg?.download_dir || "");
         resolve();
       } else {
         chrome.storage.local.get("extensionConfig", (result: any) => {
@@ -267,8 +270,9 @@ export async function updatePortDisplay(): Promise<void> {
   if (!el) return;
   return new Promise(resolve => {
     chrome.runtime.sendMessage({ type: "getConfig" }, (response: any) => {
-      if (!chrome.runtime.lastError && response && response.serverConfig) {
-        el.textContent = "Server Port: " + response.serverConfig.server_port;
+      if (!chrome.runtime.lastError && response && (response.data || response.serverConfig)) {
+        const cfg = response.data || response.serverConfig;
+        el.textContent = "Server Port: " + (cfg?.server_port ?? "");
       }
       resolve();
     });
@@ -402,6 +406,34 @@ export function createActiveListItem(
     chrome.runtime.sendMessage({ type: "pauseDownload", downloadId }, () => {});
   });
   li.appendChild(btn);
+  // Priority control (optional)
+  const priorityWrapper = document.createElement("div");
+  priorityWrapper.className = "priority-controls";
+  const select = document.createElement("select");
+  select.className = "priority-select";
+  const priorityOptions = [
+    { label: "Low (+10)", value: 10 },
+    { label: "Below normal (+5)", value: 5 },
+    { label: "Normal (0)", value: 0 },
+    { label: "Above normal (-5)", value: -5 },
+  ];
+  priorityOptions.forEach(opt => {
+    const o = document.createElement("option");
+    o.value = String(opt.value);
+    o.textContent = opt.label;
+    select.appendChild(o);
+  });
+  const setBtn = document.createElement("button");
+  setBtn.className = "priority-set-button";
+  setBtn.textContent = "Set Priority";
+  setBtn.addEventListener("click", () => {
+    const val = parseInt(select.value, 10);
+    if (!Number.isFinite(val)) return;
+    chrome.runtime.sendMessage({ type: "setPriority", downloadId, priority: val }, () => {});
+  });
+  priorityWrapper.appendChild(select);
+  priorityWrapper.appendChild(setBtn);
+  li.appendChild(priorityWrapper);
   return li;
 }
 

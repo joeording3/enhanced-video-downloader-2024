@@ -67,7 +67,7 @@ def clear_command(force: bool) -> None:
 
     # Send request to server
     try:
-        response = requests.post(f"http://127.0.0.1:{port}/history", json={"action": "clear"}, timeout=10)
+        response = requests.post(f"http://127.0.0.1:{port}/api/history", json={"action": "clear"}, timeout=10)
 
         if response.status_code == 200:
             click.echo("Download history cleared successfully.")
@@ -132,7 +132,7 @@ def _fetch_history_entries(status: str, domain: str, port: int, limit: int) -> t
     if domain:
         params["domain"] = domain
     try:
-        response = requests.get(f"http://127.0.0.1:{port}/history", params=params, timeout=10)
+        response = requests.get(f"http://127.0.0.1:{port}/api/history", params=params, timeout=10)
     except requests.exceptions.ConnectionError:
         click.echo(f"Could not connect to server at port {port}. Is the server running?")
         sys.exit(1)

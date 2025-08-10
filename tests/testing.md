@@ -112,6 +112,8 @@ pytest tests/unit/test_<name>.py
 
 ## Test Audit & Coverage Metrics
 
+Note: The detailed redundancy audit previously captured in `reports/test_audit_report.md` has been consolidated into this living document. For a high-level snapshot, see `reports/test_audit_summary.md`.
+
 ### Test Responsibility Matrix
 
 | Module                             | Test Files                                   | Coverage % | Mutation Score | Owner | Notes |

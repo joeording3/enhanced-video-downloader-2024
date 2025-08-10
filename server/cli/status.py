@@ -98,7 +98,7 @@ def get_active_downloads() -> list[dict[str, Any]]:
         sys.exit(1)
 
     try:
-        response = requests.get(f"http://127.0.0.1:{port}/status", timeout=10)
+        response = requests.get(f"http://127.0.0.1:{port}/api/status", timeout=10)
         if response.status_code == 200:
             data: dict[str, Any] = response.json()
             active_downloads = data.get("active_downloads", [])

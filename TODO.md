@@ -3,6 +3,7 @@
 Urgent Tasks:
 
 - [/] log viewer on options page not working - no logs displayed
+- [x] Remove outdated `reports/test_audit_report.md`; migrate key notes into `tests/testing.md` and keep `reports/test_audit_summary.md`.
 - [ ] Add unused-code checks to CI and local workflows
   <!-- working-on: unused-code checks (ts-prune, vulture) -->
   - [x] Add ts-prune scripts and Make targets
@@ -26,13 +27,21 @@ Urgent Tasks:
 ### Wiring Audit Findings (Backend/UI/CLI integration)
 
 - [ ] Options: `resumeDownloads` button sends `chrome.runtime.sendMessage({ type: "resumeDownloads" })` but background has no handler. Add background handler to POST `/api/resume` and return result. Files: `extension/src/background.ts`, tests in `extension/src/__tests__/`.
+  - [/] Implemented background handler for `resumeDownloads` to POST `/api/resume`.
 - [ ] Popup: `getConfig` response shape mismatch. `popup.ts` expects `response.serverConfig`, background returns `{ status, data }`. Normalize to `data` in `popup.ts` (`loadConfig`, `updateDownloadDirDisplay`, `updatePortDisplay`). Files: `extension/src/popup.ts`.
+  - [/] Normalized popup config access to use `response.data || response.serverConfig`.
 - [ ] Logs endpoints not standardized under `/api`. Server exposes `/logs` and `/logs/clear` (no `/api`), background tries `/api/logs` first. Either (prefer) mount `logs_bp` and `logs_manage_bp` under `/api` in `server/__init__.py` or (fallback) keep BG candidates but update README to reflect reality. Files: `server/__init__.py`, `server/api/logs_bp.py`, `server/api/logs_manage_bp.py`, `README.md`.
+  - [/] Mounted `logs_bp` and `logs_manage_bp` under `/api` in `server/__init__.py`.
 - [ ] CLI calls non-API paths. Update `server/cli/*.py` to use `/api/*` endpoints: `/api/download`, `/api/status`, `/api/resume`, `/api/download/<id>/{cancel,pause,resume,priority}`. Files: `server/cli/download.py`, `server/cli/status.py`, `server/cli/history.py`.
+  - [/] Updated CLI endpoints to `/api/*` in `server/cli/download.py`, `server/cli/status.py`, and `server/cli/history.py`.
 - [ ] GalleryDL API not wired in UI. Backend supports `POST /api/gallery-dl` and `use_gallery_dl` flag, but extension never triggers it. Add UI toggle/logic or document as server-only. Files: `extension/src/popup.ts` (or options), `extension/src/background.ts`.
+  - [/] Added optional Options UI hook (`settings-gallery-download`) wiring: sends `galleryDownload` to background; background posts to `/api/gallery-dl`.
 - [ ] Priority API not surfaced in UI. Backend `POST /api/download/<id>/priority` exists; add control in popup active item UI or drop endpoint. Files: `extension/src/popup.ts`, `server/api/download_bp.py` (if dropping).
+  - [/] Background added `setPriority` message case; popup UI control added in `createActiveListItem()`.
 - [ ] Status API unused by extension. Popup listens for `downloadStatusUpdate` but no sender exists; BG does not poll `/api/status`. Either implement periodic polling and broadcast, or remove listener. Files: `extension/src/background.ts`, `extension/src/popup.ts`.
+  - [/] Implemented background periodic polling of `/api/status` and broadcasting `downloadStatusUpdate`.
 - [ ] History API unused by extension. Extension persists history only in `chrome.storage`; consider syncing with `/api/history` for enriched entries or document local-only behavior. Files: `extension/src/history.ts`, `server/api/history_bp.py`.
+  - [/] Implemented best-effort history sync: append entries and clear via `/api/history` when `serverPort` is known.
 - [ ] Debug API (`GET /debug/paths`) is dev-only and unused in UI; optionally surface in Options “Debug” tab or leave as internal.
 
 Legacy/Stub Cleanup:
@@ -59,6 +68,15 @@ Legacy/Stub Cleanup:
   `variables.css`, `components.css`, `base.css`, and `themes.css`
 - [/] CSS audit: migrated inline styles to classes, unified visibility helpers.
   <!-- working-on: css refactor - visibility classes and contrast variants -->
+
+### Frontend centralized services follow-ups
+
+- [ ] Replace direct DOM queries in `extension/src/popup.ts` and `extension/src/options.ts` with
+  `domManager` where practical
+- [ ] Replace remaining `console.*` calls in `popup.ts` and `options.ts` with centralized `logger`
+- [ ] Remove `validatePort()` in `extension/src/options.ts` and use `validationService` port validator
+- [ ] Recreate and finish CSS design system consolidation (variables, themes, components, base) and
+  ensure imports in `popup.css`, `options.css`, and `content.css`
 
 ## 1.2 Fix Critical JavaScript/TypeScript Modules [WEEK 1-2]
 

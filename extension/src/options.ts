@@ -298,6 +298,30 @@ export function setupEventListeners(): void {
     });
   }
 
+  // Optional: enable GalleryDL and Priority UI hooks if present in DOM
+  const galleryBtn = document.getElementById("settings-gallery-download");
+  if (galleryBtn) {
+    galleryBtn.addEventListener("click", () => {
+      const urlInput = document.getElementById("settings-gallery-url") as HTMLInputElement | null;
+      const url = urlInput?.value?.trim();
+      if (!url) {
+        setStatus("settings-status", "Please enter a gallery URL", true);
+        return;
+      }
+      chrome.runtime.sendMessage({ type: "galleryDownload", url }, (response: any) => {
+        if (response && response.status === "success") {
+          setStatus("settings-status", "Gallery download started");
+        } else {
+          setStatus(
+            "settings-status",
+            "Error: " + (response?.message || "Failed to start gallery"),
+            true
+          );
+        }
+      });
+    });
+  }
+
   // Clear all stored button positions across hosts
   const clearPositionsButton = document.getElementById("settings-clear-positions");
   if (clearPositionsButton) {
@@ -994,6 +1018,32 @@ export async function saveSettings(event: Event): Promise<void> {
       // Show success state with enhanced visual feedback
       showSaveSuccess();
       setStatus("settings-status", "Settings saved successfully!", false);
+
+      // If changes include restart-required keys, inform the user
+      try {
+        const changedKeys: string[] = Array.isArray(response.changed_keys)
+          ? (response.changed_keys as string[])
+          : [];
+        const restartKeys = new Set([
+          "server_port",
+          "server_host",
+          "max_concurrent_downloads",
+          "log_level",
+          "console_log_level",
+          "log_path",
+        ]);
+        const requiresRestart = changedKeys.some(k => restartKeys.has(k));
+        if (requiresRestart) {
+          setStatus(
+            "settings-status",
+            "Some changes require a server restart. Click 'Restart Server' below to apply.",
+            false,
+            6000
+          );
+        }
+      } catch {
+        // ignore notification errors
+      }
 
       // Log the successful save
       logger.info(

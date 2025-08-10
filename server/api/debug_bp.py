@@ -1,7 +1,20 @@
 """
 Provide debug endpoints for troubleshooting the server.
 
-Only used in development/debug mode.
+This blueprint exposes a diagnostics endpoint:
+
+- GET /debug/paths: Returns project root, current working directory, environment-derived
+  configuration snapshot, discovered log files (with size and access flags), the root
+  logger level, and the result of a test write to ``logs/test_log_access.log``.
+
+Availability and logging behavior:
+- The endpoint is always registered; it is intended primarily for development/support.
+- When ``DEBUG_MODE`` is true and logging is set to a verbose level (e.g., ``LOG_LEVEL=debug``),
+  the handler emits detailed request traces (remote address, headers, cookies, params, body)
+  to aid troubleshooting.
+
+Note: ``DEBUG_MODE`` does not toggle Flask's built-in auto-reloader. Control verbosity via
+``LOG_LEVEL`` and ``CONSOLE_LOG_LEVEL``.
 """
 
 import logging

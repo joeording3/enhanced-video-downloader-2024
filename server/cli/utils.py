@@ -217,7 +217,9 @@ def _display_table(config_dict: dict[str, Any], verbose: bool) -> None:
         "server_host": "Host address for the server to bind to",
         "server_port": "Port number for the server to listen on",
         "download_dir": "Directory where downloaded files are stored",
-        "debug_mode": "Enable debug mode for detailed logging",
+        "debug_mode": (
+            "Enable server debug features (diagnostics endpoints; verbose request traces when log level is 'debug')"
+        ),
         "max_concurrent_downloads": "Maximum number of simultaneous downloads",
         "download_history_limit": "Maximum number of history entries to keep",
         "allowed_domains": "List of domains allowed for downloads (empty = all)",

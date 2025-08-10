@@ -107,7 +107,10 @@ class ServerConfig(BaseModel):
     )
     debug_mode: bool = Field(
         default=False,
-        description="Enable debug mode for the server (e.g., Werkzeug reloader).",
+        description=(
+            "Enable server debug features (e.g., verbose request tracing in debug endpoints). "
+            "Does not enable Flask auto-reloader; adjust LOG_LEVEL/CONSOLE_LOG_LEVEL for verbosity."
+        ),
     )
     max_concurrent_downloads: int = Field(
         default=3,
@@ -335,13 +338,19 @@ class ConfigUpdate(BaseModel):
         description="Server port (Caution: changing this can affect server accessibility)",
     )
     download_dir: str | None = Field(None, description="Download directory path. Must be absolute or use ~.")
-    debug_mode: bool | None = Field(None, description="Debug mode")
+    debug_mode: bool | None = Field(
+        None,
+        description=(
+            "Enable/disable server debug features; "
+            "adds verbose traces in debug endpoints when log level is 'debug'."
+        ),
+    )
     enable_history: bool | None = Field(None, description="Enable download history")
     log_level: str | None = Field(None, description="Logging level")
     console_log_level: str | None = Field(
         None,
         description=(
-            "Console logging level (warning for minimal output, info for regular output, debug for verbose output)"
+            "Console logging level: 'warning' (minimal), 'info' (regular), or 'debug' (verbose)"
         ),
     )
 
