@@ -382,6 +382,7 @@ The project maintains comprehensive documentation across multiple files:
 - **mypy**: Type checking
 - **pytest**: Testing framework
 - **mutmut**: Mutation testing
+- **Vulture**: Dead-code detection (run over `server` and `tests`)
 
 ### JavaScript/TypeScript Tooling
 
@@ -392,6 +393,7 @@ The project maintains comprehensive documentation across multiple files:
 - **Playwright**: E2E testing
 - **Stryker**: Mutation testing
 - **esbuild**: TypeScript compilation and bundling
+- **ts-prune**: Detect unused TS exports (configured via root `tsconfig.json` which includes tests)
 
 ### Build Automation
 

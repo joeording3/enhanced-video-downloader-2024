@@ -207,6 +207,23 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
 ## Quality Assurance Commands
 
+### Unused Code Detection
+
+```bash
+# Detect unused TS exports (includes tests via root tsconfig)
+make lint-unused-ts
+
+# Detect unused Python code (server and tests)
+make lint-unused-py
+
+# Run both
+make lint-unused
+```
+
+Notes:
+- ts-prune scans according to `tsconfig.json` includes; tests are included in the root config.
+- vulture is run with `--min-confidence 60` over `server` and `tests` to keep noise manageable; adjust as needed.
+
 ### Comprehensive Quality Checks
 
 ```bash
