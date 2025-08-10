@@ -69,7 +69,7 @@ def test_logs_endpoint_variants(
 
         monkeypatch.setattr(Path, "exists", fake_exists)
         monkeypatch.setattr(Path, "is_file", fake_is_file)
-    endpoint = "/logs" + (f"?{query}" if query else "")
+    endpoint = "/api/logs" + (f"?{query}" if query else "")
     resp = getattr(client, method)(endpoint)
     assert resp.status_code == expected_status
     if expected_contains:
@@ -90,7 +90,7 @@ def test_logs_line_queries(
     expected_contains: str | None,
 ) -> None:
     """GET /logs?lines=<n> returns expected status and content."""
-    resp = client.get(f"/logs?{query}")
+    resp = client.get(f"/api/logs?{query}")
     assert resp.status_code == expected_status
     text = resp.get_data(as_text=True)
     if expected_contains:
@@ -116,6 +116,6 @@ def test_logs_file_read_error(client: FlaskClient, monkeypatch: MonkeyPatch) -> 
 
     monkeypatch.setattr(Path, "open", fake_open)
 
-    resp = client.get("/logs?lines=10")
+    resp = client.get("/api/logs?lines=10")
     assert resp.status_code == 500
     assert "Error reading log file" in resp.get_data(as_text=True)
