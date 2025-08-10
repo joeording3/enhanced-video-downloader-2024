@@ -2,6 +2,7 @@
 """Entry point for the Enhanced Video Downloader Flask server."""
 
 import atexit
+import contextlib
 import logging
 import os
 import signal
@@ -393,11 +394,8 @@ def _run_flask_server(cfg: Config, host: str, port: int, lock_handle: TextIO) ->
     atexit.register(cleanup_lock_file, lock_handle)
     app = create_app(cfg)
     # Emit a clear startup line to the configured log file
-    try:
+    with contextlib.suppress(Exception):
         logger.info(f"Server starting on {host}:{port}")
-    except Exception:
-        # Best-effort logging; do not block startup on logging issues
-        pass
     app.run(host=host, port=port, debug=False, use_reloader=False)
 
 
