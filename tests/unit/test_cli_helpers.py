@@ -530,7 +530,7 @@ class TestCLIDownloadCommands:
 
         assert result.exit_code == 0
         mock_post.assert_called_once_with(
-            f"http://127.0.0.1:{get_server_port()}/download/download123/cancel", timeout=10
+            f"http://127.0.0.1:{get_server_port()}/api/download/download123/cancel", timeout=10
         )
 
     def test_priority_command_help(self, runner: CliRunner) -> None:
@@ -569,7 +569,7 @@ class TestCLIDownloadCommands:
 
         assert result.exit_code == 0
         mock_post.assert_called_once_with(
-            f"http://127.0.0.1:{get_server_port()}/download/download123/priority", json={"priority": 5}, timeout=10
+            f"http://127.0.0.1:{get_server_port()}/api/download/download123/priority", json={"priority": 5}, timeout=10
         )
 
     def test_list_command_help(self, runner: CliRunner) -> None:
@@ -668,7 +668,7 @@ class TestDownloadHelperFunctions:
             _download_single_url("https://example.com/video", "best", "", "", "", False)
 
         mock_post.assert_called_once_with(
-            f"http://127.0.0.1:{get_server_port()}/download",
+            f"http://127.0.0.1:{get_server_port()}/api/download",
             json={
                 "url": "https://example.com/video",
                 "format": "best",
