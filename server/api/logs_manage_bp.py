@@ -73,10 +73,9 @@ def clear_logs() -> Response:
 
             # Create a fresh log file with initialization entry
             with log_path.open("w", encoding="utf-8") as f:
-                f.write(
-                    f"Log file archived to {archive_basename} on "
-                    f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
-                )
+                ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                message = f"Log file archived to {archive_basename} on {ts}\n"
+                f.write(message)
             return Response(
                 f"Log file archived to {archive_basename} and cleared",
                 mimetype="text/plain",

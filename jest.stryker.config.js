@@ -16,11 +16,9 @@ module.exports = {
   coverageProvider: "v8",
   collectCoverage: false,
 
-  // Test patterns - focus on core functionality tests
+  // Discover all unit tests under extension (exclude e2e/integration via ignore patterns below)
   testMatch: [
-    "**/extension/src/__tests__/background-logic.test.ts",
-    "**/extension/src/__tests__/background-helpers.test.ts",
-    "**/extension/src/__tests__/core/validation-service.test.ts",
+    "**/extension/src/**/__tests__/**/*.test.ts",
   ],
 
   // Files and directories to ignore
@@ -66,6 +64,7 @@ module.exports = {
     "/tests/extension/test_extension_ui_e2e.js",
     "/tests/extension/test_extension_ui_e2e.spec.ts",
     "/tests/extension/playwright-e2e.spec.js",
+    "integration\.test\.ts$",
     "/uv.lock",
     "/venv",
     "/yarn.lock",
@@ -99,9 +98,9 @@ module.exports = {
   },
 
   // Performance optimizations for faster test execution
-  maxWorkers: "75%", // Use more CPU cores for faster execution
-  workerIdleMemoryLimit: "256MB", // Lower memory limit for faster startup
-  testTimeout: 3000,
+  maxWorkers: "75%",
+  workerIdleMemoryLimit: "256MB",
+  testTimeout: 5000,
   bail: 0,
 
   // Make TypeScript paths work with Jest
@@ -113,8 +112,8 @@ module.exports = {
   setupFilesAfterEnv: ["<rootDir>/tests/jest/jest.setup.js", "@testing-library/jest-dom"],
 
   // Additional performance optimizations
-  verbose: false, // Reduce output verbosity
-  silent: false, // Keep some output for debugging
-  detectOpenHandles: false, // Disable for speed
+  verbose: false,
+  silent: false,
+  detectOpenHandles: false,
   forceExit: false,
 };

@@ -205,7 +205,7 @@ class TestStatusCommands:
         # Call the actual server_command logic
         server_command.callback(as_json=False)
 
-        # Should show PID and port
+        # Should show PID and port and uptime in multi-line format
         mock_echo.assert_any_call("PID 12345")
         mock_echo.assert_any_call("Port " + str(get_server_port()))
         mock_echo.assert_any_call("Uptime: 1h 0m 0s")

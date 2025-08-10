@@ -53,6 +53,18 @@ extension UI (via Playwright).
 - `tests/integration`: Integration tests for Python API endpoints and CLI commands.
 - `tests/extension`: UI tests and headless browser tests for the Chrome extension.
 
+Note: Legacy CLI tests under `tests/unit/test_cli_commands.py` have been removed. CLI tests are consolidated in `tests/unit/test_cli_consolidated.py`, and legacy imports under `server/cli_commands/*` intentionally raise ImportError.
+
+### CLI Output Modes (Status Command)
+
+- The status CLI exposes two output styles used by different tests:
+  - Multi-line detail (module command `server_command`): prints each process on separate lines:
+    `PID <pid>`, `Port <port>`, and `Uptime: <Hh Mm Ss>`; supports `--json` for structured output.
+  - Single-line summary (test alias `server`): prints concise summaries per process like
+    `PID <pid>, port <port>, uptime <secs>s`; also supports `--json` by delegating to the module command.
+- Purpose: unit tests verify both human-readable formats across different code paths; integration
+  tests typically assert the single-line summaries when invoking the alias.
+
 ## Pytest Markers
 
 - `unit`: for fast, isolated unit tests.

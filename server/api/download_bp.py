@@ -9,7 +9,7 @@ import logging
 import time
 from collections import defaultdict
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict, cast
 
 import psutil
 from flask import Blueprint, jsonify, request
@@ -28,6 +28,20 @@ from server.utils import cleanup_expired_cache
 # Create blueprint with '/api' prefix
 download_bp = Blueprint("download_api", __name__, url_prefix="/api")
 logger = logging.getLogger(__name__)
+# Narrow JSON payload types used within this module to reduce Unknown warnings
+class _RawDownloadData(TypedDict, total=False):
+    url: str
+    downloadId: str
+    use_gallery_dl: bool
+    download_playlist: bool
+    page_title: str
+    yt_dlp_options: dict[str, Any]
+
+class _RawGalleryData(TypedDict, total=False):
+    url: str
+    downloadId: str
+    options: dict[str, Any]
+
 
 # Rate limiting storage
 _rate_limit_storage: defaultdict[str, list[float]] = defaultdict(list)
@@ -358,14 +372,17 @@ def download() -> Any:
         logger.warning(f"Rate limit exceeded for IP: {client_ip}")
         return rate_limit_response()
 
-    raw_data: dict[str, Any] = {}
+    raw_data: _RawDownloadData = {}
     try:
         # Parse JSON first without consuming the stream; if this yields None or non-dict,
         # fallback to strict parsing which will raise on invalid JSON and be handled uniformly below.
         json_obj: Any = request.get_json(silent=True)
-        raw_data = json_obj if isinstance(json_obj, dict) else _parse_download_raw()
+        if isinstance(json_obj, dict):
+            raw_data = cast(_RawDownloadData, json_obj)
+        else:
+            raw_data = cast(_RawDownloadData, _parse_download_raw())
         # Process the request
-        response, _ = _process_download_request(raw_data)
+        response, _ = _process_download_request(cast(dict[str, Any], raw_data))
     except RequestEntityTooLarge:
         # Large payloads should yield a structured 413 JSON
         return (
@@ -412,13 +429,13 @@ def gallery_dl() -> Any:
         logger.warning(f"Rate limit exceeded for IP: {client_ip}")
         return rate_limit_response()
 
-    raw_data: dict[str, Any] = {}
+    raw_data: _RawGalleryData = {}
     try:
         # Avoid automatic 400 on bad JSON; treat as server error per tests
         json_obj: Any = request.get_json(silent=True)
         if not isinstance(json_obj, dict):
             return _download_error_response("Server error: Invalid JSON payload", "SERVER_ERROR", "unknown", 500)
-        raw_data = json_obj
+        raw_data = cast(_RawGalleryData, json_obj)
         download_id = raw_data.get("downloadId", "unknown")
 
         # Validate with Pydantic
@@ -468,13 +485,13 @@ def resume() -> Any:
     Any
         Flask JSON response representing resume status or error message.
     """
-    raw_data: dict[str, Any] = {}
+    raw_data: _RawDownloadData = {}
     try:
         # Avoid automatic 400 on bad JSON; treat as server error per tests
-        json_obj = request.get_json(silent=True)
+        json_obj: Any = request.get_json(silent=True)
         if not isinstance(json_obj, dict):
             return _download_error_response("Server error: Invalid JSON payload", "SERVER_ERROR", "unknown", 500)
-        raw_data = json_obj
+        raw_data = cast(_RawDownloadData, json_obj)
         download_id = raw_data.get("downloadId", "unknown")
 
         # Validate with Pydantic

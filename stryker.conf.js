@@ -17,14 +17,12 @@ module.exports = {
   },
   // Focus on critical files for mutation testing
   mutate: [
-    "extension/src/background-logic.ts",
-    "extension/src/background-helpers.ts",
-    "extension/src/core/validation-service.ts",
+    "extension/src/**/*.ts",
     "!extension/src/**/*.test.ts",
     "!extension/src/**/*.spec.ts",
     "!extension/src/**/__tests__/**",
     "!extension/src/types/**",
-    "!extension/src/global.d.ts",
+    "!extension/src/**/*.d.ts",
     "!extension/src/extension-overview.md",
   ],
   thresholds: {
@@ -39,7 +37,8 @@ module.exports = {
   ignoreStatic: false,
   logLevel: "info",
   tempDirName: ".stryker-tmp",
-  symlinkNodeModules: false,
+  // Link node_modules instead of copying for faster sandbox prep
+  symlinkNodeModules: true,
   // Use ignorePatterns instead of deprecated files option
   ignorePatterns: [
     "**/node_modules/**",
@@ -60,6 +59,4 @@ module.exports = {
   ],
   // Performance optimizations from official docs
   testRunnerNodeArgs: ["--max-old-space-size=4096"],
-  // Disable expensive features for speed
-  disableBail: true,
 };

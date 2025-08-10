@@ -15,7 +15,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
 # Third-party modules
 import click
@@ -129,7 +129,7 @@ def _write_lock_metadata(metadata: dict[str, Any]) -> None:
     """Write supplementary metadata for the running server to a JSON file."""
     try:
         LOCK_META_PATH.parent.mkdir(parents=True, exist_ok=True)
-        safe_meta = {
+        safe_meta: dict[str, str | int | bool | None] = {
             "host": metadata.get("host"),
             "port": metadata.get("port"),
             "gunicorn": bool(metadata.get("gunicorn", False)),
@@ -143,13 +143,14 @@ def _write_lock_metadata(metadata: dict[str, Any]) -> None:
         log.debug("Failed to write lock metadata", exc_info=True)
 
 
-def _read_lock_metadata() -> dict[str, Any] | None:
+def _read_lock_metadata() -> dict[str, str | int | bool | None] | None:
     """Read lock metadata JSON if present."""
     try:
         if LOCK_META_PATH.exists():
             data = json.loads(LOCK_META_PATH.read_text())
             if isinstance(data, dict):
-                return data
+                # Narrow the value types to simple JSON scalars used by the CLI
+                return {str(k): v for k, v in data.items()}
     except Exception:
         log.debug("Failed to read lock metadata", exc_info=True)
     return None
@@ -1049,7 +1050,9 @@ def _cli_stop_pre_checks() -> list[psutil.Process]:
         cfg = Config.load()
         fallback_port = cfg.get_value("server_port")
         if isinstance(fallback_port, int):
-            for proc in psutil.process_iter(["pid"]):
+            # Explicitly annotate iterator to avoid partially-unknown typing
+            procs: Iterator[psutil.Process] = psutil.process_iter(["pid"])
+            for proc in procs:
                 try:
                     if not proc.is_running():
                         continue
@@ -1238,7 +1241,8 @@ def _run_restart_server_enhanced(
             click.echo(f"  Warning: Port {h}:{p} still appears in use after stop; retrying forced cleanup...")
             # Attempt an extra round of cleanup for any lingering processes bound to the port
             # Scan processes and terminate those listening on the target port
-            for proc in psutil.process_iter(["pid"]):
+            procs2: Iterator[psutil.Process] = psutil.process_iter(["pid"])
+            for proc in procs2:
                 # Safely retrieve network connections; skip process on failure
                 conns = ()
                 with contextlib.suppress(Exception):
