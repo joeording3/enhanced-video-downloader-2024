@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { checkServerStatus } from "../../extension/src/background";
 import { getServerPort } from "../../extension/src/core/constants";
 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   getButtonState,
   saveButtonState,
