@@ -608,7 +608,7 @@ class TestCLIDownloadCommands:
         result = runner.invoke(list_command, [])
 
         assert result.exit_code == 0
-        mock_get.assert_called_once_with(f"http://127.0.0.1:{get_server_port()}/status", timeout=10)
+        mock_get.assert_called_once_with(f"http://127.0.0.1:{get_server_port()}/api/status", timeout=10)
 
     def test_download_group_help(self, runner: CliRunner) -> None:
         """Test that download group shows help with all subcommands.
