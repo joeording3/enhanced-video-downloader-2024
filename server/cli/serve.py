@@ -25,7 +25,8 @@ logger = logging.getLogger(__name__)
 # Dummy app for CLI commands; tests patch app.run
 class _ServeApp:
     def run(self, *args: Any, **kwargs: Any) -> None:
-        pass
+        # Placeholder for actual Flask app.run in tests; intentionally no-op
+        logger.debug("_ServeApp.run called with args=%s kwargs=%s", args, kwargs)
 
 
 app = _ServeApp()

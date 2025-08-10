@@ -90,8 +90,9 @@ def _apply_custom_opts(ydl_opts: dict[str, Any], custom_opts: Any, _download_id:
     try:
         if hasattr(custom_opts, "model_dump"):
             custom_opts = custom_opts.model_dump(mode="json")  # type: ignore[assignment]
-    except Exception:
-        pass
+    except Exception as e:
+        # Best-effort conversion; fall back silently but record for diagnostics
+        logger.debug("Failed to model_dump yt_dlp_options; using provided value as-is: %s", e)
 
     if isinstance(custom_opts, dict):
         # Apply config options, but block only a few keys; allow 'format' to override defaults
