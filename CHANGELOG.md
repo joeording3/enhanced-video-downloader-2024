@@ -251,6 +251,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   docs
 - **Quality Metrics**: Preserved important metrics and achievements in permanent documentation
 - **Audit Report Cleanup**: Removed standalone audit reports after information migration
+### Documentation
+
+- Consolidated frontend optimization findings into `ARCHITECTURE.md` and `README.md` (centralized
+  services section and follow-ups). Marked remaining action items in `TODO.md`. Removed outdated
+  reports under `reports/`:
+  - `frontend_optimization_comprehensive_audit.md`
+  - `frontend_optimization_progress_audit.md`
 - **Standards Documentation**: Consolidated code quality standards across all main documentation
   files
 
