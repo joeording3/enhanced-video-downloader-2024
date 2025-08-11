@@ -467,6 +467,64 @@ You can use query parameters `status` and `age` together or separately, e.g.,
 
 ## History API
 
+## Queue API (Server-side)
+
+### Behavior
+
+- The server enforces `max_concurrent_downloads` from config. When the limit is reached, POST
+  `/api/download` will enqueue the request and return:
+
+```json
+{
+  "status": "queued",
+  "message": "Server at capacity. Request added to queue.",
+  "downloadId": "<id>"
+}
+```
+
+- The queue is processed in the background; when a slot frees up, queued items are started
+  automatically.
+
+### Status visibility
+
+- `GET /api/status` now includes queued items as entries with:
+
+```json
+"<downloadId>": { "status": "queued", "url": "..." }
+```
+
+### GET /api/queue
+
+Returns the current queue contents.
+
+Response:
+
+```json
+{ "queue": [{ "downloadId": "id1", "url": "https://..." }, { "downloadId": "id2" }] }
+```
+
+### POST /api/queue/reorder
+
+Reorder the queue by specifying a new list of IDs.
+
+Request body:
+
+```json
+{ "order": ["id2", "id1", "id3"] }
+```
+
+Response: `{ "status": "success" }`
+
+### POST /api/queue/<id>/remove
+
+Remove a queued item by ID.
+
+Response:
+
+```json
+{ "status": "success", "downloadId": "id1" }
+```
+
 ### GET /history
 
 Retrieves download history with optional filters and pagination.

@@ -10,7 +10,7 @@ body.dark-theme {
   /* ===== THEME VARIABLES ===== */
   --background-color: var(--bg-primary-dark);
   --text-color: var(--text-primary-dark);
-  --container-bg: var(--bg-elevated-dark);
+  --container-bg: var(--bg-secondary-dark);
   --border-color: var(--border-muted-dark);
   --header-bg: var(--bg-tertiary-dark);
   --button-bg: var(--primary);
@@ -36,12 +36,25 @@ body.dark-theme {
   --scrollbar-thumb-color: var(--scrollbar-thumb-dark);
   --scrollbar-thumb-hover-color: var(--scrollbar-thumb-hover-dark);
 
+  /* ===== THEME ALIASES (ensure component CSS uses the same var names across themes) ===== */
+  --bg-elevated: var(--bg-elevated-dark);
+  --row-alt-bg: var(--row-alt-bg-dark);
+  /* Map light-specific name to dark tint so existing CSS keeps working without extra selectors */
+  --error-bg-tint-light: var(--error-bg-tint-dark);
+
   /* ===== COMPONENT OVERRIDES ===== */
 
   /* Button Overrides */
   --btn-bg: var(--bg-button-dark);
   --btn-color: var(--text-primary-dark);
   --btn-hover: var(--bg-tertiary-dark);
+
+  /* Focus ring strength alias for dark mode */
+  --focus-ring-light: var(--focus-ring-dark);
+
+  /* Empty list state – ensure darker surface and muted text in dark mode */
+  --list-empty-bg: var(--bg-elevated-dark);
+  --list-empty-text: var(--text-primary-dark);
 }
 
 /* ===== COMPONENT-SPECIFIC DARK THEME RULES ===== */

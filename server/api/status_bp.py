@@ -12,6 +12,7 @@ from flask.wrappers import Response
 
 from server.downloads import progress_data, progress_lock
 from server.downloads.ytdlp import download_errors_from_hooks, map_error_message, parse_bytes
+from server.queue import queue_manager
 
 status_bp = Blueprint("status", __name__, url_prefix="/api")
 
@@ -157,6 +158,17 @@ def get_all_status() -> Response:
                     "troubleshooting": error.get("troubleshooting", suggestion),
                     "status": "error",
                 }
+        # Include queued (server-side) items
+        try:
+            queued = queue_manager.list()
+            # Represent queued items minimally under their id
+            for item in queued:
+                did = str(item.get("downloadId") or item.get("download_id") or "unknown")
+                if did and did not in combined:
+                    combined[did] = {"status": "queued", "url": item.get("url", "")}
+        except Exception:
+            pass
+
         return jsonify(combined)
 
 

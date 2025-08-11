@@ -19,6 +19,7 @@ chrome.storage.local.get("serverConfig", res => {
  */
 
 import { Theme, ServerConfig, HistoryEntry } from "./types";
+import { fetchHistory, renderHistoryItems } from "./history";
 
 /**
  * Download status interface for the popup UI
@@ -362,13 +363,14 @@ export function createQueuedListItem(item: { id: string }): HTMLLIElement {
   queuedText.className = "item-status";
   queuedText.textContent = "Queued: " + item.id;
   li.appendChild(queuedText);
-  const btn = document.createElement("button");
-  btn.className = "cancel-button";
-  btn.textContent = "Cancel";
-  btn.addEventListener("click", () => {
+  const removeBtn = document.createElement("button");
+  removeBtn.className = "cancel-button";
+  removeBtn.textContent = "Cancel";
+  removeBtn.title = "Cancel download";
+  removeBtn.addEventListener("click", () => {
     chrome.runtime.sendMessage({ type: "cancelDownload", downloadId: item.id }, () => {});
   });
-  li.appendChild(btn);
+  li.appendChild(removeBtn);
   return li;
 }
 
@@ -649,12 +651,77 @@ export async function initPopup(): Promise<void> {
     renderDownloadStatus(response || { active: {}, queue: [] });
   });
 
+  // --- History wiring (pagination + live updates) ---
+  const historyListEl = document.getElementById("download-history") as HTMLElement | null;
+  const prevPageBtn = document.getElementById("prev-page") as HTMLButtonElement | null;
+  const nextPageBtn = document.getElementById("next-page") as HTMLButtonElement | null;
+  const itemsPerPageSelect = document.getElementById("items-per-page") as HTMLSelectElement | null;
+  const pageInfoEl = document.getElementById("page-info") as HTMLElement | null;
+
+  let currentPage = 1;
+  let perPage = (() => {
+    const v = itemsPerPageSelect?.value;
+    const n = v ? parseInt(v, 10) : 50;
+    return Number.isFinite(n) && n > 0 ? n : 50;
+  })();
+
+  const refreshHistory = async (): Promise<void> => {
+    try {
+      if (!historyListEl) return;
+      const { history, totalItems } = await fetchHistory(currentPage, perPage);
+      renderHistoryItems(
+        history,
+        currentPage,
+        perPage,
+        totalItems,
+        historyListEl,
+        pageInfoEl || undefined,
+        prevPageBtn || undefined,
+        nextPageBtn || undefined
+      );
+    } catch (e) {
+      // Keep popup resilient; ignore render errors
+    }
+  };
+
+  if (itemsPerPageSelect) {
+    itemsPerPageSelect.addEventListener("change", () => {
+      const n = parseInt(itemsPerPageSelect.value, 10);
+      perPage = Number.isFinite(n) && n > 0 ? n : perPage;
+      currentPage = 1;
+      void refreshHistory();
+    });
+  }
+
+  if (prevPageBtn) {
+    prevPageBtn.addEventListener("click", () => {
+      if (currentPage > 1) {
+        currentPage -= 1;
+        void refreshHistory();
+      }
+    });
+  }
+
+  if (nextPageBtn) {
+    nextPageBtn.addEventListener("click", () => {
+      // Bounds are enforced by renderHistoryItems disabling button, but we also guard here
+      currentPage += 1;
+      void refreshHistory();
+    });
+  }
+
+  // Initial history load
+  await refreshHistory();
+
   // Set up message listeners
   chrome.runtime.onMessage.addListener((msg: any) => {
     if (msg.type === "downloadStatusUpdate") {
       renderDownloadStatus(msg.data);
     } else if (msg.type === "queueUpdated") {
       renderDownloadStatus({ active: msg.active, queue: msg.queue });
+    } else if (msg.type === "historyUpdated") {
+      // Keep current page if possible
+      void refreshHistory();
     } else if (msg.type === "serverStatusUpdate") {
       updatePopupServerStatus(msg.status);
     }

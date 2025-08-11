@@ -83,10 +83,6 @@ ul {
   padding-left: var(--space-lg);
 }
 
-li {
-  margin-bottom: var(--space-xs);
-}
-
 /* ===== FORMS ===== */
 
 label {
@@ -96,7 +92,59 @@ label {
   color: var(--label-text);
 }
 
-/* Use .input component instead */
+/* Ensure native controls have sensible defaults even without .input class */
+input[type="text"],
+input[type="number"],
+input[type="url"],
+select,
+textarea {
+  display: block;
+  width: 100%;
+  background-color: var(--input-bg);
+  color: var(--input-text);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  padding: var(--control-padding-y) var(--control-padding-x);
+  font-size: var(--font-size-md);
+  font-family: var(--font-family);
+  transition: var(--transition-normal);
+  box-sizing: border-box;
+}
+
+/* Increase contrast for disabled state in dark mode */
+select:disabled,
+textarea:disabled,
+input:disabled {
+  opacity: 0.7;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="url"]:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--input-focus-border);
+  box-shadow: var(--focus-ring-light);
+}
+
+input[type="text"]:invalid,
+input[type="number"]:invalid,
+input[type="url"]:invalid,
+select:invalid,
+textarea:invalid {
+  border-color: var(--error);
+  box-shadow: var(--ring-error-light);
+}
+
+input[type="text"]:valid,
+input[type="number"]:valid,
+input[type="url"]:valid,
+select:valid,
+textarea:valid {
+  border-color: var(--success);
+  box-shadow: var(--ring-success-light);
+}
 
 /* ===== TABLES ===== */
 

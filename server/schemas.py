@@ -341,17 +341,14 @@ class ConfigUpdate(BaseModel):
     debug_mode: bool | None = Field(
         None,
         description=(
-            "Enable/disable server debug features; "
-            "adds verbose traces in debug endpoints when log level is 'debug'."
+            "Enable/disable server debug features; adds verbose traces in debug endpoints when log level is 'debug'."
         ),
     )
     enable_history: bool | None = Field(None, description="Enable download history")
     log_level: str | None = Field(None, description="Logging level")
     console_log_level: str | None = Field(
         None,
-        description=(
-            "Console logging level: 'warning' (minimal), 'info' (regular), or 'debug' (verbose)"
-        ),
+        description=("Console logging level: 'warning' (minimal), 'info' (regular), or 'debug' (verbose)"),
     )
 
     max_concurrent_downloads: int | None = Field(None, ge=1, description="Maximum number of concurrent downloads.")

@@ -1,18 +1,19 @@
 """
-Configure logging for Enhanced Video Downloader server.
+Configure logging for Enhanced Video Downloader server and CLI.
 
 This module defines functions to ensure log file availability and set up
 console and file logging based on application configuration.
 
-Logging format
---------------
-- File and console logs are emitted as one-JSON-per-line (NDJSON) to enable
-  structured analysis and sorting (e.g., by ``start_ts`` or ``duration_ms``).
+Logging formats
+---------------
+- Server/file logs: one-JSON-per-line (NDJSON) for structured analysis.
+- CLI console logs: plain, human-readable text (kept minimal by default).
 """
 
 import json
 import logging
 import os
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
@@ -131,8 +132,8 @@ def setup_logging(log_level: str = "INFO", log_file: str | None = None) -> None:
     # Convert string log level to logging constant
     numeric_level = getattr(logging, log_level.upper(), logging.INFO)
 
-    # Create JSON line formatter
-    formatter = JSONLineFormatter()
+    # Create JSON line formatter (used for server/file logs)
+    json_formatter = JSONLineFormatter()
 
     # Set up root logger
     root_logger = logging.getLogger()
@@ -141,10 +142,10 @@ def setup_logging(log_level: str = "INFO", log_file: str | None = None) -> None:
     # Clear existing handlers
     root_logger.handlers.clear()
 
-    # Console handler: send logs to stderr so CLI stdout remains clean
-    console_handler = logging.StreamHandler(stream=None)
+    # Console handler (server contexts may still want console logs; keep JSON for parity)
+    console_handler = logging.StreamHandler(stream=sys.stderr)
     console_handler.setLevel(numeric_level)
-    console_handler.setFormatter(formatter)
+    console_handler.setFormatter(json_formatter)
     root_logger.addHandler(console_handler)
 
     # File handler (if specified)
@@ -159,8 +160,45 @@ def setup_logging(log_level: str = "INFO", log_file: str | None = None) -> None:
             file_handler = None
         if file_handler is not None:
             file_handler.setLevel(numeric_level)
-            file_handler.setFormatter(formatter)
+            file_handler.setFormatter(json_formatter)
             root_logger.addHandler(file_handler)
+
+
+class PlainConsoleFormatter(logging.Formatter):
+    """Minimal, human-readable console formatter for CLI output."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        """Return a concise, readable message for the given log record."""
+        message = record.getMessage()
+        if record.levelno >= logging.ERROR:
+            return f"ERROR: {message}"
+        if record.levelno >= logging.WARNING:
+            return f"Warning: {message}"
+        if record.levelno >= logging.INFO:
+            return message
+        # DEBUG and lower
+        return f"[DEBUG] {message}"
+
+
+def setup_cli_logging(verbose: bool = False) -> None:
+    """
+    Configure logging for CLI processes with plain console output only.
+
+    Notes
+    -----
+    - Uses stderr for logs so stdout remains dedicated to command output.
+    - Default level WARNING to keep CLI output clean; DEBUG when verbose=True.
+    - No file handlers are attached here; server processes manage file logging.
+    """
+    level = logging.DEBUG if verbose else logging.WARNING
+    root_logger = logging.getLogger()
+    root_logger.setLevel(level)
+    root_logger.handlers.clear()
+
+    console = logging.StreamHandler(stream=sys.stderr)
+    console.setLevel(level)
+    console.setFormatter(PlainConsoleFormatter())
+    root_logger.addHandler(console)
 
 
 def resolve_log_path(

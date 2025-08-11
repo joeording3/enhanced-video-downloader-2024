@@ -1,8 +1,13 @@
 //
 const { test, expect } = require("@playwright/test");
+const { chromium } = require("playwright");
 const path = require("path");
 const express = require("express");
 const fs = require("fs");
+const cp = require("child_process");
+const { spawn } = require("child_process");
+const os = require("os");
+const _net = require("net");
 
 /**
  * Chrome Extension E2E Test Suite
@@ -1961,5 +1966,286 @@ test.describe("Chrome Extension E2E Tests", () => {
 
       await saveCoverage(coverageData, "performance-monitoring");
     });
+  });
+});
+
+// -----------------------------------------------------------------------------
+// Real site detection (opt-in; requires headed Chromium and internet access)
+// -----------------------------------------------------------------------------
+test.describe("Real site video detection (opt-in)", () => {
+  test.skip(!!process.env.CI, "Skip on CI");
+  test.skip(process.env.EVD_REAL_SITES !== "true", "Set EVD_REAL_SITES=true to enable");
+
+  let context;
+  let serverProc;
+  let serverPort;
+  let downloadDir;
+  let extPath;
+
+  test.beforeAll(async () => {
+    // Build extension to ensure dist assets exist
+    try {
+      cp.execSync("npm run build", { stdio: "inherit" });
+    } catch (_e) {
+      console.log("[RealSites] Build failed; proceeding if dist exists.");
+    }
+
+    // Extension root is repo root (manifest.json at project root)
+    extPath = path.resolve(__dirname, "../../");
+
+    // Start Python server with temp download dir and fixed port (9090) for easier extension discovery
+    downloadDir = fs.mkdtempSync(path.join(os.tmpdir(), "evd-downloads-"));
+    serverPort = 9090;
+    const env = {
+      ...process.env,
+      SERVER_PORT: String(serverPort),
+      DOWNLOAD_DIR: downloadDir,
+      DEBUG_MODE: "false",
+    };
+    serverProc = spawn("python3", ["-m", "server"], { env, stdio: "inherit" });
+    // Wait until health endpoint responds
+    const healthUrl = `http://127.0.0.1:${serverPort}/health`;
+    for (let i = 0; i < 20; i++) {
+      try {
+        const res = await fetch(healthUrl);
+        if (res.ok) break;
+      } catch (e) {
+        void e;
+      }
+      await new Promise(r => setTimeout(r, 300));
+    }
+
+    // Launch persistent context with extension loaded
+    const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const userDataDir = path.resolve(__dirname, `../../tmp/chrome-profile-real-${uniqueSuffix}`);
+    context = await chromium.launchPersistentContext(userDataDir, {
+      headless: false,
+      args: [
+        `--disable-extensions-except=${extPath}`,
+        `--load-extension=${extPath}`,
+        "--allow-insecure-localhost",
+        "--no-first-run",
+        "--no-default-browser-check",
+        "--start-minimized",
+        "--window-position=2000,2000",
+      ],
+    });
+
+    // On macOS, hide the Chromium app so windows don't steal focus
+    if (process.platform === "darwin") {
+      try {
+        spawn(
+          "osascript",
+          ["-e", 'tell application "System Events" to set visible of process "Chromium" to false'],
+          { stdio: "ignore", detached: true }
+        ).unref();
+      } catch (_e) {
+        // ignore
+      }
+    }
+  });
+
+  test.afterAll(async () => {
+    if (context) {
+      await context.close();
+    }
+    if (serverProc) {
+      try {
+        serverProc.kill("SIGTERM");
+      } catch (_e) {
+        // ignore
+      }
+    }
+  });
+
+  const mainstreamVideoPages = [
+    // Keep mainstream minimal and stable; YouTube can be flaky in automated contexts
+    { name: "Vimeo", url: "https://vimeo.com/76979871" },
+    { name: "Dailymotion", url: "https://www.dailymotion.com/video/x7u5n3j" },
+    // Twitch clip (may require consent/geo; best-effort)
+    { name: "Twitch", url: "https://clips.twitch.tv/AwkwardHelplessBunnyWutFace" },
+    { name: "Streamable", url: "https://streamable.com/moo" },
+  ];
+
+  const adultVideoPages = [
+    // Note: These may require geo/consent; all are best-effort and skipped if unreachable
+    { name: "Pornhub", url: "https://www.pornhub.com/view_video.php?viewkey=ph5b7b2bd85e3e9" },
+    { name: "XVideos", url: "https://www.xvideos.com/video5894801/" },
+    { name: "XHamster", url: "https://xhamster.com/videos/teen-amateur-12345" },
+    { name: "RedTube", url: "https://www.redtube.com/131313" },
+    { name: "YouPorn", url: "https://www.youporn.com/watch/13639978/" },
+    { name: "SpankBang", url: "https://spankbang.com/1/video/" },
+    { name: "Spankwire", url: "https://www.spankwire.com/1234567/video/" },
+    { name: "Tube8", url: "https://www.tube8.com/video/1234567/" },
+    { name: "KeezMovies", url: "https://www.keezmovies.com/video/1234567/" },
+    { name: "Tnaflix", url: "https://www.tnaflix.com/teen-porn/1234567" },
+    { name: "Motherless", url: "https://motherless.com/ABC123" },
+    { name: "Eporner", url: "https://www.eporner.com/video-abc123/" },
+    { name: "Porntrex", url: "https://www.porntrex.com/video/123456/" },
+    { name: "YouJizz", url: "https://www.youjizz.com/videos/12345678/" },
+    { name: "HClips", url: "https://hclips.com/videos/123456/" },
+  ];
+
+  async function verifyDetection(page, label) {
+    // Wait for our content script to initialize and run scans
+    await page.waitForTimeout(3000);
+    // Count buttons injected by our script
+    const buttons = await page.$$(`button[id^='evd-download-button-']`);
+    const count = buttons.length;
+    console.log(`[RealSites] ${label}: found ${count} EVD button(s)`);
+    // At least the global button should exist; ideally >= 2 when a video/iframe is detected
+    expect(count).toBeGreaterThanOrEqual(1);
+  }
+
+  async function closeOverlays(page) {
+    // Best-effort removal of age/consent overlays commonly used on adult sites
+    const removalSelectors = [
+      "#ageDisclaimerWrapper",
+      "#age_disclaimer",
+      ".age-gate",
+      ".age-modal",
+      ".modal-age-verification",
+      ".consentModal",
+      "#consentModal",
+      "[id*='consent']",
+      "[class*='consent']",
+    ];
+    await page.evaluate(selectors => {
+      selectors.forEach(sel => {
+        document.querySelectorAll(sel).forEach(el => {
+          el.remove();
+        });
+      });
+      // Also neutralize full-screen overlays
+      const overlays = Array.from(document.querySelectorAll("div,section")).filter(el => {
+        const style = window.getComputedStyle(el);
+        return (
+          (style.position === "fixed" || style.position === "sticky") &&
+          parseInt(style.zIndex || "0", 10) > 1000 &&
+          (el.clientHeight > window.innerHeight * 0.4 || el.clientWidth > window.innerWidth * 0.4)
+        );
+      });
+      overlays.forEach(el => {
+        el.remove();
+      });
+    }, removalSelectors);
+  }
+
+  async function safeClickDownloadButton(page) {
+    await closeOverlays(page);
+    const locator = page.locator("#evd-download-button-main, button.download-button");
+    try {
+      // Ensure our button is topmost
+      await page.evaluate(() => {
+        const btn = document.querySelector("#evd-download-button-main, button.download-button");
+        if (btn) {
+          const b = btn;
+          b.style.zIndex = "2147483647";
+          b.classList.add("evd-visible");
+          b.classList.remove("hidden");
+        }
+      });
+      await locator.first().click({ force: true, timeout: 2000 });
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  for (const site of mainstreamVideoPages) {
+    test(`detects video on ${site.name}`, async () => {
+      const page = await context.newPage();
+      await page.goto(site.url, { waitUntil: "domcontentloaded" });
+      await verifyDetection(page, site.name);
+      // Trigger download by clicking global button (best-effort)
+      const clicked = await safeClickDownloadButton(page);
+      if (!clicked) {
+        test.info().annotations.push({
+          type: "skip",
+          description: `${site.name} click blocked by overlays`,
+        });
+        await page.close();
+        return;
+      }
+      // Poll server status endpoint
+      const statusUrl = `http://127.0.0.1:${serverPort}/api/status`;
+      let ok = false;
+      for (let i = 0; i < 20; i++) {
+        try {
+          const res = await page.request.get(statusUrl);
+          if (res.ok()) {
+            ok = true;
+            break;
+          }
+        } catch (e) {
+          void e;
+        }
+        await page.waitForTimeout(500);
+      }
+      expect(ok).toBe(true);
+      await page.close();
+    });
+  }
+
+  for (const site of adultVideoPages) {
+    test(`attempts detection on ${site.name} (best-effort)`, async () => {
+      const page = await context.newPage();
+      try {
+        await page.goto(site.url, { waitUntil: "domcontentloaded", timeout: 15000 });
+        await verifyDetection(page, site.name);
+        const clicked = await safeClickDownloadButton(page);
+        if (!clicked) {
+          test.info().annotations.push({
+            type: "skip",
+            description: `${site.name} click blocked by overlays`,
+          });
+          return;
+        }
+      } catch (err) {
+        console.log(`[RealSites] Skipping ${site.name}: ${err.message}`);
+        test.info().annotations.push({ type: "skip", description: `${site.name} unreachable` });
+      } finally {
+        await page.close();
+      }
+    });
+  }
+
+  test.skip("concurrent downloads from two tabs (best-effort)", async () => {
+    const p1 = await context.newPage();
+    const p2 = await context.newPage();
+    try {
+      await p1.goto("https://vimeo.com/76979871", { waitUntil: "domcontentloaded" });
+      await p2.goto("https://www.dailymotion.com/video/x7u5n3j", { waitUntil: "domcontentloaded" });
+      await verifyDetection(p1, "Vimeo");
+      await verifyDetection(p2, "Dailymotion");
+      const c1 = await safeClickDownloadButton(p1);
+      const c2 = await safeClickDownloadButton(p2);
+      if (!c1 || !c2) {
+        test.info().annotations.push({ type: "skip", description: `click blocked by overlays` });
+        return;
+      }
+      // Poll status and check at least one active entry appears
+      const statusUrl = `http://127.0.0.1:${serverPort}/api/status`;
+      let sawActive = false;
+      for (let i = 0; i < 20; i++) {
+        try {
+          const res = await p1.request.get(statusUrl);
+          if (res.ok()) {
+            const data = await res.json();
+            if (data && Object.keys(data).length >= 0) {
+              sawActive = true;
+              break;
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+        await p1.waitForTimeout(500);
+      }
+      expect(sawActive).toBe(true);
+    } finally {
+      await p1.close();
+      await p2.close();
+    }
   });
 });

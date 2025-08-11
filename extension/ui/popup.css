@@ -52,7 +52,7 @@ body {
   background-color: var(--container-bg);
   padding: var(--surface-padding);
   border-radius: var(--radius-xl);
-  box-shadow: 0 2px 10px var(--shadow-color);
+  box-shadow: 0 2px 10px var(--shadow-dark);
 }
 
 /* Header styling */
@@ -123,7 +123,7 @@ h2 {
   overflow-y: auto;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  background-color: var(--container-bg);
+  background-color: var(--bg-elevated);
 }
 
 #download-status li,
@@ -135,14 +135,17 @@ h2 {
   background-color: var(--bg-elevated);
 }
 
+/* Empty state styling for lists */
+#download-status li:only-child {
+  background-color: var(--list-empty-bg);
+  color: var(--list-empty-text);
+  border: none;
+  backdrop-filter: none;
+}
+
 #download-status li:nth-child(even),
 #download-history li:nth-child(even) {
   background-color: var(--row-alt-bg);
-}
-
-body.dark-theme #download-status li:nth-child(even),
-body.dark-theme #download-history li:nth-child(even) {
-  background-color: var(--row-alt-bg-dark);
 }
 
 #download-status li:last-child,
@@ -297,10 +300,6 @@ label {
   margin-bottom: var(--space-md);
 }
 
-body.dark-theme .error-display {
-  background-color: var(--error-bg-tint-dark);
-}
-
 /* Visible helper used by scripts to show blocks without inline styles */
 .evd-visible {
   display: block !important;
@@ -344,10 +343,6 @@ body.dark-theme .error-display {
   padding: var(--space-sm);
   border-radius: var(--radius-md);
   margin-top: var(--space-sm);
-}
-
-body.dark-theme .error-details-content {
-  background-color: var(--error-bg-tint-dark);
 }
 
 .error-details[open] .error-details-content {

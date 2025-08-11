@@ -46,6 +46,8 @@ const BUTTON_TEXT = UI_CONSTANTS.BUTTON_TEXT;
 const CHECK_INTERVAL = UI_CONSTANTS.VIDEO_CHECK_INTERVAL;
 const MAX_CHECKS = UI_CONSTANTS.MAX_VIDEO_CHECKS;
 const VIDEO_SELECTOR = DOM_SELECTORS.VIDEO_SELECTORS;
+const MIN_VIDEO_WIDTH = UI_CONSTANTS.MIN_VIDEO_WIDTH;
+const MIN_VIDEO_HEIGHT = UI_CONSTANTS.MIN_VIDEO_HEIGHT;
 
 // Visual guidelines are enforced via CSS classes in content.css
 
@@ -78,6 +80,60 @@ const isJest =
   typeof process !== "undefined" &&
   process.env &&
   typeof process.env.JEST_WORKER_ID !== "undefined";
+
+/**
+ * Compute a score for a potential media element. Higher is better.
+ * Prefers larger, longer, and metadata-ready HTMLVideoElements. For iframes, prefers larger area.
+ */
+function scoreMediaElement(element: HTMLElement): number {
+  try {
+    const rect = element.getBoundingClientRect();
+    const areaScore = Math.max(0, rect.width) * Math.max(0, rect.height);
+
+    if (element instanceof HTMLVideoElement) {
+      const video = element as HTMLVideoElement;
+      const duration = Number.isFinite(video.duration) ? video.duration : 0;
+      const hasMetadata = Number.isFinite(video.readyState) && video.readyState >= 1 ? 1 : 0;
+      const hasSrc =
+        (video.currentSrc && !video.currentSrc.startsWith("blob:")) || !!video.src ? 1 : 0;
+      // Weighted sum: area dominates, then duration, then metadata/src bonuses
+      return areaScore + duration * 1000 + hasMetadata * 50000 + hasSrc * 25000;
+    }
+
+    if (element instanceof HTMLIFrameElement) {
+      // If known video host, give a small bonus
+      const src = (element as HTMLIFrameElement).src || "";
+      const knownHostBonus =
+        /youtube|vimeo|dailymotion|twitch|streamable|wistia|brightcove|jwplayer|xhamster|xvideos|pornhub|redtube|youporn|eporner|porntrex|youjizz|hclips/i.test(
+          src
+        )
+          ? 50000
+          : 0;
+      return areaScore + knownHostBonus;
+    }
+
+    return areaScore;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Select the primary media candidate from a list of significant elements.
+ */
+function selectPrimaryMediaCandidate(candidates: HTMLElement[]): HTMLElement | null {
+  if (!candidates || candidates.length === 0) return null;
+  let best: HTMLElement | null = null;
+  let bestScore = -1;
+  for (const el of candidates) {
+    const s = scoreMediaElement(el);
+    if (s > bestScore) {
+      bestScore = s;
+      best = el;
+    }
+  }
+  return best;
+}
 
 /**
  * Gets the stored button state (position and hidden status) for the current domain.
@@ -316,11 +372,12 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
       btn.classList.add("download-sending");
 
       try {
-        // Determine download URL, avoid blob URLs by falling back to page URL
-        const rawUrl =
-          videoElement && videoElement.tagName === "VIDEO" && (videoElement as HTMLVideoElement).src
-            ? (videoElement as HTMLVideoElement).src
-            : window.location.href;
+        // Determine download URL. Prefer currentSrc, then src; avoid blob URLs by falling back to page URL
+        let rawUrl = window.location.href;
+        if (videoElement && videoElement.tagName === "VIDEO") {
+          const ve = videoElement as HTMLVideoElement;
+          rawUrl = ve.currentSrc || ve.src || rawUrl;
+        }
         const url = rawUrl.startsWith("blob:") ? window.location.href : rawUrl;
 
         // Send message to background script
@@ -557,11 +614,14 @@ function isSignificantVideo(video: HTMLElement): boolean {
     }
     const rect = video.getBoundingClientRect();
     const isVisible = rect.width > 0 && rect.height > 0;
-    const isSignificantSize = rect.width >= 200 && rect.height >= 150;
-    const hasSrc = !!(video as HTMLVideoElement).src;
-    return isVisible && isSignificantSize && hasSrc;
+    const isSignificantSize = rect.width >= MIN_VIDEO_WIDTH && rect.height >= MIN_VIDEO_HEIGHT;
+    const ve = video as HTMLVideoElement;
+    const hasSrc = Boolean(ve.currentSrc || ve.src || video.querySelector("source[src]"));
+    const hasLoadedMetadata = Number.isFinite(ve.readyState) && ve.readyState >= 1; // HAVE_METADATA
+    return isVisible && isSignificantSize && (hasSrc || hasLoadedMetadata);
   } else if (video instanceof HTMLIFrameElement) {
-    // Always consider iframes significant
+    // Keep permissive behavior: iframes that match selectors are treated as significant.
+    // Robustness is primarily handled by DOM_SELECTORS.VIDEO_SELECTORS scoping.
     return true;
   }
   return false;
@@ -576,23 +636,36 @@ async function findVideosAndInjectButtons(): Promise<void> {
     return;
   }
 
-  // Create global button if not already present
-  if (!downloadButton) {
-    downloadButton = await createOrUpdateButton();
+  // Count each scan attempt to allow interval shutdown when nothing is found
+  {
     const currentState = stateManager.getUIState();
     stateManager.updateUIState({ checksDone: currentState.checksDone + 1 });
   }
 
-  // Find all video elements and significant iframes
-  const videos = document.querySelectorAll<HTMLElement>(VIDEO_SELECTOR);
-  let foundSignificantVideo = false;
+  // Create global button if not already present
+  if (!downloadButton) {
+    downloadButton = await createOrUpdateButton();
+  }
 
-  for (const video of Array.from(videos)) {
-    if (isSignificantVideo(video)) {
-      foundSignificantVideo = true;
-      // Only inject if we haven't already for this video
-      if (!injectedButtons.has(video)) {
-        await createOrUpdateButton(video);
+  // Find all video elements and significant iframes, choose a single primary candidate
+  const allCandidates = Array.from(document.querySelectorAll<HTMLElement>(VIDEO_SELECTOR)).filter(
+    isSignificantVideo
+  );
+
+  let foundSignificantVideo = allCandidates.length > 0;
+  if (foundSignificantVideo) {
+    const primary = selectPrimaryMediaCandidate(allCandidates);
+    if (primary && !injectedButtons.has(primary)) {
+      await createOrUpdateButton(primary);
+    }
+
+    // Ensure only one injected button tied to media exists; remove others
+    for (const [el, btn] of Array.from(injectedButtons.entries())) {
+      if (el !== primary) {
+        if (btn && document.body.contains(btn)) {
+          btn.remove();
+        }
+        injectedButtons.delete(el);
       }
     }
   }
@@ -689,6 +762,7 @@ export {
   resetButtonPosition,
   setButtonHiddenState,
   isSignificantVideo,
+  selectPrimaryMediaCandidate,
   debounce,
   getButtonState,
   saveButtonState,

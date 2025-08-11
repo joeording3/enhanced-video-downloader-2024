@@ -132,8 +132,15 @@ const storageService: StorageService = {
     }
   },
   async getPort(): Promise<number | null> {
-    const result = await chrome.storage.local.get(_portStorageKey);
-    return result[_portStorageKey] || null;
+    try {
+      const result = await chrome.storage.local.get(_portStorageKey);
+      if (result && typeof result === "object") {
+        return (result as any)[_portStorageKey] || null;
+      }
+      return null;
+    } catch {
+      return null;
+    }
   },
   async setPort(port: number | null): Promise<void> {
     try {
@@ -903,8 +910,10 @@ const sendDownloadRequest = async (
 
       // Also reflect in the extension's queue UI for immediate feedback
       try {
-        if (!downloadQueue.includes(videoUrl)) {
-          downloadQueue.push(videoUrl);
+        const queueId: string =
+          (result.downloadId as string) || (customDownloadId as string) || videoUrl;
+        if (!downloadQueue.includes(queueId)) {
+          downloadQueue.push(queueId);
           _updateQueueAndBadge();
         }
       } catch {
@@ -963,9 +972,27 @@ const initializeExtension = async (): Promise<void> => {
           if (!res.ok) return;
           const data = await res.json();
           const active: Record<string, any> = {};
+          const serverQueued: string[] = [];
           Object.entries(data || {}).forEach(([id, obj]) => {
-            active[id] = obj;
+            if ((obj as any)?.status === "queued") {
+              serverQueued.push(id);
+            } else {
+              active[id] = obj;
+            }
           });
+
+          // Merge server queued ids with local queue, remove any that are now active
+          try {
+            const union = Array.from(new Set<string>([...downloadQueue, ...serverQueued]));
+            const filtered = union.filter(id => !(id in active));
+            if (filtered.length !== downloadQueue.length || serverQueued.length > 0) {
+              downloadQueue = filtered;
+              _updateQueueAndBadge();
+            }
+          } catch {
+            // ignore queue update errors
+          }
+
           chrome.runtime.sendMessage({
             type: "downloadStatusUpdate",
             data: { active, queue: downloadQueue },
@@ -1355,6 +1382,33 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           downloadQueue = message.queue;
           updateQueueUI();
           sendResponse({ status: "success" });
+          break;
+        }
+
+        case "removeFromQueue": {
+          const id: string | undefined = message.downloadId;
+          if (!id) {
+            sendResponse({ status: "error", message: "Missing downloadId" });
+            break;
+          }
+          try {
+            // Optimistic update
+            downloadQueue = downloadQueue.filter(q => q !== id);
+            _updateQueueAndBadge();
+            // Also remove on the server if available
+            if (port) {
+              try {
+                await fetch(`http://127.0.0.1:${port}/api/queue/${encodeURIComponent(id)}/remove`, {
+                  method: "POST",
+                });
+              } catch {
+                /* ignore network errors */
+              }
+            }
+            sendResponse({ status: "success" });
+          } catch (e) {
+            sendResponse({ status: "error", message: (e as Error).message });
+          }
           break;
         }
 

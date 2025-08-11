@@ -19,6 +19,7 @@ from .api.health_bp import health_bp
 from .api.history_bp import history_bp, history_route
 from .api.logs_bp import logs_bp
 from .api.logs_manage_bp import logs_manage_bp
+from .api.queue_bp import queue_bp
 from .api.restart_bp import restart_bp
 from .api.status_bp import status_bp
 from .config import Config
@@ -191,11 +192,15 @@ def create_app(config: Config) -> Flask:
                     request.method,
                     request.path,
                     response.status_code,
-                    extra={k: v for k, v in {
-                        "start_ts": start_ts_ms,
-                        "duration_ms": duration_ms,
-                        "status": response.status_code,
-                    }.items() if v is not None},
+                    extra={
+                        k: v
+                        for k, v in {
+                            "start_ts": start_ts_ms,
+                            "duration_ms": duration_ms,
+                            "status": response.status_code,
+                        }.items()
+                        if v is not None
+                    },
                 )
         except Exception:
             # Never block responses due to logging issues
@@ -207,6 +212,7 @@ def create_app(config: Config) -> Flask:
         # Store start time on flask.g to satisfy linters and keep request scope
         try:
             from flask import g as flask_g  # local import to avoid top-level import cycles
+
             flask_g.evd_request_start = datetime.now().timestamp()
         except Exception:
             pass
@@ -226,6 +232,7 @@ def create_app(config: Config) -> Flask:
     app.register_blueprint(health_bp, url_prefix="/api")
     app.register_blueprint(history_bp)
     app.register_blueprint(restart_bp)
+    app.register_blueprint(queue_bp)
     # Mount logs under /api for consistent client paths
     app.register_blueprint(logs_bp, url_prefix="/api")
     app.register_blueprint(logs_manage_bp, url_prefix="/api")

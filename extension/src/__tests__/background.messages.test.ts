@@ -26,7 +26,7 @@ describe("background message routing", () => {
     await handler({ type: "getServerStatus" }, {}, cb);
     jest.runAllTimers?.();
     // handler is async and returns true to indicate async sendResponse; flush microtasks
-    await Promise.resolve();
+    await new Promise(resolve => setTimeout(resolve, 0));
     expect(cb).toHaveBeenCalled();
   });
 

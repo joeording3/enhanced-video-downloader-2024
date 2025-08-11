@@ -154,7 +154,8 @@ Enhanced Video Downloader/
 #### CSS design system (UI)
 
 - Files under `extension/ui/`:
-  - `variables.css` (design tokens), `base.css` (base rules), `components.css` (buttons, inputs, status), `themes.css` (light/dark)
+  - `variables.css` (design tokens), `base.css` (base rules), `components.css` (buttons, inputs,
+    status), `themes.css` (light/dark)
 - Use CSS variables everywhere; avoid hardcoded hex or spacing values.
 - Prefer component classes like `btn btn--primary`; legacy `styles.css` is removed.
 
@@ -174,7 +175,8 @@ Enhanced Video Downloader/
 - **[reports/type_ignore_audit_report.md](reports/type_ignore_audit_report.md)** - Type ignore usage
   audit and cleanup
 
-Note: Test suite and Playwright E2E audit details now live in `tests/testing.md` (Test Audit & Coverage Metrics). The old standalone audit reports have been removed.
+Note: Test suite and Playwright E2E audit details now live in `tests/testing.md` (Test Audit &
+Coverage Metrics). The old standalone audit reports have been removed.
 
 ### CI/CD Documentation
 
@@ -238,7 +240,7 @@ videodownloader-server start --foreground
 # Or use the shorter --fg flag
 videodownloader-server start --fg
 
-# Start with verbose output (shows all log messages instead of just warnings/errors)
+# Start with verbose output (shows INFO/DEBUG logs to stderr instead of only warnings/errors)
 videodownloader-server start --verbose
 
 # Force start a new instance (stopping any existing instance)
@@ -318,7 +320,16 @@ For production deployments, it's recommended to use Gunicorn:
 gunicorn --workers=4 --bind=0.0.0.0:<SERVER_PORT> server:create_app()
 ```
 
-Note: When using the CLI to start with `--gunicorn` or daemon/foreground mode, these settings are recorded and reused on `videodownloader-server restart` unless you provide explicit overrides. Metadata is stored at `server/data/server.lock.json` alongside the lock file.
+Note: When using the CLI to start with `--gunicorn` or daemon/foreground mode, these settings are
+recorded and reused on `videodownloader-server restart` unless you provide explicit overrides.
+Metadata is stored at `server/data/server.lock.json` alongside the lock file.
+
+CLI logging/output hygiene
+
+- CLI logs are plain text and printed to stderr to keep stdout clean for command output.
+- Default CLI verbosity is WARNING; pass `--verbose` to see INFO/DEBUG.
+- Server and Gunicorn logs are written as NDJSON to the active `LOG_FILE` path; when starting via
+  the CLI in Gunicorn mode, `accesslog` and `errorlog` are routed to that same file by default.
 
 ### Using Docker
 
@@ -379,25 +390,27 @@ Note: When using the CLI to start with `--gunicorn` or daemon/foreground mode, t
 
 ### Options Page
 
-- **Server Configuration**: Set download directory, server port, and other settings. The
-  "Runtime (requires restart)" note is now part of this section, and the "Save Settings" and
-  "Restart Server" buttons live here to keep related actions together.
+- **Server Configuration**: Set download directory, server port, and other settings. The "Runtime
+  (requires restart)" note is now part of this section, and the "Save Settings" and "Restart Server"
+  buttons live here to keep related actions together.
 - **Theme Toggle**: Switch between light and dark themes
 - **Log Display**: View server logs with different verbosity levels
 - **Log File Path**: The log viewer reads from the server's current log file path exposed via
   `/api/config` as `log_file`. If `LOG_FILE` is not set in the environment, the server sets it at
   startup to a stable default path `server_output.log` in the project root. You can override this
-  path from the Options page (Log File field) or by setting `LOG_FILE` in your shell or `.env`.
-  Logs are emitted in structured NDJSON format (one JSON object per line) so you can parse and sort
+  path from the Options page (Log File field) or by setting `LOG_FILE` in your shell or `.env`. Logs
+  are emitted in structured NDJSON format (one JSON object per line) so you can parse and sort
   easily. Request logs include optional `start_ts` and `duration_ms` fields for latency analysis.
-  When running under Gunicorn via the CLI helpers, Gunicorn's access and error logs are also wired by
-  default to the same log file.
+  When running under Gunicorn via the CLI helpers, Gunicorn's access and error logs are also wired
+  by default to the same log file.
 
   Log path precedence:
+
   - `LOG_FILE` environment variable (if set)
   - Config value `log_path` (for management operations like clearing/archiving)
-  - Default fallback: `<project_root>/server_output.log` for reading logs; an improbable
-    placeholder name for management if neither env nor config is provided
+  - Default fallback: `<project_root>/server_output.log` for reading logs; an improbable placeholder
+    name for management if neither env nor config is provided
+
 - **Error History**: Browse past download errors with detailed troubleshooting information
 - **Server Status**: Real-time server connectivity status
 - **Settings Persistence**: All settings are automatically saved and restored
@@ -474,6 +487,7 @@ and includes:
   (persisted to `.env` when changed via the API/CLI).
 
 Log path resolution details
+
 - Read operations (`GET /api/logs`): In a normal repo, `LOG_FILE` is honored if set; otherwise a
   placeholder path triggers a 404 until configured. In tests (no `pyproject.toml`), reads default to
   `<project_root>/server_output.log`.
@@ -726,8 +740,8 @@ For complete API documentation, see `server/api/api.md`.
 ### Error semantics (JSON parsing)
 
 - `/api/download`: If the request body claims JSON but is malformed, the endpoint returns a 500 JSON
-  error with `error_type: SERVER_ERROR` (test-suite compatible). Oversized payloads return 413 with a
-  structured JSON error.
+  error with `error_type: SERVER_ERROR` (test-suite compatible). Oversized payloads return 413 with
+  a structured JSON error.
 - `/api/gallery-dl` and `/api/resume`: Malformed JSON is treated as a server error (500) with a
   standardized JSON body (consistent with integration tests).
 

@@ -350,9 +350,6 @@ body.dark-theme .settings-hint {
 }
 
 /* File Input */
-input[type="file"] {
-  display: none; /* Hide the default file input */
-}
 
 /* Responsive Design */
 @media (width <= 600px) {
@@ -414,40 +411,14 @@ body.dark-theme #disclaimer {
 }
 
 /* ===== Striped Lists (Settings, Error History) ===== */
-.settings-list,
+
 #error-history-list {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.settings-list li,
-#error-history-list li {
-  padding: var(--list-row-padding-y) var(--list-row-padding-x);
-  border-bottom: 1px solid var(--border-color);
-  background-color: var(--bg-elevated);
-}
-
 /* Dark theme: ensure base row background uses dark elevated surface */
-body.dark-theme .settings-list li,
-body.dark-theme #error-history-list li {
-  background-color: var(--bg-elevated-dark);
-}
-
-.settings-list li:nth-child(even),
-#error-history-list li:nth-child(even) {
-  background-color: var(--row-alt-bg);
-}
-
-body.dark-theme .settings-list li:nth-child(even),
-body.dark-theme #error-history-list li:nth-child(even) {
-  background-color: var(--row-alt-bg-dark);
-}
-
-.settings-list li:last-child,
-#error-history-list li:last-child {
-  border-bottom: none;
-}
 
 #log-header {
   display: flex;

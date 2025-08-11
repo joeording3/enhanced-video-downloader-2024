@@ -88,17 +88,12 @@ def _cli_load_config(_ctx: click.Context) -> Config:
 
 
 def _cli_set_logging(verbose: bool) -> None:
-    """Set up logging using central configuration."""
-    from server.logging_setup import setup_logging
+    """Set up logging specifically for CLI so stdout stays clean."""
+    from server.logging_setup import setup_cli_logging
 
-    if verbose:
-        setup_logging(log_level="DEBUG")
-        log.setLevel(logging.DEBUG)
-        log.debug("Verbose logging enabled")
-    else:
-        # Default to INFO for normal operation per tests/expectations
-        setup_logging(log_level="INFO")
-        log.setLevel(logging.INFO)
+    setup_cli_logging(verbose=verbose)
+    # Tests expect module logger level DEBUG when verbose and INFO otherwise
+    log.setLevel(logging.DEBUG if verbose else logging.INFO)
 
 
 # Helper to resolve download directory for start_server
@@ -230,6 +225,14 @@ def _cli_build_command(_cfg: Config, host: str, port: int, gunicorn: bool, worke
     """Build the command list for starting the server."""
     if gunicorn:
         log.info("Starting server in production mode with Gunicorn on %s:%s", host, port)
+        # Resolve a single log file path and wire Gunicorn to it by default
+        from server.logging_setup import resolve_log_path
+
+        project_root = Path(__file__).parent.parent
+        env_log = os.getenv("LOG_FILE")
+        cfg_log = _cfg.get_value("log_path")
+        log_path = resolve_log_path(project_root, env_log, cfg_log, purpose="manage")
+
         # Use the WSGI callable defined in server/__main__.py as 'application'
         app_path = "server.__main__:application"
         # Respect requested workers (minimum 1)
@@ -240,9 +243,9 @@ def _cli_build_command(_cfg: Config, host: str, port: int, gunicorn: bool, worke
             f"--bind={host}:{port}",
             app_path,
             "--access-logfile",
-            "-",
+            str(log_path),
             "--error-logfile",
-            "-",
+            str(log_path),
             "--log-level",
             "info",
         ]
@@ -995,6 +998,8 @@ def _cli_execute_daemon(cmd: list[str], host: str, port: int) -> None:
         log.info(f"Attempting to start server as a daemon (PID {process.pid}). Waiting for it to become available...")
         if wait_for_server_start_cli(port, host, timeout=20):
             log.info(f"Server started as a daemon (PID {process.pid}) on {host}:{port}.")
+            # Human-readable confirmation to stdout per CLI UX
+            click.echo(f" Server started on {host}:{port} (PID {process.pid})")
             # Write lock again after successful start to ensure presence
             try:
                 LOCK_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -1011,7 +1016,7 @@ def _cli_execute_foreground(cmd: list[str], _host: str, _port: int) -> None:
     try:
         command_str = " ".join(cmd)
         log.info(f"Running server in foreground. Command: {command_str}")
-        server_process = subprocess.Popen(cmd)
+        server_process = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         # Best-effort: write lock file for foreground process as well
         try:
             LOCK_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -1019,6 +1024,9 @@ def _cli_execute_foreground(cmd: list[str], _host: str, _port: int) -> None:
         except Exception:
             log.debug("Failed to write lock file for foreground process", exc_info=True)
 
+        # Emit a clear started message after brief delay (best-effort)
+        time.sleep(0.5)
+        click.echo(f" Server started on {_host}:{_port} (PID {server_process.pid})")
         server_process.wait()
     except KeyboardInterrupt:
         log.info("Server process interrupted by user (Ctrl+C in CLI). Server should handle its own cleanup.")
@@ -1186,7 +1194,15 @@ def _verify_processes_stopped(procs: list[psutil.Process]) -> None:
 
 
 def _cli_stop_cleanup_enhanced() -> None:
-    """Enhanced cleanup with better lock file handling."""
+    """
+    Enhanced cleanup with better lock file handling.
+
+    Policy
+    ------
+    - Remove stale lock files when the referenced PID is not running.
+    - After stopping, prefer to reuse the configured port rather than switching.
+    - Emit explicit user-facing messages via click.echo for predictable CLI output.
+    """
     lock_info = get_lock_pid_port_cli(LOCK_PATH)
     pid = lock_info[0] if lock_info else None
 
@@ -1219,7 +1235,19 @@ def _run_restart_server_enhanced(
     preserve_state: bool,
     auto_port: bool,
 ) -> None:
-    """Enhanced restart server logic with state preservation and verification."""
+    """
+    Enhanced restart server logic with state preservation and verification.
+
+    Behavior and precedence:
+    - Always attempts to stop all running server instances first (graceful then force if needed).
+    - Port/host resolution on restart defaults to current configuration (ENV/.env), not prior run
+      metadata. Prior run metadata is used only as a fallback when config does not specify values.
+    - By default, restart runs the new server in daemon mode unless `--foreground`/`--fg` is passed.
+    - Restart will prefer to reuse the configured port; it will not auto-switch ports unless the user
+      explicitly passes `--auto-port`. If the configured port is still held by another process, the
+      restart path makes a best-effort to free it and then fails fast if it cannot, instead of
+      silently changing ports.
+    """
     click.echo(" Restarting Enhanced Video Downloader server...")
 
     # Try to capture current run parameters before stopping the server
@@ -1229,26 +1257,40 @@ def _run_restart_server_enhanced(
     def _provided(name: str) -> bool:
         try:
             from click.core import ParameterSource
+
             src = ctx.get_parameter_source(name)
         except Exception:
             return False
         else:
             return src in (ParameterSource.COMMANDLINE, ParameterSource.ENVIRONMENT)
 
-    # Derive defaults from prior metadata if not provided by user
-    if not _provided("host") and isinstance(prior_meta.get("host"), str):
-        host = prior_meta.get("host")  # type: ignore[assignment]
-    if not _provided("port") and isinstance(prior_meta.get("port"), int):
-        port = prior_meta.get("port")  # type: ignore[assignment]
+    # Load current config to prefer configured host/port over prior metadata
+    cfg_for_defaults = _cli_load_config(ctx)
+
+    # Derive defaults, preferring config; fall back to prior metadata only if config missing
+    if not _provided("host"):
+        cfg_host = cfg_for_defaults.get_value("server_host")
+        if isinstance(cfg_host, str) and cfg_host.strip():
+            host = cfg_host
+        elif isinstance(prior_meta.get("host"), str):
+            host = prior_meta.get("host")  # type: ignore[assignment]
+
+    if not _provided("port"):
+        cfg_port = cfg_for_defaults.get_value("server_port")
+        if isinstance(cfg_port, int):
+            port = cfg_port
+        elif isinstance(prior_meta.get("port"), int):
+            port = prior_meta.get("port")  # type: ignore[assignment]
     if not _provided("gunicorn") and isinstance(prior_meta.get("gunicorn"), bool):
         gunicorn = bool(prior_meta.get("gunicorn"))  # type: ignore[assignment]
     if not _provided("workers") and isinstance(prior_meta.get("workers"), int):
         workers = int(prior_meta.get("workers"))  # type: ignore[assignment]
     if not _provided("verbose") and isinstance(prior_meta.get("verbose"), bool):
         verbose = bool(prior_meta.get("verbose"))  # type: ignore[assignment]
-    # For daemon/foreground, only override if neither --daemon nor --fg were given
-    if not _provided("daemon") and not _provided("fg") and isinstance(prior_meta.get("daemon"), bool):
-        daemon = bool(prior_meta.get("daemon"))  # type: ignore[assignment]
+    # Daemonization policy on restart: unless user explicitly sets --foreground/--fg or --daemon,
+    # default to daemon mode to mimic "stop" then "start" behavior (non-blocking restart).
+    if not _provided("daemon") and not _provided("fg"):
+        daemon = True
 
     # Preserve state if requested
     preserved_state = None
@@ -1295,16 +1337,7 @@ def _run_restart_server_enhanced(
 
     # Start the server with enhanced options
     click.echo("  Starting server with new configuration...")
-    # If target port is occupied by a different application, force auto-port just for this restart
-    try:
-        cfg = _cli_load_config(ctx)
-        resolved_host, resolved_port, _ = _resolve_start_params(cfg, host, port, None)
-        pid_port, port_in_use = _cli_get_existing_server_status(resolved_host, resolved_port)
-        if port_in_use and not pid_port:
-            auto_port = True
-    except Exception:
-        # Fall back to provided auto_port flag
-        pass
+    # Do not auto-switch ports implicitly; prefer to reuse configured port.
 
     _run_start_server(
         ctx,

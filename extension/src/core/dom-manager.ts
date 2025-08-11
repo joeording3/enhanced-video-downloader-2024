@@ -65,7 +65,51 @@ export class DOMManager {
     // Content selectors
     this.selectors.set(
       "content.video",
-      'video, iframe[src*="youtube.com"], iframe[src*="vimeo.com"]'
+      // Reuse centralized selectors for consistency
+      "video, " +
+        'iframe[src*="youtube.com"], ' +
+        'iframe[src*="youtube-nocookie.com"], ' +
+        'iframe[src*="vimeo.com"], ' +
+        'iframe[src*="player.vimeo.com"], ' +
+        'iframe[src*="dailymotion.com"], ' +
+        'iframe[src*="dmcdn.net"], ' +
+        'iframe[src*="twitch.tv"], ' +
+        'iframe[src*="player.twitch.tv"], ' +
+        'iframe[src*="facebook.com/plugins/video"], ' +
+        'iframe[src*="facebook.com/plugins/live"], ' +
+        'iframe[src*="tiktok.com"], ' +
+        'iframe[src*="twitter.com"], ' +
+        'iframe[src*="x.com"], ' +
+        'iframe[src*="redditmedia.com"], ' +
+        'iframe[src*="reddit.com/media"], ' +
+        'iframe[src*="streamable.com"], ' +
+        'iframe[src*="wistia.com"], ' +
+        'iframe[src*="fast.wistia.net"], ' +
+        'iframe[src*="players.brightcove.net"], ' +
+        'iframe[src*="jwplayer.com"], ' +
+        'iframe[src*="cdn.jwplayer.com"], ' +
+        'iframe[src*="player.videodelivery.net"], ' +
+        'iframe[src*="w.soundcloud.com/player"], ' +
+        'iframe[src*="pornhub.com"], ' +
+        'iframe[src*="pornhubpremium.com"], ' +
+        'iframe[src*="phncdn.com"], ' +
+        'iframe[src*="redtube.com"], ' +
+        'iframe[src*="youporn.com"], ' +
+        'iframe[src*="ypncdn.com"], ' +
+        'iframe[src*="xvideos.com"], ' +
+        'iframe[src*="player.xvideos.com"], ' +
+        'iframe[src*="xhamster.com"], ' +
+        'iframe[src*="xhcdn.com"], ' +
+        'iframe[src*="spankbang.com"], ' +
+        'iframe[src*="spankwire.com"], ' +
+        'iframe[src*="tube8.com"], ' +
+        'iframe[src*="keezmovies.com"], ' +
+        'iframe[src*="tnaflix.com"], ' +
+        'iframe[src*="motherless.com"], ' +
+        'iframe[src*="eporner.com"], ' +
+        'iframe[src*="porntrex.com"], ' +
+        'iframe[src*="youjizz.com"], ' +
+        'iframe[src*="hclips.com"]'
     );
     this.selectors.set("content.downloadButton", ".download-button");
     this.selectors.set("content.dragHandle", ".evd-drag-handle");

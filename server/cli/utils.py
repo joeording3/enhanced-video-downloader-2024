@@ -13,11 +13,39 @@ from typing import Any
 import click
 import yaml
 
+from server.cli_helpers import (
+    get_config_value as _get_config_value,
+)
+from server.cli_helpers import (
+    is_server_running as _is_server_running,
+)
 from server.config import Config
 
 # Expose Config.load and Config.update_config for CLI commands and tests
 load_config = Config.load
 update_config = Config.update_config
+
+
+# Re-export commonly used helpers for CLI submodules (backward compatibility)
+def get_config_value(key: str, default: Any | None = None) -> Any:
+    """Get a configuration value using centralized loader (compat shim)."""
+    try:
+        return _get_config_value(key, default)
+    except Exception:
+        # Fallback to direct Config access if helper unavailable
+        try:
+            cfg = Config.load()
+            return cfg.get_value(key, default)
+        except Exception:
+            return default
+
+
+def is_server_running() -> bool:
+    """Return True if the managed server instance appears to be running."""
+    try:
+        return _is_server_running()
+    except Exception:
+        return False
 
 
 # Helper functions for logs and cleanup

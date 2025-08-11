@@ -107,7 +107,8 @@ class TestCLIMain:
 
             _cli_set_logging(False)
 
-            mock_logger.setLevel.assert_called_with(20)  # logging.INFO
+            # CLI default is WARNING to keep output clean
+            mock_logger.setLevel.assert_called_with(30)  # logging.WARNING
 
     def test_main_function_exists(self):
         """Test that main function exists and is callable."""

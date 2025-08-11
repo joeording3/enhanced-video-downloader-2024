@@ -109,7 +109,71 @@ label {
   color: var(--label-text);
 }
 
-/* Use .input component instead */
+/* Ensure native controls have sensible defaults even without .input class */
+input[type="text"],
+input[type="search"],
+input[type="number"],
+input[type="password"],
+input[type="url"],
+input[type="email"],
+select,
+textarea {
+  display: block;
+  width: 100%;
+  background-color: var(--input-bg);
+  color: var(--input-text);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  padding: var(--control-padding-y) var(--control-padding-x);
+  font-size: var(--font-size-md);
+  font-family: var(--font-family);
+  transition: var(--transition-normal);
+  box-sizing: border-box;
+}
+
+/* Increase contrast for disabled state in dark mode */
+select:disabled,
+textarea:disabled,
+input:disabled {
+  opacity: 0.7;
+}
+
+input[type="text"]:focus,
+input[type="search"]:focus,
+input[type="number"]:focus,
+input[type="password"]:focus,
+input[type="url"]:focus,
+input[type="email"]:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--input-focus-border);
+  box-shadow: var(--focus-ring-light);
+}
+
+input[type="text"]:invalid,
+input[type="search"]:invalid,
+input[type="number"]:invalid,
+input[type="password"]:invalid,
+input[type="url"]:invalid,
+input[type="email"]:invalid,
+select:invalid,
+textarea:invalid {
+  border-color: var(--error);
+  box-shadow: var(--ring-error-light);
+}
+
+input[type="text"]:valid,
+input[type="search"]:valid,
+input[type="number"]:valid,
+input[type="password"]:valid,
+input[type="url"]:valid,
+input[type="email"]:valid,
+select:valid,
+textarea:valid {
+  border-color: var(--success);
+  box-shadow: var(--ring-success-light);
+}
 
 /* ===== TABLES ===== */
 

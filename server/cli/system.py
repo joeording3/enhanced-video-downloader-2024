@@ -60,9 +60,7 @@ def system_maintenance(
             clear_cache,
         ]
     ):
-        log.info(
-            "No maintenance tasks specified. Use options like --resume-incomplete, --clear-history, etc."
-        )
+        log.info("No maintenance tasks specified. Use options like --resume-incomplete, --clear-history, etc.")
         return
 
     perform_system_maintenance(
@@ -73,4 +71,3 @@ def system_maintenance(
         clear_cache,
         log,
     )
-

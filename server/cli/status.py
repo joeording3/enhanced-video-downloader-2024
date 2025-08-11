@@ -172,6 +172,7 @@ status_group.add_command(downloads_command)
 # Expose the main command for registration
 status_command = status_group
 
+
 # Aliases for tests: provide a wrapper that supports --json and summary output
 @click.command(name="server_alias")
 @click.option("--json", "as_json", is_flag=True, help="Output in JSON format.")

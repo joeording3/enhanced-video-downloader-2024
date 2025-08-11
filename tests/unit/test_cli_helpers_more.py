@@ -7,8 +7,6 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 import server.cli_helpers as h
 
 
@@ -33,7 +31,9 @@ class TestProcessAndLockHelpers:
         monkeypatch.setattr(h, "psutil", MagicMock(Process=lambda pid: Proc(pid)))
 
         procs = h.find_server_processes_cli()
-        assert procs == [{"pid": 12345, "port": 5050, "uptime": pytest.approx(procs[0]["uptime"], rel=1)}]
+        # Allow extra keys like 'cmd' and accept approximate uptime
+        assert procs and procs[0]["pid"] == 12345 and procs[0]["port"] == 5050
+        assert isinstance(procs[0].get("uptime"), int | float)
 
     def test_find_server_processes_cli_no_lock(self, tmp_path: Path, monkeypatch: Any) -> None:
 

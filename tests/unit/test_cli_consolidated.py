@@ -107,7 +107,8 @@ class TestCLIMain:
 
             _cli_set_logging(False)
 
-            mock_logger.setLevel.assert_called_with(20)  # logging.INFO
+            # CLI default is WARNING to keep output clean
+            mock_logger.setLevel.assert_called_with(30)  # logging.WARNING
 
     def test_main_function_exists(self):
         """Test that main function exists and is callable."""
@@ -897,6 +898,107 @@ _spec.loader.exec_module(cli_module)
 
 class DummyCtx:
     """Dummy context object for testing _run_start_server."""
+
+
+def test_restart_stops_all_and_starts_on_configured_port(monkeypatch: Any) -> None:
+    """
+    Verify restart kills all running instances and starts on configured port without port drift.
+
+    Expectations
+    ------------
+    - All discovered processes are terminated before restart proceeds
+    - Configured host/port (from Config) take precedence over prior metadata
+    - Daemon mode is the default (non-blocking)
+    - No implicit auto-port is enabled unless requested
+    """
+    calls: dict[str, Any] = {}
+
+    # Provide a config with explicit port/host
+    class _Cfg:
+        def get_value(self, key: str, default: Any = None) -> Any:
+            if key == "server_host":
+                return "127.0.0.1"
+            if key == "server_port":
+                return 9090
+            return default
+
+    monkeypatch.setattr(cli_module, "_cli_load_config", lambda ctx: _Cfg())
+
+    # Stop phase: simulate two entities and record termination input
+    monkeypatch.setattr(cli_module, "_cli_stop_pre_checks", lambda: ["procA", "procB"])
+    monkeypatch.setattr(
+        cli_module,
+        "_cli_stop_terminate_enhanced",
+        lambda entities, timeout, force: calls.setdefault("terminated", list(entities)),
+    )
+    monkeypatch.setattr(cli_module, "_cli_stop_cleanup_enhanced", lambda: calls.setdefault("cleanup", True))
+
+    # Avoid port drift: report target port not in use after stop; ignore auto-port logic
+    monkeypatch.setattr(cli_module, "_cli_get_existing_server_status", lambda h, p: (None, False))
+
+    # Resolve start params to the configured host/port deterministically
+    monkeypatch.setattr(
+        cli_module,
+        "_resolve_start_params",
+        lambda cfg, host, port, download_dir: ("127.0.0.1", 9090, "dl"),
+    )
+
+    # Capture _run_start_server invocation for verification
+    def _capture_run_start_server(
+        ctx: Any,
+        daemon: bool,
+        host: str | None,
+        port: int | None,
+        download_dir: str | None,
+        gunicorn: bool,
+        workers: int | None,
+        verbose: bool,
+        force: bool,
+        timeout: int,
+        retry_attempts: int,
+        auto_port: bool,
+    ) -> None:
+        calls["start_args"] = {
+            "daemon": daemon,
+            "host": host,
+            "port": port,
+            "gunicorn": gunicorn,
+            "workers": workers,
+            "verbose": verbose,
+            "force": force,
+            "timeout": timeout,
+            "retry_attempts": retry_attempts,
+            "auto_port": auto_port,
+        }
+
+    monkeypatch.setattr(cli_module, "_run_start_server", _capture_run_start_server)
+    monkeypatch.setattr(cli_module, "_verify_restart_success", lambda h, p, t: True)
+
+    # Execute
+    cli_module._run_restart_server_enhanced(
+        ctx=DummyCtx(),
+        daemon=True,
+        host=None,
+        port=None,
+        gunicorn=False,
+        workers=None,
+        verbose=False,
+        force=False,
+        timeout=5,
+        preserve_state=False,
+        auto_port=False,
+    )
+
+    # Assert all running instances were sent to terminate
+    assert calls["terminated"] == ["procA", "procB"]
+    assert calls["cleanup"] is True
+
+    # Assert restart used configured host/port and defaulted to daemon mode without auto-port
+    start_args = calls["start_args"]
+    assert start_args["daemon"] is True
+    assert start_args["host"] == "127.0.0.1"
+    assert start_args["port"] == 9090
+    assert start_args["auto_port"] is False
 
 
 def test_run_start_server_daemon(monkeypatch: Any) -> None:

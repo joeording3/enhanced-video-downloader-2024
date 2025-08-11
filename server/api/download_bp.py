@@ -21,7 +21,12 @@ from server.config import Config
 from server.downloads import progress_data
 from server.downloads.gallery_dl import handle_gallery_dl_download
 from server.downloads.resume import handle_resume_download
-from server.downloads.ytdlp import download_process_registry, download_tempfile_registry, handle_ytdlp_download
+from server.downloads.ytdlp import (
+    download_process_registry,
+    download_tempfile_registry,
+    handle_ytdlp_download,
+)
+from server.queue import queue_manager
 from server.schemas import DownloadRequest, GalleryDLRequest, PriorityRequest, ResumeRequest
 from server.utils import cleanup_expired_cache
 
@@ -29,6 +34,8 @@ from server.utils import cleanup_expired_cache
 download_bp = Blueprint("download_api", __name__, url_prefix="/api")
 logger = logging.getLogger(__name__)
 # Narrow JSON payload types used within this module to reduce Unknown warnings
+
+
 class _RawDownloadData(TypedDict, total=False):
     url: str
     downloadId: str
@@ -36,6 +43,10 @@ class _RawDownloadData(TypedDict, total=False):
     download_playlist: bool
     page_title: str
     yt_dlp_options: dict[str, Any]
+
+
+# Keep separate type for gallery requests
+
 
 class _RawGalleryData(TypedDict, total=False):
     url: str
@@ -366,48 +377,72 @@ def download() -> Any:
     # Perform background cleanup
     perform_background_cleanup()
 
+    # Prepare unified response holder to minimize return statements
+    unified_response: Any
+
     # Check rate limit
     client_ip = request.remote_addr or "unknown"
     if check_rate_limit(client_ip):
         logger.warning(f"Rate limit exceeded for IP: {client_ip}")
-        return rate_limit_response()
+        unified_response = rate_limit_response()
+    else:
+        raw_data: _RawDownloadData = {}
+        try:
+            # Parse JSON first without consuming the stream; if this yields None or non-dict,
+            # fallback to strict parsing which will raise on invalid JSON and be handled uniformly below.
+            json_obj: Any = request.get_json(silent=True)
+            if isinstance(json_obj, dict):
+                raw_data = cast(_RawDownloadData, json_obj)
+            else:
+                raw_data = cast(_RawDownloadData, _parse_download_raw())
 
-    raw_data: _RawDownloadData = {}
-    try:
-        # Parse JSON first without consuming the stream; if this yields None or non-dict,
-        # fallback to strict parsing which will raise on invalid JSON and be handled uniformly below.
-        json_obj: Any = request.get_json(silent=True)
-        if isinstance(json_obj, dict):
-            raw_data = cast(_RawDownloadData, json_obj)
-        else:
-            raw_data = cast(_RawDownloadData, _parse_download_raw())
-        # Process the request
-        response, _ = _process_download_request(cast(dict[str, Any], raw_data))
-    except RequestEntityTooLarge:
-        # Large payloads should yield a structured 413 JSON
-        return (
-            jsonify(
-                {
-                    "status": "error",
-                    "message": "Request entity too large",
-                    "error_type": "REQUEST_ENTITY_TOO_LARGE",
-                    "downloadId": raw_data.get("downloadId", "unknown"),
-                }
-            ),
-            413,
-        )
-    except ValidationError as e:
-        logger.warning(f"Invalid download request: {e}")
-        return _download_error_response(
-            f"Invalid request data: {e}", "VALIDATION_ERROR", raw_data.get("downloadId", "unknown"), 400
-        )
-    except Exception as e:
-        logger.error(f"Unexpected error processing download request: {e}", exc_info=True)
-        return _download_error_response(
-            f"Server error: {e!s}", "SERVER_ERROR", raw_data.get("downloadId", "unknown"), 500
-        )
+            # If server is at capacity, enqueue and return queued status immediately
+            try:
+                cfg = Config.load()
+                max_concurrent = int(cfg.get_value("max_concurrent_downloads", 3))
+            except Exception:
+                max_concurrent = 3
+            if len(download_process_registry) >= max_concurrent:
+                # Ensure a downloadId exists for queue tracking
+                if not raw_data.get("downloadId") and not raw_data.get("download_id"):
+                    raw_data["downloadId"] = str(int(time.time() * 1000))  # type: ignore[index]
+                queue_manager.enqueue(dict(raw_data))
+                queue_manager.start()
+                unified_response = jsonify(
+                    {
+                        "status": "queued",
+                        "message": "Server at capacity. Request added to queue.",
+                        "downloadId": str(raw_data.get("downloadId") or raw_data.get("download_id") or "unknown"),
+                    }
+                )
+            else:
+                # Otherwise process immediately
+                unified_response, _ = _process_download_request(cast(dict[str, Any], raw_data))
+        except RequestEntityTooLarge:
+            # Large payloads should yield a structured 413 JSON
+            unified_response = (
+                jsonify(
+                    {
+                        "status": "error",
+                        "message": "Request entity too large",
+                        "error_type": "REQUEST_ENTITY_TOO_LARGE",
+                        "downloadId": raw_data.get("downloadId", "unknown"),
+                    }
+                ),
+                413,
+            )
+        except ValidationError as e:
+            logger.warning(f"Invalid download request: {e}")
+            unified_response = _download_error_response(
+                f"Invalid request data: {e}", "VALIDATION_ERROR", raw_data.get("downloadId", "unknown"), 400
+            )
+        except Exception as e:
+            logger.error(f"Unexpected error processing download request: {e}", exc_info=True)
+            unified_response = _download_error_response(
+                f"Server error: {e!s}", "SERVER_ERROR", raw_data.get("downloadId", "unknown"), 500
+            )
 
-    return response
+    return unified_response
 
 
 @download_bp.route("/gallery-dl", methods=["POST", "OPTIONS"])

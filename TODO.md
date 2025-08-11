@@ -23,14 +23,15 @@ Urgent Tasks:
 
   <!-- working-on: options logs viewer wired to background API -->
 
+- [x] Full pipeline health: lint, format-check, tests, coverage all green via `make all` (fixed ESLint/Prettier issues in Playwright E2E; auto-formatted JSON; no blocking lints remain)
 - [/] Prevent stale lock file from affecting CLI status tests by removing `server/data/server.lock`
   before `make test-py`
 - [x] Enhance CLI restart: reuse previous run mode/flags automatically when not provided (persisted
-  in `server/data/server.lock.json`); normalize invalid hostnames and stabilize auto-port with
-  SO_REUSEADDR-aware port checks to avoid transient false "in use" on restart.
+      in `server/data/server.lock.json`); normalize invalid hostnames and stabilize auto-port with
+      SO_REUSEADDR-aware port checks to avoid transient false "in use" on restart.
 - [x] Remove 'Choose' folder button from Options. The download directory field now only accepts a
-  pathname typed/pasted by the user. Validation accepts absolute paths and `~`-prefixed paths (the
-  server expands `~`).
+      pathname typed/pasted by the user. Validation accepts absolute paths and `~`-prefixed paths
+      (the server expands `~`).
 - [/] Implement `run_cleanup()` in `server/cli/utils.py` and add tests
 - [/] Align JSON error semantics across endpoints; document in README and CHANGELOG
   <!-- working-on: api-json-errors -->
@@ -47,8 +48,15 @@ Urgent Tasks:
         `.env` as the documented default.
   - [x] Switch to structured JSON (NDJSON) logging with optional `start_ts` and `duration_ms` fields
         for easy sorting and analysis; standardized request logs include timing when available.
+  - [x] Options Log Viewer: parse NDJSON, derive level from prefix, filter-first then limit display,
+        suppress `werkzeug` and status 200 entries; iteratively fetch more lines until the filtered
+        set reaches the UI limit. Added unit tests to verify filter + limit order and iterative
+        fetch.
 - [x] Add explicit startup INFO log line and wire Gunicorn access/error logs to the same log file by
-  default via CLI helpers. Update README and CHANGELOG to document behavior.
+      default via CLI helpers. Update README and CHANGELOG to document behavior.
+- [x] Keep CLI output clean: use plain, minimal console formatter at WARNING by default; route all
+      structured JSON to the log file; suppress server child stdout/stderr in foreground runs;
+      ensure Gunicorn access/error logs go to `LOG_FILE`.
 - [/] Centralize log-path resolution via `server/logging_setup.resolve_log_path` and update
   `server/api/logs_bp.py` and `server/api/logs_manage_bp.py` to use it; document precedence in
   README. Tighten `_validate_lines` message while preserving client response text.
@@ -135,6 +143,13 @@ Urgent Tasks:
       `extension/src/history.ts`, `server/api/history_bp.py`.
   - [/] Implemented best-effort history sync: append entries and clear via `/api/history` when
     `serverPort` is known.
+  - [/] Wired popup history view to pagination controls and live updates; `initPopup()` now imports
+    `fetchHistory`/`renderHistoryItems` and listens for `historyUpdated`. Files:
+    `extension/src/popup.ts`.
+  - [/] Added server-side queue management: when max concurrency is reached, `/api/download` returns
+    `status: queued` and enqueues the request; `/api/status` includes queued IDs. Files:
+    `server/queue.py`, `server/api/download_bp.py`, `server/api/status_bp.py`, docs in
+    `server/api/api.md`.
   - [x] Consolidate Playwright E2E audit details into `tests/testing.md`; remove outdated
         `reports/playwright_quality_audit_report.md` and update references in `README.md` and
         `ARCHITECTURE.md`.
@@ -165,10 +180,15 @@ Legacy/Stub Cleanup:
   `variables.css`, `components.css`, `base.css`, and `themes.css`
 - [/] CSS audit: migrated inline styles to classes, unified visibility helpers.
   <!-- working-on: css refactor - visibility classes and contrast variants -->
+
   - [/] Add missing CSS variables and aliases to unify color/spacing across Options and Popup
   - [/] Remove non-standard `composes:` usage; replace with explicit component styles
   - [/] Align backgrounds to `--container-bg` and headers to `--header-bg`
   - [/] Normalize history/logs styles; use variables for dark-mode notification colors
+  - [x] Popup: Clean up dark/light theme rules by relying on variable aliases only; removed
+        `body.dark-theme` overrides from `extension/ui/popup.css` and added theme aliases to
+        `extension/ui/themes.css` (`--row-alt-bg`, `--bg-elevated`, `--error-bg-tint-light` → dark
+        tint)
 
 - [x] Remove obsolete `server/data/server.json` (unused; superseded by env config and lock metadata
       JSON)

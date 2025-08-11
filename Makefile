@@ -12,6 +12,13 @@ all:
 	@echo "Format check passed"
 	@echo "Running tests..."
 	@$(MAKE) test || (echo "Tests failed" && exit 1)
+	@echo "Checking for opt-in real-site Playwright tests..."
+	@if [ "$$EVD_REAL_SITES" = "true" ]; then \
+	  echo "EVD_REAL_SITES=true detected. Running real-site Playwright tests..."; \
+	  $(MAKE) test-real-sites || (echo "Real-site tests failed" && exit 1); \
+	else \
+	  echo "Skipping real-site Playwright tests (set EVD_REAL_SITES=true to enable)"; \
+	fi
 	@echo "Tests passed"
 	@echo "Cleaning up junk folders..."
 	@$(MAKE) cleanup-junk-folders || (echo "Junk folder cleanup failed" && exit 1)
@@ -75,6 +82,10 @@ test-js:
 test-playwright:
 	npm run test:playwright:install || true
 	npm run test:playwright
+
+# Opt-in: Real-site Playwright tests
+test-real-sites:
+	EVD_REAL_SITES=true $(MAKE) test-playwright
 
 lint: lint-py lint-js lint-md emoji-check lint-unused
 

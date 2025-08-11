@@ -92,10 +92,73 @@ export const DOM_SELECTORS = {
   // Video detection
   VIDEO_SELECTORS: [
     "video",
+    // YouTube
     'iframe[src*="youtube.com"]',
+    'iframe[src*="youtube-nocookie.com"]',
+    // Vimeo
     'iframe[src*="vimeo.com"]',
+    'iframe[src*="player.vimeo.com"]',
+    // Dailymotion
     'iframe[src*="dailymotion.com"]',
+    'iframe[src*="dmcdn.net"]',
+    // Twitch
     'iframe[src*="twitch.tv"]',
+    'iframe[src*="player.twitch.tv"]',
+    // Facebook
+    'iframe[src*="facebook.com/plugins/video"]',
+    'iframe[src*="facebook.com/plugins/live"]',
+    // TikTok
+    'iframe[src*="tiktok.com"]',
+    // Twitter / X
+    'iframe[src*="twitter.com"]',
+    'iframe[src*="x.com"]',
+    // Reddit embeds
+    'iframe[src*="redditmedia.com"]',
+    'iframe[src*="reddit.com/media"]',
+    // Streamable
+    'iframe[src*="streamable.com"]',
+    // Wistia
+    'iframe[src*="wistia.com"]',
+    'iframe[src*="fast.wistia.net"]',
+    // Brightcove
+    'iframe[src*="players.brightcove.net"]',
+    // JW Player cloud-hosted embeds
+    'iframe[src*="jwplayer.com"]',
+    'iframe[src*="cdn.jwplayer.com"]',
+    // Video.js / generic players often use cdn subdomains — keep conservative
+    'iframe[src*="player.videodelivery.net"]', // Cloudflare Stream
+    // SoundCloud (occasionally video-like embeds)
+    'iframe[src*="w.soundcloud.com/player"]',
+
+    // Adult platforms (common embed hosts)
+    // Pornhub network
+    'iframe[src*="pornhub.com"]',
+    'iframe[src*="pornhubpremium.com"]',
+    'iframe[src*="phncdn.com"]',
+    // RedTube
+    'iframe[src*="redtube.com"]',
+    // YouPorn
+    'iframe[src*="youporn.com"]',
+    'iframe[src*="ypncdn.com"]',
+    // XVideos
+    'iframe[src*="xvideos.com"]',
+    'iframe[src*="player.xvideos.com"]',
+    // XHamster
+    'iframe[src*="xhamster.com"]',
+    'iframe[src*="xhcdn.com"]',
+    // SpankBang / Spankwire / Tube8 / KeezMovies / Tnaflix
+    'iframe[src*="spankbang.com"]',
+    'iframe[src*="spankwire.com"]',
+    'iframe[src*="tube8.com"]',
+    'iframe[src*="keezmovies.com"]',
+    'iframe[src*="tnaflix.com"]',
+    // Motherless
+    'iframe[src*="motherless.com"]',
+    // Eporner / Porntrex / YouJizz / HClips
+    'iframe[src*="eporner.com"]',
+    'iframe[src*="porntrex.com"]',
+    'iframe[src*="youjizz.com"]',
+    'iframe[src*="hclips.com"]',
   ].join(", "),
 
   // UI elements

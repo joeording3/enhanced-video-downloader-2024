@@ -232,41 +232,37 @@ def stop_process_by_pid(pid: int) -> None:
 
 def find_server_processes_cli() -> list[dict[str, int | str | None]]:
     """
-    List running server processes by reading lock file.
+    List running server processes using the lock file only.
 
-    Identifies processes recorded in the lock file and retrieves their PID,
-    port, and uptime if still active.
+    This helper is intended for CLI status output and stop/restart flows where the lock file is the
+    source of truth for the actively managed instance. It does not perform a full process-table scan
+    (use `find_server_processes()` for that broader discovery).
 
     Returns
     -------
-    List[Dict[str, Optional[Union[int, str]]]]
-        List of dictionaries each containing 'pid', 'port', and 'uptime'.
+    list[dict[str, int | str | None]]
+        Each entry includes `pid`, `port`, and `uptime` when available. Empty list if no lock.
     """
-    procs: list[dict[str, int | str | None]] = []
     if not LOCK_FILE.exists():
-        return procs
+        return []
 
-    # Use server.lock.get_lock_pid_port to support both 'pid:port' and JSON lock formats
-    pid_port = _get_lock_pid_port(LOCK_FILE)
-    if not pid_port:
-        return procs
-    pid, port = pid_port
-    # Compute uptime
+    entities: list[dict[str, int | str | None]] = []
     try:
-        proc = psutil.Process(pid)
-        uptime = int(time.time() - proc.create_time())
-    except (psutil.NoSuchProcess, psutil.AccessDenied) as e_psutil:
-        helper_log.warning(
-            f"Could not get process info for PID {pid} from lock file "
-            + f"(psutil error: {e_psutil}). Process might have exited or check permissions."
-        )
-        return procs
-    except Exception as e_uptime:
-        helper_log.warning(f"Could not determine uptime for PID {pid}: {e_uptime}")
-        return procs
-    procs.append({"pid": pid, "port": port, "uptime": uptime})
-
-    return procs
+        pid_port = _get_lock_pid_port(LOCK_FILE)
+        if not pid_port:
+            return []
+        pid, port = pid_port
+        if not psutil.pid_exists(pid):
+            return []
+        try:
+            proc = psutil.Process(pid)
+            uptime = int(time.time() - proc.create_time())
+        except Exception:
+            uptime = None
+        entities.append({"pid": pid, "port": port, "uptime": uptime})
+    except Exception:
+        helper_log.debug("Failed to read lock-referenced process", exc_info=True)
+    return entities
 
 
 def resume_failed_downloads(
@@ -1108,6 +1104,7 @@ def run_gunicorn_server(port: int, workers: int, daemon: bool) -> None:
 
         # Resolve a single log file path and wire Gunicorn to it by default
         from .logging_setup import resolve_log_path
+
         project_root = Path(__file__).parent.parent
         env_log = os.getenv("LOG_FILE")
         cfg_log = config.get_value("log_path")

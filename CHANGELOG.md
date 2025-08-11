@@ -7,16 +7,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Changed
+### Additional Changes
+
+- Tooling: Resolved ESLint/Prettier failures blocking `make all`.
+  - Cleaned up Playwright E2E spec formatting and empty catch blocks; renamed unused imports.
+  - Ran Prettier write across repo, including JSON under `server/data/`.
+  - Confirmed lint, format-check, tests, and coverage all pass via `make all`.
 
 - Options page: Consolidated the "Runtime (requires restart)" info block into the
-- Options page: Console Log Level now shows per-option explanations (Debug/Info/Warning/Error/Critical)
-  and uses a dedicated validator. Removed noisy "Field is valid" message for generic dropdowns to
-  reduce UI clutter. Console log level is normalized to the extension logger levels at runtime
-  (warning→warn, critical→error).
-  "Server Configuration" section and moved the "Save Settings" and "Restart Server" buttons there.
-  This improves discoverability of settings that only apply after restart and keeps related actions
-  together. No functional changes; element IDs unchanged (`#save-settings`, `#restart-server`).
+- Options page: Console Log Level now shows per-option explanations
+  (Debug/Info/Warning/Error/Critical) and uses a dedicated validator. Removed noisy "Field is valid"
+  message for generic dropdowns to reduce UI clutter. Console log level is normalized to the
+  extension logger levels at runtime (warning→warn, critical→error). "Server Configuration" section
+  and moved the "Save Settings" and "Restart Server" buttons there. This improves discoverability of
+  settings that only apply after restart and keeps related actions together. No functional changes;
+  element IDs unchanged (`#save-settings`, `#restart-server`).
 - **Mutation testing configuration optimized**:
   - **JS/TS (Stryker)**: coverageAnalysis off for stability, higher concurrency and test runner
     reuse, ignoreStatic disabled for compatibility; add fast/minimal scripts; disable Jest coverage
@@ -70,13 +75,25 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `evd-visible`, `evd-on-dark`, `evd-on-light`), unified z-index variable (`--z-max`), and
   consolidated floating button states into `content.css`. Updated TS to toggle classes instead of
   setting inline `display`/`opacity`.
-  - Added missing CSS variables and dark-theme notification aliases; removed non-standard `composes:`
-    in CSS, replacing with explicit component styles. Unified list/log backgrounds to
-    `--container-bg`, headers to `--header-bg`, and standardized text colors using `--label-text` and
-    `--text-secondary`.
+  - Added missing CSS variables and dark-theme notification aliases; removed non-standard
+    `composes:` in CSS, replacing with explicit component styles. Unified list/log backgrounds to
+    `--container-bg`, headers to `--header-bg`, and standardized text colors using `--label-text`
+    and `--text-secondary`.
+  - Popup theme cleanup: removed `body.dark-theme` selector overrides from `extension/ui/popup.css`.
+    Dark/light modes are now fully driven by CSS variables. Added theme aliases in
+    `extension/ui/themes.css` to map `--row-alt-bg`, `--bg-elevated`, and `--error-bg-tint-light` to
+    their dark equivalents for consistent styling without duplicate rules.
 - Code Quality: Eliminated remaining pyright warnings by tightening types in `config_bp.py` and
   explicitly referencing nested Flask error handler in `__init__.py`. Fixed implicit string
   concatenation in `download_bp.py` and cleaned import ordering in CLI status command.
+- CLI logging/output hygiene:
+  - Switched CLI console logging to a plain, human-readable formatter and default level WARNING (use
+    `--verbose` for INFO/DEBUG). This prevents structured JSON logs from polluting stdout.
+  - Introduced `setup_cli_logging(verbose)` and updated `server/cli_main.py` to keep stdout reserved
+    for command output; all logs go to stderr.
+  - Wired Gunicorn `accesslog`/`errorlog` to the active `LOG_FILE` by default when starting via CLI.
+  - Suppress child server process stdout/stderr in foreground mode to avoid leaking JSON logs to the
+    terminal. Structured NDJSON logs continue to be written to the log file.
 - Frontend: Standardized API usage to current endpoints (`/api/health`, `/api/logs`,
   `/api/logs/clear`). Updated tests to reflect non-throwing error handling and contrast-aware button
   styling. Removed legacy log endpoint fallbacks and adjusted YouTube enhancement positioning
@@ -92,18 +109,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     client-facing error text.
   - Switched server logging to structured NDJSON format for both console and file outputs. Each log
     is a single JSON object per line. Request logs now include `start_ts` and `duration_ms` when
-    available for easy sorting and latency analysis. Log initialization and rotation entries are also
-    emitted as JSON lines.
-  - On startup, the server now writes an explicit INFO line `Server starting on <host>:<port>` to the
-    active log file. When running under Gunicorn via CLI helpers, Gunicorn access and error logs are
-    wired by default to the same file (`accesslog`/`errorlog`), ensuring a single source of logs.
+    available for easy sorting and latency analysis. Log initialization and rotation entries are
+    also emitted as JSON lines.
+  - On startup, the server now writes an explicit INFO line `Server starting on <host>:<port>` to
+    the active log file. When running under Gunicorn via CLI helpers, Gunicorn access and error logs
+    are wired by default to the same file (`accesslog`/`errorlog`), ensuring a single source of
+    logs.
   - Tests now run with `ENVIRONMENT=testing`, redirect server logs to a per-test temporary file via
-    `LOG_FILE`, and default `SERVER_PORT` to the testing port (5006) to avoid conflicts with a locally
-    running production server and to prevent test noise in the main `server_output.log`.
-  - Session-level logging isolation: added a session-scoped autouse fixture that sets `LOG_FILE` to a
-    repo-local `tmp/server_output_test.session.log` before any tests run. This ensures even tests that
-    create ad-hoc Flask apps (without the app factory) write to a test log file and never to the
-    production `server_output.log`.
+    `LOG_FILE`, and default `SERVER_PORT` to the testing port (5006) to avoid conflicts with a
+    locally running production server and to prevent test noise in the main `server_output.log`.
+  - Session-level logging isolation: added a session-scoped autouse fixture that sets `LOG_FILE` to
+    a repo-local `tmp/server_output_test.session.log` before any tests run. This ensures even tests
+    that create ad-hoc Flask apps (without the app factory) write to a test log file and never to
+    the production `server_output.log`.
   - Auto-port for tests: a session-scoped fixture dynamically selects an available port within the
     configured test range, exposes it as `test_server_port`, and injects it via `SERVER_PORT` for
     each test. Added `TEST_SERVER_PORT=5006` to `.env` as a documented default.
@@ -172,9 +190,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- Options: Removed the directory chooser button. The download directory is now entered as a
-  pathname in the text field. Validation accepts absolute paths and `~` (home-relative) which the
-  backend expands.
+- Options: Removed the directory chooser button. The download directory is now entered as a pathname
+  in the text field. Validation accepts absolute paths and `~` (home-relative) which the backend
+  expands.
 
 ### Testing & Tooling
 

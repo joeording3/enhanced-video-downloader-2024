@@ -57,16 +57,16 @@
   --btn-color: var(--text-primary);
   --btn-hover: var(--bg-tertiary);
   border: 1px solid var(--border-secondary);
-  box-shadow: 0 1px 0 rgb(0 0 0 / 0.12);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 1px 0 rgb(0 0 0 / 0.12);
 }
 
 /* Dark theme adjustments for secondary buttons: increase contrast */
 body.dark-theme .btn--secondary {
   --btn-bg: color-mix(in srgb, var(--bg-button-dark), #000 10%);
   --btn-color: var(--text-primary-dark);
-  --btn-hover: color-mix(in srgb, var(--bg-tertiary-dark), #000 10%);
+  --btn-hover: color-mix(in srgb, var(--bg-tertiary-dark), #000 14%);
   border-color: var(--border-secondary-dark);
-  box-shadow: 0 1px 0 rgb(255 255 255 / 0.06);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 1px 0 rgb(0 0 0 / 0.4);
 }
 
 /* Button Sizes */

@@ -2,8 +2,7 @@
  * Options page functionality for the Enhanced Video Downloader extension.
  * Handles extension settings, configuration, and user preferences.
  */
-// @ts-nocheck
-
+// Note: keep strict typing; avoid no-check to preserve type safety
 
 import { safeParse } from "./lib/utils";
 import { logger } from "./core/logger";
@@ -106,6 +105,99 @@ export function initOptionsPage(): void {
   setupLiveSave();
   loadErrorHistory();
   logger.debug("Options page initialized", { component: "options" });
+
+  // Queue Admin wiring
+  const queueRefreshBtn = document.getElementById("queue-refresh") as HTMLButtonElement | null;
+  const queueClearBtn = document.getElementById("queue-clear") as HTMLButtonElement | null;
+  const queueList = document.getElementById("queue-list") as HTMLUListElement | null;
+
+  const renderQueue = (ids: string[]) => {
+    if (!queueList) return;
+    queueList.innerHTML = "";
+    if (ids.length === 0) {
+      const li = document.createElement("li");
+      li.textContent = "Queue is empty";
+      queueList.appendChild(li);
+      return;
+    }
+    ids.forEach(id => {
+      const li = document.createElement("li");
+      li.dataset.downloadId = id;
+      li.textContent = id;
+      // Draggable for reordering
+      li.setAttribute("draggable", "true");
+      li.addEventListener("dragstart", e => {
+        (e.dataTransfer as DataTransfer).setData("text/plain", id);
+        li.classList.add("dragging");
+      });
+      li.addEventListener("dragover", e => {
+        e.preventDefault();
+        li.classList.add("drag-over");
+      });
+      li.addEventListener("dragleave", () => li.classList.remove("drag-over"));
+      li.addEventListener("drop", () => {
+        li.classList.remove("drag-over");
+        const all = Array.from(queueList.querySelectorAll("li"));
+        const newOrder = all.map(el => el.dataset.downloadId!).filter(Boolean);
+        // Optimistic reorder locally
+        renderQueue(newOrder);
+        // Notify background and server
+        chrome.runtime.sendMessage({ type: "reorderQueue", queue: newOrder }, () => {});
+        // Best-effort server reorder
+        chrome.storage.local.get("serverPort", res => {
+          const port = (res as any).serverPort;
+          if (!port) return;
+          fetch(`http://127.0.0.1:${port}/api/queue/reorder`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ order: newOrder }),
+          }).catch(() => {});
+        });
+      });
+      li.addEventListener("dragend", () => li.classList.remove("dragging"));
+      // Remove button per item
+      const rm = document.createElement("button");
+      rm.textContent = "Remove";
+      rm.className = "btn btn--secondary";
+      rm.addEventListener("click", () => {
+        chrome.runtime.sendMessage({ type: "removeFromQueue", downloadId: id }, () => {
+          li.remove();
+        });
+      });
+      li.appendChild(document.createTextNode(" "));
+      li.appendChild(rm);
+      queueList.appendChild(li);
+    });
+  };
+
+  const refreshQueue = () => {
+    chrome.runtime.sendMessage({ type: "getQueue" }, (resp: any) => {
+      if (resp && Array.isArray(resp.queue)) {
+        renderQueue(resp.queue);
+      } else {
+        renderQueue([]);
+      }
+    });
+  };
+
+  if (queueRefreshBtn) {
+    queueRefreshBtn.addEventListener("click", refreshQueue);
+  }
+  if (queueClearBtn) {
+    queueClearBtn.addEventListener("click", () => {
+      renderQueue([]);
+      chrome.runtime.sendMessage({ type: "reorderQueue", queue: [] }, () => {});
+      chrome.storage.local.get("serverPort", res => {
+        const port = (res as any).serverPort;
+        if (!port) return;
+        fetch(`http://127.0.0.1:${port}/api/queue/reorder`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ order: [] }),
+        }).catch(() => {});
+      });
+    });
+  }
 }
 
 /**
@@ -249,7 +341,9 @@ export function populateFormFields(config: ServerConfig): void {
 
   // Update info messages to reflect current selections
   const logLevelSelect = document.getElementById("settings-log-level") as HTMLSelectElement;
-  const consoleLogLevelSelect = document.getElementById("settings-console-log-level") as HTMLSelectElement;
+  const consoleLogLevelSelect = document.getElementById(
+    "settings-console-log-level"
+  ) as HTMLSelectElement;
   const formatSelect = document.getElementById("settings-ytdlp-format") as HTMLSelectElement;
 
   if (logLevelSelect) {
@@ -381,7 +475,9 @@ export function setupEventListeners(): void {
  * Server Configuration section continues to use explicit Save + Restart flow.
  */
 function setupLiveSave(): void {
-  const sendPartialUpdate = async (partial: Partial<ServerConfig & Record<string, any>>): Promise<void> => {
+  const sendPartialUpdate = async (
+    partial: Partial<ServerConfig & Record<string, any>>
+  ): Promise<void> => {
     try {
       setStatus("settings-status", "Saving...", false, 1500);
       const response = await new Promise<any>((resolve, reject) => {
@@ -396,7 +492,12 @@ function setupLiveSave(): void {
       if (response && response.status === "success") {
         setStatus("settings-status", "Saved", false, 1200);
       } else {
-        setStatus("settings-status", "Save failed: " + (response?.message || "Unknown error"), true, 3000);
+        setStatus(
+          "settings-status",
+          "Save failed: " + (response?.message || "Unknown error"),
+          true,
+          3000
+        );
       }
     } catch (e) {
       setStatus(
@@ -419,7 +520,9 @@ function setupLiveSave(): void {
   };
 
   // Download Settings (live save)
-  const downloadDirInput = document.getElementById("settings-download-dir") as HTMLInputElement | null;
+  const downloadDirInput = document.getElementById(
+    "settings-download-dir"
+  ) as HTMLInputElement | null;
   if (downloadDirInput) {
     const commit = () => {
       if (validateFolder(downloadDirInput)) {
@@ -440,7 +543,9 @@ function setupLiveSave(): void {
     });
   }
 
-  const ytdlpConc = document.getElementById("settings-ytdlp-concurrent-fragments") as HTMLInputElement | null;
+  const ytdlpConc = document.getElementById(
+    "settings-ytdlp-concurrent-fragments"
+  ) as HTMLInputElement | null;
   if (ytdlpConc) {
     const commitConc = () => {
       const raw = ytdlpConc.value.trim();
@@ -456,7 +561,9 @@ function setupLiveSave(): void {
     onEnterCommit(ytdlpConc, commitConc);
   }
 
-  const allowPlaylists = document.getElementById("settings-allow-playlists") as HTMLInputElement | null;
+  const allowPlaylists = document.getElementById(
+    "settings-allow-playlists"
+  ) as HTMLInputElement | null;
   if (allowPlaylists) {
     allowPlaylists.addEventListener("change", () => {
       void sendPartialUpdate({ allow_playlists: !!allowPlaylists.checked });
@@ -464,7 +571,9 @@ function setupLiveSave(): void {
   }
 
   // Behavior Settings (live save)
-  const enableHistory = document.getElementById("settings-enable-history") as HTMLInputElement | null;
+  const enableHistory = document.getElementById(
+    "settings-enable-history"
+  ) as HTMLInputElement | null;
   if (enableHistory) {
     enableHistory.addEventListener("change", () => {
       void sendPartialUpdate({ enable_history: !!enableHistory.checked });
@@ -504,9 +613,13 @@ export function setupValidation(): void {
   }
 
   // Console log level validation
-  const consoleLogLevelSelect = document.getElementById("settings-console-log-level") as HTMLSelectElement;
+  const consoleLogLevelSelect = document.getElementById(
+    "settings-console-log-level"
+  ) as HTMLSelectElement;
   if (consoleLogLevelSelect) {
-    consoleLogLevelSelect.addEventListener("change", () => validateConsoleLogLevel(consoleLogLevelSelect));
+    consoleLogLevelSelect.addEventListener("change", () =>
+      validateConsoleLogLevel(consoleLogLevelSelect)
+    );
   }
 
   // Format validation
@@ -866,7 +979,9 @@ function validateAllFields(): boolean {
 export function setupInfoMessages(): void {
   const formatSelect = document.getElementById("settings-ytdlp-format") as HTMLSelectElement;
   const logLevelSelect = document.getElementById("settings-log-level") as HTMLSelectElement;
-  const consoleLogLevelSelect = document.getElementById("settings-console-log-level") as HTMLSelectElement;
+  const consoleLogLevelSelect = document.getElementById(
+    "settings-console-log-level"
+  ) as HTMLSelectElement;
 
   if (formatSelect) {
     formatSelect.addEventListener("change", () => updateFormatInfo(formatSelect));
@@ -879,7 +994,9 @@ export function setupInfoMessages(): void {
   }
 
   if (consoleLogLevelSelect) {
-    consoleLogLevelSelect.addEventListener("change", () => updateConsoleLogLevelInfo(consoleLogLevelSelect));
+    consoleLogLevelSelect.addEventListener("change", () =>
+      updateConsoleLogLevelInfo(consoleLogLevelSelect)
+    );
     updateConsoleLogLevelInfo(consoleLogLevelSelect); // Initial update
   }
 }
@@ -1067,7 +1184,8 @@ export function setupLogsUI(): void {
           // Plain text within message: "-> 200" possibly followed by punctuation/space/EOL
           const isStatus200Arrow = /->\s*200(\b|\s|[,}])?/.test(line);
           // JSON for server.request logger with 200 status (robust across spacing)
-          const isServerRequest200 = /"logger"\s*:\s*"server\.request"[\s\S]*?"status"\s*:\s*"?200"?/i.test(line);
+          const isServerRequest200 =
+            /"logger"\s*:\s*"server\.request"[\s\S]*?"status"\s*:\s*"?200"?/i.test(line);
           return !(isWerkzeug || isStatus200Json || isStatus200Arrow || isServerRequest200);
         })
         .join("\n");
@@ -1101,8 +1219,14 @@ export function setupLogsUI(): void {
           const jsonPart = line.slice(firstBrace);
           try {
             const obj: any = JSON.parse(jsonPart);
-            const startTs: number | undefined = typeof obj.start_ts === "number" ? obj.start_ts : undefined;
-            const iso = typeof obj.ts === "string" ? obj.ts : startTs ? new Date(startTs).toISOString() : undefined;
+            const startTs: number | undefined =
+              typeof obj.start_ts === "number" ? obj.start_ts : undefined;
+            const iso =
+              typeof obj.ts === "string"
+                ? obj.ts
+                : startTs
+                ? new Date(startTs).toISOString()
+                : undefined;
             // Derive level from JSON or from any prefix before the JSON
             let level: string | undefined = undefined;
             if (typeof obj.level === "string") {
@@ -1126,10 +1250,16 @@ export function setupLogsUI(): void {
         }
         // If we have NDJSON entries, optionally sort by start_ts according to UI toggle
         if (entries.length > 0) {
-          const recentFirst = !!(document.getElementById("log-recent-first") as HTMLInputElement | null)?.checked;
+          const recentFirst = !!(
+            document.getElementById("log-recent-first") as HTMLInputElement | null
+          )?.checked;
           const withStart = entries.filter(e => typeof e._startTs === "number");
           if (withStart.length > 0) {
-            entries.sort((a, b) => (recentFirst ? (b._startTs ?? 0) - (a._startTs ?? 0) : (a._startTs ?? 0) - (b._startTs ?? 0)));
+            entries.sort((a, b) =>
+              recentFirst
+                ? (b._startTs ?? 0) - (a._startTs ?? 0)
+                : (a._startTs ?? 0) - (b._startTs ?? 0)
+            );
           }
         }
       } catch {
@@ -1139,7 +1269,51 @@ export function setupLogsUI(): void {
 
       // If NDJSON was not present, parse typical server log lines (legacy) and group continuation/trace lines
       if (entries.length === 0) {
-        var lineRegex = /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:[,.]\d{3})?)\s*-\s*([^-]+?)\s*-\s*(DEBUG|INFO|WARNING|ERROR|CRITICAL|WARN|TRACE)\s*-\s*([\s\S]*)$/;
+        var lineRegex2 =
+          /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:[,.]\d{3})?)\s*-\s*([^-]+?)\s*-\s*(DEBUG|INFO|WARNING|ERROR|CRITICAL|WARN|TRACE)\s*-\s*([\s\S]*)$/;
+        var levelMap2: Record<string, string> = {
+          warn: "warning",
+          warning: "warning",
+          error: "error",
+          critical: "critical",
+          info: "info",
+          debug: "debug",
+          trace: "debug",
+        };
+
+        var current2: any = null;
+        for (var i2 = 0; i2 < rawLines.length; i2 += 1) {
+          var line2 = rawLines[i2] || "";
+          var m2 = line2.match(lineRegex2);
+          if (m2) {
+            if (current2) entries.push(current2);
+            var lvlRaw2 = (m2[3] || "").trim().toLowerCase();
+            current2 = {
+              timestamp: (m2[1] || "").trim(),
+              logger: (m2[2] || "").trim(),
+              level: levelMap2[lvlRaw2] || "info",
+              message: (m2[4] || "").trim(),
+              details: [],
+            } as any;
+          } else if (
+            current2 &&
+            (line2.indexOf(" ") === 0 ||
+              line2.indexOf("\t") === 0 ||
+              /^(Traceback|File "|\s*\.\.\.|\s*at )/.test(line2))
+          ) {
+            current2.details.push(line2);
+          } else if (line2.trim().length > 0) {
+            if (current2) entries.push(current2);
+            current2 = { message: line2, details: [], level: "info" } as any;
+          } else if (current2) {
+            current2.details.push("");
+          }
+        }
+        if (current2) entries.push(current2);
+      }
+      if (entries.length === 0) {
+        var lineRegex =
+          /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:[,.]\d{3})?)\s*-\s*([^-]+?)\s*-\s*(DEBUG|INFO|WARNING|ERROR|CRITICAL|WARN|TRACE)\s*-\s*([\s\S]*)$/;
         var levelMap: Record<string, string> = {
           warn: "warning",
           warning: "warning",
@@ -1163,64 +1337,22 @@ export function setupLogsUI(): void {
               level: levelMap[lvlRaw] || "info",
               message: (m[4] || "").trim(),
               details: [],
-            } as any;
+            };
           } else if (
             current &&
             (line.indexOf(" ") === 0 ||
               line.indexOf("\t") === 0 ||
-              /^(Traceback|File \"|\s*\.\.\.|\s*at )/.test(line))
+              /^(Traceback|File "|\s*\.{3}|\s*at )/.test(line))
           ) {
             current.details.push(line);
           } else if (line.trim().length > 0) {
             if (current) entries.push(current);
-            current = { message: line, details: [], level: "info" } as any;
+            current = { message: line, details: [], level: "info" };
           } else if (current) {
             current.details.push("");
           }
         }
         if (current) entries.push(current);
-      }
-      if (entries.length === 0) {
-      var lineRegex = /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:[,.]\d{3})?)\s*-\s*([^-]+?)\s*-\s*(DEBUG|INFO|WARNING|ERROR|CRITICAL|WARN|TRACE)\s*-\s*([\s\S]*)$/;
-      var levelMap: Record<string, string> = {
-        warn: "warning",
-        warning: "warning",
-        error: "error",
-        critical: "critical",
-        info: "info",
-        debug: "debug",
-        trace: "debug",
-      };
-
-      var current: any = null;
-      for (var i = 0; i < rawLines.length; i += 1) {
-        var line = rawLines[i] || "";
-        var m = line.match(lineRegex);
-        if (m) {
-          if (current) entries.push(current);
-          var lvlRaw = (m[3] || "").trim().toLowerCase();
-          current = {
-            timestamp: (m[1] || "").trim(),
-            logger: (m[2] || "").trim(),
-            level: levelMap[lvlRaw] || "info",
-            message: (m[4] || "").trim(),
-            details: [],
-          };
-        } else if (
-          current &&
-          (line.indexOf(" ") === 0 ||
-            line.indexOf("\t") === 0 ||
-            /^(Traceback|File \"|\s*\.{3}|\s*at )/.test(line))
-        ) {
-          current.details.push(line);
-        } else if (line.trim().length > 0) {
-          if (current) entries.push(current);
-          current = { message: line, details: [], level: "info" };
-        } else if (current) {
-          current.details.push("");
-        }
-      }
-      if (current) entries.push(current);
       }
 
       // After building entries, apply UI limit AFTER filtering
@@ -1275,53 +1407,30 @@ export function setupLogsUI(): void {
     }
   };
 
-  const fetchAndRender = async (): Promise<void> => {
+  const fetchAndRender = (): void => {
     const uiLimit = limitSelect ? parseInt(limitSelect.value, 10) : 500;
     const recent = recentFirstCheckbox ? !!recentFirstCheckbox.checked : true;
-
-    const getLogsText = (lines: number): Promise<string> =>
-      new Promise(resolve => {
-        chrome.runtime.sendMessage({ type: "getLogs", lines, recent }, (response: any) => {
-          if (chrome.runtime.lastError) {
-            resolve("Error: " + chrome.runtime.lastError.message);
-            return;
-          }
-          if (response && response.status === "success") {
-            resolve(response.data || "");
-          } else {
-            resolve("Error: " + (response?.message || "Failed to fetch logs"));
-          }
-        });
-      });
-
-    const countFilteredLines = (text: string): number => {
-      const filtered = applyFilters(text);
-      return filtered
-        .split("\n")
-        .map(s => s.trim())
-        .filter(s => s.length > 0).length;
-    };
-
-    // Start with an estimate; double until we have at least uiLimit filtered lines or we hit caps
-    const hardCap = 50000; // safety cap
-    let batch = (() => {
-      if (!Number.isFinite(uiLimit)) return 2000;
-      if (uiLimit <= 0) return 10000; // "All" in UI
-      return Math.min(hardCap, Math.max(uiLimit * 10, 2000));
+    // Request more lines than UI limit so client-side filters don't empty the view
+    const requestedLines = (() => {
+      if (!Number.isFinite(uiLimit)) return 1000;
+      if (uiLimit <= 0) return 5000; // "All" in UI: pull a generous chunk
+      const scaled = uiLimit * 10;
+      return Math.min(20000, Math.max(scaled, 1000));
     })();
-
-    let text = await getLogsText(batch);
-    let filteredCount = countFilteredLines(text);
-
-    let iterations = 0;
-    while (uiLimit > 0 && filteredCount < uiLimit && batch < hardCap && iterations < 5) {
-      batch = Math.min(hardCap, batch * 2);
-      text = await getLogsText(batch);
-      filteredCount = countFilteredLines(text);
-      iterations += 1;
-    }
-
-    renderLogs(text);
+    chrome.runtime.sendMessage(
+      { type: "getLogs", lines: requestedLines, recent },
+      (response: any) => {
+        if (chrome.runtime.lastError) {
+          renderLogs("Error: " + chrome.runtime.lastError.message);
+          return;
+        }
+        if (response && response.status === "success") {
+          renderLogs(response.data || "");
+        } else {
+          renderLogs("Error: " + (response?.message || "Failed to fetch logs"));
+        }
+      }
+    );
   };
 
   refreshBtn?.addEventListener("click", () => {
@@ -1401,7 +1510,9 @@ export async function saveSettings(event: Event): Promise<void> {
       enable_history: formData.get("enable-history") === "on",
       log_level: formData.get("log-level") as string,
       // Persist console log level from dedicated field if present; else mirror log_level
-      console_log_level: ((formData.get("console-log-level") as string) || (formData.get("log-level") as string) || "info") as any,
+      console_log_level: ((formData.get("console-log-level") as string) ||
+        (formData.get("log-level") as string) ||
+        "info") as any,
       yt_dlp_options: {
         format: formData.get("ytdlp-format") as string,
         concurrent_fragments: (() => {
