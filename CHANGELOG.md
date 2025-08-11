@@ -10,6 +10,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 
 - Options page: Consolidated the "Runtime (requires restart)" info block into the
+- Options page: Console Log Level now shows per-option explanations (Debug/Info/Warning/Error/Critical)
+  and uses a dedicated validator. Removed noisy "Field is valid" message for generic dropdowns to
+  reduce UI clutter. Console log level is normalized to the extension logger levels at runtime
+  (warning→warn, critical→error).
   "Server Configuration" section and moved the "Save Settings" and "Restart Server" buttons there.
   This improves discoverability of settings that only apply after restart and keeps related actions
   together. No functional changes; element IDs unchanged (`#save-settings`, `#restart-server`).
@@ -86,9 +90,23 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - Documented log path precedence in README: `LOG_FILE` env → config `log_path` → defaults.
   - Improved internal validation message for `lines` parameter in logs endpoint without changing
     client-facing error text.
+  - Switched server logging to structured NDJSON format for both console and file outputs. Each log
+    is a single JSON object per line. Request logs now include `start_ts` and `duration_ms` when
+    available for easy sorting and latency analysis. Log initialization and rotation entries are also
+    emitted as JSON lines.
   - On startup, the server now writes an explicit INFO line `Server starting on <host>:<port>` to the
     active log file. When running under Gunicorn via CLI helpers, Gunicorn access and error logs are
     wired by default to the same file (`accesslog`/`errorlog`), ensuring a single source of logs.
+  - Tests now run with `ENVIRONMENT=testing`, redirect server logs to a per-test temporary file via
+    `LOG_FILE`, and default `SERVER_PORT` to the testing port (5006) to avoid conflicts with a locally
+    running production server and to prevent test noise in the main `server_output.log`.
+  - Session-level logging isolation: added a session-scoped autouse fixture that sets `LOG_FILE` to a
+    repo-local `tmp/server_output_test.session.log` before any tests run. This ensures even tests that
+    create ad-hoc Flask apps (without the app factory) write to a test log file and never to the
+    production `server_output.log`.
+  - Auto-port for tests: a session-scoped fixture dynamically selects an available port within the
+    configured test range, exposes it as `test_server_port`, and injects it via `SERVER_PORT` for
+    each test. Added `TEST_SERVER_PORT=5006` to `.env` as a documented default.
   - `server/video_downloader_server.py` now raises ImportError and is documented as removed
   - Removed legacy `server/cli_commands/*` package entirely; migrated `system_maintenance` to
     `server/cli/system.py`; updated imports/tests; all CLI now under `server/cli/*`.
@@ -154,8 +172,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- Options page Choose button wired to directory picker (`settings-folder-picker`), aligning with
-  current implementation in `options.ts`.
+- Options: Directory picker ('Choose') now derives a practical path for the backend. Browsers do not
+  expose full filesystem paths, so the UI populates the download directory by combining the selected
+  folder name with the current absolute value's parent (or `~/Downloads` when unset). Validation now
+  also treats `~` prefixes as acceptable home-relative paths, matching backend expansion logic.
 
 ### Testing & Tooling
 

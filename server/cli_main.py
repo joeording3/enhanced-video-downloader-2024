@@ -94,11 +94,11 @@ def _cli_set_logging(verbose: bool) -> None:
     if verbose:
         setup_logging(log_level="DEBUG")
         log.setLevel(logging.DEBUG)
-        log.info("Verbose logging enabled")
+        log.debug("Verbose logging enabled")
     else:
+        # Default to INFO for normal operation per tests/expectations
         setup_logging(log_level="INFO")
         log.setLevel(logging.INFO)
-        log.info("Console logging set to warnings and errors only")
 
 
 # Helper to resolve download directory for start_server
@@ -547,6 +547,8 @@ def stop_server(_ctx: click.Context, timeout: int, force: bool):
     None
         This command does not return a value.
     """
+    # Configure logging at WARNING by default to keep CLI output clean
+    _cli_set_logging(False)
     _run_stop_server_enhanced(timeout, force)
 
 
@@ -646,6 +648,9 @@ def restart_server_command(
     None
         This command does not return a value.
     """
+    # Configure logging early to avoid noisy INFO logs unless --verbose is set
+    _cli_set_logging(verbose)
+
     # If --fg flag is used, override daemon setting to run in foreground
     if fg:
         daemon = False

@@ -5,6 +5,7 @@ Provides the application factory to create the Flask app.
 
 import logging
 import os
+from datetime import datetime
 from pathlib import Path
 
 from flask import Flask, current_app, jsonify, request
@@ -110,8 +111,9 @@ def create_app(config: Config) -> Flask:
     # Only set when not explicitly provided by the environment
     os.environ.setdefault("LOG_FILE", default_log_path)
 
-    # Initialize logging with file output to a stable, known path so /logs works
-    setup_logging(config.get_value("log_level", "INFO"), default_log_path)
+    # Initialize logging with file output; honor LOG_FILE env when provided
+    active_log_path_for_setup = os.getenv("LOG_FILE", default_log_path)
+    setup_logging(config.get_value("log_level", "INFO"), active_log_path_for_setup)
 
     # Ensure Werkzeug request logs flow into our file logger instead of stderr
     try:
@@ -166,18 +168,48 @@ def create_app(config: Config) -> Flask:
     # Add security headers to all responses
     app.after_request(add_security_headers)
 
-    # Log API requests (method, path, status) at INFO to ensure visibility in file logs
+    # Log API requests (method, path, status) with structured timing fields
     @app.after_request  # type: ignore[misc]
     def _log_api_requests(response: FlaskResponse) -> FlaskResponse:
         try:
             if request.path.startswith("/api"):
+                # Compute duration based on timestamp captured in before_request
+                start_ts_ms = None
+                duration_ms = None
+                # Prefer flask.g storage to avoid private attribute warnings
+                try:
+                    from flask import g as flask_g  # local import to avoid top-level import cycles
+                except Exception:
+                    flask_g = None  # type: ignore[assignment]
+                start_attr = getattr(flask_g, "evd_request_start", None) if flask_g is not None else None
+                if isinstance(start_attr, (float | int)):
+                    start_ts_ms = int(float(start_attr) * 1000)
+                    duration_ms = int((datetime.now().timestamp() - float(start_attr)) * 1000)
+
                 logging.getLogger("server.request").info(
-                    "%s %s -> %s", request.method, request.path, response.status_code
+                    "%s %s -> %s",
+                    request.method,
+                    request.path,
+                    response.status_code,
+                    extra={k: v for k, v in {
+                        "start_ts": start_ts_ms,
+                        "duration_ms": duration_ms,
+                        "status": response.status_code,
+                    }.items() if v is not None},
                 )
         except Exception:
             # Never block responses due to logging issues
             pass
         return response
+
+    @app.before_request  # type: ignore[misc]
+    def _record_start_time() -> None:
+        # Store start time on flask.g to satisfy linters and keep request scope
+        try:
+            from flask import g as flask_g  # local import to avoid top-level import cycles
+            flask_g.evd_request_start = datetime.now().timestamp()
+        except Exception:
+            pass
 
     # Error handlers (registered at module scope for static analysis friendliness)
     app.register_error_handler(413, handle_request_entity_too_large)

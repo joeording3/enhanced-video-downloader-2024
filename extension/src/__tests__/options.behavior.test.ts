@@ -1,8 +1,6 @@
 /**
  * Options page behavior tests: load/save/log viewer/error history/theme interactions
  */
-// @ts-nocheck
-
 
 import {
   initOptionsPage,
@@ -39,7 +37,6 @@ describe("options.ts behavior", () => {
       <input id="log-recent-first" type="checkbox" />
       <input id="log-filter-werkzeug" type="checkbox" />
       <div id="log-display"></div>
-      <textarea id="logViewerTextarea"></textarea>
       <input id="log-toggle-auto" type="checkbox" />
       <ul id="error-history-list"></ul>
       <div id="port-validation"></div>
@@ -134,8 +131,8 @@ describe("options.ts behavior", () => {
     setupLogsUI();
     const refresh = document.getElementById("log-refresh") as HTMLButtonElement;
     refresh.click();
-    const txt = (document.getElementById("logViewerTextarea") as HTMLTextAreaElement).value;
-    expect(txt).toContain("log-line-1");
+    const pre = document.querySelector('#log-display pre') as HTMLElement | null;
+    expect(pre?.textContent || '').toContain('log-line-1');
   });
 
   it("loads error history via background", async () => {

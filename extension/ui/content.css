@@ -58,13 +58,13 @@
 
 /* Contrast-aware variants applied dynamically based on page background */
 .evd-on-dark {
-  background-color: rgba(255, 255, 255, 0.92) !important;
+  background-color: color-mix(in srgb, #fff, transparent 8%) !important;
   color: #000 !important;
   border-color: #000 !important;
 }
 
 .evd-on-light {
-  background-color: rgba(0, 0, 0, 0.72) !important;
+  background-color: color-mix(in srgb, #000, transparent 28%) !important;
   color: #fff !important;
   border-color: #fff !important;
 }

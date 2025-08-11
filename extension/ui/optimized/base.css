@@ -24,7 +24,7 @@ body {
   color: var(--text-color);
   margin: 0;
   padding: 0;
-  line-height: 1.6;
+  line-height: var(--line-height-normal);
   transition: var(--transition-normal);
 }
 
@@ -40,16 +40,30 @@ h3 {
 
 h1 {
   font-size: var(--font-size-2xl);
+  line-height: var(--line-height-tight);
 }
 h2 {
   font-size: var(--font-size-xl);
+  line-height: var(--line-height-tight);
 }
 h3 {
   font-size: var(--font-size-lg);
+  line-height: var(--line-height-tight);
 }
 
 p {
   margin: 0 0 var(--space-md);
+  line-height: var(--line-height-relaxed);
+}
+
+/* ===== PLACEHOLDER COLORS ===== */
+::placeholder {
+  color: var(--placeholder-text);
+  opacity: 1;
+}
+
+body.dark-theme ::placeholder {
+  color: var(--placeholder-text-dark);
 }
 
 a {

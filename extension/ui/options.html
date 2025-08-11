@@ -46,6 +46,7 @@
           <!-- Server Configuration Section -->
           <section class="settings-group" data-category="server">
             <h2 class="section-title">Server Configuration</h2>
+            <div class="settings-hint">The following settings only take effect after a server restart:</div>
             <div class="section-content">
               <fieldset>
                 <legend>Connection Settings</legend>
@@ -117,6 +118,10 @@
                       <option value="critical">Critical</option>
                     </select>
                     <div class="validation-message" id="settings-console-log-level-validation"></div>
+                      <div class="log-level-info" id="console-log-level-info">
+                        <span class="info-icon">Info</span>
+                        <span class="info-text">General info, warnings, and errors</span>
+                      </div>
                   </div>
                 </div>
 
@@ -137,33 +142,13 @@
                   <div class="settings-hint">Controls how many downloads run simultaneously (1–10).</div>
                 </div>
               </fieldset>
-                <!-- Moved from Behavior Settings: Runtime (requires restart) -->
-                <fieldset>
-                  <legend>Runtime (requires restart)</legend>
-                  <!-- Gunicorn controls removed: workers forced to 1 for correctness -->
-                  <div class="settings-hint">
-                    The following settings only take effect after a server restart:
-                  </div>
-                  <ul class="settings-list">
-                    <li>Server Port</li>
-                    <li>Log Level</li>
-                    <li>Console Log Level</li>
-                    <li>Max Concurrent Downloads</li>
-                    <li>Log File Path</li>
-                  </ul>
-                  <div class="settings-hint">
-                    Use the <strong>Restart Server</strong> button below after saving to apply these changes.
-                  </div>
-                </fieldset>
 
                 <!-- Save + Restart controls moved here from the bottom and Actions section -->
                 <div class="settings-actions">
                   <button type="submit" id="save-settings" class="btn btn--primary">
-                    <span>Save</span>
                     Save Settings
                   </button>
                   <button type="button" id="restart-server" class="btn btn--secondary">
-                    <span>Restart</span>
                     Restart Server
                   </button>
                 </div>
@@ -314,7 +299,6 @@
                   id="settings-resume-downloads"
                   class="btn btn--primary"
                 >
-                  <span>Play</span>
                   Resume Partial Downloads
                 </button>
                 <button
@@ -322,7 +306,6 @@
                   id="settings-clear-history"
                   class="btn btn--secondary"
                 >
-                  <span>Delete</span>
                   Clear History
                 </button>
                 <button
@@ -331,7 +314,6 @@
                   class="btn btn--secondary"
                   title="Clear all stored positions of the on-page download button across sites"
                 >
-                  <span>Reset</span>
                   Clear Button Positions
                 </button>
               </div>
@@ -396,7 +378,7 @@
                 </label>
               </div>
             </div>
-            <textarea id="logViewerTextarea" readonly></textarea>
+            <div id="log-display"></div>
           </div>
         </section>
 

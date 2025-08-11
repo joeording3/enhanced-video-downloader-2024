@@ -14,7 +14,7 @@
   color: var(--btn-color, var(--text-inverse));
   border: none;
   border-radius: var(--radius-md);
-  padding: var(--space-md) var(--space-lg);
+  padding: var(--button-padding-y) var(--button-padding-x);
   font-size: var(--font-size-md);
   font-weight: var(--font-weight-bold);
   cursor: pointer;
@@ -57,6 +57,16 @@
   --btn-color: var(--text-primary);
   --btn-hover: var(--bg-tertiary);
   border: 1px solid var(--border-secondary);
+  box-shadow: 0 1px 0 rgb(0 0 0 / 0.12);
+}
+
+/* Dark theme adjustments for secondary buttons: increase contrast */
+body.dark-theme .btn--secondary {
+  --btn-bg: color-mix(in srgb, var(--bg-button-dark), #000 10%);
+  --btn-color: var(--text-primary-dark);
+  --btn-hover: color-mix(in srgb, var(--bg-tertiary-dark), #000 10%);
+  border-color: var(--border-secondary-dark);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.06);
 }
 
 /* Button Sizes */
@@ -71,7 +81,7 @@
   color: var(--input-color, var(--text-primary));
   border: 1px solid var(--input-border, var(--border-secondary));
   border-radius: var(--radius-md);
-  padding: var(--space-sm) var(--space-md);
+  padding: var(--control-padding-y) var(--control-padding-x);
   font-size: var(--font-size-md);
   font-family: var(--font-family);
   transition: var(--transition-normal);
@@ -84,17 +94,17 @@
 .input:focus {
   outline: none;
   border-color: var(--input-focus-border, var(--border-focus));
-  box-shadow: var(--shadow-focus);
+  box-shadow: var(--shadow-focus, var(--focus-ring-light));
 }
 
 .input:invalid {
   border-color: var(--error);
-  box-shadow: 0 0 0 2px rgb(220 53 69 / 0.25);
+  box-shadow: var(--ring-error-light);
 }
 
 .input:valid {
   border-color: var(--success);
-  box-shadow: 0 0 0 2px rgb(40 167 69 / 0.25);
+  box-shadow: var(--ring-success-light);
 }
 
 /* Input Variants */

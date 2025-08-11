@@ -1,4 +1,3 @@
-// @ts-nocheck
 // eslint-env jest
 /**
  * Headless browser tests for Chrome extension UI using Playwright.

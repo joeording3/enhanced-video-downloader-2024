@@ -3,10 +3,17 @@ Configure logging for Enhanced Video Downloader server.
 
 This module defines functions to ensure log file availability and set up
 console and file logging based on application configuration.
+
+Logging format
+--------------
+- File and console logs are emitted as one-JSON-per-line (NDJSON) to enable
+  structured analysis and sorting (e.g., by ``start_ts`` or ``duration_ms``).
 """
 
+import json
 import logging
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
@@ -37,14 +44,19 @@ def ensure_log_file(path: str) -> bool:  # Added type hint for path
         if log_dir and not log_dir.exists():
             log_dir.mkdir(parents=True, exist_ok=True)
 
-        # Create file if it doesn't exist
+        # Create file if it doesn't exist (initialize with a JSON line)
         if not log_path.exists():
             with log_path.open("a", encoding="utf-8") as f:
-                f.write(
-                    f"Log file created at {
-                        logging.Formatter('%Y-%m-%d %H:%M:%S').format(logging.LogRecord('', 0, '', 0, '', (), None))
-                    }\n"
-                )
+                init_event = {
+                    "event": "log_file_created",
+                    "ts": datetime.now(timezone.utc).isoformat(),
+                    "start_ts": int(datetime.now(timezone.utc).timestamp() * 1000),
+                    "duration_ms": 0,
+                    "message": "Log file initialized",
+                    "logger": "server.logging",
+                    "level": "INFO",
+                }
+                f.write(json.dumps(init_event, ensure_ascii=False) + "\n")
 
         # Check if file is writable
         return os.access(path, os.W_OK)
@@ -52,13 +64,75 @@ def ensure_log_file(path: str) -> bool:  # Added type hint for path
         return False
 
 
+class JSONLineFormatter(logging.Formatter):
+    """Emit logs as a single JSON object per line (NDJSON)."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        """Format a log record as a compact JSON string suitable for NDJSON files."""
+        # Base envelope
+        payload = {
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+            "process": record.process,
+            "thread": record.threadName,
+            "file": getattr(record, "pathname", None),
+            "line": getattr(record, "lineno", None),
+            "function": getattr(record, "funcName", None),
+        }
+
+        # Optional structured timing fields expected by viewers
+        # If callers pass extras, include them; otherwise leave absent
+        extra = record.__dict__
+        if "start_ts" in extra:
+            payload["start_ts"] = extra["start_ts"]
+        if "duration_ms" in extra:
+            payload["duration_ms"] = extra["duration_ms"]
+
+        # Include any extra keys that are JSON-serializable and not built-ins
+        skip_keys = {
+            "msg",
+            "args",
+            "levelname",
+            "levelno",
+            "pathname",
+            "filename",
+            "module",
+            "exc_info",
+            "exc_text",
+            "stack_info",
+            "lineno",
+            "funcName",
+            "created",
+            "msecs",
+            "relativeCreated",
+            "thread",
+            "threadName",
+            "processName",
+            "process",
+            "name",
+        }
+        for key, value in extra.items():
+            if key in skip_keys or key in payload:
+                continue
+            # Best-effort: only include simple JSON-serializable values
+            try:
+                json.dumps(value)  # type: ignore[arg-type]
+            except Exception:
+                continue
+            payload[key] = value
+
+        return json.dumps(payload, ensure_ascii=False)
+
+
 def setup_logging(log_level: str = "INFO", log_file: str | None = None) -> None:
     """Set up logging configuration for the application."""
     # Convert string log level to logging constant
     numeric_level = getattr(logging, log_level.upper(), logging.INFO)
 
-    # Create formatter
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    # Create JSON line formatter
+    formatter = JSONLineFormatter()
 
     # Set up root logger
     root_logger = logging.getLogger()
@@ -67,8 +141,8 @@ def setup_logging(log_level: str = "INFO", log_file: str | None = None) -> None:
     # Clear existing handlers
     root_logger.handlers.clear()
 
-    # Console handler
-    console_handler = logging.StreamHandler()
+    # Console handler: send logs to stderr so CLI stdout remains clean
+    console_handler = logging.StreamHandler(stream=None)
     console_handler.setLevel(numeric_level)
     console_handler.setFormatter(formatter)
     root_logger.addHandler(console_handler)

@@ -1,6 +1,4 @@
 /* eslint-env jest */
-// @ts-nocheck
-
 
 import { getButtonState, saveButtonState } from "../../extension/src/content";
 import type { ButtonState } from "../../extension/src/types";

@@ -3,6 +3,8 @@
 Urgent Tasks:
 
 - [/] log viewer on options page not working - no logs displayed
+- [x] Options: Replace generic "Field is valid" for dropdowns with meaningful, contextual info. Add
+      explanatory help for "Console Log Level" with per-option descriptions and validation.
 - [x] Options UI: Consolidate "Runtime (requires restart)" settings into the "Server Configuration"
       section and relocate "Save Settings" and "Restart Server" buttons there for clarity
 - [x] Remove outdated test audit reports (`reports/test_audit_report.md`,
@@ -26,14 +28,26 @@ Urgent Tasks:
 - [x] Enhance CLI restart: reuse previous run mode/flags automatically when not provided (persisted
   in `server/data/server.lock.json`); normalize invalid hostnames and stabilize auto-port with
   SO_REUSEADDR-aware port checks to avoid transient false "in use" on restart.
-- [/] 'choose' button to set download directory now wired (added id `settings-folder-picker` in
-  `extension/ui/options.html`)
+- [x] 'Choose' button for download directory: wired and now populates a usable path. The picker
+  cannot reveal OS paths, so the UI derives an absolute path from the current field value (or
+  defaults to `~/Downloads/<selectedName>`). Validation also accepts home-relative `~` paths, which
+  the backend expands to an absolute path.
 - [/] Implement `run_cleanup()` in `server/cli/utils.py` and add tests
 - [/] Align JSON error semantics across endpoints; document in README and CHANGELOG
   <!-- working-on: api-json-errors -->
 - [/] Server log noise reductions and fixes: standardized JSON parsing errors in
   `server/api/download_bp.py`, completed error logging in `server/api/logs_bp.py`, ensured restart
   and resume modules log with appropriate levels; verified via tests.
+  - [x] Honor `LOG_FILE` for file logging in app factory and redirect test logs to temp files.
+  - [x] Autouse pytest fixture sets `ENVIRONMENT=testing` and defaults `SERVER_PORT=5006` to prevent
+        conflicts and log noise in `server_output.log`.
+  - [x] Add session-scoped autouse fixture to set `LOG_FILE` before any tests run, preventing early
+        initializations or blueprint-only apps from writing to production `server_output.log`.
+  - [x] Auto-port in tests: dynamically choose an available port in the test range and expose it via
+        `test_server_port` fixture; avoid any hard-coded ports in tests. Added `TEST_SERVER_PORT` to
+        `.env` as the documented default.
+  - [x] Switch to structured JSON (NDJSON) logging with optional `start_ts` and `duration_ms` fields
+        for easy sorting and analysis; standardized request logs include timing when available.
 - [x] Add explicit startup INFO log line and wire Gunicorn access/error logs to the same log file by
   default via CLI helpers. Update README and CHANGELOG to document behavior.
 - [/] Centralize log-path resolution via `server/logging_setup.resolve_log_path` and update

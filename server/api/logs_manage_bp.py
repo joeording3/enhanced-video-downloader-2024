@@ -5,6 +5,7 @@ This module defines endpoints to archive, clear, and manage server log files.
 """
 
 import datetime
+import json
 import logging
 import os
 from pathlib import Path
@@ -71,11 +72,20 @@ def clear_logs() -> Response:
             # Move the current log file to the archive location
             log_path.rename(archive_path)
 
-            # Create a fresh log file with initialization entry
+            # Create a fresh log file with a structured initialization entry
             with log_path.open("w", encoding="utf-8") as f:
-                ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                message = f"Log file archived to {archive_basename} on {ts}\n"
-                f.write(message)
+                now = datetime.datetime.now(datetime.timezone.utc)
+                init_event = {
+                    "event": "log_file_archived",
+                    "archived_to": archive_basename,
+                    "ts": now.isoformat(),
+                    "start_ts": int(now.timestamp() * 1000),
+                    "duration_ms": 0,
+                    "message": f"Log file archived to {archive_basename}",
+                    "logger": "server.logs",
+                    "level": "INFO",
+                }
+                f.write(json.dumps(init_event, ensure_ascii=False) + "\n")
             return Response(
                 f"Log file archived to {archive_basename} and cleared",
                 mimetype="text/plain",

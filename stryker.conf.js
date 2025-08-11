@@ -2,8 +2,6 @@
  * Stryker mutation testing configuration
  * @type {import('@stryker-mutator/core').StrykerOptions}
  */
-// @ts-nocheck
-
 module.exports = {
   packageManager: "npm",
   reporters: ["html", "clear-text", "progress"],
@@ -17,9 +15,11 @@ module.exports = {
     projectType: "custom",
     enableFindRelatedTests: false,
   },
-  // Focus on critical files for mutation testing
+  // Default: focus on critical files for fast mutation runs
   mutate: [
-    "extension/src/**/*.ts",
+    "extension/src/background-logic.ts",
+    "extension/src/background-helpers.ts",
+    "extension/src/core/validation-service.ts",
     "!extension/src/**/*.test.ts",
     "!extension/src/**/*.spec.ts",
     "!extension/src/**/__tests__/**",

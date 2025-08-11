@@ -9,7 +9,7 @@
 body {
   font-family: var(--font-family);
   margin: 0;
-  padding: var(--space-xl);
+  padding: var(--surface-padding);
   background-color: var(--background-color);
   color: var(--text-color);
   min-width: 400px; /* Ensure a reasonable minimum width */
@@ -19,10 +19,15 @@ body {
   max-width: 800px;
   margin: 0 auto;
   background-color: var(--container-bg);
-  padding: var(--space-xl);
+  padding: var(--surface-padding);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);
   position: relative; /* Ensure this for absolute positioning of children */
+}
+
+/* Improve section spacing rhythm */
+.section-content > .settings-section + .settings-section {
+  margin-top: var(--space-lg);
 }
 
 h1 {
@@ -32,6 +37,7 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
+  line-height: var(--line-height-tight);
 }
 
 h1 img {
@@ -49,19 +55,19 @@ h1 img {
   font-size: 1.5em;
   padding: var(--space-xs);
   border-radius: 50%;
-  background-color: rgb(0 0 0 / 10%);
+  background-color: color-mix(in srgb, var(--background-color), #000 10%);
   line-height: 1;
   z-index: 1000; /* Ensure it's on top */
 }
 
 body.dark-theme .theme-toggle {
-  background-color: rgb(255 255 255 / 10%);
+  background-color: color-mix(in srgb, var(--background-color), #fff 10%);
   color: var(--text-primary-dark);
 }
 
 /* Settings Groups */
 .settings-group {
-  margin-bottom: var(--space-xl);
+  margin-bottom: var(--section-gap);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-xl);
   background-color: var(--container-bg);
@@ -93,6 +99,7 @@ body.dark-theme .settings-group {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
+  line-height: var(--line-height-tight);
 }
 
 body.dark-theme .section-title {
@@ -102,14 +109,14 @@ body.dark-theme .section-title {
 }
 
 .section-content {
-  padding: var(--space-xl);
+  padding: var(--card-padding);
 }
 
 .settings-section {
-  margin-bottom: var(--space-xl);
-  padding: var(--space-lg);
+  margin-bottom: var(--section-gap);
+  padding: var(--card-padding);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   background-color: var(--container-bg);
 }
 
@@ -123,9 +130,10 @@ body.dark-theme .settings-section {
 
 .settings-section label {
   display: block;
-  margin-bottom: var(--space-sm);
+  margin-bottom: var(--label-margin-bottom);
   font-weight: var(--font-weight-bold);
   color: var(--label-text);
+  line-height: var(--line-height-tight);
 }
 
 body.dark-theme .settings-section label {
@@ -140,14 +148,14 @@ body.dark-theme .settings-section label {
 .settings-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--form-row-gap);
 }
 
 .settings-row input[type="text"],
 .settings-row input[type="number"],
 select {
   flex-grow: 1;
-  padding: var(--space-sm);
+  padding: var(--control-padding-y) var(--control-padding-x);
   border: 1px solid var(--border-secondary);
   border-radius: var(--radius-md);
   box-sizing: border-box;
@@ -191,6 +199,8 @@ select:focus {
   font-size: var(--font-size-sm);
   font-weight: 500;
   min-height: 16px;
+  color: var(--text-secondary);
+  line-height: var(--line-height-normal);
 }
 
 .validation-message.error {
@@ -210,21 +220,22 @@ select:focus {
 .log-level-info {
   margin-top: var(--space-sm);
   padding: var(--space-sm) var(--space-md);
-  background-color: var(--notification-success-bg);
-  border: 1px solid var(--notification-success-border);
+  background-color: var(--notification-info-bg);
+  border: 1px solid var(--notification-info-border);
   border-radius: var(--radius-md);
   font-size: var(--font-size-sm);
-  color: var(--notification-success-text);
+  color: var(--notification-info-text);
   display: flex;
   align-items: center;
   gap: 6px;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06);
 }
 
 body.dark-theme .format-info,
 body.dark-theme .log-level-info {
-  background-color: var(--notification-success-bg-dark);
-  border-color: var(--notification-success-border-dark);
-  color: var(--notification-success-text-dark);
+  background-color: var(--notification-info-bg-dark);
+  border-color: var(--notification-info-border-dark);
+  color: var(--notification-info-text-dark);
 }
 
 .info-icon {
@@ -273,6 +284,7 @@ body.dark-theme .checkbox-item:hover {
   color: var(--text-secondary);
   margin-top: var(--space-xs);
   font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-relaxed);
 }
 
 body.dark-theme .checkbox-hint {
@@ -307,8 +319,8 @@ body.dark-theme .checkbox-hint {
   text-align: center;
   font-weight: var(--font-weight-bold);
   min-height: 20px;
-  padding: var(--space-md);
-  border-radius: var(--radius-md);
+  padding: var(--card-padding);
+  border-radius: var(--radius-lg);
   transition: var(--transition-normal);
 }
 
@@ -412,6 +424,42 @@ body.dark-theme #disclaimer {
   margin-top: var(--space-xl);
 }
 
+/* ===== Striped Lists (Settings, Error History) ===== */
+.settings-list,
+#error-history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.settings-list li,
+#error-history-list li {
+  padding: var(--list-row-padding-y) var(--list-row-padding-x);
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-elevated);
+}
+
+/* Dark theme: ensure base row background uses dark elevated surface */
+body.dark-theme .settings-list li,
+body.dark-theme #error-history-list li {
+  background-color: var(--bg-elevated-dark);
+}
+
+.settings-list li:nth-child(even),
+#error-history-list li:nth-child(even) {
+  background-color: var(--row-alt-bg);
+}
+
+body.dark-theme .settings-list li:nth-child(even),
+body.dark-theme #error-history-list li:nth-child(even) {
+  background-color: var(--row-alt-bg-dark);
+}
+
+.settings-list li:last-child,
+#error-history-list li:last-child {
+  border-bottom: none;
+}
+
 #log-header {
   display: flex;
   justify-content: space-between;
@@ -438,12 +486,8 @@ body.dark-theme #log-title {
 }
 
 #log-controls button {
-  padding: var(--space-xs) var(--space-md);
-  background-color: var(--disabled);
-  color: var(--text-inverse);
-  border: none;
+  padding: calc(var(--button-padding-y) - 2px) var(--button-padding-x);
   border-radius: var(--radius-md);
-  cursor: pointer;
   font-size: var(--font-size-sm);
 }
 
@@ -451,7 +495,7 @@ body.dark-theme #log-title {
   background-color: var(--container-bg);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  padding: var(--space-lg);
+  padding: var(--card-padding);
   font-family: monospace;
   font-size: var(--font-size-sm);
   max-height: 300px;
@@ -472,7 +516,7 @@ body.dark-theme #log-display {
   font-size: var(--font-size-sm);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  padding: var(--space-md);
+  padding: var(--control-padding-y) var(--control-padding-x);
   background-color: var(--container-bg);
   color: var(--text-color);
   resize: vertical;
@@ -487,20 +531,20 @@ body.dark-theme #logViewerTextarea {
 /* Validation States */
 input.invalid {
   border-color: var(--error);
-  box-shadow: 0 0 0 2px rgb(220 53 69 / 10%);
+  box-shadow: var(--ring-error-light);
 }
 
 body.dark-theme input.invalid {
-  box-shadow: 0 0 0 2px rgb(220 53 69 / 20%);
+  box-shadow: var(--ring-error-dark);
 }
 
 input.valid {
   border-color: var(--success);
-  box-shadow: 0 0 0 2px rgb(40 167 69 / 10%);
+  box-shadow: var(--ring-success-light);
 }
 
 body.dark-theme input.valid {
-  box-shadow: 0 0 0 2px rgb(40 167 69 / 20%);
+  box-shadow: var(--ring-success-dark);
 }
 
 /* Select Enhancements */

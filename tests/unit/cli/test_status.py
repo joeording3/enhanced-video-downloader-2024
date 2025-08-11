@@ -12,7 +12,6 @@ from click.testing import CliRunner
 
 from server.cli.status import (
     downloads_command,
-    find_server_processes_cli,
     get_active_downloads,
     server_command,
     status_command,
@@ -189,12 +188,12 @@ class TestStatusCommands:
         """Test server_command with no running processes."""
         mock_find.return_value = []
 
-        # Simulate the server command logic
-        processes = find_server_processes_cli()
-        if not processes:
-            mock_echo("No running server found")
+        # Call the actual command logic and expect SystemExit
+        import pytest
+        with pytest.raises(SystemExit):
+            server_command.callback(as_json=False)
 
-        mock_echo.assert_called_with("No running server found")
+        mock_echo.assert_called_with("No running server found.")
 
     @patch("server.cli.status.find_server_processes_cli")
     @patch("click.echo")

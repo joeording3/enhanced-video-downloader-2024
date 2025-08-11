@@ -11,6 +11,9 @@
   --font-size-2xl: 20px;
   --font-weight-normal: normal;
   --font-weight-bold: bold;
+  --line-height-tight: 1.3;
+  --line-height-normal: 1.6;
+  --line-height-relaxed: 1.75;
 
   /* ===== SPACING ===== */
   --space-xs: 4px;
@@ -20,11 +23,27 @@
   --space-xl: 20px;
   --space-2xl: 24px;
 
+  /* ===== PADDING SYSTEM (CONSISTENCY) ===== */
+  --surface-padding: var(--space-xl);
+  --card-padding: var(--space-lg);
+  --button-padding-y: var(--space-sm);
+  --button-padding-x: var(--space-lg);
+  --control-padding-y: var(--space-sm);
+  --control-padding-x: var(--space-md);
+
+  /* ===== LAYOUT & TEXT RHYTHM ===== */
+  --section-gap: var(--space-xl);
+  --form-row-gap: var(--space-md);
+  --label-margin-bottom: var(--space-sm);
+  --heading-margin-bottom: var(--space-xl);
+  --list-row-padding-y: var(--space-md);
+  --list-row-padding-x: var(--space-lg);
+
   /* ===== BORDERS ===== */
-  --radius-sm: 3px;
-  --radius-md: 4px;
-  --radius-lg: 6px;
-  --radius-xl: 8px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
 
   /* ===== UNIFIED SHADOW SYSTEM ===== */
   --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.1);
@@ -66,6 +85,7 @@
   --bg-primary: #f0f0f0;
   --bg-secondary: #fff;
   --bg-tertiary: #f5f5f5;
+  --bg-elevated: #ffffff;
   --bg-input: #fff;
   --bg-button: #fff;
 
@@ -74,10 +94,15 @@
   --text-secondary: #666;
   --text-muted: #aaa;
   --text-inverse: #fff;
+  --placeholder-text: #8a8a8a;
+  /* Extended text aliases for consistency */
+  --text-tertiary-light: var(--text-secondary);
+  --text-quaternary-light: var(--text-muted);
 
   /* Borders */
   --border-primary: #ddd;
   --border-secondary: #ccc;
+  --border-muted: #e6e6e6;
   --border-focus: var(--primary);
 
   /* Links */
@@ -95,6 +120,7 @@
   --bg-primary-dark: #1e1e1e;
   --bg-secondary-dark: #2a2a2a;
   --bg-tertiary-dark: #333;
+  --bg-elevated-dark: #2f2f2f;
   --bg-input-dark: #333;
   --bg-button-dark: #444;
 
@@ -103,10 +129,12 @@
   --text-secondary-dark: #bbb;
   --text-muted-dark: #666;
   --text-inverse-dark: #000;
+  --placeholder-text-dark: #8d8d8d;
 
   /* Borders */
   --border-primary-dark: #444;
   --border-secondary-dark: #555;
+  --border-muted-dark: #3a3a3a;
   --border-focus-dark: var(--primary);
 
   /* Links */
@@ -132,6 +160,19 @@
   --notification-error-bg: #f8d7da;
   --notification-error-border: #f5c6cb;
   --notification-error-text: #721c24;
+  --notification-info-bg: #e7f5ff; /* subtle blue */
+  --notification-info-border: #a5d8ff;
+  --notification-info-text: #1c7ed6;
+  /* Dark-theme notification aliases for consistency */
+  --notification-success-bg-dark: var(--bg-secondary-dark);
+  --notification-success-border-dark: var(--border-secondary-dark);
+  --notification-success-text-dark: var(--text-primary-dark);
+  --notification-error-bg-dark: var(--bg-secondary-dark);
+  --notification-error-border-dark: var(--border-secondary-dark);
+  --notification-error-text-dark: var(--text-primary-dark);
+  --notification-info-bg-dark: #243a5c; /* slightly lighter for readability */
+  --notification-info-border-dark: #35557f;
+  --notification-info-text-dark: #b7d3ff;
 
   /* ===== COMPREHENSIVE TRANSITION SYSTEM ===== */
   --transition-fast: 0.15s ease;
@@ -139,6 +180,20 @@
   --transition-slow: 0.5s ease;
   --transition-bounce: 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   --transition-spring: 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  /* ===== FOCUS RINGS ===== */
+  --focus-ring-light: 0 0 0 3px rgb(0 123 255 / 0.25);
+  --focus-ring-dark: 0 0 0 3px rgb(0 123 255 / 0.35);
+
+  /* ===== STATUS RINGS ===== */
+  --ring-error-light: 0 0 0 2px rgb(220 53 69 / 0.15);
+  --ring-error-dark: 0 0 0 2px rgb(220 53 69 / 0.25);
+  --ring-success-light: 0 0 0 2px rgb(40 167 69 / 0.15);
+  --ring-success-dark: 0 0 0 2px rgb(40 167 69 / 0.25);
+
+  /* ===== STATUS BACKGROUND TINTS ===== */
+  --error-bg-tint-light: rgb(220 53 69 / 10%);
+  --error-bg-tint-dark: rgb(220 53 69 / 16%);
 
   /* ===== RESPONSIVE BREAKPOINTS ===== */
   --breakpoint-sm: 576px;
@@ -150,6 +205,8 @@
   --btn-hover-opacity: 0.8;
   --btn-active-opacity: 0.6;
   --btn-disabled-opacity: 0.5;
+  /* Hover colors aliases */
+  --error-color-hover: var(--error-hover);
 
   /* ===== DEFAULT THEME (LIGHT) ===== */
   --background-color: var(--bg-primary);
@@ -179,4 +236,18 @@
   --scrollbar-track-color: var(--scrollbar-track);
   --scrollbar-thumb-color: var(--scrollbar-thumb);
   --scrollbar-thumb-hover-color: var(--scrollbar-thumb-hover);
+
+  /* ===== EXTENDED BACKGROUND ALIASES ===== */
+  --bg-quaternary-light: var(--bg-tertiary);
+  --bg-quaternary-dark: var(--bg-tertiary-dark);
+
+  /* ===== LIST ROW ALTERNATION ===== */
+  --row-alt-bg: color-mix(in srgb, var(--bg-elevated), #000 2%);
+  /* Dark theme: subtle but visible */
+  --row-alt-bg-dark: color-mix(in srgb, var(--bg-elevated-dark), #fff 2%);
+
+  /* ===== EXTRA SHADOW ALIASES ===== */
+  --shadow-dark: 0 2px 6px rgb(0 0 0 / 0.4);
 }
+
+/* ===== COMPACT DENSITY MODE ===== */

@@ -388,9 +388,10 @@ Note: When using the CLI to start with `--gunicorn` or daemon/foreground mode, t
   `/api/config` as `log_file`. If `LOG_FILE` is not set in the environment, the server sets it at
   startup to a stable default path `server_output.log` in the project root. You can override this
   path from the Options page (Log File field) or by setting `LOG_FILE` in your shell or `.env`.
-  The server writes a startup line to this file on boot: `Server starting on <host>:<port>`.
-  When running under Gunicorn via the CLI helpers, Gunicorn's access and error logs are also
-  wired by default to the same log file.
+  Logs are emitted in structured NDJSON format (one JSON object per line) so you can parse and sort
+  easily. Request logs include optional `start_ts` and `duration_ms` fields for latency analysis.
+  When running under Gunicorn via the CLI helpers, Gunicorn's access and error logs are also wired by
+  default to the same log file.
 
   Log path precedence:
   - `LOG_FILE` environment variable (if set)

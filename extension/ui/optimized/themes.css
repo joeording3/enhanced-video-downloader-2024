@@ -10,8 +10,8 @@ body.dark-theme {
   /* ===== THEME VARIABLES ===== */
   --background-color: var(--bg-primary-dark);
   --text-color: var(--text-primary-dark);
-  --container-bg: var(--bg-secondary-dark);
-  --border-color: var(--border-primary-dark);
+  --container-bg: var(--bg-elevated-dark);
+  --border-color: var(--border-muted-dark);
   --header-bg: var(--bg-tertiary-dark);
   --button-bg: var(--primary);
   --button-hover: var(--primary-hover);
@@ -65,6 +65,7 @@ body.dark-theme .input {
 
 body.dark-theme .input:focus {
   border-color: var(--border-focus-dark);
+  box-shadow: var(--focus-ring-dark);
 }
 
 body.dark-theme .input:invalid {
