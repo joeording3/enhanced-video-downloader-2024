@@ -115,9 +115,13 @@ export function renderHistoryItems(
       li.dataset.itemId = item.id.toString(); // Store ID for potential actions like delete
     }
 
+    // Left column wrapper
+    const leftWrapper = document.createElement("div");
+    leftWrapper.className = "history-left";
+
     const titleDiv = document.createElement("div");
     const titleBold = document.createElement("b");
-    titleBold.textContent = item.page_title || item.filename || "...";
+    titleBold.textContent = computeDisplayTitle(item);
     titleDiv.appendChild(titleBold);
 
     const timestampDiv = document.createElement("div");
@@ -195,10 +199,10 @@ export function renderHistoryItems(
     if (normalized) {
       li.classList.add("status-" + normalized);
     }
-    li.appendChild(titleDiv);
-    li.appendChild(timestampDiv);
-    li.appendChild(statusDiv);
-    li.appendChild(actionsWrapper);
+    // Assemble left column
+    leftWrapper.appendChild(titleDiv);
+    leftWrapper.appendChild(timestampDiv);
+    leftWrapper.appendChild(statusDiv);
 
     if (item.detail) {
       const detailDiv = document.createElement("div");
@@ -208,14 +212,14 @@ export function renderHistoryItems(
       detailSpan.textContent = Array.isArray(item.detail) ? item.detail.join(", ") : item.detail;
       detailDiv.appendChild(document.createTextNode("Detail: "));
       detailDiv.appendChild(detailSpan);
-      li.appendChild(detailDiv);
+      leftWrapper.appendChild(detailDiv);
     }
 
     if (item.error) {
       const errorDiv = document.createElement("div");
       errorDiv.className = "history-item-error";
       errorDiv.textContent = "Error: " + item.error;
-      li.appendChild(errorDiv);
+      leftWrapper.appendChild(errorDiv);
     }
 
     if (item.url) {
@@ -227,8 +231,10 @@ export function renderHistoryItems(
       urlLink.textContent = item.url;
       urlDiv.appendChild(document.createTextNode("URL: "));
       urlDiv.appendChild(urlLink);
-      li.appendChild(urlDiv);
+      leftWrapper.appendChild(urlDiv);
     }
+    li.appendChild(leftWrapper);
+    li.appendChild(actionsWrapper);
     historyListElement.appendChild(li);
   });
 
@@ -423,5 +429,31 @@ function sanitizeFilename(name: string): string {
     .trim();
 }
 
+function computeDisplayTitle(item: HistoryEntry): string {
+  const raw =
+    (item as any).page_title || (item as any).title || item.filename || extractTitleFromUrl(item.url);
+  const t = String(raw || "").trim();
+  if (t && t.toLowerCase() !== "video") return t;
+  const fallback = extractTitleFromUrl(item.url);
+  return fallback || (item.filename ? sanitizeFilename(item.filename) : "...");
+}
+
+function extractTitleFromUrl(url?: string): string | undefined {
+  if (!url) return undefined;
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes("youtube.com")) {
+      const id = u.searchParams.get("v");
+      if (id) return `youtube:${id}`;
+      const parts = u.pathname.split("/").filter(Boolean);
+      if (parts[0] === "shorts" && parts[1]) return `yt shorts:${parts[1]}`;
+    }
+    const segs = u.pathname.split("/").filter(Boolean);
+    if (segs.length > 0) return `${u.hostname}/${segs[segs.length - 1]}`;
+    return u.hostname;
+  } catch {
+    return undefined;
+  }
+}
 // Export for testing (these are already exported above)
 // export { fetchHistory, renderHistoryItems, addToHistory, clearHistory, removeHistoryItem };

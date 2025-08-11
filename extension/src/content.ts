@@ -236,9 +236,9 @@ function ensureDownloadButtonStyle(buttonElement: HTMLElement): void {
   // But some sites/extensions may inject inline font sizing onto all buttons.
   // Force essential typography and spacing with inline !important to avoid tiny text.
   try {
-    buttonElement.style.setProperty("font-size", "20px", "important");
+    buttonElement.style.setProperty("font-size", "1.5rem", "important");
     buttonElement.style.setProperty("line-height", "1", "important");
-    buttonElement.style.setProperty("padding", "20px 24px", "important");
+    buttonElement.style.setProperty("padding", "5px", "important");
     buttonElement.style.setProperty("border-radius", "10px", "important");
     // Keep border width visible for contrast variants
     buttonElement.style.setProperty("border-width", "2px", "important");
