@@ -226,6 +226,15 @@ function ensureDownloadButtonStyle(buttonElement: HTMLElement): void {
     buttonElement.classList.add("evd-visible");
   }
 
+  // Force stacking and hit-testing dominance
+  try {
+    buttonElement.style.setProperty("position", "fixed", "important");
+    buttonElement.style.setProperty("z-index", "2147483647", "important");
+    buttonElement.style.setProperty("pointer-events", "auto", "important");
+  } catch {
+    // ignore
+  }
+
   // Phase 2: Enforce guideline styles for the button's DEFAULT state
   const currentInlineBg = buttonElement.style.backgroundColor;
   const isTemporaryFeedbackState = EVD_BUTTON_TEMPORARY_BACKGROUNDS.some(
@@ -339,6 +348,17 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
   }
 
   // Add to document
+  // Ensure we do not leave stale buttons around
+  try {
+    const existing = document.querySelectorAll('button.evd-drag-handle.download-button');
+    existing.forEach(el => {
+      if (el !== btn && el.parentElement === document.body && !injectedButtons.has(el as any)) {
+        el.remove();
+      }
+    });
+  } catch {
+    // ignore DOM scan errors
+  }
   document.body.appendChild(btn);
 
   // Apply YouTube-specific enhancements if applicable
@@ -346,6 +366,15 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
 
   // Ensure button has correct style
   ensureDownloadButtonStyle(btn);
+  // Re-append to end of body to ensure it is above later siblings for stacking contexts
+  try {
+    if (btn.parentElement === document.body) {
+      document.body.removeChild(btn);
+      document.body.appendChild(btn);
+    }
+  } catch {
+    // ignore
+  }
 
   // Add event listeners for dragging
   btn.addEventListener("mousedown", e => {
@@ -360,9 +389,9 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
       },
     });
 
-    // Add document-level listeners
-    document.addEventListener("mousemove", onDrag);
-    document.addEventListener("mouseup", onDragEnd);
+    // Add document-level listeners if not already attached
+    document.addEventListener("mousemove", onDrag, { passive: false });
+    document.addEventListener("mouseup", onDragEnd, { passive: false, once: true });
 
     // Prevent text selection during drag
     e.preventDefault();
@@ -398,7 +427,7 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
 
         // Send message to background script; include a client-side dedupe token to avoid rapid duplicates
         const dedupeToken = `${url}::${Date.now()}`;
-        chrome.runtime.sendMessage({ type: "downloadVideo", url: url, downloadId: dedupeToken }, response => {
+        chrome.runtime.sendMessage({ type: "downloadVideo", url: url, downloadId: dedupeToken, pageTitle: document.title }, response => {
           if (chrome.runtime.lastError) {
             error("Error sending download request:", chrome.runtime.lastError.message);
             btn.classList.remove("download-sending");
@@ -674,6 +703,16 @@ async function findVideosAndInjectButtons(): Promise<void> {
     const primary = selectPrimaryMediaCandidate(allCandidates);
     if (primary && !injectedButtons.has(primary)) {
       await createOrUpdateButton(primary);
+    }
+
+    // If a global button exists, remove it to avoid duplicates when a primary media is present
+    if (downloadButton && document.body.contains(downloadButton)) {
+      try {
+        downloadButton.remove();
+      } catch {
+        // ignore
+      }
+      downloadButton = null;
     }
 
     // Ensure only one injected button tied to media exists; remove others

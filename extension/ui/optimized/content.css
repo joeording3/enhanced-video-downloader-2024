@@ -32,8 +32,7 @@
 
 /* Strong scoping to resist site overrides and other extensions */
 button.evd-drag-handle.download-button,
-button[id^="evd-download-button-"],
-#evd-download-button-main {
+button[id^="evd-download-button-"] {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -46,6 +45,7 @@ button[id^="evd-download-button-"],
   border: 2px solid transparent !important;
   box-shadow: var(--shadow-xl) !important;
   cursor: move !important;
+  pointer-events: auto !important;
   line-height: 1 !important;
 }
 
@@ -60,9 +60,6 @@ button[id^="evd-download-button-"],
 }
 
 /* JS-toggled micro-bounce on click */
-.download-button.clicked {
-  animation: evd-click-bounce var(--transition-bounce);
-}
 
 @keyframes evd-click-bounce {
   0% { transform: scale(1); }
@@ -88,17 +85,4 @@ button[id^="evd-download-button-"],
 .download-error {
   background-color: var(--error) !important;
   opacity: 0.7;
-}
-
-/* Strict contrast modes */
-.evd-on-dark {
-  background-color: #fff !important;
-  color: #000 !important;
-  border-color: #000 !important;
-}
-
-.evd-on-light {
-  background-color: #000 !important;
-  color: #fff !important;
-  border-color: #fff !important;
 }

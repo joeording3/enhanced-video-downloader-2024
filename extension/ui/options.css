@@ -480,6 +480,9 @@ body.dark-theme #disclaimer {
   border-bottom: 1px solid var(--border-color);
   color: var(--text-color);
   background-color: var(--bg-elevated);
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-lg);
 }
 
 #history-list li:nth-child(even) {
@@ -516,6 +519,16 @@ body.dark-theme #disclaimer {
   margin-top: var(--space-sm);
   display: flex;
   gap: var(--space-sm);
+  align-items: flex-start;
+  flex-direction: column;
+  min-width: 120px;
+}
+
+.history-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1 1 auto;
 }
 
 /* Pill styling */

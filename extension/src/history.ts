@@ -121,7 +121,8 @@ export function renderHistoryItems(
 
     const titleDiv = document.createElement("div");
     const titleBold = document.createElement("b");
-    titleBold.textContent = computeDisplayTitle(item);
+    // Prioritize the original page title if available
+    titleBold.textContent = (item.page_title || item.title || "").trim() || computeDisplayTitle(item);
     titleDiv.appendChild(titleBold);
 
     const timestampDiv = document.createElement("div");

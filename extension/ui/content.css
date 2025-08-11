@@ -68,6 +68,7 @@ button[id^="evd-download-button-"],
   border: 2px solid transparent !important;
   box-shadow: var(--shadow-xl) !important;
   cursor: move !important;
+  pointer-events: auto !important;
   line-height: 1 !important;
 }
 
