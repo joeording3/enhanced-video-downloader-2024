@@ -130,7 +130,7 @@ def create_app(config: Config) -> Flask:
     # Log a clear startup/initialization message so the log file is never empty
     try:
         # Ensure we only emit this once per process
-        if not getattr(create_app, "_evd_startup_logged", False):
+        if not getattr(create_app, "evd_startup_logged", False):
             app_logger = logging.getLogger(__name__)
             # Best-effort host/port from config; binding may be controlled by WSGI server
             host_for_log = getattr(config, "server_host", "127.0.0.1")
@@ -148,7 +148,7 @@ def create_app(config: Config) -> Flask:
                 f"Server application initialized for {host_for_log}:{port_for_log} | log_file={active_log_path}"
             )
             # Mark as logged to avoid duplicate lines from repeated create_app calls in the same process
-            create_app._evd_startup_logged = True  # type: ignore[attr-defined]
+            create_app.evd_startup_logged = True  # type: ignore[attr-defined]
     except Exception:
         # Do not block startup on logging issues
         pass

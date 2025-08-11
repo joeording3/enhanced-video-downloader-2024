@@ -866,8 +866,7 @@ const sendDownloadRequest = async (
   isPlaylist = false,
   quality?: string | null,
   format?: string | null,
-  pageTitle = "video",
-  customDownloadId?: string | null
+  pageTitle = "video"
 ): Promise<any> => {
   try {
     const port = await storageService.getPort();
@@ -876,7 +875,7 @@ const sendDownloadRequest = async (
     }
 
     // De-dupe: build a canonical key for this request
-    const downloadKey = `${videoUrl}::${customDownloadId ?? ""}`;
+    const downloadKey = `${videoUrl}`;
     const now = Date.now();
     const lastTs = _recentDownloads.get(downloadKey) || 0;
     if (_inFlightDownloads.has(downloadKey) || now - lastTs < _recentWindowMs) {
@@ -891,7 +890,6 @@ const sendDownloadRequest = async (
       format: format || "mp4",
       download_playlist: isPlaylist,
       page_title: pageTitle,
-      download_id: customDownloadId || null,
     };
 
     // Send request to server
@@ -926,8 +924,7 @@ const sendDownloadRequest = async (
 
       // Also reflect in the extension's queue UI for immediate feedback
       try {
-        const queueId: string =
-          (result.downloadId as string) || (customDownloadId as string) || videoUrl;
+        const queueId: string = (result.downloadId as string) || videoUrl;
         if (!downloadQueue.includes(queueId)) {
           downloadQueue.push(queueId);
           _updateQueueAndBadge();
@@ -1057,15 +1054,30 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             break;
           }
 
+          try {
+            log("EVD background: Posting to /api/download on port " + effectivePort + " for URL " + message.url);
+            // eslint-disable-next-line no-console
+            console.log("[EVD] BG → POST /api/download", { port: effectivePort, url: message.url, pageTitle: message.pageTitle });
+          } catch {
+            /* ignore */
+          }
+
           const response = await sendDownloadRequest(
             message.url,
             sender.tab?.id,
             message.isPlaylist,
             message.quality,
             message.format,
-            message.pageTitle,
-            message.downloadId
+            message.pageTitle
           );
+
+          try {
+            log("EVD background: Server response for download", JSON.stringify(response));
+            // eslint-disable-next-line no-console
+            console.log("[EVD] BG response from server", response);
+          } catch {
+            /* ignore */
+          }
           sendResponse(response);
           break;
         }

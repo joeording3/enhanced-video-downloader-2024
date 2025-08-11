@@ -38,6 +38,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Added Download History section with pagination (Items per page, Prev/Next) and live updates on
   `historyUpdated`. Uses existing `fetchHistory` and `renderHistoryItems`. Clear-all remains under
   Actions → Clear History.
+- Options page sections are now collapsible with accessible accordion toggles. Collapsible sections:
+  Server Configuration, Download Settings, Behavior Settings, Server Logs, Download History. The
+  open/closed state persists per section in local storage.
 
 #### Docs and Configuration
 

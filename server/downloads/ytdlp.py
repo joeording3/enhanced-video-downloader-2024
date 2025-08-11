@@ -6,6 +6,7 @@ yt-dlp, including option building, progress hooks, process tracking, and error c
 """
 
 import json
+from contextlib import suppress
 import logging
 import tempfile
 from datetime import datetime, timezone
@@ -988,17 +989,17 @@ def _handle_yt_dlp_download_error(
 
     # Append a failure entry to history so errors are visible even without the 'finished' hook
     try:
-        append_history_entry(
-            {
-                "download_id": download_id,
-                "url": url,
-                "status": "error",
-                "error_type": error_type,
-                "message": user_msg,
-                "original_error": client_error,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            }
-        )
+            append_history_entry(
+                {
+                    "download_id": download_id,
+                    "url": url,
+                    "status": "error",
+                    "error_type": error_type,
+                    "message": user_msg,
+                    "original_error": client_error,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }
+            )
     except Exception:
         # Do not block error response on history persistence issues
         pass
@@ -1093,7 +1094,7 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
                 # Attempt to find any matching info JSON for this download's prefix.
                 candidates = list(download_path.glob(f"{prefix}.*.info.json"))
                 if candidates:
-                    try:
+                    with suppress(Exception):
                         with candidates[0].open(encoding="utf-8") as f:
                             info_data = json.load(f)
                         append_history_entry(info_data)
@@ -1101,9 +1102,6 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
                         logger.info(
                             f"[{download_id}] Fallback appended download metadata to history: {candidates[0]}"
                         )
-                    except Exception:
-                        # If reading/parsing fails, fall back to a minimal entry below
-                        pass
                 if str(download_id) not in history_appended_ids:
                     # Append a minimal success entry
                     media_candidates = [

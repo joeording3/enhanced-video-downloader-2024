@@ -2105,7 +2105,52 @@ test.describe("Real site video detection (opt-in)", () => {
     { name: "HClips", url: "https://hclips.com/videos/123456/" },
   ];
 
+  test("Synthetic: controlled page injects button and backend registers download", async () => {
+    test.setTimeout(45000);
+    const syntheticUrl = "http://evd.test/synthetic";
+    const html = `<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>EVD Synthetic</title></head><body><main><h1>Test</h1><video width=\"320\" height=\"240\"></video></main></body></html>`;
+    // Route the synthetic URL to our controlled HTML
+    await context.route("**/*", async route => {
+      const reqUrl = route.request().url();
+      if (reqUrl === syntheticUrl) {
+        await route.fulfill({ status: 200, contentType: "text/html", body: html });
+      } else {
+        await route.continue();
+      }
+    });
+
+    const page = await context.newPage();
+    try {
+      await page.goto(syntheticUrl, { waitUntil: "domcontentloaded" });
+      // Wait for our content script to run and inject the global button
+      await page.waitForTimeout(1500);
+      const clicked = await safeClickDownloadButton(page);
+      expect(clicked).toBe(true);
+
+      // Poll backend for any status entries
+      const statusUrl = `http://127.0.0.1:${serverPort}/api/status`;
+      let sawAny = false;
+      for (let i = 0; i < 30; i++) {
+        const res = await page.request.get(statusUrl).catch(() => null);
+        if (res && res.ok()) {
+          const data = await res.json();
+          if (data && typeof data === "object" && Object.keys(data).length > 0) {
+            sawAny = true;
+            break;
+          }
+        }
+        await page.waitForTimeout(500);
+      }
+      expect(sawAny).toBe(true);
+    } finally {
+      await page.close();
+      await context.unroute("**/*");
+    }
+  });
+
   test("YouTube Shorts: drag and click EVD button (best-effort)", async () => {
+    // Allow extra time for real-site network variability and backend polling
+    test.setTimeout(60000);
     const page = await context.newPage();
     try {
       await page.goto("https://www.youtube.com/shorts/MbY7wWkQcrc", {
@@ -2204,6 +2249,30 @@ test.describe("Real site video detection (opt-in)", () => {
           if (btn instanceof HTMLElement) btn.click();
         });
       }
+
+      // After click, confirm backend received the download by polling /api/status
+      await page.waitForTimeout(1000);
+      const statusUrl = `http://127.0.0.1:${serverPort}/api/status`;
+      let received = false;
+      for (let i = 0; i < 30; i++) {
+        const res = await page.request.get(statusUrl).catch(() => null);
+        if (res && res.ok()) {
+          try {
+            const data = await res.json();
+            if (data && typeof data === "object") {
+              const ids = Object.keys(data);
+              if (ids.length > 0) {
+                received = true;
+                break;
+              }
+            }
+          } catch {
+            // ignore parse issues and retry
+          }
+        }
+        await page.waitForTimeout(500);
+      }
+      expect(received).toBe(true);
     } finally {
       await page.close();
     }

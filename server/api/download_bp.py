@@ -6,6 +6,7 @@ including validation, processing, and status management.
 """
 
 import logging
+from contextlib import suppress
 import os
 import time
 from collections import defaultdict
@@ -106,11 +107,9 @@ def rate_limit_response() -> tuple[Response, int]:
             "downloadId": "unknown",
         }
     )
-    try:
-        # Suggest short backoff (10s by default if window is 60s)
+    # Suggest short backoff (10s by default if window is 60s)
+    with suppress(Exception):
         resp.headers["Retry-After"] = str(min(max(_RATE_LIMIT_WINDOW // 6, 1), _RATE_LIMIT_WINDOW))
-    except Exception:
-        pass
     return resp, 429
 
 
@@ -409,6 +408,21 @@ def download() -> Any:
                 raw_data = cast(_RawDownloadData, json_obj)
             else:
                 raw_data = cast(_RawDownloadData, _parse_download_raw())
+
+            # Server-side debug log when a download request is received (safe fields only)
+            try:
+                safe_url = str(raw_data.get("url", ""))
+                trimmed = safe_url[:100] + ("…" if len(safe_url) > 100 else "")
+                logger.info(
+                    "EVD server: download request received",
+                    extra={
+                        "url": trimmed,
+                        "has_playlist": bool(raw_data.get("download_playlist")),
+                        "page_title": str(raw_data.get("page_title", ""))[:80],
+                    },
+                )
+            except Exception:
+                pass
 
             # If server is at capacity, enqueue and return queued status immediately
             try:

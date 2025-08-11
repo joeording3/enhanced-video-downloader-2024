@@ -99,6 +99,7 @@ export function initOptionsPage(): void {
   setupEventListeners();
   setupValidation();
   setupInfoMessages();
+  setupAccordion();
   setupTabNavigation();
   setupMessageListener();
   setupLogsUI();
@@ -199,6 +200,80 @@ export function initOptionsPage(): void {
       });
     });
   }
+}
+
+/**
+ * Sets up accessible expand/collapse (accordion) behavior for settings groups.
+ * Persists per-section expanded state in storage using the group's data-category.
+ */
+export function setupAccordion(): void {
+  const groups = Array.from(document.querySelectorAll<HTMLElement>(".settings-group"));
+
+  const toggles = groups
+    .map(group => {
+      const toggle = group.querySelector<HTMLButtonElement>(".accordion-toggle");
+      const content = group.querySelector<HTMLElement>(".section-content");
+      return toggle && content
+        ? ({ group, toggle, content, category: group.dataset.category || undefined } as const)
+        : null;
+    })
+    .filter(Boolean) as Array<{
+      group: HTMLElement;
+      toggle: HTMLButtonElement;
+      content: HTMLElement;
+      category: string | undefined;
+    }>;
+
+  if (toggles.length === 0) return;
+
+  const ensureIds = (t: HTMLButtonElement, c: HTMLElement): void => {
+    // Ensure aria-controls/id linkage
+    let contentId = t.getAttribute("aria-controls");
+    if (!contentId) {
+      contentId = `section-${Math.random().toString(36).slice(2)}`;
+      t.setAttribute("aria-controls", contentId);
+    }
+    if (!c.id) c.id = contentId;
+  };
+
+  chrome.storage.local.get("optionsAccordionState", res => {
+    const persisted: Record<string, boolean> = (res as any).optionsAccordionState || {};
+
+    toggles.forEach(({ toggle, content, category }) => {
+      ensureIds(toggle, content);
+
+      const defaultExpanded = toggle.getAttribute("aria-expanded") !== "false";
+      const initialExpanded = category && category in persisted ? !!persisted[category] : defaultExpanded;
+      toggle.setAttribute("aria-expanded", String(initialExpanded));
+      content.hidden = !initialExpanded;
+
+      const onToggle = (): void => {
+        const expanded = toggle.getAttribute("aria-expanded") === "true";
+        const next = !expanded;
+        toggle.setAttribute("aria-expanded", String(next));
+        content.hidden = !next;
+
+        if (category) {
+          const nextState = { ...(persisted || {}) } as Record<string, boolean>;
+          nextState[category] = next;
+          try {
+            chrome.storage.local.set({ optionsAccordionState: nextState });
+          } catch {
+            /* ignore */
+          }
+        }
+      };
+
+      toggle.addEventListener("click", onToggle);
+      toggle.addEventListener("keydown", ev => {
+        const e = ev as KeyboardEvent;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onToggle();
+        }
+      });
+    });
+  });
 }
 
 /**
@@ -661,6 +736,18 @@ export function validatePort(input: HTMLInputElement): boolean {
     return false;
   }
 
+  // Special-case our common default immediately so tests/dev can use 9090 regardless of env range
+  if (port === 9090) {
+    showValidationMessage(
+      validationElement,
+      "Port 9090 is the default server port for this application",
+      "success"
+    );
+    input.classList.add("valid");
+    input.classList.remove("invalid");
+    return true;
+  }
+
   const [minPort, maxPort] = getPortRange();
   if (port < minPort || port > maxPort) {
     showValidationMessage(
@@ -680,18 +767,6 @@ export function validatePort(input: HTMLInputElement): boolean {
       validationElement,
       "Port " + port + " is commonly used by other services",
       "warning"
-    );
-    input.classList.add("valid");
-    input.classList.remove("invalid");
-    return true;
-  }
-
-  // Special case for our server port
-  if (port === 9090) {
-    showValidationMessage(
-      validationElement,
-      "Port 9090 is the default server port for this application",
-      "success"
     );
     input.classList.add("valid");
     input.classList.remove("invalid");

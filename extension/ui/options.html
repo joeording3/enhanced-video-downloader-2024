@@ -45,9 +45,11 @@
         <form id="settings-form" autocomplete="off">
           <!-- Server Configuration Section -->
           <section class="settings-group" data-category="server">
-            <h2 class="section-title">Server Configuration</h2>
-            <div class="settings-hint">The following settings only take effect after a server restart:</div>
-            <div class="section-content">
+            <h2 class="section-title">
+              <button type="button" id="options-server-title" class="accordion-toggle" aria-expanded="true" aria-controls="server-section-content">Server Configuration</button>
+            </h2>
+            <div class="section-content" id="server-section-content" role="region" aria-labelledby="options-server-title">
+              <div class="settings-hint">The following settings only take effect after a server restart:</div>
               <fieldset>
                 <legend>Connection Settings</legend>
                 <div class="settings-section">
@@ -158,8 +160,10 @@
 
           <!-- Download Settings Section -->
           <section class="settings-group" data-category="download">
-            <h2 class="section-title">Download Settings</h2>
-            <div class="section-content">
+            <h2 class="section-title">
+              <button type="button" id="options-download-title" class="accordion-toggle" aria-expanded="true" aria-controls="download-section-content">Download Settings</button>
+            </h2>
+            <div class="section-content" id="download-section-content" role="region" aria-labelledby="options-download-title">
               <fieldset>
                 <legend>Storage & Format</legend>
                 <div class="settings-section">
@@ -240,8 +244,10 @@
 
           <!-- Behavior Settings Section -->
           <section class="settings-group" data-category="behavior">
-            <h2 class="section-title">Behavior Settings</h2>
-            <div class="section-content">
+            <h2 class="section-title">
+              <button type="button" id="options-behavior-title" class="accordion-toggle" aria-expanded="true" aria-controls="behavior-section-content">Behavior Settings</button>
+            </h2>
+            <div class="section-content" id="behavior-section-content" role="region" aria-labelledby="options-behavior-title">
               <fieldset>
                 <legend>General Options</legend>
                 <div class="settings-section checkbox-group">
@@ -327,8 +333,10 @@
           class="settings-group"
           data-category="logs"
         >
-          <h2 class="section-title">Server Logs</h2>
-          <div class="section-content">
+          <h2 class="section-title">
+            <button type="button" class="accordion-toggle" aria-expanded="true" aria-controls="log-section-content">Server Logs</button>
+          </h2>
+          <div class="section-content" id="log-section-content" role="region" aria-labelledby="log-title">
             <div id="log-header">
               <h3 id="log-title">Log Viewer</h3>
               <div id="log-controls">
@@ -387,8 +395,10 @@
           class="settings-group"
           data-category="history"
         >
-          <h2 class="section-title" id="download-history-title">Download History</h2>
-          <div class="section-content">
+          <h2 class="section-title" id="download-history-title">
+            <button type="button" class="accordion-toggle" aria-expanded="true" aria-controls="history-section-content">Download History</button>
+          </h2>
+          <div class="section-content" id="history-section-content" role="region" aria-labelledby="download-history-title">
             <div class="history-controls">
               <button id="history-prev" class="btn btn--secondary" disabled aria-label="Previous History Page">&laquo; Prev</button>
               <span class="history-controls-middle-group">
@@ -406,21 +416,6 @@
             <ul id="history-list"></ul>
           </div>
         </section>
-
-        <!-- Error History Section -->
-        <section
-          id="error-history-container"
-          aria-labelledby="error-history-title"
-          class="settings-group"
-          data-category="errors"
-        >
-          <h2 class="section-title">Download Error History</h2>
-          <div class="section-content">
-            <h3 id="error-history-title">Recent Errors</h3>
-            <ul id="error-history-list"></ul>
-          </div>
-        </section>
-      </main>
 
       <footer>
         <p id="disclaimer">

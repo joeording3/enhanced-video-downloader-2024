@@ -495,10 +495,19 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
         }
         const url = rawUrl.startsWith("blob:") ? window.location.href : rawUrl;
 
-        // Send message to background script; include a client-side dedupe token to avoid rapid duplicates
-        const dedupeToken = `${url}::${Date.now()}`;
+        // Debug logging for browser console and centralized logger
+        try {
+          log("EVD content: Download button clicked. Sending request", url);
+          // Emit a plain console log to ensure visibility in Playwright/browser devtools
+          // eslint-disable-next-line no-console
+          console.log("[EVD] Button click → sending download request", { url, pageTitle: document.title });
+        } catch {
+          /* no-op */
+        }
+
+        // Send message to background script (server will generate downloadId)
         chrome.runtime.sendMessage(
-          { type: "downloadVideo", url: url, downloadId: dedupeToken, pageTitle: document.title },
+          { type: "downloadVideo", url: url, pageTitle: document.title },
           response => {
             if (chrome.runtime.lastError) {
               error("Error sending download request:", chrome.runtime.lastError.message);
@@ -511,6 +520,13 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
             }
 
             if (response && (response.status === "success" || response.status === "queued")) {
+              try {
+                log("EVD content: Background responded success", JSON.stringify(response));
+                // eslint-disable-next-line no-console
+                console.log("[EVD] Background response (success)", response);
+              } catch {
+                /* ignore */
+              }
               // Success feedback
               btn.classList.remove("download-sending");
               btn.classList.add("download-success");
@@ -518,6 +534,13 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
                 btn.classList.remove("download-success");
               }, 1200);
             } else {
+              try {
+                log("EVD content: Background responded error", JSON.stringify(response));
+                // eslint-disable-next-line no-console
+                console.log("[EVD] Background response (error)", response);
+              } catch {
+                /* ignore */
+              }
               // Error feedback
               btn.classList.remove("download-sending");
               btn.classList.add("download-error");
@@ -529,6 +552,12 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
         );
       } catch (err) {
         error("Error initiating download:", err);
+        try {
+          // eslint-disable-next-line no-console
+          console.log("[EVD] Error initiating download", err);
+        } catch {
+          /* ignore */
+        }
         try {
           btn.classList.remove("download-sending");
           btn.classList.add("download-error");

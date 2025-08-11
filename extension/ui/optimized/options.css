@@ -107,6 +107,34 @@ body.dark-theme .section-title {
   padding: var(--card-padding);
 }
 
+/* Accordion toggle inside section title */
+.accordion-toggle {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: var(--text-color);
+}
+
+.accordion-toggle::before {
+  content: "\25BC"; /* down-pointing triangle */
+  display: inline-block;
+  transform: rotate(0deg);
+  transition: transform 0.2s ease;
+  font-size: 0.9em;
+}
+
+.accordion-toggle[aria-expanded="false"]::before {
+  transform: rotate(-90deg); /* points right when collapsed */
+}
+
+.accordion-toggle:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--shadow-color);
+  border-radius: var(--radius-sm);
+}
+
 .settings-section {
   margin-bottom: var(--section-gap);
   padding: var(--card-padding);
