@@ -243,6 +243,36 @@ download_process_registry: dict[str, psutil.Process] = {}
 history_appended_ids: set[str] = set()
 
 
+def _try_extract_title_with_ytdlp(url: str, download_id: str | None) -> str | None:
+    """
+    Attempt to extract a reliable title using yt-dlp metadata extraction (no download).
+
+    Returns a title string or None on failure.
+    """
+    try:
+        opts: dict[str, Any] = {
+            "quiet": True,
+            "no_warnings": True,
+            "noplaylist": True,
+            "skip_download": True,
+            # Reuse native logger to keep output consolidated
+            "logger": logging.getLogger("yt_dlp_native"),
+            # Prefer browser cookies for YouTube edge cases (e.g., Shorts)
+            "cookies_from_browser": "chrome",
+        }
+        with yt_dlp.YoutubeDL(opts) as ydl:  # type: ignore[import-untyped]
+            info = ydl.extract_info(url, download=False)
+        title = None
+        if isinstance(info, dict):
+            title = info.get("title") or info.get("fulltitle")
+        if title and isinstance(title, str) and title.strip():
+            logger.debug(f"[{download_id or 'N/A'}] Title extracted via yt-dlp: {title}")
+            return title.strip()
+    except Exception as e:
+        logger.debug(f"[{download_id or 'N/A'}] yt-dlp metadata title extraction failed: {e}")
+    return None
+
+
 # Progress hook helpers to reduce complexity of ytdlp_progress_hook
 def _extract_video_metadata(d: dict[str, Any]) -> dict[str, Any]:
     """
@@ -650,11 +680,23 @@ def _init_download(data: dict[str, Any]) -> tuple[Path | None, str, str, str, bo
     url = data.get("url", "").strip()
     # Accept both camelCase (client) and snake_case (validated) keys
     download_id = str(data.get("download_id") or data.get("downloadId") or "N/A")
-    # Prefer explicit page_title; otherwise derive from the URL for better defaults
+    # Prefer explicit page_title; otherwise try yt-dlp metadata; finally derive from URL
     raw_title = data.get("page_title")
     if isinstance(raw_title, str) and raw_title.strip():
-        page_title = raw_title.strip()
+        candidate = raw_title.strip()
+        # Treat ultra-generic titles like 'video' as missing to derive a better default
+        if candidate.lower() == "video":
+            candidate = ""
+        page_title = candidate or None  # fall through to extraction/derivation if emptied
     else:
+        page_title = None
+
+    if not page_title:
+        extracted = _try_extract_title_with_ytdlp(url, download_id)
+        if extracted:
+            page_title = extracted
+
+    if not page_title:
         # Derive a readable default from the URL path or hostname instead of a generic 'video'
         try:
             parsed_for_title = urlparse(url)
@@ -662,6 +704,13 @@ def _init_download(data: dict[str, Any]) -> tuple[Path | None, str, str, str, bo
             segment = parsed_for_title.path.rstrip("/").rsplit("/", 1)[-1]
             fallback = segment or parsed_for_title.netloc or "video"
             page_title = fallback
+        except Exception:
+            page_title = "video"
+    if not page_title:
+        # As a final guard, ensure non-empty value
+        try:
+            parsed_for_title = urlparse(url)
+            page_title = parsed_for_title.netloc or "video"
         except Exception:
             page_title = "video"
     download_playlist = bool(data.get("download_playlist", False))

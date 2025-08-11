@@ -235,6 +235,8 @@ function ensureDownloadButtonStyle(buttonElement: HTMLElement): void {
     // Improve drag reliability on touch/pointer devices and block native drags
     buttonElement.style.setProperty("touch-action", "none", "important");
     buttonElement.style.setProperty("-webkit-user-drag", "none", "important");
+    // Defensive: neutralize site-wide CSS that disables pointer events on descendants
+    buttonElement.style.setProperty("-webkit-tap-highlight-color", "transparent", "important");
   } catch {
     // ignore
   }
@@ -416,7 +418,7 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
 
     // Prevent site handlers and text selection during drag
     e.preventDefault();
-    e.stopPropagation();
+    e.stopImmediatePropagation();
   });
 
   // Pointer Events fallback (covers stylus/touch and cases where mouse events are suppressed)
@@ -455,26 +457,28 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
 
         // Prevent site handlers and default gestures
         e.preventDefault();
-        e.stopPropagation();
+        e.stopImmediatePropagation();
       });
     }
   } catch {
     /* no-op */
   }
 
-  // Add click listener for download action
-  btn.addEventListener("click", async e => {
+  // Add click listener for download action (capture-phase to preempt site handlers)
+  btn.addEventListener(
+    "click",
+    async e => {
     // Only handle as click if not dragged significantly
     const currentState = stateManager.getUIState();
     const now = Date.now();
     const timeSinceLastClick = now - currentState.lastClickTime;
 
     // Treat as click only when not dragging and sufficient time since drag started
-    if (!currentState.isDragging && timeSinceLastClick > CLICK_THRESHOLD) {
+      if (!currentState.isDragging && timeSinceLastClick > CLICK_THRESHOLD) {
       // Update last click time
       stateManager.updateUIState({ lastClickTime: now });
-      e.preventDefault();
-      e.stopPropagation();
+        e.preventDefault();
+        e.stopImmediatePropagation();
 
       // Add visual feedback without hiding the button
       btn.classList.add("clicked");
@@ -536,7 +540,9 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
         }
       }
     }
-  });
+    },
+    { capture: true }
+  );
 
   // If this is for a specific video, store in our map
   if (videoElement) {
@@ -802,10 +808,26 @@ async function findVideosAndInjectButtons(): Promise<void> {
     downloadButton = await createOrUpdateButton();
   }
 
-  // Find all video elements and significant iframes, choose a single primary candidate
-  const allCandidates = Array.from(document.querySelectorAll<HTMLElement>(VIDEO_SELECTOR)).filter(
-    isSignificantVideo
-  );
+  // Find all video elements and significant iframes, including within open shadow roots
+  const collectCandidates = (root: Document | ShadowRoot): HTMLElement[] => {
+    const list = Array.from(root.querySelectorAll<HTMLElement>(VIDEO_SELECTOR)).filter(
+      isSignificantVideo
+    );
+    // Traverse shallow, open shadow roots
+    const hosts = Array.from(root.querySelectorAll<HTMLElement>("*")).filter(
+      el => (el as any).shadowRoot && (el as any).shadowRoot.mode === "open"
+    );
+    for (const host of hosts) {
+      try {
+        const sr = (host as any).shadowRoot as ShadowRoot;
+        list.push(...collectCandidates(sr));
+      } catch {
+        // ignore shadow traversal errors
+      }
+    }
+    return list;
+  };
+  const allCandidates = collectCandidates(document);
 
   let foundSignificantVideo = allCandidates.length > 0;
   if (foundSignificantVideo) {

@@ -1986,7 +1986,7 @@ test.describe("Real site video detection (opt-in)", () => {
     // Build extension to ensure dist assets exist
     try {
       cp.execSync("npm run build", { stdio: "inherit" });
-    } catch (_e) {
+    } catch {
       console.log("[RealSites] Build failed; proceeding if dist exists.");
     }
 
@@ -2029,12 +2029,8 @@ test.describe("Real site video detection (opt-in)", () => {
     // Wait until health endpoint responds
     const healthUrl = `http://127.0.0.1:${serverPort}/health`;
     for (let i = 0; i < 20; i++) {
-      try {
-        const res = await fetch(healthUrl);
-        if (res.ok) break;
-      } catch (e) {
-        void e;
-      }
+      const res = await fetch(healthUrl).catch(() => null);
+      if (res && res.ok) break;
       await new Promise(r => setTimeout(r, 300));
     }
 
@@ -2062,8 +2058,8 @@ test.describe("Real site video detection (opt-in)", () => {
           ["-e", 'tell application "System Events" to set visible of process "Chromium" to false'],
           { stdio: "ignore", detached: true }
         ).unref();
-      } catch (_e) {
-        // ignore
+      } catch {
+        void 0;
       }
     }
   });
@@ -2075,8 +2071,8 @@ test.describe("Real site video detection (opt-in)", () => {
     if (serverProc) {
       try {
         serverProc.kill("SIGTERM");
-      } catch (_e) {
-        // ignore
+      } catch {
+        void 0;
       }
     }
   });
@@ -2174,7 +2170,7 @@ test.describe("Real site video detection (opt-in)", () => {
       try {
         await locator.scrollIntoViewIfNeeded();
         await locator.click({ timeout: 2000 });
-      } catch (_e) {
+      } catch {
         const viewport = await page.evaluate(() => ({
           w: window.innerWidth,
           h: window.innerHeight,
@@ -2274,7 +2270,7 @@ test.describe("Real site video detection (opt-in)", () => {
       });
       await locator.first().click({ force: true, timeout: 2000 });
       return true;
-    } catch (e) {
+    } catch {
       return false;
     }
   }
@@ -2298,14 +2294,10 @@ test.describe("Real site video detection (opt-in)", () => {
       const statusUrl = `http://127.0.0.1:${serverPort}/api/status`;
       let ok = false;
       for (let i = 0; i < 20; i++) {
-        try {
-          const res = await page.request.get(statusUrl);
-          if (res.ok()) {
-            ok = true;
-            break;
-          }
-        } catch (e) {
-          void e;
+        const res = await page.request.get(statusUrl).catch(() => null);
+        if (res && res.ok()) {
+          ok = true;
+          break;
         }
         await page.waitForTimeout(500);
       }
@@ -2355,17 +2347,13 @@ test.describe("Real site video detection (opt-in)", () => {
       const statusUrl = `http://127.0.0.1:${serverPort}/api/status`;
       let sawActive = false;
       for (let i = 0; i < 20; i++) {
-        try {
-          const res = await p1.request.get(statusUrl);
-          if (res.ok()) {
-            const data = await res.json();
-            if (data && Object.keys(data).length >= 0) {
-              sawActive = true;
-              break;
-            }
+        const res = await p1.request.get(statusUrl).catch(() => null);
+        if (res && res.ok()) {
+          const data = await res.json();
+          if (data && Object.keys(data).length >= 0) {
+            sawActive = true;
+            break;
           }
-        } catch (e) {
-          // ignore
         }
         await p1.waitForTimeout(500);
       }
