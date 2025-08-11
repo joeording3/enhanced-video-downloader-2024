@@ -389,6 +389,11 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
       },
     });
 
+    // Visual drag cursor
+    try {
+      btn.classList.add("dragging");
+    } catch {}
+
     // Add document-level listeners if not already attached
     document.addEventListener("mousemove", onDrag, { passive: false });
     document.addEventListener("mouseup", onDragEnd, { passive: false, once: true });
@@ -410,11 +415,11 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
       e.preventDefault();
       e.stopPropagation();
 
-      // Add visual feedback
+      // Add visual feedback without hiding the button
       btn.classList.add("clicked");
       btn.classList.add("download-sending");
       // Remove the transient clicked class after the animation
-      setTimeout(() => btn.classList.remove("clicked"), 300);
+      setTimeout(() => btn.classList.remove("clicked"), 150);
 
       try {
         // Determine download URL. Prefer currentSrc, then src; avoid blob URLs by falling back to page URL
@@ -444,14 +449,14 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
             btn.classList.add("download-success");
             setTimeout(() => {
               btn.classList.remove("download-success");
-            }, 2000);
+            }, 1200);
           } else {
             // Error feedback
             btn.classList.remove("download-sending");
             btn.classList.add("download-error");
             setTimeout(() => {
               btn.classList.remove("download-error");
-            }, 2000);
+            }, 1200);
           }
         });
       } catch (err) {
@@ -461,7 +466,7 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
           btn.classList.add("download-error");
           setTimeout(() => {
             btn.classList.remove("download-error");
-          }, 2000);
+          }, 1200);
         } catch {
           // no-op: visual feedback cleanup best-effort
         }
@@ -514,7 +519,11 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
  */
 function onDrag(event: MouseEvent): void {
   const uiState = stateManager.getUIState();
-  if (!uiState.isDragging || !downloadButton) return;
+  if (!uiState.isDragging || !downloadButton) {
+    // Ensure no stale drag visual
+    try { downloadButton?.classList.remove("dragging"); } catch {}
+    return;
+  }
 
   event.preventDefault();
 
@@ -540,6 +549,11 @@ async function onDragEnd(): Promise<void> {
   // Remove document-level listeners
   document.removeEventListener("mousemove", onDrag);
   document.removeEventListener("mouseup", onDragEnd);
+
+  // Remove drag visual
+  try {
+    downloadButton.classList.remove("dragging");
+  } catch {}
 
   // Get current position
   const rect = downloadButton.getBoundingClientRect();
