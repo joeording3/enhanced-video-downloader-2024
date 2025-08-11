@@ -18,9 +18,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - yt-dlp config parsing noise: accept `yt_dlp_options` provided as JSON strings or Pydantic models;
   continue using safe defaults when types are invalid, reducing warnings like "yt_dlp_options is not
   a dictionary".
- - Playwright E2E: Stabilized opt-in real-site test (YouTube Shorts drag-and-click). The test now
-   clamps the injected download button into the viewport and falls back to a JS-triggered click when
-   actionability fails, preventing intermittent "element is outside of the viewport" failures.
+- Playwright E2E: Stabilized opt-in real-site test (YouTube Shorts drag-and-click). The test now
+  clamps the injected download button into the viewport and falls back to a JS-triggered click when
+  actionability fails, preventing intermittent "element is outside of the viewport" failures.
 
 ### Added
 

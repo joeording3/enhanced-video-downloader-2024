@@ -3,7 +3,8 @@
 Urgent Tasks:
 
 - [/] log viewer on options page not working - no logs displayed
-- [/] Client must not send URL-based dedupe token as `download_id`; omit field and let server generate ID
+- [/] Client must not send URL-based dedupe token as `download_id`; omit field and let server
+  generate ID
 - [x] Options: Replace generic "Field is valid" for dropdowns with meaningful, contextual info. Add
       explanatory help for "Console Log Level" with per-option descriptions and validation.
 - [x] Options UI: Consolidate "Runtime (requires restart)" settings into the "Server Configuration"
@@ -63,9 +64,9 @@ Urgent Tasks:
 - [x] Options Log Viewer: parse NDJSON, derive level from prefix, filter-first then limit display,
       suppress `werkzeug` and status 200 entries; iteratively fetch more lines until the filtered
       set reaches the UI limit. Added unit tests to verify filter + limit order and iterative fetch.
- - [x] Options Page: Make major sections collapsible (Server Configuration, Download Settings,
-       Behavior Settings, Server Logs, Download History) with accessible accordion controls and
-       persisted open/closed state per section.
+- [x] Options Page: Make major sections collapsible (Server Configuration, Download Settings,
+      Behavior Settings, Server Logs, Download History) with accessible accordion controls and
+      persisted open/closed state per section.
 - [x] Add explicit startup INFO log line and wire Gunicorn access/error logs to the same log file by
       default via CLI helpers. Update README and CHANGELOG to document behavior.
 - [x] Keep CLI output clean: use plain, minimal console formatter at WARNING by default; route all

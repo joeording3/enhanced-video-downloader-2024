@@ -1055,9 +1055,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           }
 
           try {
-            log("EVD background: Posting to /api/download on port " + effectivePort + " for URL " + message.url);
-            // eslint-disable-next-line no-console
-            console.log("[EVD] BG → POST /api/download", { port: effectivePort, url: message.url, pageTitle: message.pageTitle });
+            log(
+              "EVD background: Posting to /api/download on port " +
+                effectivePort +
+                " for URL " +
+                message.url
+            );
+
+            console.log("[EVD] BG → POST /api/download", {
+              port: effectivePort,
+              url: message.url,
+              pageTitle: message.pageTitle,
+            });
           } catch {
             /* ignore */
           }
@@ -1073,7 +1082,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
           try {
             log("EVD background: Server response for download", JSON.stringify(response));
-            // eslint-disable-next-line no-console
+
             console.log("[EVD] BG response from server", response);
           } catch {
             /* ignore */

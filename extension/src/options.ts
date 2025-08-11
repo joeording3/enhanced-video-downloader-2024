@@ -218,11 +218,11 @@ export function setupAccordion(): void {
         : null;
     })
     .filter(Boolean) as Array<{
-      group: HTMLElement;
-      toggle: HTMLButtonElement;
-      content: HTMLElement;
-      category: string | undefined;
-    }>;
+    group: HTMLElement;
+    toggle: HTMLButtonElement;
+    content: HTMLElement;
+    category: string | undefined;
+  }>;
 
   if (toggles.length === 0) return;
 
@@ -243,7 +243,8 @@ export function setupAccordion(): void {
       ensureIds(toggle, content);
 
       const defaultExpanded = toggle.getAttribute("aria-expanded") !== "false";
-      const initialExpanded = category && category in persisted ? !!persisted[category] : defaultExpanded;
+      const initialExpanded =
+        category && category in persisted ? !!persisted[category] : defaultExpanded;
       toggle.setAttribute("aria-expanded", String(initialExpanded));
       content.hidden = !initialExpanded;
 

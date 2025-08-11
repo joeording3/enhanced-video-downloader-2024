@@ -2108,7 +2108,7 @@ test.describe("Real site video detection (opt-in)", () => {
   test("Synthetic: controlled page injects button and backend registers download", async () => {
     test.setTimeout(45000);
     const syntheticUrl = "http://evd.test/synthetic";
-    const html = `<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>EVD Synthetic</title></head><body><main><h1>Test</h1><video width=\"320\" height=\"240\"></video></main></body></html>`;
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>EVD Synthetic</title></head><body><main><h1>Test</h1><video width="320" height="240"></video></main></body></html>`;
     // Route the synthetic URL to our controlled HTML
     await context.route("**/*", async route => {
       const reqUrl = route.request().url();

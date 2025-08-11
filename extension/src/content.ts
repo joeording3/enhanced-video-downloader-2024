@@ -468,107 +468,109 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
   btn.addEventListener(
     "click",
     async e => {
-    // Only handle as click if not dragged significantly
-    const currentState = stateManager.getUIState();
-    const now = Date.now();
-    const timeSinceLastClick = now - currentState.lastClickTime;
+      // Only handle as click if not dragged significantly
+      const currentState = stateManager.getUIState();
+      const now = Date.now();
+      const timeSinceLastClick = now - currentState.lastClickTime;
 
-    // Treat as click only when not dragging and sufficient time since drag started
+      // Treat as click only when not dragging and sufficient time since drag started
       if (!currentState.isDragging && timeSinceLastClick > CLICK_THRESHOLD) {
-      // Update last click time
-      stateManager.updateUIState({ lastClickTime: now });
+        // Update last click time
+        stateManager.updateUIState({ lastClickTime: now });
         e.preventDefault();
         e.stopImmediatePropagation();
 
-      // Add visual feedback without hiding the button
-      btn.classList.add("clicked");
-      btn.classList.add("download-sending");
-      // Remove the transient clicked class after the animation
-      setTimeout(() => btn.classList.remove("clicked"), 150);
+        // Add visual feedback without hiding the button
+        btn.classList.add("clicked");
+        btn.classList.add("download-sending");
+        // Remove the transient clicked class after the animation
+        setTimeout(() => btn.classList.remove("clicked"), 150);
 
-      try {
-        // Determine download URL. Prefer currentSrc, then src; avoid blob URLs by falling back to page URL
-        let rawUrl = window.location.href;
-        if (videoElement && videoElement.tagName === "VIDEO") {
-          const ve = videoElement as HTMLVideoElement;
-          rawUrl = ve.currentSrc || ve.src || rawUrl;
-        }
-        const url = rawUrl.startsWith("blob:") ? window.location.href : rawUrl;
-
-        // Debug logging for browser console and centralized logger
         try {
-          log("EVD content: Download button clicked. Sending request", url);
-          // Emit a plain console log to ensure visibility in Playwright/browser devtools
-          // eslint-disable-next-line no-console
-          console.log("[EVD] Button click → sending download request", { url, pageTitle: document.title });
-        } catch {
-          /* no-op */
-        }
-
-        // Send message to background script (server will generate downloadId)
-        chrome.runtime.sendMessage(
-          { type: "downloadVideo", url: url, pageTitle: document.title },
-          response => {
-            if (chrome.runtime.lastError) {
-              error("Error sending download request:", chrome.runtime.lastError.message);
-              btn.classList.remove("download-sending");
-              btn.classList.add("download-error");
-              setTimeout(() => {
-                btn.classList.remove("download-error");
-              }, 2000);
-              return;
-            }
-
-            if (response && (response.status === "success" || response.status === "queued")) {
-              try {
-                log("EVD content: Background responded success", JSON.stringify(response));
-                // eslint-disable-next-line no-console
-                console.log("[EVD] Background response (success)", response);
-              } catch {
-                /* ignore */
-              }
-              // Success feedback
-              btn.classList.remove("download-sending");
-              btn.classList.add("download-success");
-              setTimeout(() => {
-                btn.classList.remove("download-success");
-              }, 1200);
-            } else {
-              try {
-                log("EVD content: Background responded error", JSON.stringify(response));
-                // eslint-disable-next-line no-console
-                console.log("[EVD] Background response (error)", response);
-              } catch {
-                /* ignore */
-              }
-              // Error feedback
-              btn.classList.remove("download-sending");
-              btn.classList.add("download-error");
-              setTimeout(() => {
-                btn.classList.remove("download-error");
-              }, 1200);
-            }
+          // Determine download URL. Prefer currentSrc, then src; avoid blob URLs by falling back to page URL
+          let rawUrl = window.location.href;
+          if (videoElement && videoElement.tagName === "VIDEO") {
+            const ve = videoElement as HTMLVideoElement;
+            rawUrl = ve.currentSrc || ve.src || rawUrl;
           }
-        );
-      } catch (err) {
-        error("Error initiating download:", err);
-        try {
-          // eslint-disable-next-line no-console
-          console.log("[EVD] Error initiating download", err);
-        } catch {
-          /* ignore */
-        }
-        try {
-          btn.classList.remove("download-sending");
-          btn.classList.add("download-error");
-          setTimeout(() => {
-            btn.classList.remove("download-error");
-          }, 1200);
-        } catch {
-          // no-op: visual feedback cleanup best-effort
+          const url = rawUrl.startsWith("blob:") ? window.location.href : rawUrl;
+
+          // Debug logging for browser console and centralized logger
+          try {
+            log("EVD content: Download button clicked. Sending request", url);
+            // Emit a plain console log to ensure visibility in Playwright/browser devtools
+
+            console.log("[EVD] Button click → sending download request", {
+              url,
+              pageTitle: document.title,
+            });
+          } catch {
+            /* no-op */
+          }
+
+          // Send message to background script (server will generate downloadId)
+          chrome.runtime.sendMessage(
+            { type: "downloadVideo", url: url, pageTitle: document.title },
+            response => {
+              if (chrome.runtime.lastError) {
+                error("Error sending download request:", chrome.runtime.lastError.message);
+                btn.classList.remove("download-sending");
+                btn.classList.add("download-error");
+                setTimeout(() => {
+                  btn.classList.remove("download-error");
+                }, 2000);
+                return;
+              }
+
+              if (response && (response.status === "success" || response.status === "queued")) {
+                try {
+                  log("EVD content: Background responded success", JSON.stringify(response));
+
+                  console.log("[EVD] Background response (success)", response);
+                } catch {
+                  /* ignore */
+                }
+                // Success feedback
+                btn.classList.remove("download-sending");
+                btn.classList.add("download-success");
+                setTimeout(() => {
+                  btn.classList.remove("download-success");
+                }, 1200);
+              } else {
+                try {
+                  log("EVD content: Background responded error", JSON.stringify(response));
+
+                  console.log("[EVD] Background response (error)", response);
+                } catch {
+                  /* ignore */
+                }
+                // Error feedback
+                btn.classList.remove("download-sending");
+                btn.classList.add("download-error");
+                setTimeout(() => {
+                  btn.classList.remove("download-error");
+                }, 1200);
+              }
+            }
+          );
+        } catch (err) {
+          error("Error initiating download:", err);
+          try {
+            console.log("[EVD] Error initiating download", err);
+          } catch {
+            /* ignore */
+          }
+          try {
+            btn.classList.remove("download-sending");
+            btn.classList.add("download-error");
+            setTimeout(() => {
+              btn.classList.remove("download-error");
+            }, 1200);
+          } catch {
+            // no-op: visual feedback cleanup best-effort
+          }
         }
       }
-    }
     },
     { capture: true }
   );
@@ -858,7 +860,7 @@ async function findVideosAndInjectButtons(): Promise<void> {
   };
   const allCandidates = collectCandidates(document);
 
-  let foundSignificantVideo = allCandidates.length > 0;
+  const foundSignificantVideo = allCandidates.length > 0;
   if (foundSignificantVideo) {
     const primary = selectPrimaryMediaCandidate(allCandidates);
     if (primary && !injectedButtons.has(primary)) {
