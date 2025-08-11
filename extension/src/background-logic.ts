@@ -141,8 +141,26 @@ export async function discoverServerPort(
     }
   }
 
-  // Scan port range with timeout and parallel checking for efficiency
-  const portRange = Array.from({ length: totalPorts }, (_, i) => defaultPort + i);
+  // Deterministically check the default port first to satisfy callers/tests that
+  // expect the canonical port when the server is available there.
+  try {
+    const ok = await Promise.race([
+      checkStatus(defaultPort),
+      new Promise<boolean>((_, reject) => setTimeout(() => reject(new Error("Timeout")), timeout)),
+    ]);
+    if (ok) {
+      if (storageService.setPort) {
+        await storageService.setPort(defaultPort);
+      }
+      if (onProgress) onProgress(1, totalPorts);
+      return defaultPort;
+    }
+  } catch {
+    // Fall through to ranged scan
+  }
+
+  // Scan remaining port range (excluding default) with timeout and parallel checking for efficiency
+  const portRange = Array.from({ length: totalPorts - 1 }, (_, i) => defaultPort + i + 1);
 
   // Check ports in batches to avoid overwhelming the system
   const batchSize = 5;

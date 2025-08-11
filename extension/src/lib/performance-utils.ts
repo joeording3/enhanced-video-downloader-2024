@@ -16,10 +16,31 @@ export function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
-  let timeoutId: ReturnType<typeof setTimeout>;
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
   return (...args: Parameters<T>) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => func(...args), wait);
+    if (timeoutId !== null) {
+      clearTimeout(timeoutId);
+    }
+    // Use minimal timeout path for very small waits to improve responsiveness in tight loops
+    if (wait <= 10) {
+      // Schedule on microtask queue when possible to coalesce bursts
+      Promise.resolve().then(() => {
+        if (timeoutId !== null) {
+          // another call scheduled a timer; let that handle it
+          return;
+        }
+        // Fallback to setTimeout with minimal delay to yield to event loop
+        timeoutId = setTimeout(() => {
+          timeoutId = null;
+          func(...args);
+        }, wait);
+      });
+      return;
+    }
+    timeoutId = setTimeout(() => {
+      timeoutId = null;
+      func(...args);
+    }, wait);
   };
 }
 
@@ -30,12 +51,39 @@ export function throttle<T extends (...args: any[]) => any>(
   func: T,
   limit: number
 ): (...args: Parameters<T>) => void {
-  let inThrottle: boolean;
+  let lastInvoke = 0;
+  let trailingArgs: Parameters<T> | null = null;
+  let scheduled = false;
+
+  const invoke = (args: Parameters<T>) => {
+    lastInvoke = Date.now();
+    func(...args);
+  };
+
   return (...args: Parameters<T>) => {
-    if (!inThrottle) {
-      func(...args);
-      inThrottle = true;
-      setTimeout(() => (inThrottle = false), limit);
+    const now = Date.now();
+    const remaining = limit - (now - lastInvoke);
+
+    if (remaining <= 0) {
+      // Enough time has passed; invoke immediately
+      if (scheduled) {
+        scheduled = false;
+      }
+      trailingArgs = null;
+      invoke(args);
+    } else {
+      // Within throttle window; remember latest args and schedule trailing edge once
+      trailingArgs = args;
+      if (!scheduled) {
+        scheduled = true;
+        setTimeout(() => {
+          scheduled = false;
+          if (trailingArgs) {
+            invoke(trailingArgs);
+            trailingArgs = null;
+          }
+        }, remaining);
+      }
     }
   };
 }
