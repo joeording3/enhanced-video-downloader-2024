@@ -18,26 +18,23 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 HISTORY_PATH = DATA_DIR / "history.json"
 
 
-@cache_result(ttl_seconds=60)  # Cache for 1 minute
-def load_history() -> list[dict[str, Any]]:
-    """
-    Load download history from the storage file.
-
-    Returns
-    -------
-    List[Dict[str, Any]]
-        List of download history entries, or empty list if the file doesn't exist or is invalid.
-    """
+@cache_result(ttl_seconds=60)
+def _load_history_cached(history_path_str: str) -> list[dict[str, Any]]:
+    """Internal cached loader keyed by the history file path string."""
+    path = Path(history_path_str)
     try:
-        with HISTORY_PATH.open(encoding="utf-8") as f:
+        with path.open(encoding="utf-8") as f:
             data: Any = json.load(f)
             if isinstance(data, list):
-                # We cast here because json.load returns List[Any]
-                # and we are asserting the structure of our history items.
                 return cast(list[dict[str, Any]], data)
-            return []  # Or handle error if not a list
+            return []
     except (OSError, json.JSONDecodeError):
         return []
+
+
+def load_history() -> list[dict[str, Any]]:
+    """Load download history from the current HISTORY_PATH with caching per-path."""
+    return _load_history_cached(str(HISTORY_PATH))
 
 
 def save_history(history: list[dict[str, Any]]) -> bool:
