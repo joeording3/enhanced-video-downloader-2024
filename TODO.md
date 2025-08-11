@@ -56,10 +56,9 @@ Urgent Tasks:
         `.env` as the documented default.
   - [x] Switch to structured JSON (NDJSON) logging with optional `start_ts` and `duration_ms` fields
         for easy sorting and analysis; standardized request logs include timing when available.
-  - [x] Options Log Viewer: parse NDJSON, derive level from prefix, filter-first then limit display,
-        suppress `werkzeug` and status 200 entries; iteratively fetch more lines until the filtered
-        set reaches the UI limit. Added unit tests to verify filter + limit order and iterative
-        fetch.
+- [x] Options Log Viewer: parse NDJSON, derive level from prefix, filter-first then limit display,
+  suppress `werkzeug` and status 200 entries; iteratively fetch more lines until the filtered set
+  reaches the UI limit. Added unit tests to verify filter + limit order and iterative fetch.
 - [x] Add explicit startup INFO log line and wire Gunicorn access/error logs to the same log file by
       default via CLI helpers. Update README and CHANGELOG to document behavior.
 - [x] Keep CLI output clean: use plain, minimal console formatter at WARNING by default; route all
@@ -69,7 +68,8 @@ Urgent Tasks:
 - [x] Centralize log-path resolution via `server/logging_setup.resolve_log_path` and update
   `server/api/logs_bp.py` and `server/api/logs_manage_bp.py` to use it; document precedence in
   README. Tighten `_validate_lines` message while preserving client response text.
- - [x] Background messaging noise: suppress "Could not establish connection. Receiving end does not exist" by ensuring all `chrome.runtime.sendMessage(...)` calls in `extension/src/background.ts` either use a callback or `.catch(...)` when no receivers are present.
+- [x] Background messaging noise: suppress connection error by ensuring
+  `chrome.runtime.sendMessage(...)` calls use a callback or `.catch(...)` when no receivers are present.
 - [ ] Replace silent `pass` blocks with logging/handling in:
   - `server/cli_helpers.py` (loops and maintenance utils)
   - `server/cli_main.py` (loop around verification)

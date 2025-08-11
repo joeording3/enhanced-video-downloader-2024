@@ -48,6 +48,11 @@ const _maxPortScan = getPortRange()[1]; // Use the end of the port range
 const _serverCheckInterval = NETWORK_CONSTANTS.SERVER_CHECK_INTERVAL;
 const _statusPollIntervalMs = 3000;
 
+// Prevent duplicate download requests: track in-flight and recent requests
+const _inFlightDownloads = new Set<string>();
+const _recentDownloads = new Map<string, number>();
+const _recentWindowMs = 5000; // ignore duplicate requests for same key within 5s
+
 // Expected application name for server identification (from manifest)
 const expectedAppName =
   (chrome.runtime && chrome.runtime.getManifest ? chrome.runtime.getManifest().name : null) ||
@@ -870,12 +875,21 @@ const sendDownloadRequest = async (
       return { status: "error", message: "Server not available" };
     }
 
+    // De-dupe: build a canonical key for this request
+    const downloadKey = `${videoUrl}::${customDownloadId ?? ""}`;
+    const now = Date.now();
+    const lastTs = _recentDownloads.get(downloadKey) || 0;
+    if (_inFlightDownloads.has(downloadKey) || now - lastTs < _recentWindowMs) {
+      return { status: "error", message: "Duplicate request ignored. Please wait a moment." };
+    }
+    _inFlightDownloads.add(downloadKey);
+
     // Create download request payload
     const downloadRequest = {
       url: videoUrl,
       quality: quality || "best",
       format: format || "mp4",
-      is_playlist: isPlaylist,
+      download_playlist: isPlaylist,
       page_title: pageTitle,
       download_id: customDownloadId || null,
     };
@@ -890,6 +904,8 @@ const sendDownloadRequest = async (
     });
 
     if (!response.ok) {
+      _recentDownloads.set(downloadKey, Date.now());
+      _inFlightDownloads.delete(downloadKey);
       const errorText = await response.text();
       return { status: "error", message: `Server error: ${response.status} - ${errorText}` };
     }
@@ -921,6 +937,8 @@ const sendDownloadRequest = async (
       }
     }
 
+    _recentDownloads.set(downloadKey, Date.now());
+    _inFlightDownloads.delete(downloadKey);
     return result;
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";

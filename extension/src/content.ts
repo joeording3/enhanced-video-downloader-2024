@@ -233,6 +233,19 @@ function ensureDownloadButtonStyle(buttonElement: HTMLElement): void {
   );
 
   // Phase 2: Base look & feel handled by CSS class `.download-button`
+  // But some sites/extensions may inject inline font sizing onto all buttons.
+  // Force essential typography and spacing with inline !important to avoid tiny text.
+  try {
+    buttonElement.style.setProperty("font-size", "20px", "important");
+    buttonElement.style.setProperty("line-height", "1", "important");
+    buttonElement.style.setProperty("padding", "20px 24px", "important");
+    buttonElement.style.setProperty("border-radius", "10px", "important");
+    // Keep border width visible for contrast variants
+    buttonElement.style.setProperty("border-width", "2px", "important");
+    buttonElement.style.setProperty("border-style", "solid", "important");
+  } catch {
+    // ignore inline style enforcement errors
+  }
 
   // Phase 2b: Choose contrast-aware colors based on page background
   try {
@@ -383,8 +396,9 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
         }
         const url = rawUrl.startsWith("blob:") ? window.location.href : rawUrl;
 
-        // Send message to background script
-        chrome.runtime.sendMessage({ type: "downloadVideo", url: url }, response => {
+        // Send message to background script; include a client-side dedupe token to avoid rapid duplicates
+        const dedupeToken = `${url}::${Date.now()}`;
+        chrome.runtime.sendMessage({ type: "downloadVideo", url: url, downloadId: dedupeToken }, response => {
           if (chrome.runtime.lastError) {
             error("Error sending download request:", chrome.runtime.lastError.message);
             btn.classList.remove("download-sending");

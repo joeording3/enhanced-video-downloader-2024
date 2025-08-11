@@ -1733,7 +1733,6 @@ _Last updated: 2025-01-27_
   - Identifies duplicate test patterns
   - Suggests consolidation opportunities
 
-
 ### Coverage & Metrics
 
 - `scripts/update_coverage_stats.py` - Update coverage statistics in TODO.md and tests/testing.md

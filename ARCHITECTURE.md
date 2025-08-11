@@ -480,8 +480,9 @@ Adoption status:
 
 - **Living Documentation**: `tests/testing.md` provides a comprehensive overview of test
   responsibilities, coverage metrics, and quality indicators across the codebase.
- - **Coverage Reporting**: `scripts/update_coverage_stats.py` (also exposed via `make coverage-update`) updates
-   coverage statistics and the table in `TODO.md`, ensuring accurate tracking across modules.
+- **Coverage Reporting**: `scripts/update_coverage_stats.py` (also exposed via
+  `make coverage-update`) updates coverage statistics and the table in `TODO.md`, ensuring accurate
+  tracking across modules.
 - **Quality Metrics**: The audit system tracks mutation scores, test classification, and maintenance
   schedules to ensure robust test quality.
 - **Mutation Testing**: Stryker for JS/TS and Mutmut for Python provide mutation testing to detect

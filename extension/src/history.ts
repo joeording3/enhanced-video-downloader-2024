@@ -126,7 +126,18 @@ export function renderHistoryItems(
 
     const statusDiv = document.createElement("div");
     const statusBold = document.createElement("b");
-    statusBold.textContent = item.status || "";
+    const rawStatus = String(item.status || "");
+    const normalized = rawStatus.toLowerCase();
+    statusBold.textContent = rawStatus;
+    // Apply status pill classes
+    statusBold.classList.add("status-pill");
+    if (["success", "complete", "completed", "done"].includes(normalized)) {
+      statusBold.classList.add("is-success");
+    } else if (["error", "failed", "fail"].includes(normalized)) {
+      statusBold.classList.add("is-error");
+    } else if (["queued", "pending", "waiting", "paused"].includes(normalized)) {
+      statusBold.classList.add("is-warning");
+    }
     statusDiv.appendChild(document.createTextNode("Status: "));
     statusDiv.appendChild(statusBold);
 
@@ -142,11 +153,10 @@ export function renderHistoryItems(
       // Retry clicked for item
       chrome.runtime.sendMessage(
         {
-          type: "downloadVideo", // Changed action to type
+          type: "downloadVideo",
           url: item.url,
-          filename: item.filename,
-          page_title: item.page_title || document.title, // Fallback for page_title
-          // id: item.id // Optionally pass original ID if server needs to link them
+          downloadId: item.id || undefined,
+          page_title: item.page_title || document.title,
         },
         response => {
           if (chrome.runtime.lastError) {
@@ -181,6 +191,10 @@ export function renderHistoryItems(
     actionsWrapper.appendChild(retryButton);
     actionsWrapper.appendChild(deleteButton);
 
+    // Also tag item with normalized status for styling hooks
+    if (normalized) {
+      li.classList.add("status-" + normalized);
+    }
     li.appendChild(titleDiv);
     li.appendChild(timestampDiv);
     li.appendChild(statusDiv);

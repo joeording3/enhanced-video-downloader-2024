@@ -79,7 +79,6 @@ Enhanced Video Downloader/
 │   │   ├── status.py         # Status check commands
 │   │   ├── utils.py          # Utility commands
 │   │   └── resume.py         # Resume commands
-│   ├── cli/                  # Modular CLI commands
 │   ├── cli_helpers.py        # Shared helpers for CLI commands
 │   ├── cli_resume_helpers.py # Resume-specific CLI helpers
 │   ├── api/                  # Flask Blueprints
