@@ -5,19 +5,19 @@ This module defines functions to configure and execute video downloads using
 yt-dlp, including option building, progress hooks, process tracking, and error cleanup.
 """
 
-from contextlib import suppress
-from datetime import datetime, timezone
 import json
 import logging
-from pathlib import Path
 import tempfile
+from contextlib import suppress
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
 import browser_cookie3  # type: ignore[import-untyped]
-from flask import jsonify
 import psutil  # Added for type annotations
 import yt_dlp
+from flask import jsonify
 from yt_dlp.utils import sanitize_filename
 
 from server.config import Config
