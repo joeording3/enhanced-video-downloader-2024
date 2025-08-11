@@ -984,6 +984,30 @@ def _handle_yt_dlp_download_error(
 
     logger.error(f"[{download_id}] yt-dlp download error for URL {url}: Type='{error_type}', Message='{client_error}'")
 
+    # Surface an entry in the status endpoint even when the error is raised before any hook runs.
+    try:
+        with progress_lock:
+            # Record an error entry that the /api/status endpoint will expose
+            download_errors_from_hooks[str(download_id)] = {
+                "original_message": client_error,
+                "parsed_type": error_type,
+                "source": "server",
+                "details": {"exception": exc_message},
+                "troubleshooting": user_msg,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "download_id": str(download_id),
+                "url": url,
+            }
+            # Optionally reflect a minimal status object as well
+            progress_data[str(download_id)] = {
+                "status": "error",
+                "message": user_msg,
+                "last_update": datetime.now(timezone.utc).isoformat(),
+            }
+    except Exception:
+        # Best-effort; do not block response on status recording errors
+        pass
+
     # Append a failure entry to history so errors are visible even without the 'finished' hook
     with suppress(Exception):
         append_history_entry(

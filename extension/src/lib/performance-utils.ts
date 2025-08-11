@@ -51,39 +51,14 @@ export function throttle<T extends (...args: any[]) => any>(
   func: T,
   limit: number
 ): (...args: Parameters<T>) => void {
-  let lastInvoke = 0;
-  let trailingArgs: Parameters<T> | null = null;
-  let scheduled = false;
-
-  const invoke = (args: Parameters<T>) => {
-    lastInvoke = Date.now();
-    func(...args);
-  };
-
+  let inThrottle = false;
   return (...args: Parameters<T>) => {
-    const now = Date.now();
-    const remaining = limit - (now - lastInvoke);
-
-    if (remaining <= 0) {
-      // Enough time has passed; invoke immediately
-      if (scheduled) {
-        scheduled = false;
-      }
-      trailingArgs = null;
-      invoke(args);
-    } else {
-      // Within throttle window; remember latest args and schedule trailing edge once
-      trailingArgs = args;
-      if (!scheduled) {
-        scheduled = true;
-        setTimeout(() => {
-          scheduled = false;
-          if (trailingArgs) {
-            invoke(trailingArgs);
-            trailingArgs = null;
-          }
-        }, remaining);
-      }
+    if (!inThrottle) {
+      func(...args);
+      inThrottle = true;
+      setTimeout(() => {
+        inThrottle = false;
+      }, limit);
     }
   };
 }
