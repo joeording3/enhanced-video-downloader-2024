@@ -314,8 +314,16 @@ export const NOTIFICATION_MESSAGES = {
 
 // Environment detection
 function getEnvironment(): string {
-  // In browser environment, we can't easily detect environment
-  // Default to development, but could be overridden by extension options
+  // Prefer explicit test signal at build/runtime (bundlers may inline process.env)
+  if (typeof process !== "undefined" && typeof process.env !== "undefined") {
+    if (process.env.EVD_TESTING === "true" || process.env.NODE_ENV === "test") {
+      return "testing";
+    }
+    if (process.env.NODE_ENV === "production") {
+      return "production";
+    }
+  }
+  // Default to development in browsers
   return "development";
 }
 

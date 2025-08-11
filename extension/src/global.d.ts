@@ -135,5 +135,6 @@ declare var process: {
   env: {
     JEST_WORKER_ID?: string;
     NODE_ENV?: string;
+    EVD_TESTING?: string;
   };
 };

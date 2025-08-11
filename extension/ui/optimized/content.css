@@ -60,9 +60,6 @@ button[id^="evd-download-button-"] {
 }
 
 /* Cursor feedback during drag */
-.download-button.dragging {
-  cursor: grabbing !important;
-}
 
 /* JS-toggled micro-bounce on click */
 

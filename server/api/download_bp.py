@@ -172,9 +172,14 @@ def _parse_download_raw() -> dict[str, Any]:
 
 
 def _get_download_id(raw_data: dict[str, Any]) -> str:
-    """Extract the downloadId or use 'unknown' if missing."""
-    download_id = raw_data.get("downloadId", "unknown")
-    return str(download_id) if download_id is not None else "unknown"
+    """Extract a download ID from either 'downloadId' or 'download_id'; generate one if missing."""
+    download_id = raw_data.get("downloadId")
+    if download_id is None:
+        download_id = raw_data.get("download_id")
+    if not download_id:
+        # Millisecond timestamp fallback for stability
+        return str(int(time.time() * 1000))
+    return str(download_id)
 
 
 def _missing_url_response(download_id: str) -> tuple[Response, int]:
@@ -349,6 +354,10 @@ def _process_download_request(raw_data: dict[str, Any]) -> tuple[Any, str | None
         return _validation_error_response(e, download_id), None
 
     validated_data = download_request.model_dump()
+
+    # Ensure a non-null download_id flows to the downstream handler
+    if not validated_data.get("download_id"):
+        validated_data["download_id"] = download_id
 
     # Playlist permission check
     resp = _playlist_permission_response(validated_data, download_id)

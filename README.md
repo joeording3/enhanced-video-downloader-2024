@@ -407,7 +407,9 @@ CLI logging/output hygiene
     name for management if neither env nor config is provided
 
 - **Error History**: Browse past download errors with detailed troubleshooting information
-- **Download History**: Browse local download history with pagination. Controls include Items per page, Prev/Next navigation, and a clear-all action under Actions → Clear History. The view updates live when new history entries are added.
+- **Download History**: Browse local download history with pagination. Controls include Items per
+  page, Prev/Next navigation, and a clear-all action under Actions → Clear History. The view updates
+  live when new history entries are added.
 - **Server Status**: Real-time server connectivity status
 - **Settings Persistence**: All settings are automatically saved and restored
 

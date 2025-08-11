@@ -86,13 +86,28 @@ def _default_ydl_opts(output_path: str, download_playlist: bool) -> dict[str, An
 
 
 def _apply_custom_opts(ydl_opts: dict[str, Any], custom_opts: Any, _download_id: str | None) -> None:
-    # Accept either dict-like or Pydantic model instances
+    """Merge custom yt-dlp options into ydl_opts, tolerating various input shapes.
+
+    Accepts:
+    - Pydantic model instances (uses model_dump)
+    - JSON strings representing an object
+    - Plain dictionaries
+    Silently ignores unsupported types while keeping safe defaults.
+    """
+    # Normalize to a plain dict when possible
     try:
         if hasattr(custom_opts, "model_dump"):
             custom_opts = custom_opts.model_dump(mode="json")  # type: ignore[assignment]
     except Exception as e:
-        # Best-effort conversion; fall back silently but record for diagnostics
         logger.debug("Failed to model_dump yt_dlp_options; using provided value as-is: %s", e)
+
+    if isinstance(custom_opts, str):
+        try:
+            parsed = json.loads(custom_opts)
+            if isinstance(parsed, dict):
+                custom_opts = parsed
+        except Exception as e:
+            logger.debug("yt_dlp_options string was not valid JSON: %s", e)
 
     if isinstance(custom_opts, dict):
         # Apply config options, but block only a few keys; allow 'format' to override defaults
@@ -103,7 +118,10 @@ def _apply_custom_opts(ydl_opts: dict[str, Any], custom_opts: Any, _download_id:
             ydl_opts[key] = value
         logger.debug(f"Applied custom yt-dlp options from config: {custom_opts}")
     else:
-        logger.warning("Config yt_dlp_options is not a dictionary, using defaults only")
+        logger.warning(
+            "Config yt_dlp_options is not a dictionary, using defaults only (type=%s)",
+            type(custom_opts).__name__,
+        )
 
 
 def _apply_playlist_flags(ydl_opts: dict[str, Any], download_playlist: bool) -> None:
@@ -220,6 +238,9 @@ download_errors_from_hooks: dict[str, dict[str, Any]] = {}
 download_tempfile_registry: dict[str, str] = {}
 # Registry mapping download IDs to their download process for cancellation
 download_process_registry: dict[str, psutil.Process] = {}
+# Track which download IDs have had history appended to avoid duplication across
+# finished hook and post-download fallback
+history_appended_ids: set[str] = set()
 
 
 # Progress hook helpers to reduce complexity of ytdlp_progress_hook
@@ -528,6 +549,12 @@ def _progress_finished(d: dict[str, Any], download_id: str | None) -> None:
 
             append_history_entry(info_data)
             logger.info(f"[{str_id}] Appended download metadata to history: {info_json_path}")
+            # Mark this download as having its history appended
+            try:
+                history_appended_ids.add(str_id)
+            except Exception:
+                # Best-effort; do not block on set operations
+                pass
         except Exception as e:
             logger.warning(f"[{str_id}] Failed to append history entry from {info_json_path}: {e}")
     if filename:
@@ -623,7 +650,20 @@ def _init_download(data: dict[str, Any]) -> tuple[Path | None, str, str, str, bo
     url = data.get("url", "").strip()
     # Accept both camelCase (client) and snake_case (validated) keys
     download_id = str(data.get("download_id") or data.get("downloadId") or "N/A")
-    page_title = data.get("page_title", "video")
+    # Prefer explicit page_title; otherwise derive from the URL for better defaults
+    raw_title = data.get("page_title")
+    if isinstance(raw_title, str) and raw_title.strip():
+        page_title = raw_title.strip()
+    else:
+        # Derive a readable default from the URL path or hostname instead of a generic 'video'
+        try:
+            parsed_for_title = urlparse(url)
+            # Try last non-empty path segment
+            segment = parsed_for_title.path.rstrip("/").rsplit("/", 1)[-1]
+            fallback = segment or parsed_for_title.netloc or "video"
+            page_title = fallback
+        except Exception:
+            page_title = "video"
     download_playlist = bool(data.get("download_playlist", False))
     if not url:
         return (
@@ -896,6 +936,23 @@ def _handle_yt_dlp_download_error(
         client_error = exc_message
 
     logger.error(f"[{download_id}] yt-dlp download error for URL {url}: Type='{error_type}', Message='{client_error}'")
+
+    # Append a failure entry to history so errors are visible even without the 'finished' hook
+    try:
+        append_history_entry(
+            {
+                "download_id": download_id,
+                "url": url,
+                "status": "error",
+                "error_type": error_type,
+                "message": user_msg,
+                "original_error": client_error,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+        )
+    except Exception:
+        # Do not block error response on history persistence issues
+        pass
     return (
         jsonify(
             {
@@ -979,6 +1036,48 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
                     logger.debug(f"[{download_id}] Unregistering download process")
                     unregister_download_process(current_process)
 
+        # Fallback: if the progress hook did not append history, attempt to append now
+        try:
+            if str(download_id) not in history_appended_ids:
+                # Prefer appending rich metadata from the .info.json if it exists
+                # The info JSON is named after the final filename, which we do not know the ext for.
+                # Attempt to find any matching info JSON for this download's prefix.
+                candidates = list(download_path.glob(f"{prefix}.*.info.json"))
+                if candidates:
+                    try:
+                        with candidates[0].open(encoding="utf-8") as f:
+                            info_data = json.load(f)
+                        append_history_entry(info_data)
+                        history_appended_ids.add(str(download_id))
+                        logger.info(
+                            f"[{download_id}] Fallback appended download metadata to history: {candidates[0]}"
+                        )
+                    except Exception:
+                        # If reading/parsing fails, fall back to a minimal entry below
+                        pass
+                if str(download_id) not in history_appended_ids:
+                    # Append a minimal success entry
+                    media_candidates = [
+                        p
+                        for p in download_path.glob(f"{prefix}.*")
+                        if not (p.name.endswith(".part") or p.name.endswith(".info.json"))
+                    ]
+                    chosen = media_candidates[0] if media_candidates else None
+                    append_history_entry(
+                        {
+                            "download_id": download_id,
+                            "url": url,
+                            "status": "complete",
+                            "filename": chosen.name if chosen else None,
+                            "filepath": str(chosen) if chosen else None,
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                        }
+                    )
+                    history_appended_ids.add(str(download_id))
+        except Exception:
+            # Do not fail the request due to history write issues
+            pass
+
         logger.info(f"[{download_id}] Download process completed for URL: {url}")
         return (
             jsonify(
@@ -1004,6 +1103,20 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
             f"[{download_id}] Unexpected server error during download for URL {url}: {e}",
             exc_info=True,
         )
+        # Append a failure entry to history for unexpected server errors
+        try:
+            append_history_entry(
+                {
+                    "download_id": download_id,
+                    "url": url,
+                    "status": "error",
+                    "error_type": "UNEXPECTED_SERVER_ERROR",
+                    "message": str(e),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }
+            )
+        except Exception:
+            pass
         return (
             jsonify(
                 {

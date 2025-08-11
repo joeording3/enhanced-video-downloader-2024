@@ -28,24 +28,23 @@ Urgent Tasks:
   - Auto-formatted JSON
   - No blocking lints remain
 - [x] Prevent stale lock file from affecting CLI status tests by removing `server/data/server.lock`
-  before `make test-py` (wired in `Makefile:test-py`)
+      before `make test-py` (wired in `Makefile:test-py`)
 - [x] Add automatic temp/cache cleanup and reserved-name scrubbing after test runs
-  <!-- working-on: post-test cleanup wiring -->
+<!-- working-on: post-test cleanup wiring -->
 - [x] Enhance CLI restart: reuse previous run mode/flags automatically when not provided (persisted
       in `server/data/server.lock.json`); normalize invalid hostnames and stabilize auto-port with
       SO_REUSEADDR-aware port checks to avoid transient false "in use" on restart.
 - [x] Remove 'Choose' folder button from Options. The download directory field now only accepts a
-- [x] Scripts/docs hygiene: add Make targets for manual utilities (coverage-update, inventory-report,
-      audit-tests-redundancy, setup-uv); update docs to remove references to deleted/legacy scripts
-      and reflect current `scripts/` contents.
-      pathname typed/pasted by the user. Validation accepts absolute paths and `~`-prefixed paths
-      (the server expands `~`).
+- [x] Scripts/docs hygiene: add Make targets for manual utilities (coverage-update,
+      inventory-report, audit-tests-redundancy, setup-uv); update docs to remove references to
+      deleted/legacy scripts and reflect current `scripts/` contents. pathname typed/pasted by the
+      user. Validation accepts absolute paths and `~`-prefixed paths (the server expands `~`).
 - [x] Implement `run_cleanup()` in `server/cli/utils.py` and add tests
 - [x] Align JSON error semantics across endpoints; document in README and CHANGELOG
-  <!-- working-on: api-json-errors -->
+<!-- working-on: api-json-errors -->
 - [x] Server log noise reductions and fixes: standardized JSON parsing errors in
-  `server/api/download_bp.py`, completed error logging in `server/api/logs_bp.py`, ensured restart
-  and resume modules log with appropriate levels; verified via tests.
+      `server/api/download_bp.py`, completed error logging in `server/api/logs_bp.py`, ensured
+      restart and resume modules log with appropriate levels; verified via tests.
   - [x] Honor `LOG_FILE` for file logging in app factory and redirect test logs to temp files.
   - [x] Autouse pytest fixture sets `ENVIRONMENT=testing` and defaults `SERVER_PORT=5006` to prevent
         conflicts and log noise in `server_output.log`.
@@ -56,9 +55,13 @@ Urgent Tasks:
         `.env` as the documented default.
   - [x] Switch to structured JSON (NDJSON) logging with optional `start_ts` and `duration_ms` fields
         for easy sorting and analysis; standardized request logs include timing when available.
+  - [/] Reduce duplicate startup logs: add one-time guard in `server/__init__.py:create_app` to log
+    "Server application initialized..." only once per process.
+  - [/] Make yt-dlp options parsing robust: accept JSON strings and Pydantic models in
+    `server/downloads/ytdlp.py` for `yt_dlp_options`; keep safe defaults when invalid.
 - [x] Options Log Viewer: parse NDJSON, derive level from prefix, filter-first then limit display,
-  suppress `werkzeug` and status 200 entries; iteratively fetch more lines until the filtered set
-  reaches the UI limit. Added unit tests to verify filter + limit order and iterative fetch.
+      suppress `werkzeug` and status 200 entries; iteratively fetch more lines until the filtered
+      set reaches the UI limit. Added unit tests to verify filter + limit order and iterative fetch.
 - [x] Add explicit startup INFO log line and wire Gunicorn access/error logs to the same log file by
       default via CLI helpers. Update README and CHANGELOG to document behavior.
 - [x] Keep CLI output clean: use plain, minimal console formatter at WARNING by default; route all
@@ -66,10 +69,11 @@ Urgent Tasks:
       ensure Gunicorn access/error logs go to `LOG_FILE`.
 - [x] Remove Declarative Net Request (DNR) usage and `rules.json`; update manifest and docs.
 - [x] Centralize log-path resolution via `server/logging_setup.resolve_log_path` and update
-  `server/api/logs_bp.py` and `server/api/logs_manage_bp.py` to use it; document precedence in
-  README. Tighten `_validate_lines` message while preserving client response text.
+      `server/api/logs_bp.py` and `server/api/logs_manage_bp.py` to use it; document precedence in
+      README. Tighten `_validate_lines` message while preserving client response text.
 - [x] Background messaging noise: suppress connection error by ensuring
-  `chrome.runtime.sendMessage(...)` calls use a callback or `.catch(...)` when no receivers are present.
+      `chrome.runtime.sendMessage(...)` calls use a callback or `.catch(...)` when no receivers are
+      present.
 - [ ] Replace silent `pass` blocks with logging/handling in:
   - `server/cli_helpers.py` (loops and maintenance utils)
   - `server/cli_main.py` (loop around verification)
@@ -153,12 +157,15 @@ Urgent Tasks:
       `extension/src/history.ts`, `server/api/history_bp.py`.
   - [/] Implemented best-effort history sync: append entries and clear via `/api/history` when
     `serverPort` is known.
+  - [/] Server now appends failure entries on yt-dlp errors and appends a fallback success entry
+    after `ydl.download` returns when the `finished` hook did not persist metadata. This ensures
+    history reflects both successes and failures even if the process restarts mid-download.
   - [/] Wired popup history view to pagination controls and live updates; `initPopup()` now imports
     `fetchHistory`/`renderHistoryItems` and listens for `historyUpdated`. Files:
     `extension/src/popup.ts`.
-  - [/] Implemented Download History section in Options with pagination and live updates; Options now
-    listens for `historyUpdated` and exposes per-page controls. Files: `extension/ui/options.html`,
-    `extension/src/options.ts`.
+  - [/] Implemented Download History section in Options with pagination and live updates; Options
+    now listens for `historyUpdated` and exposes per-page controls. Files:
+    `extension/ui/options.html`, `extension/src/options.ts`.
   - [/] Added server-side queue management: when max concurrency is reached, `/api/download` returns
     `status: queued` and enqueues the request; `/api/status` includes queued IDs. Files:
     `server/queue.py`, `server/api/download_bp.py`, `server/api/status_bp.py`, docs in
@@ -166,6 +173,9 @@ Urgent Tasks:
   - [x] Consolidate Playwright E2E audit details into `tests/testing.md`; remove outdated
         `reports/playwright_quality_audit_report.md` and update references in `README.md` and
         `ARCHITECTURE.md`.
+  - [x] Stabilized opt-in real-site Playwright test for YouTube Shorts by clamping the injected
+        button into the viewport and adding a JS click fallback when Playwright actionability fails.
+        This eliminates intermittent "element is outside of the viewport" errors.
 - [ ] Debug API (`GET /debug/paths`) is dev-only and unused in UI; optionally surface in Options
       “Debug” tab or leave as internal.
 

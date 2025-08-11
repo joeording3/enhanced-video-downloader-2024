@@ -122,7 +122,8 @@ export function renderHistoryItems(
     const titleDiv = document.createElement("div");
     const titleBold = document.createElement("b");
     // Prioritize the original page title if available
-    titleBold.textContent = (item.page_title || item.title || "").trim() || computeDisplayTitle(item);
+    titleBold.textContent =
+      (item.page_title || item.title || "").trim() || computeDisplayTitle(item);
     titleDiv.appendChild(titleBold);
 
     const timestampDiv = document.createElement("div");
@@ -432,7 +433,10 @@ function sanitizeFilename(name: string): string {
 
 function computeDisplayTitle(item: HistoryEntry): string {
   const raw =
-    (item as any).page_title || (item as any).title || item.filename || extractTitleFromUrl(item.url);
+    (item as any).page_title ||
+    (item as any).title ||
+    item.filename ||
+    extractTitleFromUrl(item.url);
   const t = String(raw || "").trim();
   if (t && t.toLowerCase() !== "video") return t;
   const fallback = extractTitleFromUrl(item.url);

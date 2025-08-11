@@ -69,6 +69,7 @@ const injectedButtons = new Map<HTMLElement, HTMLElement>(); // Map to store but
 
 // State managed by centralized state manager
 let downloadButton: HTMLElement | null = null;
+let activeDragButton: HTMLElement | null = null;
 
 // Utility functions - now using centralized logger
 const log = (...args: any[]): void => logger.info(args.join(" "), { component: "content" });
@@ -231,6 +232,9 @@ function ensureDownloadButtonStyle(buttonElement: HTMLElement): void {
     buttonElement.style.setProperty("position", "fixed", "important");
     buttonElement.style.setProperty("z-index", "2147483647", "important");
     buttonElement.style.setProperty("pointer-events", "auto", "important");
+    // Improve drag reliability on touch/pointer devices and block native drags
+    buttonElement.style.setProperty("touch-action", "none", "important");
+    buttonElement.style.setProperty("-webkit-user-drag", "none", "important");
   } catch {
     // ignore
   }
@@ -348,11 +352,17 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
   }
 
   // Add to document
-  // Ensure we do not leave stale buttons around
+  // Ensure we do not leave stale GLOBAL buttons around, but keep any injected buttons for videos
   try {
-    const existing = document.querySelectorAll('button.evd-drag-handle.download-button');
+    const existing = Array.from(
+      document.querySelectorAll<HTMLButtonElement>("button.evd-drag-handle.download-button")
+    );
+    const injectedButtonSet = new Set<HTMLElement>(Array.from(injectedButtons.values()));
     existing.forEach(el => {
-      if (el !== btn && el.parentElement === document.body && !injectedButtons.has(el as any)) {
+      const isCurrent = el === btn;
+      const isInjected = injectedButtonSet.has(el);
+      const isInBody = el.parentElement === document.body;
+      if (!isCurrent && isInBody && !isInjected) {
         el.remove();
       }
     });
@@ -381,6 +391,8 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
     if (e.button !== 0) return; // Only left mouse button
 
     const rect = btn.getBoundingClientRect();
+    // Track which element is being dragged
+    activeDragButton = btn;
     stateManager.updateUIState({
       isDragging: true,
       buttonPosition: {
@@ -394,15 +406,61 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
     // Visual drag cursor
     try {
       btn.classList.add("dragging");
-    } catch {}
+    } catch {
+      /* no-op */
+    }
 
     // Add document-level listeners if not already attached
     document.addEventListener("mousemove", onDrag, { passive: false });
     document.addEventListener("mouseup", onDragEnd, { passive: false, once: true });
 
-    // Prevent text selection during drag
+    // Prevent site handlers and text selection during drag
     e.preventDefault();
+    e.stopPropagation();
   });
+
+  // Pointer Events fallback (covers stylus/touch and cases where mouse events are suppressed)
+  try {
+    if (typeof window !== "undefined" && "PointerEvent" in window) {
+      btn.addEventListener("pointerdown", e => {
+        // Primary pointer only
+        if ((e as PointerEvent).isPrimary === false) return;
+
+        const rect = btn.getBoundingClientRect();
+        activeDragButton = btn;
+        stateManager.updateUIState({
+          isDragging: true,
+          buttonPosition: {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top,
+          },
+          lastClickTime: Date.now(),
+        });
+
+        try {
+          btn.classList.add("dragging");
+        } catch {
+          /* no-op */
+        }
+
+        // Capture pointer so moves continue even if pointer leaves the element
+        try {
+          (btn as any).setPointerCapture?.((e as PointerEvent).pointerId);
+        } catch {
+          /* no-op */
+        }
+
+        document.addEventListener("pointermove", onPointerMove as any, { passive: false });
+        document.addEventListener("pointerup", onPointerEnd as any, { passive: false, once: true });
+
+        // Prevent site handlers and default gestures
+        e.preventDefault();
+        e.stopPropagation();
+      });
+    }
+  } catch {
+    /* no-op */
+  }
 
   // Add click listener for download action
   btn.addEventListener("click", async e => {
@@ -435,33 +493,36 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
 
         // Send message to background script; include a client-side dedupe token to avoid rapid duplicates
         const dedupeToken = `${url}::${Date.now()}`;
-        chrome.runtime.sendMessage({ type: "downloadVideo", url: url, downloadId: dedupeToken, pageTitle: document.title }, response => {
-          if (chrome.runtime.lastError) {
-            error("Error sending download request:", chrome.runtime.lastError.message);
-            btn.classList.remove("download-sending");
-            btn.classList.add("download-error");
-            setTimeout(() => {
-              btn.classList.remove("download-error");
-            }, 2000);
-            return;
-          }
+        chrome.runtime.sendMessage(
+          { type: "downloadVideo", url: url, downloadId: dedupeToken, pageTitle: document.title },
+          response => {
+            if (chrome.runtime.lastError) {
+              error("Error sending download request:", chrome.runtime.lastError.message);
+              btn.classList.remove("download-sending");
+              btn.classList.add("download-error");
+              setTimeout(() => {
+                btn.classList.remove("download-error");
+              }, 2000);
+              return;
+            }
 
-          if (response && (response.status === "success" || response.status === "queued")) {
-            // Success feedback
-            btn.classList.remove("download-sending");
-            btn.classList.add("download-success");
-            setTimeout(() => {
-              btn.classList.remove("download-success");
-            }, 1200);
-          } else {
-            // Error feedback
-            btn.classList.remove("download-sending");
-            btn.classList.add("download-error");
-            setTimeout(() => {
-              btn.classList.remove("download-error");
-            }, 1200);
+            if (response && (response.status === "success" || response.status === "queued")) {
+              // Success feedback
+              btn.classList.remove("download-sending");
+              btn.classList.add("download-success");
+              setTimeout(() => {
+                btn.classList.remove("download-success");
+              }, 1200);
+            } else {
+              // Error feedback
+              btn.classList.remove("download-sending");
+              btn.classList.add("download-error");
+              setTimeout(() => {
+                btn.classList.remove("download-error");
+              }, 1200);
+            }
           }
-        });
+        );
       } catch (err) {
         error("Error initiating download:", err);
         try {
@@ -522,9 +583,14 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
  */
 function onDrag(event: MouseEvent): void {
   const uiState = stateManager.getUIState();
-  if (!uiState.isDragging || !downloadButton) {
+  const target = activeDragButton || downloadButton;
+  if (!uiState.isDragging || !target) {
     // Ensure no stale drag visual
-    try { downloadButton?.classList.remove("dragging"); } catch {}
+    try {
+      (activeDragButton || downloadButton)?.classList.remove("dragging");
+    } catch {
+      /* no-op */
+    }
     return;
   }
 
@@ -535,17 +601,28 @@ function onDrag(event: MouseEvent): void {
   const y = event.clientY - uiState.buttonPosition.y;
 
   // Update button position
-  downloadButton.style.left = String(x) + "px";
-  downloadButton.style.top = String(y) + "px";
+  target.style.left = String(x) + "px";
+  target.style.top = String(y) + "px";
 
   // Mark a movement threshold to suppress click after drag
   const dx = Math.abs(event.movementX || 0);
   const dy = Math.abs(event.movementY || 0);
-  if ((dx + dy) > 0) {
+  if (dx + dy > 0) {
     try {
       stateManager.updateUIState({ lastClickTime: Date.now() });
-    } catch {}
+    } catch {
+      /* no-op */
+    }
   }
+}
+
+// Bridge PointerEvent -> existing drag logic
+function onPointerMove(event: PointerEvent): void {
+  onDrag(event as unknown as MouseEvent);
+}
+
+async function onPointerEnd(): Promise<void> {
+  await onDragEnd();
 }
 
 /**
@@ -553,7 +630,8 @@ function onDrag(event: MouseEvent): void {
  */
 async function onDragEnd(): Promise<void> {
   const uiState = stateManager.getUIState();
-  if (!uiState.isDragging || !downloadButton) return;
+  const target = activeDragButton || downloadButton;
+  if (!uiState.isDragging || !target) return;
 
   // Update centralized state
   stateManager.updateUIState({ isDragging: false });
@@ -564,11 +642,13 @@ async function onDragEnd(): Promise<void> {
 
   // Remove drag visual
   try {
-    downloadButton.classList.remove("dragging");
-  } catch {}
+    target.classList.remove("dragging");
+  } catch {
+    /* no-op */
+  }
 
   // Get current position
-  const rect = downloadButton.getBoundingClientRect();
+  const rect = target.getBoundingClientRect();
   const x = rect.left;
   const y = rect.top;
 
@@ -597,6 +677,9 @@ async function onDragEnd(): Promise<void> {
   } catch {
     // ignore
   }
+
+  // Clear active drag reference
+  activeDragButton = null;
 }
 
 /**

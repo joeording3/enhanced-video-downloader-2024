@@ -1993,14 +1993,37 @@ test.describe("Real site video detection (opt-in)", () => {
     // Extension root is repo root (manifest.json at project root)
     extPath = path.resolve(__dirname, "../../");
 
-    // Start Python server with temp download dir and fixed port (9090) for easier extension discovery
+    // Start Python server with temp download dir on a dynamic testing port
     downloadDir = fs.mkdtempSync(path.join(os.tmpdir(), "evd-downloads-"));
-    serverPort = 9090;
+    // Choose from the same test range as the Python suite (5000-5010)
+    // Prefer an explicit E2E_TEST_PORT if provided, else pick an open one
+    const pickOpenPort = async (start = 5000, end = 5010) => {
+      const net = await import("node:net");
+      const tryPort = p =>
+        new Promise(resolve => {
+          const srv = net.createServer();
+          srv.once("error", () => resolve(false));
+          srv.once("listening", () => srv.close(() => resolve(true)));
+          srv.listen(p, "127.0.0.1");
+        });
+      for (let p = start; p <= end; p++) {
+        const ok = await tryPort(p);
+        if (ok) return p;
+      }
+      return 5006;
+    };
+    serverPort = process.env.E2E_TEST_PORT
+      ? Number(process.env.E2E_TEST_PORT)
+      : await pickOpenPort();
     const env = {
       ...process.env,
+      ENVIRONMENT: "testing",
+      EVD_TESTING: "true",
       SERVER_PORT: String(serverPort),
       DOWNLOAD_DIR: downloadDir,
       DEBUG_MODE: "false",
+      // Ensure logs do not go to the main server_output.log
+      LOG_FILE: path.resolve(__dirname, "../../tmp/server_output_test.playwright.log"),
     };
     serverProc = spawn("python3", ["-m", "server"], { env, stdio: "inherit" });
     // Wait until health endpoint responds
@@ -2085,6 +2108,110 @@ test.describe("Real site video detection (opt-in)", () => {
     { name: "YouJizz", url: "https://www.youjizz.com/videos/12345678/" },
     { name: "HClips", url: "https://hclips.com/videos/123456/" },
   ];
+
+  test("YouTube Shorts: drag and click EVD button (best-effort)", async () => {
+    const page = await context.newPage();
+    try {
+      await page.goto("https://www.youtube.com/shorts/MbY7wWkQcrc", {
+        waitUntil: "domcontentloaded",
+        timeout: 20000,
+      });
+      // Wait for our script to run and try to inject the button
+      await page.waitForTimeout(3500);
+
+      // Best-effort overlay cleanup and ensure our button is brought to front
+      await closeOverlays(page);
+      await page.evaluate(() => {
+        const btn = /** @type {HTMLElement|null} */ (
+          document.querySelector("#evd-download-button-main, button.download-button")
+        );
+        if (btn) {
+          btn.style.zIndex = "2147483647";
+          btn.classList.add("evd-visible");
+          btn.classList.remove("hidden");
+          btn.style.pointerEvents = "auto";
+          btn.style.position = "fixed";
+        }
+      });
+
+      const locator = page.locator("#evd-download-button-main, button.download-button").first();
+      await locator.waitFor({ timeout: 10000 });
+
+      // Capture position before drag
+      const before = await locator.evaluate(el => {
+        const he = /** @type {HTMLElement} */ (el);
+        return {
+          left: parseInt(he.style.left || "0", 10) || 0,
+          top: parseInt(he.style.top || "0", 10) || 0,
+        };
+      });
+
+      // Perform mouse drag by offset
+      const box = await locator.boundingBox();
+      if (box) {
+        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+        await page.mouse.down();
+        await page.mouse.move(box.x + box.width / 2 + 140, box.y + box.height / 2 + 100, {
+          steps: 12,
+        });
+        await page.mouse.up();
+      }
+      await page.waitForTimeout(300);
+
+      // Read position after drag
+      const after = await locator.evaluate(el => {
+        const he = /** @type {HTMLElement} */ (el);
+        return {
+          left: parseInt(he.style.left || "0", 10) || 0,
+          top: parseInt(he.style.top || "0", 10) || 0,
+        };
+      });
+
+      // Verify position changed (allow either axis change)
+      expect(after.left !== before.left || after.top !== before.top).toBeTruthy();
+
+      // Ensure it remains clickable - clamp into viewport if needed and use JS click fallback
+      try {
+        await locator.scrollIntoViewIfNeeded();
+        await locator.click({ timeout: 2000 });
+      } catch (_e) {
+        const viewport = await page.evaluate(() => ({
+          w: window.innerWidth,
+          h: window.innerHeight,
+        }));
+        const bb = await locator.boundingBox();
+        if (
+          bb &&
+          (bb.x < 0 || bb.y < 0 || bb.x + bb.width > viewport.w || bb.y + bb.height > viewport.h)
+        ) {
+          await page.evaluate(() => {
+            const btn = document.querySelector("#evd-download-button-main, button.download-button");
+            if (btn && btn instanceof HTMLElement) {
+              const vw = window.innerWidth;
+              const vh = window.innerHeight;
+              const width = btn.offsetWidth || 100;
+              const height = btn.offsetHeight || 40;
+              const left = parseInt(btn.style.left || "8", 10) || 8;
+              const top = parseInt(btn.style.top || "8", 10) || 8;
+              const clampedLeft = Math.max(8, Math.min(vw - width - 8, left));
+              const clampedTop = Math.max(8, Math.min(vh - height - 8, top));
+              btn.style.position = "fixed";
+              btn.style.left = `${clampedLeft}px`;
+              btn.style.top = `${clampedTop}px`;
+              btn.style.zIndex = "2147483647";
+            }
+          });
+        }
+        // Fallback to JS-triggered click to bypass off-viewport constraints
+        await page.evaluate(() => {
+          const btn = document.querySelector("#evd-download-button-main, button.download-button");
+          if (btn instanceof HTMLElement) btn.click();
+        });
+      }
+    } finally {
+      await page.close();
+    }
+  });
 
   async function verifyDetection(page, label) {
     // Wait for our content script to initialize and run scans

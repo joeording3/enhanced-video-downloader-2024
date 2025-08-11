@@ -1773,7 +1773,16 @@ export async function loadDownloadHistory(page = 1, perPage = 25): Promise<void>
   currentHistoryPerPage = perPage;
 
   const { history, totalItems } = await fetchHistory(page, perPage);
-  renderHistoryItems(history, page, perPage, totalItems, listEl, pageInfoEl || undefined, prevBtn || undefined, (nextBtn as HTMLButtonElement) || undefined);
+  renderHistoryItems(
+    history,
+    page,
+    perPage,
+    totalItems,
+    listEl,
+    pageInfoEl || undefined,
+    prevBtn || undefined,
+    (nextBtn as HTMLButtonElement) || undefined
+  );
 }
 
 export function setupHistoryUI(): void {

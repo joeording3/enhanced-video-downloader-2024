@@ -129,22 +129,26 @@ def create_app(config: Config) -> Flask:
 
     # Log a clear startup/initialization message so the log file is never empty
     try:
-        app_logger = logging.getLogger(__name__)
-        # Best-effort host/port from config; binding may be controlled by WSGI server
-        host_for_log = getattr(config, "server_host", "127.0.0.1")
-        port_for_log = getattr(config, "server_port", None)
-        if port_for_log is None:
-            # Fallback to constants if needed
-            try:
-                from .constants import get_server_port
+        # Ensure we only emit this once per process
+        if not getattr(create_app, "_evd_startup_logged", False):
+            app_logger = logging.getLogger(__name__)
+            # Best-effort host/port from config; binding may be controlled by WSGI server
+            host_for_log = getattr(config, "server_host", "127.0.0.1")
+            port_for_log = getattr(config, "server_port", None)
+            if port_for_log is None:
+                # Fallback to constants if needed
+                try:
+                    from .constants import get_server_port
 
-                port_for_log = get_server_port()
-            except Exception:
-                port_for_log = "unknown"
-        active_log_path = os.getenv("LOG_FILE", default_log_path)
-        app_logger.info(
-            f"Server application initialized for {host_for_log}:{port_for_log} | log_file={active_log_path}"
-        )
+                    port_for_log = get_server_port()
+                except Exception:
+                    port_for_log = "unknown"
+            active_log_path = os.getenv("LOG_FILE", default_log_path)
+            app_logger.info(
+                f"Server application initialized for {host_for_log}:{port_for_log} | log_file={active_log_path}"
+            )
+            # Mark as logged to avoid duplicate lines from repeated create_app calls in the same process
+            create_app._evd_startup_logged = True  # type: ignore[attr-defined]
     except Exception:
         # Do not block startup on logging issues
         pass

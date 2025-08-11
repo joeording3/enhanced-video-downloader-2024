@@ -10,8 +10,26 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Fixed
 
 - Extension background messaging: prevent noisy connection errors by ensuring broadcast
-  `chrome.runtime.sendMessage(...)` calls handle the no-receiver case via callbacks or `.catch(...)`.
-  This occurs when popup/options are not open.
+  `chrome.runtime.sendMessage(...)` calls handle the no-receiver case via callbacks or
+  `.catch(...)`. This occurs when popup/options are not open.
+- Server startup log duplication: guard initialization log in `create_app` so "Server application
+  initialized ..." writes only once per process even if the app factory is called multiple times
+  (e.g., tests, WSGI reloads).
+- yt-dlp config parsing noise: accept `yt_dlp_options` provided as JSON strings or Pydantic models;
+  continue using safe defaults when types are invalid, reducing warnings like "yt_dlp_options is not
+  a dictionary".
+ - Playwright E2E: Stabilized opt-in real-site test (YouTube Shorts drag-and-click). The test now
+   clamps the injected download button into the viewport and falls back to a JS-triggered click when
+   actionability fails, preventing intermittent "element is outside of the viewport" failures.
+
+### Added
+
+- Server-side history persistence improvements for downloads:
+  - Append a failure entry to `server/data/history.json` when yt-dlp reports a download error or an
+    unexpected server exception occurs during a download request.
+  - Append a fallback success entry after `ydl.download` returns if the `finished` progress hook did
+    not append metadata (e.g., due to worker restarts), preferring `.info.json` when available.
+  - Prevent duplicate history entries by tracking IDs appended via hooks vs fallback.
 
 ### Additional Changes
 
@@ -23,7 +41,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 #### Docs and Configuration
 
-- Updated `pyproject.toml` to set Pyright `pythonVersion` to 3.13 for consistency with tooling and docs.
+- Updated `pyproject.toml` to set Pyright `pythonVersion` to 3.13 for consistency with tooling and
+  docs.
 
 - README/Architecture/Developer docs reconciled to current reality:
   - Configuration is environment-driven, persisted to `.env` via CLI/API (no `config.json`).
@@ -33,7 +52,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Content UI: Increased size of injected download button and added reactive click feedback.
   - Larger padding and font for better visibility; rounded corners and stronger shadow.
   - Hover/active transforms; JS toggles a transient `clicked` class for a micro-bounce.
-  - Maintains existing success/error state classes (`download-sending`, `download-success`, `download-error`).
+  - Maintains existing success/error state classes (`download-sending`, `download-success`,
+    `download-error`).
 - Tooling: Added Make targets for optional utilities to improve discoverability:
   - `coverage-update` → runs `scripts/update_coverage_stats.py`
   - `inventory-report` → runs `scripts/generate_inventory_report.py`
