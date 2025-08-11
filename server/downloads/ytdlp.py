@@ -1093,9 +1093,7 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
                             info_data = json.load(f)
                         append_history_entry(info_data)
                         history_appended_ids.add(str(download_id))
-                        logger.info(
-                            f"[{download_id}] Fallback appended download metadata to history: {candidates[0]}"
-                        )
+                        logger.info(f"[{download_id}] Fallback appended download metadata to history: {candidates[0]}")
                 if str(download_id) not in history_appended_ids:
                     # Append a minimal success entry
                     media_candidates = [
