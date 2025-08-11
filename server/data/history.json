@@ -6,6 +6,23 @@
     "error_type": "YT_DLP_UNKNOWN_ERROR",
     "message": "A download error occurred: fail download. Contact support if this persists.",
     "original_error": "fail download",
+    "timestamp": "2025-08-11T16:12:18.930030+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-11T16:12:18.922498+00:00"
+  },
+  {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
     "timestamp": "2025-08-11T15:15:57.392902+00:00"
   },
   {
