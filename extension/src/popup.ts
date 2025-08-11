@@ -393,12 +393,16 @@ export function createActiveListItem(
   title.textContent = statusObj.filename || downloadId;
   li.appendChild(title);
   const progress = document.createElement("progress");
-  progress.value = statusObj.progress;
+  // Sanitize and clamp progress to a finite value within [0, 100]
+  const raw = Number(statusObj.progress);
+  const finite = Number.isFinite(raw) ? raw : 0;
+  const clamped = Math.min(100, Math.max(0, finite));
   progress.max = 100;
+  progress.value = clamped;
   li.appendChild(progress);
   const percentLabel = document.createElement("span");
   percentLabel.className = "item-percent";
-  percentLabel.textContent = String(statusObj.progress) + "%";
+  percentLabel.textContent = String(Math.round(clamped)) + "%";
   li.appendChild(percentLabel);
   const statusText = document.createElement("div");
   statusText.className = "item-status";
@@ -627,6 +631,17 @@ export async function initPopup(): Promise<void> {
     "toggle-enhanced-download-button"
   ) as HTMLButtonElement | null;
   if (toggleBtn) {
+    // Initialize label based on active tab's per-domain state
+    try {
+      sendToActiveTab({ type: "getButtonVisibility" }, resp => {
+        if (resp && resp.success) {
+          toggleBtn.textContent = resp.hidden ? "SHOW" : "HIDE";
+        }
+      });
+    } catch {
+      // ignore init label failures
+    }
+
     toggleBtn.addEventListener("click", () => {
       const currentlyHiding = toggleBtn.textContent?.trim().toUpperCase() === "HIDE";
       const newHidden = currentlyHiding; // if showing, next action hides

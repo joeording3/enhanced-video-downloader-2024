@@ -865,6 +865,141 @@ def wait_for_server_start_cli(port: int, host: str = "127.0.0.1", timeout: int =
     return False
 
 
+def ensure_caddy_proxy_running(
+    project_root: Path,
+    upstream_host: str,
+    upstream_port: int,
+    proxy_port: int = 9443,
+    caddyfile_path: Path | None = None,
+    log: logging.Logger | None = None,
+) -> None:
+    """Ensure a local Caddy HTTPS proxy is running and targeting the upstream server.
+
+    - Updates the Caddyfile reverse_proxy target to the provided upstream.
+    - If the proxy port is not listening, starts Caddy with that Caddyfile.
+    - If Caddy appears to be running, triggers a reload to pick up any changes.
+
+    This function is best-effort and will not raise on failure; it logs warnings instead.
+    """
+    logger = log or helper_log
+    try:
+        # Resolve Caddyfile path
+        caddyfile = caddyfile_path or (project_root / "Caddyfile")
+        # Determine server log file path to mirror Caddy logs
+        log_file = Path(os.getenv("LOG_FILE") or (project_root / "server_output.log"))
+
+        # Prepare desired reverse_proxy line
+        desired_upstream = f"{upstream_host}:{upstream_port}"
+        desired_proxy_line = f"  reverse_proxy {desired_upstream}\n"
+
+        # Ensure a Caddyfile exists; if missing, create a minimal one pointing to known cert path
+        if not caddyfile.exists():
+            try:
+                cert_dir = Path("/opt/homebrew/var/lib/caddy/certs/evd")
+                cert_file = cert_dir / "127.0.0.1+1.pem"
+                key_file = cert_dir / "127.0.0.1+1-key.pem"
+                # Build minimal Caddyfile with access log to server log file
+                minimal_cfg = (
+                    ":9443 {\n\n"
+                    "  log {\n"
+                    f"    output file {log_file}\n"
+                    "    format json\n"
+                    "  }\n\n"
+                    f"{desired_proxy_line}"
+                    f"  tls {cert_file} {key_file}\n"
+                    "}\n"
+                )
+                caddyfile.write_text(minimal_cfg)
+                logger.info(f"Created minimal Caddyfile at {caddyfile}")
+            except Exception:
+                logger.warning("Failed to create Caddyfile; HTTPS proxy may not be available.", exc_info=True)
+
+        # If Caddyfile exists, ensure reverse_proxy line targets the current upstream
+        if caddyfile.exists():
+            try:
+                content = caddyfile.read_text()
+                lines = content.splitlines(keepends=True)
+                updated = False
+                new_lines: list[str] = []
+
+                def _line_has_log_block(text: str) -> bool:
+                    stripped = text.strip()
+                    return (
+                        stripped.startswith("log ")
+                        or stripped.startswith("log{")
+                        or stripped == "log {"
+                    )
+                have_log_block = any(_line_has_log_block(line_text) for line_text in lines)
+
+                inserted_log = False
+                for line in lines:
+                    # Insert log block after site line if missing
+                    if (not have_log_block) and (not inserted_log) and line.strip().startswith(":") and "{" in line:
+                        new_lines.append(line)
+                        new_lines.append("  log {\n")
+                        new_lines.append(f"    output file {log_file}\n")
+                        new_lines.append("    format json\n")
+                        new_lines.append("  }\n")
+                        inserted_log = True
+                        continue
+                    if line.strip().startswith("reverse_proxy "):
+                        if desired_upstream not in line:
+                            new_lines.append(desired_proxy_line)
+                            updated = True
+                        else:
+                            new_lines.append(line)
+                    else:
+                        new_lines.append(line)
+                if updated:
+                    caddyfile.write_text("".join(new_lines))
+                    logger.info(f"Updated Caddyfile reverse_proxy to {desired_upstream}")
+            except Exception:
+                logger.warning("Failed to update Caddyfile; continuing without proxy update.", exc_info=True)
+
+        # Detect whether proxy port is already in use
+        proxy_listening = is_port_in_use(proxy_port, host="127.0.0.1")
+
+        # Determine caddy binary
+        caddy_bin = os.getenv("EVD_CADDY_BIN", "caddy")
+
+        # Decide verbosity based on logger level
+        verbose_mode = (log or helper_log).isEnabledFor(logging.DEBUG)
+        run_kwargs: dict[str, Any] = {}
+        if not verbose_mode:
+            run_kwargs = {"stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL}
+
+        # Best-effort: format the Caddyfile to avoid warnings
+        try:
+            subprocess.run([caddy_bin, "fmt", "--overwrite", str(caddyfile)], check=False, **run_kwargs)
+        except Exception:
+            logger.debug("Caddy fmt failed; continuing.", exc_info=True)
+
+        if proxy_listening:
+            # Best effort reload to pick up any config changes
+            try:
+                subprocess.run([caddy_bin, "reload", "--config", str(caddyfile)], check=False, **run_kwargs)
+                logger.info(f"Caddy proxy appears to be running on :{proxy_port}; reload attempted.")
+            except Exception:
+                logger.debug("Caddy reload failed; ignoring.", exc_info=True)
+            return
+
+        # Start Caddy in background (managed by Caddy itself)
+        try:
+            subprocess.run([caddy_bin, "start", "--config", str(caddyfile)], check=False, **run_kwargs)
+            # Wait for port to open
+            if wait_for_server_start_cli(proxy_port, host="127.0.0.1", timeout=10):
+                logger.info(f"Caddy proxy started and listening on :{proxy_port}")
+            else:
+                logger.warning(f"Caddy proxy did not become ready on :{proxy_port} within timeout")
+        except FileNotFoundError:
+            logger.warning("Caddy binary not found. Install with 'brew install caddy' to enable HTTPS proxy.")
+        except Exception:
+            logger.warning("Failed to start Caddy proxy.", exc_info=True)
+    except Exception:
+        # Never break CLI start/restart due to proxy management
+        logger.debug("ensure_caddy_proxy_running encountered an error", exc_info=True)
+
+
 # CLI entry point removed - consolidated into server/cli.py
 # Helper functions remain for use by the main CLI
 

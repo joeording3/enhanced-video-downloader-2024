@@ -29,6 +29,7 @@ from server.cli.system import system_maintenance
 # Register scaffolded CLI subcommands
 from server.cli_helpers import (
     disable_agents_cli,
+    ensure_caddy_proxy_running,
     find_server_processes,
     find_server_processes_cli,
     find_video_downloader_agents_cli,
@@ -907,10 +908,8 @@ def main():
     cli()
 
 
-if __name__ == "__main__":
-    project_root = Path(__file__).resolve().parent.parent
-    sys.path.insert(0, str(project_root))
-    cli()
+if False:  # placeholder to preserve context; real __main__ block moved to EOF
+    pass
 
 
 # Helper: no-lock port conflict
@@ -1006,6 +1005,11 @@ def _cli_execute_daemon(cmd: list[str], host: str, port: int) -> None:
                 LOCK_PATH.write_text(f"{process.pid}:{port}")
             except Exception:
                 log.debug("Failed to write lock file post-start", exc_info=True)
+            # Ensure HTTPS proxy (Caddy) is up and targeting the current upstream
+            try:
+                ensure_caddy_proxy_running(project_root=PROJECT_ROOT, upstream_host=host, upstream_port=port)
+            except Exception:
+                log.debug("Caddy proxy ensure failed (daemon mode).", exc_info=True)
         sys.exit(0)
     except Exception:
         log.exception("Failed to start server as daemon")
@@ -1027,6 +1031,11 @@ def _cli_execute_foreground(cmd: list[str], _host: str, _port: int) -> None:
         # Emit a clear started message after brief delay (best-effort)
         time.sleep(0.5)
         click.echo(f" Server started on {_host}:{_port} (PID {server_process.pid})")
+        # Attempt to ensure Caddy proxy is running for HTTPS
+        try:
+            ensure_caddy_proxy_running(project_root=PROJECT_ROOT, upstream_host=_host, upstream_port=_port)
+        except Exception:
+            log.debug("Caddy proxy ensure failed (foreground mode).", exc_info=True)
         server_process.wait()
     except KeyboardInterrupt:
         log.info("Server process interrupted by user (Ctrl+C in CLI). Server should handle its own cleanup.")

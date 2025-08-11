@@ -38,6 +38,21 @@ logger = logging.getLogger(__name__)
 # Narrow JSON payload types used within this module to reduce Unknown warnings
 
 
+# Add permissive CORS headers for this blueprint to support extension background fetch
+@download_bp.after_request
+def _add_cors_headers(response: Response) -> Response:
+    try:
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
+        response.headers.add("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
+        # Required for Chrome Private Network Access (PNA) when calling localhost from a secure context
+        response.headers.add("Access-Control-Allow-Private-Network", "true")
+        response.headers.add("Vary", "Access-Control-Request-Private-Network")
+    except Exception:
+        pass
+    return response
+
+
 class _RawDownloadData(TypedDict, total=False):
     url: str
     downloadId: str

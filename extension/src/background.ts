@@ -869,14 +869,14 @@ const sendDownloadRequest = async (
   pageTitle = "video",
   forcedPort?: number | null
 ): Promise<any> => {
+  // De-dupe: build a canonical key for this request (visible to try/catch)
+  const downloadKey = `${videoUrl}`;
   try {
     const port = typeof forcedPort === "number" ? forcedPort : await storageService.getPort();
     if (!port) {
       return { status: "error", message: "Server not available" };
     }
 
-    // De-dupe: build a canonical key for this request
-    const downloadKey = `${videoUrl}`;
     const now = Date.now();
     const lastTs = _recentDownloads.get(downloadKey) || 0;
     if (_inFlightDownloads.has(downloadKey) || now - lastTs < _recentWindowMs) {
@@ -893,14 +893,34 @@ const sendDownloadRequest = async (
       page_title: pageTitle,
     };
 
-    // Send request to server
-    const response = await fetch(`http://127.0.0.1:${port}/api/download`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(downloadRequest),
-    });
+    // Send request to server, with hostname fallbacks to bypass local blockers
+    const protocolsToTry = ["http", "https"] as const;
+    const hostsToTry = ["127.0.0.1", "localhost", "[::1]"];
+    let response: Response | null = null;
+    let lastNetworkError: unknown = null;
+    outer: for (const protocol of protocolsToTry) {
+      for (const host of hostsToTry) {
+        try {
+          response = await fetch(`${protocol}://${host}:${port}/api/download`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(downloadRequest),
+          });
+          // If we get a response (even non-OK), stop trying other combinations
+          break outer;
+        } catch (e) {
+          lastNetworkError = e;
+          // try next combination
+        }
+      }
+    }
+
+    if (!response) {
+      // All attempts failed at network layer
+      throw lastNetworkError instanceof Error ? lastNetworkError : new Error("Network error");
+    }
 
     if (!response.ok) {
       _recentDownloads.set(downloadKey, Date.now());
@@ -941,6 +961,13 @@ const sendDownloadRequest = async (
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
     error("Error sending download request:", errorMessage);
+    // Ensure we do not leave the request marked as in-flight on network/other errors
+    try {
+      _inFlightDownloads.delete(downloadKey);
+      _recentDownloads.set(downloadKey, Date.now());
+    } catch {
+      /* ignore cleanup errors */
+    }
     return { status: "error", message: errorMessage };
   }
 };

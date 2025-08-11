@@ -3,7 +3,6 @@
 import logging
 import sys
 import time
-import types
 from pathlib import Path
 from typing import Any
 
@@ -203,27 +202,9 @@ def restart_command(force: bool) -> None:
     start_command.invoke(ctx)
 
 
-# Group the lifecycle commands
-@click.group(name="serve", invoke_without_command=True)
-@click.pass_context
-def serve_group(ctx: click.Context) -> None:
-    """Server lifecycle commands (start, stop, restart)."""
-    if ctx.invoked_subcommand is None:
-        click.echo(ctx.get_help())
-        ctx.exit(0)
-
-
-serve_group.add_command(start_command)
-serve_group.add_command(stop_command)
-serve_group.add_command(restart_command)
-
-
-# Expose the main command for registration
-serve_command = serve_group
-
-# Provide a patchable start callback holder for tests
-start = types.SimpleNamespace(callback=None)
-# Override the click Command callback to delegate to our `start.callback`
+# NOTE: The legacy `serve` command group has been removed.
+# The `start`, `stop`, and `restart` commands are now registered at the top level
+# by `server/cli_main.py`. This module only defines the command callbacks.
 
 
 # Expose create_app for tests patching

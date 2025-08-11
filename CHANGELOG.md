@@ -9,6 +9,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Popup: Prevent "The provided double value is non-finite" error by sanitizing and clamping
+  active download progress values in `createActiveListItem` to the [0, 100] range and rounding the
+  displayed percentage.
 - Extension background messaging: prevent noisy connection errors by ensuring broadcast
   `chrome.runtime.sendMessage(...)` calls handle the no-receiver case via callbacks or
   `.catch(...)`. This occurs when popup/options are not open.

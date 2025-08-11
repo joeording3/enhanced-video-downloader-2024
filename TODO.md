@@ -114,6 +114,10 @@ Urgent Tasks:
   - [ ] Collapse duplicate/migrated constants in `server/constants.py`.
   - [ ] Remove unreferenced validators/fields in `server/schemas.py`, or ensure they are referenced
         by pydantic models.
+  
+  - [/] Popup: guard against non-finite progress values causing
+        "The provided double value is non-finite" in `createActiveListItem`;
+        clamp to [0,100] and round label.
 
 - **Automation and CI**
   - [ ] Keep `make lint-unused` non-blocking during triage.

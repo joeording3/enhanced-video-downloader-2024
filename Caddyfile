@@ -1,0 +1,4 @@
+:9443 {
+	reverse_proxy 127.0.0.1:9090
+	tls /opt/homebrew/var/lib/caddy/certs/evd/127.0.0.1+1.pem /opt/homebrew/var/lib/caddy/certs/evd/127.0.0.1+1-key.pem
+}

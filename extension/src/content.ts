@@ -70,6 +70,10 @@ const injectedButtons = new Map<HTMLElement, HTMLElement>(); // Map to store but
 // State managed by centralized state manager
 let downloadButton: HTMLElement | null = null;
 let activeDragButton: HTMLElement | null = null;
+// Suppress accidental clicks immediately after a drag
+let suppressClicksUntil = 0;
+let lastPointerDownAt = 0;
+let lastPointerDownPos: { x: number; y: number } | null = null;
 
 // Utility functions - now using centralized logger
 const log = (...args: any[]): void => logger.info(args.join(" "), { component: "content" });
@@ -395,6 +399,8 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
     const rect = btn.getBoundingClientRect();
     // Track which element is being dragged
     activeDragButton = btn;
+    lastPointerDownAt = Date.now();
+    lastPointerDownPos = { x: e.clientX, y: e.clientY };
     stateManager.updateUIState({
       isDragging: true,
       buttonPosition: {
@@ -430,6 +436,8 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
 
         const rect = btn.getBoundingClientRect();
         activeDragButton = btn;
+        lastPointerDownAt = Date.now();
+        lastPointerDownPos = { x: e.clientX, y: e.clientY };
         stateManager.updateUIState({
           isDragging: true,
           buttonPosition: {
@@ -473,7 +481,14 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
       const now = Date.now();
       const timeSinceLastClick = now - currentState.lastClickTime;
 
-      // Treat as click when not currently dragging (ignore timing to allow fast automated clicks)
+      // If a drag just happened, suppress this click
+      if (now < suppressClicksUntil) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        return;
+      }
+
+      // Treat as click only when not currently dragging
       if (!currentState.isDragging) {
         // Update last click time
         stateManager.updateUIState({ lastClickTime: now });
@@ -482,6 +497,8 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
 
         // Add visual feedback without hiding the button
         btn.classList.add("clicked");
+        btn.classList.add("evd-visible");
+        btn.classList.remove("hidden");
         btn.classList.add("download-sending");
         // Remove the transient clicked class after the animation
         setTimeout(() => btn.classList.remove("clicked"), 150);
@@ -650,6 +667,13 @@ function onDrag(event: MouseEvent): void {
     } catch {
       /* no-op */
     }
+    // Any pointer movement during drag should suppress immediate click
+    suppressClicksUntil = Date.now() + CLICK_THRESHOLD;
+    // Keep the button visible while dragging
+    try {
+      (activeDragButton || downloadButton)?.classList.add("evd-visible");
+      (activeDragButton || downloadButton)?.classList.remove("hidden");
+    } catch {}
   }
 }
 
@@ -680,6 +704,9 @@ async function onDragEnd(): Promise<void> {
   // Remove drag visual
   try {
     target.classList.remove("dragging");
+    // Ensure visibility after drag ends
+    target.classList.add("evd-visible");
+    target.classList.remove("hidden");
   } catch {
     /* no-op */
   }
@@ -717,6 +744,8 @@ async function onDragEnd(): Promise<void> {
 
   // Clear active drag reference
   activeDragButton = null;
+  // Suppress clicks briefly after drag end
+  suppressClicksUntil = Date.now() + CLICK_THRESHOLD;
 }
 
 /**
@@ -745,50 +774,73 @@ async function resetButtonPosition(): Promise<void> {
  * @param hidden - Whether to hide the button
  */
 async function setButtonHiddenState(hidden: boolean): Promise<void> {
-  if (!downloadButton) return;
+  // Target all existing EVD buttons (global or injected)
+  const btns = Array.from(
+    document.querySelectorAll<HTMLButtonElement>("button.evd-drag-handle.download-button")
+  );
 
-  // Toggle visibility classes instead of inline styles
-  if (hidden) {
-    downloadButton.classList.add("hidden");
-    downloadButton.classList.remove("evd-visible");
-  } else {
-    downloadButton.classList.remove("hidden");
-    downloadButton.classList.add("evd-visible");
-  }
+  let primary: HTMLButtonElement | null = btns[0] || null;
 
-  if (!hidden) {
-    // When showing the button, ensure safe position if offscreen
+  // If showing but no button exists, create one so user can see it
+  if (!primary && !hidden) {
     try {
-      const rect = downloadButton.getBoundingClientRect();
-      const offscreen =
-        rect.width === 0 ||
-        rect.height === 0 ||
-        rect.left < 0 ||
-        rect.top < 0 ||
-        rect.left > window.innerWidth - Math.max(rect.width, 100) ||
-        rect.top > window.innerHeight - Math.max(rect.height, 40);
-      if (offscreen || !downloadButton.style.left || !downloadButton.style.top) {
-        downloadButton.style.left = "10px";
-        downloadButton.style.top = "70px";
-      }
-      // Re-apply style guidelines via classes
-      ensureDownloadButtonStyle(downloadButton);
+      primary = (await createOrUpdateButton()) as HTMLButtonElement;
     } catch {
-      // ignore
+      primary = null;
     }
   }
 
-  // Get current position
-  const rect = downloadButton.getBoundingClientRect();
-  const x = rect.left;
-  const y = rect.top;
+  // Toggle visibility classes for all buttons
+  for (const btn of btns) {
+    if (hidden) {
+      btn.classList.add("hidden");
+      btn.classList.remove("evd-visible");
+    } else {
+      btn.classList.remove("hidden");
+      btn.classList.add("evd-visible");
+      // Ensure safe position and styling when showing
+      try {
+        const rect = btn.getBoundingClientRect();
+        const offscreen =
+          rect.width === 0 ||
+          rect.height === 0 ||
+          rect.left < 0 ||
+          rect.top < 0 ||
+          rect.left > window.innerWidth - Math.max(rect.width, 100) ||
+          rect.top > window.innerHeight - Math.max(rect.height, 40);
+        if (offscreen || !btn.style.left || !btn.style.top) {
+          btn.style.left = "10px";
+          btn.style.top = "70px";
+        }
+        ensureDownloadButtonStyle(btn);
+      } catch {
+        // ignore
+      }
+    }
+  }
 
-  // Save state
-  await saveButtonState({
-    x,
-    y,
-    hidden,
-  });
+  // Determine position to persist
+  let x = 10;
+  let y = 70;
+  try {
+    const anchor = primary || btns[0];
+    if (anchor) {
+      const rect = anchor.getBoundingClientRect();
+      x = rect.left;
+      y = rect.top;
+    } else {
+      // If hidden and no buttons exist, keep previous position if available
+      const current = await getButtonState();
+      if (Number.isFinite(current.x) && Number.isFinite(current.y)) {
+        x = current.x as number;
+        y = current.y as number;
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  await saveButtonState({ x, y, hidden });
 }
 
 /**
@@ -941,6 +993,13 @@ async function init(): Promise<void> {
     } else if (message.type === "toggleButtonVisibility") {
       const hidden = message.hidden;
       setButtonHiddenState(hidden).then(() => sendResponse({ success: true }));
+      return true; // Keep channel open for async response
+    } else if (message.type === "getButtonVisibility") {
+      // Respond with current per-domain hidden state
+      getButtonState()
+        .then(state => sendResponse({ success: true, hidden: !!state.hidden }))
+        .catch(() => sendResponse({ success: false, hidden: false }))
+        .finally(() => undefined);
       return true; // Keep channel open for async response
     }
     return false;

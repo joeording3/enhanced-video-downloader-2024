@@ -1,5 +1,22 @@
 [
   {
+    "download_id": "1754949094145",
+    "url": "https://www.youtube.com/shorts/MbY7wWkQcrc",
+    "status": "complete",
+    "filename": "ad Jumping with the first ever jump rope shoe by 361\u00b0 for #GlobalJumpTogether campaign\ud83d\udc5f #361Degree - YouTube_MbY7wWkQcrc.mp4",
+    "filepath": "/Users/josephording/Downloads/ad Jumping with the first ever jump rope shoe by 361\u00b0 for #GlobalJumpTogether campaign\ud83d\udc5f #361Degree - YouTube_MbY7wWkQcrc.mp4",
+    "timestamp": "2025-08-11T21:54:13.201132+00:00"
+  },
+  {
+    "download_id": "1754933907968",
+    "url": "http://evd.test/synthetic",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: ERROR: [generic] Unable to download webpage: <urllib3.connection.HTTPConnection object at 0x106e789b0>: Failed to resolve 'evd.test' ([Errno 8] nodename nor servname provided, or not known) (caused by TransportError(\"<urllib3.connection.HTTPConnection object at 0x106e789b0>: Failed to resolve 'evd.test' ([Errno 8] nodename nor servname provided, or not known)\")). Contact support if this persists.",
+    "original_error": "ERROR: [generic] Unable to download webpage: <urllib3.connection.HTTPConnection object at 0x106e789b0>: Failed to resolve 'evd.test' ([Errno 8] nodename nor servname provided, or not known) (caused by TransportError(\"<urllib3.connection.HTTPConnection object at 0x106e789b0>: Failed to resolve 'evd.test' ([Errno 8] nodename nor servname provided, or not known)\"))",
+    "timestamp": "2025-08-11T17:38:28.199964+00:00"
+  },
+  {
     "download_id": "1754933767124",
     "url": "http://evd.test/synthetic",
     "status": "error",
