@@ -103,6 +103,7 @@ export function initOptionsPage(): void {
   setupTabNavigation();
   setupMessageListener();
   setupLogsUI();
+  setupLiveSave();
   loadErrorHistory();
   logger.debug("Options page initialized", { component: "options" });
 }
@@ -371,6 +372,109 @@ export function setupEventListeners(): void {
       } catch (e) {
         setStatus("settings-status", "Failed to clear button positions", true);
       }
+    });
+  }
+}
+
+/**
+ * Live-save non-server settings when changed.
+ * Server Configuration section continues to use explicit Save + Restart flow.
+ */
+function setupLiveSave(): void {
+  const sendPartialUpdate = async (partial: Partial<ServerConfig & Record<string, any>>): Promise<void> => {
+    try {
+      setStatus("settings-status", "Saving...", false, 1500);
+      const response = await new Promise<any>((resolve, reject) => {
+        chrome.runtime.sendMessage({ type: "setConfig", config: partial }, res => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+          } else {
+            resolve(res);
+          }
+        });
+      });
+      if (response && response.status === "success") {
+        setStatus("settings-status", "Saved", false, 1200);
+      } else {
+        setStatus("settings-status", "Save failed: " + (response?.message || "Unknown error"), true, 3000);
+      }
+    } catch (e) {
+      setStatus(
+        "settings-status",
+        "Save failed: " + (e instanceof Error ? e.message : "Unknown error"),
+        true,
+        3000
+      );
+    }
+  };
+
+  const onEnterCommit = (el: HTMLElement, handler: () => void) => {
+    el.addEventListener("keydown", ev => {
+      const e = ev as KeyboardEvent;
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handler();
+      }
+    });
+  };
+
+  // Download Settings (live save)
+  const downloadDirInput = document.getElementById("settings-download-dir") as HTMLInputElement | null;
+  if (downloadDirInput) {
+    const commit = () => {
+      if (validateFolder(downloadDirInput)) {
+        const v = downloadDirInput.value.trim();
+        if (v) void sendPartialUpdate({ download_dir: v });
+      }
+    };
+    downloadDirInput.addEventListener("blur", commit);
+    onEnterCommit(downloadDirInput, commit);
+  }
+
+  const ytdlpFormat = document.getElementById("settings-ytdlp-format") as HTMLSelectElement | null;
+  if (ytdlpFormat) {
+    ytdlpFormat.addEventListener("change", () => {
+      if (validateFormat(ytdlpFormat)) {
+        void sendPartialUpdate({ yt_dlp_options: { format: ytdlpFormat.value } });
+      }
+    });
+  }
+
+  const ytdlpConc = document.getElementById("settings-ytdlp-concurrent-fragments") as HTMLInputElement | null;
+  if (ytdlpConc) {
+    const commitConc = () => {
+      const raw = ytdlpConc.value.trim();
+      const n = parseInt(raw, 10);
+      if (Number.isFinite(n) && n >= 1 && n <= 16) {
+        void sendPartialUpdate({ yt_dlp_options: { concurrent_fragments: n } });
+      } else {
+        setStatus("settings-status", "Concurrent fragments must be 1-16", true, 2500);
+      }
+    };
+    ytdlpConc.addEventListener("change", commitConc);
+    ytdlpConc.addEventListener("blur", commitConc);
+    onEnterCommit(ytdlpConc, commitConc);
+  }
+
+  const allowPlaylists = document.getElementById("settings-allow-playlists") as HTMLInputElement | null;
+  if (allowPlaylists) {
+    allowPlaylists.addEventListener("change", () => {
+      void sendPartialUpdate({ allow_playlists: !!allowPlaylists.checked });
+    });
+  }
+
+  // Behavior Settings (live save)
+  const enableHistory = document.getElementById("settings-enable-history") as HTMLInputElement | null;
+  if (enableHistory) {
+    enableHistory.addEventListener("change", () => {
+      void sendPartialUpdate({ enable_history: !!enableHistory.checked });
+    });
+  }
+
+  const enableDebug = document.getElementById("settings-enable-debug") as HTMLInputElement | null;
+  if (enableDebug) {
+    enableDebug.addEventListener("change", () => {
+      void sendPartialUpdate({ debug_mode: !!enableDebug.checked });
     });
   }
 }
@@ -1171,27 +1275,53 @@ export function setupLogsUI(): void {
     }
   };
 
-  const fetchAndRender = (): void => {
+  const fetchAndRender = async (): Promise<void> => {
     const uiLimit = limitSelect ? parseInt(limitSelect.value, 10) : 500;
     const recent = recentFirstCheckbox ? !!recentFirstCheckbox.checked : true;
-    // Request more lines than UI limit so client-side filters don't empty the view
-    const requestedLines = (() => {
-      if (!Number.isFinite(uiLimit)) return 1000;
-      if (uiLimit <= 0) return 5000; // "All" in UI: pull a generous chunk
-      const scaled = uiLimit * 10;
-      return Math.min(20000, Math.max(scaled, 1000));
+
+    const getLogsText = (lines: number): Promise<string> =>
+      new Promise(resolve => {
+        chrome.runtime.sendMessage({ type: "getLogs", lines, recent }, (response: any) => {
+          if (chrome.runtime.lastError) {
+            resolve("Error: " + chrome.runtime.lastError.message);
+            return;
+          }
+          if (response && response.status === "success") {
+            resolve(response.data || "");
+          } else {
+            resolve("Error: " + (response?.message || "Failed to fetch logs"));
+          }
+        });
+      });
+
+    const countFilteredLines = (text: string): number => {
+      const filtered = applyFilters(text);
+      return filtered
+        .split("\n")
+        .map(s => s.trim())
+        .filter(s => s.length > 0).length;
+    };
+
+    // Start with an estimate; double until we have at least uiLimit filtered lines or we hit caps
+    const hardCap = 50000; // safety cap
+    let batch = (() => {
+      if (!Number.isFinite(uiLimit)) return 2000;
+      if (uiLimit <= 0) return 10000; // "All" in UI
+      return Math.min(hardCap, Math.max(uiLimit * 10, 2000));
     })();
-    chrome.runtime.sendMessage({ type: "getLogs", lines: requestedLines, recent }, (response: any) => {
-      if (chrome.runtime.lastError) {
-        renderLogs("Error: " + chrome.runtime.lastError.message);
-        return;
-      }
-      if (response && response.status === "success") {
-        renderLogs(response.data || "");
-      } else {
-        renderLogs("Error: " + (response?.message || "Failed to fetch logs"));
-      }
-    });
+
+    let text = await getLogsText(batch);
+    let filteredCount = countFilteredLines(text);
+
+    let iterations = 0;
+    while (uiLimit > 0 && filteredCount < uiLimit && batch < hardCap && iterations < 5) {
+      batch = Math.min(hardCap, batch * 2);
+      text = await getLogsText(batch);
+      filteredCount = countFilteredLines(text);
+      iterations += 1;
+    }
+
+    renderLogs(text);
   };
 
   refreshBtn?.addEventListener("click", () => {
