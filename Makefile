@@ -1,6 +1,6 @@
 # Makefile for Enhanced Video Downloader
 
-.PHONY: all all-continue check install-dev build-js test test-py test-js lint lint-py lint-js lint-md format format-py format-js format-md format-check format-check-py format-check-js format-check-md coverage coverage-py coverage-js clean test-fast test-js-fast test-integration test-js-slow test-slow generate-ignores test-audit audit-coverage audit-mutation audit-performance audit-docs mutation mutation-py mutation-js emoji-check markdown-check check-junk-folders cleanup-junk-folders monitor-junk-folders lint-unused lint-unused-ts lint-unused-py
+.PHONY: all all-continue check install-dev build-js test test-py test-js lint lint-py lint-js lint-md format format-py format-js format-md format-check format-check-py format-check-js format-check-md coverage coverage-py coverage-js clean test-fast test-js-fast test-integration test-js-slow test-slow generate-ignores test-audit audit-coverage audit-mutation audit-performance audit-docs mutation mutation-py mutation-js emoji-check markdown-check check-junk-folders cleanup-junk-folders monitor-junk-folders lint-unused lint-unused-ts lint-unused-py clean-temp clean-temp-reports clean-reserved-names
 
 all:
 	@echo "=== Running All Quality Checks ==="
@@ -70,6 +70,7 @@ build-js:
 	npm run build:ts
 
 test: test-py test-js test-playwright
+	@$(MAKE) clean-temp
 
 test-py:
 	# Ensure no stale server lock interferes with tests
@@ -165,6 +166,24 @@ coverage-js:
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} +
 	rm -rf .pytest_cache coverage extension/dist node_modules
+
+# Remove transient temp/cache artifacts created by tests and tooling (preserve reports)
+clean-temp:
+	@echo "Cleaning temp/cache artifacts (preserving reports)..."
+	@python scripts/prevent_junk_folders.py --clear-temp --remove-reserved-names || (echo "Temp cleanup failed" && exit 1)
+	@echo "Temp/cache cleanup complete"
+
+# Remove temp/cache artifacts including coverage/mutation/test reports
+clean-temp-reports:
+	@echo "Cleaning temp/cache artifacts including reports..."
+	@python scripts/prevent_junk_folders.py --clear-temp --clear-reports --remove-reserved-names || (echo "Temp+reports cleanup failed" && exit 1)
+	@echo "Temp/cache+reports cleanup complete"
+
+# Explicit target to scrub Windows reserved-name paths (e.g., LPT1)
+clean-reserved-names:
+	@echo "Removing Windows reserved-name paths (e.g., LPT1, CON, COM1)..."
+	@python scripts/prevent_junk_folders.py --remove-reserved-names || (echo "Reserved-name cleanup failed" && exit 1)
+	@echo "Reserved-name cleanup complete"
 
 # Generate ignore files from centralized configuration
 generate-ignores:

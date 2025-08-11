@@ -10,7 +10,6 @@
     "scripting",
     "downloads",
     "contextMenus",
-    "declarativeNetRequestWithHostAccess",
     "tabs"
   ],
   "host_permissions": ["*://*/*", "http://127.0.0.1:*/", "http://localhost:*/"],
@@ -54,15 +53,6 @@
       "match_about_blank": true
     }
   ],
-  "declarative_net_request": {
-    "rule_resources": [
-      {
-        "id": "youtube_rules",
-        "enabled": true,
-        "path": "rules.json"
-      }
-    ]
-  },
   "icons": {
     "16": "extension/icons/icon16.png",
     "48": "extension/icons/icon48.png",

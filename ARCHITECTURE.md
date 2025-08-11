@@ -220,7 +220,6 @@ Enhanced Video Downloader/
 ├── tsconfig.json                # TypeScript configuration
 ├── Makefile                     # Build and test automation
 ├── manifest.json                # Extension manifest
-├── rules.json                   # Project rules
 ├── .flake8                      # Flake8 configuration
 ├── .prettierrc                  # Prettier configuration
 ├── .stylelintrc.json            # Stylelint configuration

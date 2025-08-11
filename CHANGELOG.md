@@ -188,6 +188,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Testing docs: Consolidated `background-logic.ts` mutation analysis into `tests/testing.md`;
   removed outdated `reports/mutation_analysis_report.md` in favor of the living testing document.
 
+- Extension manifest/DNR: Removed Declarative Net Request usage and `rules.json`.
+  - Dropped `declarativeNetRequestWithHostAccess` permission.
+  - Removed `declarative_net_request.rule_resources` from `manifest.json`.
+  - Deleted root `rules.json` and references in `README.md` and `ARCHITECTURE.md`.
+  - Rationale: DNR rules were only allowing media/XMLHttpRequest to known domains; our extension
+    does not block requests and builds fetch URLs explicitly, so DNR is unnecessary overhead.
+
 ### Changed
 
 - Options: Removed the directory chooser button. The download directory is now entered as a pathname
@@ -203,6 +210,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   with the cleanup script's critical folders.
 - Fixed Makefile `check-junk-folders` recipe indentation to prevent parsing errors; clarified junk
   folder exclusions.
+
+- Post-test cleanup:
+  - Add `scripts/prevent_junk_folders.py` capabilities to clear temp/cache artifacts and remove
+    Windows reserved-name paths (e.g., `LPT1`) that can break Chrome unpacked extension loading.
+  - New Make targets:
+    - `make clean-temp` – clears pytest/ruff/mypy caches, Playwright Chrome profiles, Hypothesis
+      generated dirs (reports preserved)
+    - `make clean-temp-reports` – also removes coverage, Playwright reports, and mutation outputs
+    - `make clean-reserved-names` – scrub reserved-name paths anywhere under repo
+  - `make test` now runs `clean-temp` afterward.
 
 ### Security
 

@@ -128,7 +128,6 @@ Enhanced Video Downloader/
 ├── tsconfig.json            # TypeScript configuration
 ├── Makefile                 # Build and test automation
 ├── manifest.json            # Extension manifest
-├── rules.json               # Project rules
 └── .flake8                  # Flake8 configuration
 ```
 
@@ -624,6 +623,18 @@ mutmut show <mutant_name>     # View specific mutant details
   - `make check-junk-folders` – fails if unexpected empty directories are present at the repo root.
   - `make cleanup-junk-folders` – removes empty, non-critical directories at the repo root.
   - `make monitor-junk-folders` – background watcher to remove new empty junk directories.
+  - `make clean-temp` – clears transient temp/cache folders after tests (preserves coverage/mutation reports).
+  - `make clean-temp-reports` – also removes coverage HTML, Playwright reports, mutation outputs.
+  - `make clean-reserved-names` – removes Windows reserved-name paths (e.g., `LPT1`) that can break Chrome loading.
+
+Post-test cleanup
+
+- The script `scripts/prevent_junk_folders.py` now supports:
+  - `--clear-temp` to remove transient caches (pytest cache, Ruff cache, Playwright Chrome profiles,
+    Hypothesis generated dirs under `tmp/`),
+  - `--clear-reports` to include coverage/mutation/report directories,
+  - `--remove-reserved-names` to remove device-name paths (e.g., `LPT1`) created by tests.
+- `make test` automatically runs `make clean-temp` afterward.
 
 ### Building
 

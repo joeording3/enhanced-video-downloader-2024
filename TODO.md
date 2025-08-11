@@ -23,9 +23,14 @@ Urgent Tasks:
 
   <!-- working-on: options logs viewer wired to background API -->
 
-- [x] Full pipeline health: lint, format-check, tests, coverage all green via `make all` (fixed ESLint/Prettier issues in Playwright E2E; auto-formatted JSON; no blocking lints remain)
+- [x] Full pipeline health: lint, format-check, tests, coverage all green via `make all`
+  - Fixed ESLint/Prettier issues in Playwright E2E
+  - Auto-formatted JSON
+  - No blocking lints remain
 - [/] Prevent stale lock file from affecting CLI status tests by removing `server/data/server.lock`
   before `make test-py`
+- [/] Add automatic temp/cache cleanup and reserved-name scrubbing after test runs
+  <!-- working-on: post-test cleanup wiring -->
 - [x] Enhance CLI restart: reuse previous run mode/flags automatically when not provided (persisted
       in `server/data/server.lock.json`); normalize invalid hostnames and stabilize auto-port with
       SO_REUSEADDR-aware port checks to avoid transient false "in use" on restart.
@@ -57,6 +62,7 @@ Urgent Tasks:
 - [x] Keep CLI output clean: use plain, minimal console formatter at WARNING by default; route all
       structured JSON to the log file; suppress server child stdout/stderr in foreground runs;
       ensure Gunicorn access/error logs go to `LOG_FILE`.
+- [x] Remove Declarative Net Request (DNR) usage and `rules.json`; update manifest and docs.
 - [/] Centralize log-path resolution via `server/logging_setup.resolve_log_path` and update
   `server/api/logs_bp.py` and `server/api/logs_manage_bp.py` to use it; document precedence in
   README. Tighten `_validate_lines` message while preserving client response text.

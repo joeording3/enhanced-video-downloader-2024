@@ -26,3 +26,8 @@ echo "Running ESLint and Flake8..."
 npm run lint:all
 
 echo "All checks passed!" 
+
+# Post-check cleanup: clear transient temp/cache folders and reserved-name paths
+echo "Cleaning temp/cache artifacts (preserving reports)..."
+python scripts/prevent_junk_folders.py --clear-temp --remove-reserved-names || true
+echo "Cleanup complete."
