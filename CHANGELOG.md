@@ -170,12 +170,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Testing docs: Consolidated `background-logic.ts` mutation analysis into `tests/testing.md`;
   removed outdated `reports/mutation_analysis_report.md` in favor of the living testing document.
 
-### Fixed
+### Changed
 
-- Options: Directory picker ('Choose') now derives a practical path for the backend. Browsers do not
-  expose full filesystem paths, so the UI populates the download directory by combining the selected
-  folder name with the current absolute value's parent (or `~/Downloads` when unset). Validation now
-  also treats `~` prefixes as acceptable home-relative paths, matching backend expansion logic.
+- Options: Removed the directory chooser button. The download directory is now entered as a
+  pathname in the text field. Validation accepts absolute paths and `~` (home-relative) which the
+  backend expands.
 
 ### Testing & Tooling
 

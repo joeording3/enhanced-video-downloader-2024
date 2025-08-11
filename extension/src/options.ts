@@ -271,10 +271,7 @@ export function setupEventListeners(): void {
     form.addEventListener("submit", saveSettings);
   }
 
-  const folderPickerButton = document.getElementById("settings-folder-picker");
-  if (folderPickerButton) {
-    folderPickerButton.addEventListener("click", selectDownloadDirectory);
-  }
+  // Removed folder picker UI; users should input absolute paths directly
 
   const restartButton = document.getElementById("restart-server");
   if (restartButton) {
@@ -1122,6 +1119,12 @@ export function setupLogsUI(): void {
       if (current) entries.push(current);
       }
 
+      // After building entries, apply UI limit AFTER filtering
+      const limitCount = limitSelect ? parseInt(limitSelect.value, 10) : 500;
+      if (Number.isFinite(limitCount) && limitCount > 0 && entries.length > limitCount) {
+        entries = entries.slice(0, limitCount);
+      }
+
       if (entries.length === 0) {
         pre.textContent = "(no logs)";
       } else {
@@ -1169,9 +1172,16 @@ export function setupLogsUI(): void {
   };
 
   const fetchAndRender = (): void => {
-    const lines = limitSelect ? parseInt(limitSelect.value, 10) : 500;
+    const uiLimit = limitSelect ? parseInt(limitSelect.value, 10) : 500;
     const recent = recentFirstCheckbox ? !!recentFirstCheckbox.checked : true;
-    chrome.runtime.sendMessage({ type: "getLogs", lines, recent }, (response: any) => {
+    // Request more lines than UI limit so client-side filters don't empty the view
+    const requestedLines = (() => {
+      if (!Number.isFinite(uiLimit)) return 1000;
+      if (uiLimit <= 0) return 5000; // "All" in UI: pull a generous chunk
+      const scaled = uiLimit * 10;
+      return Math.min(20000, Math.max(scaled, 1000));
+    })();
+    chrome.runtime.sendMessage({ type: "getLogs", lines: requestedLines, recent }, (response: any) => {
       if (chrome.runtime.lastError) {
         renderLogs("Error: " + chrome.runtime.lastError.message);
         return;
@@ -1458,70 +1468,7 @@ function showSaveError(): void {
  * Opens a folder picker dialog to select the download directory.
  * Provides a fallback for browsers that do not support `showDirectoryPicker`.
  */
-export async function selectDownloadDirectory(): Promise<void> {
-  const downloadDirInput = document.getElementById("settings-download-dir") as HTMLInputElement;
-
-  //  showDirectoryPicker is not available on all browsers
-  if (!window.showDirectoryPicker) {
-    setStatus(
-      "settings-status",
-      "Your browser does not support directory selection. Please manually enter the path.",
-      true
-    );
-    return;
-  }
-
-  try {
-    //  showDirectoryPicker is not available on all browsers
-    const dirHandle = await window.showDirectoryPicker();
-    if (downloadDirInput) {
-      // Note: This returns a handle, not a path. Browsers do not expose the full path.
-      // To provide a usable absolute path for the backend, derive one from the current value
-      // or fall back to ~/Downloads.
-
-      const selectedName = String(dirHandle.name || "").trim();
-
-      const currentValue = (downloadDirInput.value || "").trim();
-      const isUnixAbsolute = currentValue.startsWith("/");
-      const isWindowsAbsolute = /^[A-Za-z]:/.test(currentValue);
-      const isHomeRelative = currentValue.startsWith("~");
-
-      // Use the current absolute/home-relative path as base; otherwise fall back to ~/Downloads
-      const baseCandidate =
-        isUnixAbsolute || isWindowsAbsolute || isHomeRelative ? currentValue : "~/Downloads";
-
-      const baseNormalized = baseCandidate.replace(/\\/g, "/").replace(/\/$/, "");
-
-      // Avoid duplicating the selected name if it already ends with it
-      const alreadyEndsWith = baseNormalized.endsWith("/" + selectedName);
-      const newPath = alreadyEndsWith ? baseNormalized : baseNormalized + "/" + selectedName;
-
-      downloadDirInput.value = newPath;
-      validateFolder(downloadDirInput);
-
-      setStatus(
-        "settings-status",
-        "Selected folder: " + selectedName +
-          ". Using derived path: " + newPath,
-        false
-      );
-    }
-  } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") {
-      logger.info("User aborted directory selection.", {
-        component: "options",
-        operation: "selectDownloadDirectory",
-      });
-    } else {
-      logger.error("Error selecting directory:", { component: "options" }, error);
-      setStatus(
-        "settings-status",
-        "Failed to select directory. Please manually enter the path.",
-        true
-      );
-    }
-  }
-}
+// Removed selectDownloadDirectory; chooser removed from UI
 
 /**
  * Sends a request to restart the server.

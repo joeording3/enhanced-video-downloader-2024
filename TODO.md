@@ -28,10 +28,9 @@ Urgent Tasks:
 - [x] Enhance CLI restart: reuse previous run mode/flags automatically when not provided (persisted
   in `server/data/server.lock.json`); normalize invalid hostnames and stabilize auto-port with
   SO_REUSEADDR-aware port checks to avoid transient false "in use" on restart.
-- [x] 'Choose' button for download directory: wired and now populates a usable path. The picker
-  cannot reveal OS paths, so the UI derives an absolute path from the current field value (or
-  defaults to `~/Downloads/<selectedName>`). Validation also accepts home-relative `~` paths, which
-  the backend expands to an absolute path.
+- [x] Remove 'Choose' folder button from Options. The download directory field now only accepts a
+  pathname typed/pasted by the user. Validation accepts absolute paths and `~`-prefixed paths (the
+  server expands `~`).
 - [/] Implement `run_cleanup()` in `server/cli/utils.py` and add tests
 - [/] Align JSON error semantics across endpoints; document in README and CHANGELOG
   <!-- working-on: api-json-errors -->
