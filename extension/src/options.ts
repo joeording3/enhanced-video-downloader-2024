@@ -961,11 +961,13 @@ export function setupLogsUI(): void {
         .split("\n")
         .filter(line => {
           const isWerkzeug = /werkzeug/i.test(line);
-          // JSON: "status": 200
-          const isStatus200Json = /"status"\s*:\s*200(\b|\s|[,}])/.test(line);
-          // Plain-text access log: "-> 200" or end-of-line
+          // JSON: "status": 200 or "status": "200"
+          const isStatus200Json = /"status"\s*:\s*"?200"?(\b|\s|[,}])/.test(line);
+          // Plain text within message: "-> 200" possibly followed by punctuation/space/EOL
           const isStatus200Arrow = /->\s*200(\b|\s|[,}])?/.test(line);
-          return !(isWerkzeug || isStatus200Json || isStatus200Arrow);
+          // JSON for server.request logger with 200 status (robust across spacing)
+          const isServerRequest200 = /"logger"\s*:\s*"server\.request"[\s\S]*?"status"\s*:\s*"?200"?/i.test(line);
+          return !(isWerkzeug || isStatus200Json || isStatus200Arrow || isServerRequest200);
         })
         .join("\n");
     }
@@ -1484,39 +1486,15 @@ export async function selectDownloadDirectory(): Promise<void> {
       const isWindowsAbsolute = /^[A-Za-z]:/.test(currentValue);
       const isHomeRelative = currentValue.startsWith("~");
 
-      const splitPath = (p: string): string[] => p.replace(/\\/g, "/").split("/").filter(Boolean);
-      const joinPath = (segments: string[], leading: string): string =>
-        (leading + segments.join("/")).replace(/\\/g, "/");
+      // Use the current absolute/home-relative path as base; otherwise fall back to ~/Downloads
+      const baseCandidate =
+        isUnixAbsolute || isWindowsAbsolute || isHomeRelative ? currentValue : "~/Downloads";
 
-      const computeParent = (p: string): string => {
-        const hasLeadingSlash = p.startsWith("/");
-        const hasHome = p.startsWith("~");
-        const winDriveMatch = p.match(/^([A-Za-z]:)[\\/]/);
-        const drive = winDriveMatch ? winDriveMatch[1] : "";
-        // Normalize separators
-        const normalized = p.replace(/\\/g, "/");
-        const parts = normalized.split("/").filter(Boolean);
-        // Remove last segment if any
-        if (parts.length > 0) parts.pop();
-        if (hasHome) {
-          return joinPath(parts, "~/");
-        }
-        if (winDriveMatch) {
-          return drive + "/" + parts.join("/");
-        }
-        if (hasLeadingSlash) {
-          return "/" + parts.join("/");
-        }
-        return parts.join("/");
-      };
+      const baseNormalized = baseCandidate.replace(/\\/g, "/").replace(/\/$/, "");
 
-      const parentBase =
-        isUnixAbsolute || isWindowsAbsolute || isHomeRelative
-          ? computeParent(currentValue)
-          : "~/Downloads";
-
-      const baseNormalized = parentBase.replace(/\\/g, "/").replace(/\/$/, "");
-      const newPath = baseNormalized + "/" + selectedName;
+      // Avoid duplicating the selected name if it already ends with it
+      const alreadyEndsWith = baseNormalized.endsWith("/" + selectedName);
+      const newPath = alreadyEndsWith ? baseNormalized : baseNormalized + "/" + selectedName;
 
       downloadDirInput.value = newPath;
       validateFolder(downloadDirInput);
