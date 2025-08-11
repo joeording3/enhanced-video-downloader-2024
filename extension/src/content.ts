@@ -387,6 +387,8 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
         x: e.clientX - rect.left,
         y: e.clientY - rect.top,
       },
+      // Track drag start to distinguish clicks from drags
+      lastClickTime: Date.now(),
     });
 
     // Visual drag cursor
@@ -409,6 +411,7 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
     const now = Date.now();
     const timeSinceLastClick = now - currentState.lastClickTime;
 
+    // Treat as click only when not dragging and sufficient time since drag started
     if (!currentState.isDragging && timeSinceLastClick > CLICK_THRESHOLD) {
       // Update last click time
       stateManager.updateUIState({ lastClickTime: now });
@@ -534,6 +537,15 @@ function onDrag(event: MouseEvent): void {
   // Update button position
   downloadButton.style.left = String(x) + "px";
   downloadButton.style.top = String(y) + "px";
+
+  // Mark a movement threshold to suppress click after drag
+  const dx = Math.abs(event.movementX || 0);
+  const dy = Math.abs(event.movementY || 0);
+  if ((dx + dy) > 0) {
+    try {
+      stateManager.updateUIState({ lastClickTime: Date.now() });
+    } catch {}
+  }
 }
 
 /**
