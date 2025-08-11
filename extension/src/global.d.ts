@@ -136,5 +136,6 @@ declare var process: {
     JEST_WORKER_ID?: string;
     NODE_ENV?: string;
     EVD_TESTING?: string;
+    E2E_TEST_PORT?: string;
   };
 };

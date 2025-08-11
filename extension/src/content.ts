@@ -473,8 +473,8 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
       const now = Date.now();
       const timeSinceLastClick = now - currentState.lastClickTime;
 
-      // Treat as click only when not dragging and sufficient time since drag started
-      if (!currentState.isDragging && timeSinceLastClick > CLICK_THRESHOLD) {
+      // Treat as click when not currently dragging (ignore timing to allow fast automated clicks)
+      if (!currentState.isDragging) {
         // Update last click time
         stateManager.updateUIState({ lastClickTime: now });
         e.preventDefault();

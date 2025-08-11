@@ -1,5 +1,14 @@
 [
   {
+    "download_id": "1754933767124",
+    "url": "http://evd.test/synthetic",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: ERROR: [generic] Unable to download webpage: <urllib3.connection.HTTPConnection object at 0x10b5948c0>: Failed to resolve 'evd.test' ([Errno 8] nodename nor servname provided, or not known) (caused by TransportError(\"<urllib3.connection.HTTPConnection object at 0x10b5948c0>: Failed to resolve 'evd.test' ([Errno 8] nodename nor servname provided, or not known)\")). Contact support if this persists.",
+    "original_error": "ERROR: [generic] Unable to download webpage: <urllib3.connection.HTTPConnection object at 0x10b5948c0>: Failed to resolve 'evd.test' ([Errno 8] nodename nor servname provided, or not known) (caused by TransportError(\"<urllib3.connection.HTTPConnection object at 0x10b5948c0>: Failed to resolve 'evd.test' ([Errno 8] nodename nor servname provided, or not known)\"))",
+    "timestamp": "2025-08-11T17:36:07.378196+00:00"
+  },
+  {
     "download_id": "id2",
     "url": "http://example.com/path/video2",
     "status": "error",

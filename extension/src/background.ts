@@ -866,10 +866,11 @@ const sendDownloadRequest = async (
   isPlaylist = false,
   quality?: string | null,
   format?: string | null,
-  pageTitle = "video"
+  pageTitle = "video",
+  forcedPort?: number | null
 ): Promise<any> => {
   try {
-    const port = await storageService.getPort();
+    const port = typeof forcedPort === "number" ? forcedPort : await storageService.getPort();
     if (!port) {
       return { status: "error", message: "Server not available" };
     }
@@ -1077,7 +1078,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             message.isPlaylist,
             message.quality,
             message.format,
-            message.pageTitle
+            message.pageTitle,
+            // During Playwright real-site tests, the server port is provided via env var
+            typeof process !== "undefined" && process.env && process.env.E2E_TEST_PORT
+              ? Number(process.env.E2E_TEST_PORT)
+              : undefined
           );
 
           try {

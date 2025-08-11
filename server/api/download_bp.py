@@ -20,7 +20,7 @@ from pydantic import ValidationError
 from werkzeug.exceptions import BadRequest, RequestEntityTooLarge
 
 from server.config import Config
-from server.downloads import progress_data
+from server.downloads import progress_data, progress_lock
 from server.downloads.gallery_dl import handle_gallery_dl_download
 from server.downloads.resume import handle_resume_download
 from server.downloads.ytdlp import (
@@ -365,6 +365,18 @@ def _process_download_request(raw_data: dict[str, Any]) -> tuple[Any, str | None
 
     # Log the validated request safely
     _log_validated_request(download_id, validated_data)
+
+    # Reflect a minimal status entry immediately so /api/status is non-empty for observers/tests
+    try:
+        with progress_lock:
+            progress_data[download_id] = {
+                "status": "queued",
+                "url": validated_data.get("url", ""),
+                "last_update": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+            }
+    except Exception:
+        # Best effort; do not block request processing
+        pass
 
     # Proceed with the download
     return handle_ytdlp_download(validated_data), None
