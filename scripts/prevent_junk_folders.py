@@ -21,8 +21,8 @@ import logging
 import re
 import sys
 import time
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 
 def setup_script_logging():
@@ -177,8 +177,7 @@ def _iter_paths(patterns: Iterable[str]) -> list[Path]:
     expanded: list[Path] = []
     for pattern in patterns:
         # Support both exact paths and globs
-        for p in Path().glob(pattern):
-            expanded.append(p)
+        expanded.extend(list(Path().glob(pattern)))
     return expanded
 
 
@@ -352,10 +351,8 @@ def main():
         did_work = True
         removed = clear_temp_and_caches(include_reports=args.clear_reports)
         logger.info(
-            (
-                f"Cleared transient temp/cache directories (removed {removed} path(s)); "
-                + ("including reports" if args.clear_reports else "reports preserved")
-            )
+            f"Cleared transient temp/cache directories (removed {removed} path(s)); "
+            + ("including reports" if args.clear_reports else "reports preserved")
         )
 
     if args.remove_reserved_names:

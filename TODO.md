@@ -35,6 +35,9 @@ Urgent Tasks:
       in `server/data/server.lock.json`); normalize invalid hostnames and stabilize auto-port with
       SO_REUSEADDR-aware port checks to avoid transient false "in use" on restart.
 - [x] Remove 'Choose' folder button from Options. The download directory field now only accepts a
+- [x] Scripts/docs hygiene: add Make targets for manual utilities (coverage-update, inventory-report,
+      audit-tests-redundancy, setup-uv); update docs to remove references to deleted/legacy scripts
+      and reflect current `scripts/` contents.
       pathname typed/pasted by the user. Validation accepts absolute paths and `~`-prefixed paths
       (the server expands `~`).
 - [/] Implement `run_cleanup()` in `server/cli/utils.py` and add tests
@@ -191,6 +194,7 @@ Legacy/Stub Cleanup:
   - [/] Remove non-standard `composes:` usage; replace with explicit component styles
   - [/] Align backgrounds to `--container-bg` and headers to `--header-bg`
   - [/] Normalize history/logs styles; use variables for dark-mode notification colors
+  - [/] Make injected download button larger and reactive on click (bounce + success/error states)
   - [x] Popup: Clean up dark/light theme rules by relying on variable aliases only; removed
         `body.dark-theme` overrides from `extension/ui/popup.css` and added theme aliases to
         `extension/ui/themes.css` (`--row-alt-bg`, `--bg-elevated`, `--error-bg-tint-light` → dark

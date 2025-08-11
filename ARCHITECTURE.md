@@ -187,15 +187,20 @@ Enhanced Video Downloader/
 │   ├── unit/                    # Server unit tests
 │   └── jest/                    # Jest configuration
 ├── scripts/                      # Build and utility scripts
-│   ├── build-ts.sh              # TypeScript build script
-│   ├── parse_coverage.py        # Coverage parsing script
-│   ├── update_coverage_stats.py # Coverage statistics updater
-│   ├── generate-ignore-files.py # Generate ignore files from config
-│   ├── check_compliance.py      # Compliance checking script
-│   ├── generate_inventory_report.py # Inventory report generation
-│   ├── run_checks.sh            # Run quality checks
-│   ├── setup_dev.py             # Development environment setup
-│   └── test_mutation_simple.py  # Simple mutation testing
+│   ├── build-ts.sh               # TypeScript build (esbuild) and asset copy
+│   ├── verify-build.js           # Post-build verification of required files
+│   ├── copy-html.js              # Copy extension HTML to dist
+│   ├── minify-css.js             # Minify and distribute CSS
+│   ├── analyze_bundle_size.js    # Analyze bundle sizes
+│   ├── optimize_tree_shaking.js  # Identify unused exports and generate barrel
+│   ├── profile_performance.js    # Static performance hints and utilities scaffold
+│   ├── update_coverage_stats.py  # Coverage statistics updater (Python + frontend)
+│   ├── generate-ignore-files.py  # Generate ignore files from central config
+│   ├── generate_inventory_report.py # Inventory report (ignores/docstrings)
+│   ├── audit_test_redundancy.py  # Test redundancy audit
+│   ├── prevent_junk_folders.py   # Junk folder/cache cleanup and monitor
+│   ├── setup_uv.py               # One-time uv-based environment setup helper
+│   └── run_checks.sh             # Legacy wrapper (Makefile supersedes)
 ├── mutants/                      # Mutation testing output (generated)
 ├── coverage/                     # Coverage reports (generated)
 ├── htmlcov/                      # HTML coverage reports (generated)
@@ -475,9 +480,8 @@ Adoption status:
 
 - **Living Documentation**: `tests/testing.md` provides a comprehensive overview of test
   responsibilities, coverage metrics, and quality indicators across the codebase.
-- **Coverage Reporting**: `scripts/parse_coverage.py` automatically updates the Test Responsibility
-  Matrix table with current coverage data, ensuring accurate tracking of test coverage across all
-  modules.
+ - **Coverage Reporting**: `scripts/update_coverage_stats.py` (also exposed via `make coverage-update`) updates
+   coverage statistics and the table in `TODO.md`, ensuring accurate tracking across modules.
 - **Quality Metrics**: The audit system tracks mutation scores, test classification, and maintenance
   schedules to ensure robust test quality.
 - **Mutation Testing**: Stryker for JS/TS and Mutmut for Python provide mutation testing to detect

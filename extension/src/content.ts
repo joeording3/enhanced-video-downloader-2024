@@ -369,7 +369,10 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
       e.stopPropagation();
 
       // Add visual feedback
+      btn.classList.add("clicked");
       btn.classList.add("download-sending");
+      // Remove the transient clicked class after the animation
+      setTimeout(() => btn.classList.remove("clicked"), 300);
 
       try {
         // Determine download URL. Prefer currentSrc, then src; avoid blob URLs by falling back to page URL

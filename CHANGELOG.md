@@ -8,8 +8,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Additional Changes
+- Content UI: Increased size of injected download button and added reactive click feedback.
+  - Larger padding and font for better visibility; rounded corners and stronger shadow.
+  - Hover/active transforms; JS toggles a transient `clicked` class for a micro-bounce.
+  - Maintains existing success/error state classes (`download-sending`, `download-success`, `download-error`).
+- Tooling: Added Make targets for optional utilities to improve discoverability:
+  - `coverage-update` → runs `scripts/update_coverage_stats.py`
+  - `inventory-report` → runs `scripts/generate_inventory_report.py`
+  - `audit-tests-redundancy` → runs `scripts/audit_test_redundancy.py`
+  - `setup-uv` → runs `scripts/setup_uv.py`
+- Docs: Updated `ARCHITECTURE.md` and `DEVELOPER.md` to reflect current scripts; removed references
+  to non-existent/legacy scripts (e.g., `parse_coverage.py`, `check_compliance.py`, `setup_dev.py`,
+  `remove_all_emojis.py`).
 
 - Tooling: Resolved ESLint/Prettier failures blocking `make all`.
+
   - Cleaned up Playwright E2E spec formatting and empty catch blocks; renamed unused imports.
   - Ran Prettier write across repo, including JSON under `server/data/`.
   - Confirmed lint, format-check, tests, and coverage all pass via `make all`.

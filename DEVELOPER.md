@@ -1723,29 +1723,20 @@ _Last updated: 2025-01-27_
 
 ### Development Setup
 
-- `scripts/setup_uv.py` - Migrate from requirements.txt to uv package manager
+- `scripts/setup_uv.py` - Migrate to uv package manager and set up environment
   - Creates virtual environment with uv
   - Installs project and development dependencies
   - Sets up Node.js dependencies and TypeScript build
-- `scripts/setup_dev.py` - Initialize development environment
-  - Creates necessary directories and files
-  - Sets up initial configuration
-  - Prepares test environment
 
 ### Code Quality & Testing
 
-- `scripts/check_compliance.py` - Run comprehensive code quality checks
-  - Validates linting, formatting, and test compliance
-  - Generates compliance reports
 - `scripts/generate_inventory_report.py` - Generate comprehensive project inventory
   - Analyzes ignore patterns and docstrings
   - Creates detailed project structure reports
 - `scripts/audit_test_redundancy.py` - Audit test suite for redundant files
   - Identifies duplicate test patterns
   - Suggests consolidation opportunities
-- `scripts/test_mutation_simple.py` - Simple mutation testing framework
-  - Provides basic mutation testing capabilities
-  - Helps identify weak test coverage
+
 
 ### Coverage & Metrics
 
@@ -1768,23 +1759,17 @@ _Last updated: 2025-01-27_
 
 ### Emoji Management
 
-- `scripts/check_emojis.py` - Check for emojis in markdown files
-  - Scans all markdown files for emoji usage
-  - Reports emoji locations for removal
-- `scripts/remove_all_emojis.py` - Remove emojis from all project files
-  - Batch removes emojis from all markdown files
-  - Updates project documentation consistently
+- `scripts/check_emojis.py` - Check for emojis in code/docs (used via Make targets)
 
 ### Build & Automation
 
-- `scripts/build-ts.sh` - Build TypeScript files with esbuild
-  - Compiles TypeScript to JavaScript
-  - Bundles extension files for distribution
-  - Copies static HTML and CSS files
-- `scripts/run_checks.sh` - Run comprehensive quality checks
-  - Executes Python tests, JavaScript tests, and linting
-  - Updates coverage stats and enforces thresholds
-  - Provides one-command quality validation
+- `scripts/build-ts.sh` - Build TypeScript files with esbuild (bundling + asset copy)
+- `scripts/verify-build.js` - Verify required extension files after build
+- `scripts/copy-html.js` - Copy HTML to dist
+- `scripts/minify-css.js` - Minify and distribute CSS
+- `scripts/analyze_bundle_size.js` - Analyze bundle sizes
+- `scripts/optimize_tree_shaking.js` - Identify unused exports and generate barrels
+- `scripts/profile_performance.js` - Static performance hints and utilities scaffold
 
 ### Configuration Management
 

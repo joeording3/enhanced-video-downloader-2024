@@ -623,9 +623,11 @@ mutmut show <mutant_name>     # View specific mutant details
   - `make check-junk-folders` – fails if unexpected empty directories are present at the repo root.
   - `make cleanup-junk-folders` – removes empty, non-critical directories at the repo root.
   - `make monitor-junk-folders` – background watcher to remove new empty junk directories.
-  - `make clean-temp` – clears transient temp/cache folders after tests (preserves coverage/mutation reports).
+  - `make clean-temp` – clears transient temp/cache folders after tests (preserves coverage/mutation
+    reports).
   - `make clean-temp-reports` – also removes coverage HTML, Playwright reports, mutation outputs.
-  - `make clean-reserved-names` – removes Windows reserved-name paths (e.g., `LPT1`) that can break Chrome loading.
+  - `make clean-reserved-names` – removes Windows reserved-name paths (e.g., `LPT1`) that can break
+    Chrome loading.
 
 Post-test cleanup
 

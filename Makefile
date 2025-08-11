@@ -1,6 +1,6 @@
 # Makefile for Enhanced Video Downloader
 
-.PHONY: all all-continue check install-dev build-js test test-py test-js lint lint-py lint-js lint-md format format-py format-js format-md format-check format-check-py format-check-js format-check-md coverage coverage-py coverage-js clean test-fast test-js-fast test-integration test-js-slow test-slow generate-ignores test-audit audit-coverage audit-mutation audit-performance audit-docs mutation mutation-py mutation-js emoji-check markdown-check check-junk-folders cleanup-junk-folders monitor-junk-folders lint-unused lint-unused-ts lint-unused-py clean-temp clean-temp-reports clean-reserved-names
+.PHONY: all all-continue check install-dev build-js test test-py test-js lint lint-py lint-js lint-md format format-py format-js format-md format-check format-check-py format-check-js format-check-md coverage coverage-py coverage-js clean test-fast test-js-fast test-integration test-js-slow test-slow generate-ignores test-audit audit-coverage audit-mutation audit-performance audit-docs mutation mutation-py mutation-js emoji-check markdown-check check-junk-folders cleanup-junk-folders monitor-junk-folders lint-unused lint-unused-ts lint-unused-py clean-temp clean-temp-reports clean-reserved-names coverage-update inventory-report audit-tests-redundancy setup-uv
 
 all:
 	@echo "=== Running All Quality Checks ==="
@@ -188,6 +188,32 @@ clean-reserved-names:
 # Generate ignore files from centralized configuration
 generate-ignores:
 	python scripts/generate-ignore-files.py
+
+# Optional/Manual Utilities (discoverable via Make)
+
+# Generate combined coverage stats and update TODO.md
+coverage-update:
+	@echo "=== Updating coverage statistics (Python + Frontend) ==="
+	@python scripts/update_coverage_stats.py || (echo "Coverage update failed" && exit 1)
+	@echo "Coverage statistics updated"
+
+# Produce ignore/docstring inventories and a consolidated report under tmp/
+inventory-report:
+	@echo "=== Generating inventory report (ignores + docstrings) ==="
+	@python scripts/generate_inventory_report.py || (echo "Inventory report generation failed" && exit 1)
+	@echo "Inventory report written to tmp/ and reports/ (if applicable)"
+
+# Analyze test suite redundancy and write report under reports/
+audit-tests-redundancy:
+	@echo "=== Auditing test suite for redundancy ==="
+	@python scripts/audit_test_redundancy.py || (echo "Test redundancy audit failed" && exit 1)
+	@echo "Test redundancy audit complete (see reports/test_audit_report.md)"
+
+# One-time developer environment setup using uv
+setup-uv:
+	@echo "=== Running uv-based developer setup ==="
+	@python scripts/setup_uv.py || (echo "uv setup failed" && exit 1)
+	@echo "uv setup complete"
 
 # Fast JS unit tests (extension)
 test-js-fast:
