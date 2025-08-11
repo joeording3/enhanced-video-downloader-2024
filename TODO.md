@@ -27,9 +27,9 @@ Urgent Tasks:
   - Fixed ESLint/Prettier issues in Playwright E2E
   - Auto-formatted JSON
   - No blocking lints remain
-- [/] Prevent stale lock file from affecting CLI status tests by removing `server/data/server.lock`
-  before `make test-py`
-- [/] Add automatic temp/cache cleanup and reserved-name scrubbing after test runs
+- [x] Prevent stale lock file from affecting CLI status tests by removing `server/data/server.lock`
+  before `make test-py` (wired in `Makefile:test-py`)
+- [x] Add automatic temp/cache cleanup and reserved-name scrubbing after test runs
   <!-- working-on: post-test cleanup wiring -->
 - [x] Enhance CLI restart: reuse previous run mode/flags automatically when not provided (persisted
       in `server/data/server.lock.json`); normalize invalid hostnames and stabilize auto-port with
@@ -40,10 +40,10 @@ Urgent Tasks:
       and reflect current `scripts/` contents.
       pathname typed/pasted by the user. Validation accepts absolute paths and `~`-prefixed paths
       (the server expands `~`).
-- [/] Implement `run_cleanup()` in `server/cli/utils.py` and add tests
-- [/] Align JSON error semantics across endpoints; document in README and CHANGELOG
+- [x] Implement `run_cleanup()` in `server/cli/utils.py` and add tests
+- [x] Align JSON error semantics across endpoints; document in README and CHANGELOG
   <!-- working-on: api-json-errors -->
-- [/] Server log noise reductions and fixes: standardized JSON parsing errors in
+- [x] Server log noise reductions and fixes: standardized JSON parsing errors in
   `server/api/download_bp.py`, completed error logging in `server/api/logs_bp.py`, ensured restart
   and resume modules log with appropriate levels; verified via tests.
   - [x] Honor `LOG_FILE` for file logging in app factory and redirect test logs to temp files.
@@ -66,10 +66,11 @@ Urgent Tasks:
       structured JSON to the log file; suppress server child stdout/stderr in foreground runs;
       ensure Gunicorn access/error logs go to `LOG_FILE`.
 - [x] Remove Declarative Net Request (DNR) usage and `rules.json`; update manifest and docs.
-- [/] Centralize log-path resolution via `server/logging_setup.resolve_log_path` and update
+- [x] Centralize log-path resolution via `server/logging_setup.resolve_log_path` and update
   `server/api/logs_bp.py` and `server/api/logs_manage_bp.py` to use it; document precedence in
   README. Tighten `_validate_lines` message while preserving client response text.
-- [/] Replace silent `pass` blocks with logging/handling in:
+ - [x] Background messaging noise: suppress "Could not establish connection. Receiving end does not exist" by ensuring all `chrome.runtime.sendMessage(...)` calls in `extension/src/background.ts` either use a callback or `.catch(...)` when no receivers are present.
+- [ ] Replace silent `pass` blocks with logging/handling in:
   - `server/cli_helpers.py` (loops and maintenance utils)
   - `server/cli_main.py` (loop around verification)
   - `server/api/download_bp.py` (partial file cleanup)

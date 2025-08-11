@@ -7,6 +7,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+- Extension background messaging: prevent noisy "Could not establish connection. Receiving end does not exist" errors by ensuring broadcast `chrome.runtime.sendMessage(...)` calls handle the no-receiver case via callbacks or `.catch(...)`. This occurs when popup/options are not open.
+
 ### Additional Changes
 
 #### Options
@@ -14,8 +17,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Added Download History section with pagination (Items per page, Prev/Next) and live updates on
   `historyUpdated`. Uses existing `fetchHistory` and `renderHistoryItems`. Clear-all remains under
   Actions → Clear History.
+
 #### Docs and Configuration
-- Updated `pyproject.toml` to set Pyright `pythonVersion` to 3.13 for consistency with tooling and docs.
+
+- Updated `pyproject.toml` to set Pyright `pythonVersion` to 3.13 for consistency with tooling and
+  docs.
 - README/Architecture/Developer docs reconciled to current reality:
   - Configuration is environment-driven, persisted to `.env` via CLI/API (no `config.json`).
   - Corrected extension/server coverage and JS/TS mutation score metrics in `ARCHITECTURE.md`.

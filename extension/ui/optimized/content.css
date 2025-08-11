@@ -30,6 +30,25 @@
   transition: transform var(--transition-spring), box-shadow var(--transition-normal), background-color var(--transition-normal), color var(--transition-normal), opacity var(--transition-normal), border-color var(--transition-normal);
 }
 
+/* Strong scoping to resist site overrides and other extensions */
+button.evd-drag-handle.download-button,
+button[id^="evd-download-button-"],
+#evd-download-button-main {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: fixed !important;
+  z-index: var(--z-max) !important;
+  padding: var(--space-xl) var(--space-2xl) !important;
+  font-size: var(--font-size-2xl) !important;
+  font-weight: var(--font-weight-bold) !important;
+  border-radius: var(--radius-xl) !important;
+  border: 2px solid transparent !important;
+  box-shadow: var(--shadow-xl) !important;
+  cursor: move !important;
+  line-height: 1 !important;
+}
+
 /* Hover/active feedback for better reactivity */
 .download-button:hover {
   transform: translateY(-1px) scale(1.02);

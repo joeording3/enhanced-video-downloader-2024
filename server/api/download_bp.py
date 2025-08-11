@@ -436,6 +436,12 @@ def download() -> Any:
                 ),
                 413,
             )
+        except BadRequest as e:
+            # Bad JSON/malformed payload; align with existing behavior to return 500 with sanitized body
+            logger.warning(f"Bad request payload for download: {e}")
+            unified_response = _download_error_response(
+                "Server error: Invalid JSON payload", "SERVER_ERROR", raw_data.get("downloadId", "unknown"), 500
+            )
         except ValidationError as e:
             logger.warning(f"Invalid download request: {e}")
             unified_response = _download_error_response(
