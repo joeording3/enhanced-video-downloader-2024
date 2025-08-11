@@ -155,6 +155,9 @@ Urgent Tasks:
   - [/] Wired popup history view to pagination controls and live updates; `initPopup()` now imports
     `fetchHistory`/`renderHistoryItems` and listens for `historyUpdated`. Files:
     `extension/src/popup.ts`.
+  - [/] Implemented Download History section in Options with pagination and live updates; Options now
+    listens for `historyUpdated` and exposes per-page controls. Files: `extension/ui/options.html`,
+    `extension/src/options.ts`.
   - [/] Added server-side queue management: when max concurrency is reached, `/api/download` returns
     `status: queued` and enqueues the request; `/api/status` includes queued IDs. Files:
     `server/queue.py`, `server/api/download_bp.py`, `server/api/status_bp.py`, docs in

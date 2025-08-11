@@ -71,7 +71,6 @@ Enhanced Video Downloader/
 ├── server/
 │   ├── __init__.py
 │   ├── __main__.py
-│   ├── cli.py                # Legacy Click entrypoint (transition)
 │   ├── cli/                  # Modular CLI commands
 │   │   ├── __init__.py       # Main CLI group
 │   │   ├── serve.py          # Server lifecycle commands
@@ -80,8 +79,7 @@ Enhanced Video Downloader/
 │   │   ├── status.py         # Status check commands
 │   │   ├── utils.py          # Utility commands
 │   │   └── resume.py         # Resume commands
-│   ├── cli/                  # Active consolidated CLI modules
-│   │   └── system_maintenance.py # System maintenance commands (legacy path retained)
+│   ├── cli/                  # Modular CLI commands
 │   ├── cli_helpers.py        # Shared helpers for CLI commands
 │   ├── cli_resume_helpers.py # Resume-specific CLI helpers
 │   ├── api/                  # Flask Blueprints
@@ -98,7 +96,6 @@ Enhanced Video Downloader/
 │   ├── logging_setup.py      # Logging configuration
 │   ├── schemas.py            # Pydantic schemas
 │   ├── utils.py              # Shared helper functions
-│   └── video_downloader_server.py  # Deprecated legacy entrypoint (raises ImportError)
 ├── tests/                    # Test files
 │   ├── extension/            # Extension unit tests (Jest + Playwright)
 │   ├── integration/          # Integration tests
@@ -411,6 +408,7 @@ CLI logging/output hygiene
     name for management if neither env nor config is provided
 
 - **Error History**: Browse past download errors with detailed troubleshooting information
+- **Download History**: Browse local download history with pagination. Controls include Items per page, Prev/Next navigation, and a clear-all action under Actions → Clear History. The view updates live when new history entries are added.
 - **Server Status**: Real-time server connectivity status
 - **Settings Persistence**: All settings are automatically saved and restored
 

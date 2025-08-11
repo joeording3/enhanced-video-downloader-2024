@@ -380,6 +380,34 @@
         </section>
 
         <!-- Error History Section -->
+        <!-- Download History Section -->
+        <section
+          id="download-history-container"
+          aria-labelledby="download-history-title"
+          class="settings-group"
+          data-category="history"
+        >
+          <h2 class="section-title" id="download-history-title">Download History</h2>
+          <div class="section-content">
+            <div class="history-controls">
+              <button id="history-prev" class="btn btn--secondary" disabled aria-label="Previous History Page">&laquo; Prev</button>
+              <span class="history-controls-middle-group">
+                <label for="history-per-page">Items:</label>
+                <select id="history-per-page" aria-label="Items per page">
+                  <option value="10">10</option>
+                  <option value="25" selected>25</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+                <span id="history-page-info" aria-live="polite">Page 1 of 1</span>
+              </span>
+              <button id="history-next" class="btn btn--secondary" disabled aria-label="Next History Page">Next &raquo;</button>
+            </div>
+            <ul id="history-list"></ul>
+          </div>
+        </section>
+
+        <!-- Error History Section -->
         <section
           id="error-history-container"
           aria-labelledby="error-history-title"

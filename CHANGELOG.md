@@ -8,6 +8,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Additional Changes
+
+#### Options
+
+- Added Download History section with pagination (Items per page, Prev/Next) and live updates on
+  `historyUpdated`. Uses existing `fetchHistory` and `renderHistoryItems`. Clear-all remains under
+  Actions → Clear History.
+#### Docs and Configuration
+- Updated `pyproject.toml` to set Pyright `pythonVersion` to 3.13 for consistency with tooling and docs.
+- README/Architecture/Developer docs reconciled to current reality:
+  - Configuration is environment-driven, persisted to `.env` via CLI/API (no `config.json`).
+  - Corrected extension/server coverage and JS/TS mutation score metrics in `ARCHITECTURE.md`.
+  - Fixed DEVELOPER configuration examples to use `videodownloader-server config set server_port ...` keys.
+  - Clarified CLI and directory structure descriptions; removed lingering legacy references.
 - Content UI: Increased size of injected download button and added reactive click feedback.
   - Larger padding and font for better visibility; rounded corners and stronger shadow.
   - Hover/active transforms; JS toggles a transient `clicked` class for a micro-bounce.

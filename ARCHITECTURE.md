@@ -14,7 +14,7 @@ These components communicate over HTTP (localhost) and via Chrome messaging APIs
 
 ## Tech Stack
 
-- **Python 3.x**: Flask, Click (CLI), Pydantic (validation), yt-dlp (download engine), gallery-dl
+- **Python 3.13**: Flask, Click (CLI), Pydantic (validation), yt-dlp (download engine), gallery-dl
   (image galleries)
 - **JavaScript / TypeScript**:
   - Chrome Extension APIs (runtime, storage, notifications, tabs)
@@ -383,8 +383,8 @@ Adoption status:
 
 - **Overall Test Coverage**: 45.34% (target: 80%)
 - **Python Server Coverage**: 67% (improved from 58%)
-- **Frontend Extension Coverage**: 0% (target: 80%)
-- **JS/TS Mutation Score**: 38.24% (target: 80%, minimum: 70%)
+- **Frontend Extension Coverage**: 76.68% (target: 80%)
+  - **JS/TS Mutation Score**: 98.85% (target: 80%, minimum: 70%)
 
 ### Test Types
 

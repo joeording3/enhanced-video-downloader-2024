@@ -861,14 +861,15 @@ videodownloader-server --help
 
 ### Server Configuration
 
-The server configuration is stored in `config.json` and includes:
+Server configuration is environment-driven and persisted to `.env` via the API/CLI. Keys include:
 
-- `server_port`: The port the server listens on (default: <DEFAULT_PORT> (see server/constants.py))
-- `download_dir`: Directory where downloaded videos are saved
-- `debug_mode`: Boolean, whether to run the server in debug mode
-- `enable_history`: Boolean, whether to save download history
-- `log_level`: String, controls server log verbosity
-- `console_log_level`: String, controls console output verbosity
+- `server_port` (default from `server/constants.py`)
+- `download_dir`
+- `debug_mode`
+- `enable_history`
+- `log_level`
+- `console_log_level`
+- `log_file`
 
 ### Configuration via CLI
 
@@ -876,8 +877,8 @@ The server configuration is stored in `config.json` and includes:
 # Show current configuration
 videodownloader-server config show
 
-# Set configuration values
-videodownloader-server config set --port 5020 --download-dir ~/Downloads/videos
+# Set configuration values (example)
+videodownloader-server config set server_port 5020 download_dir ~/Downloads/videos
 
 # Enhanced configuration commands
 videodownloader-server utils config show --format json

@@ -267,7 +267,7 @@ output = "coverage.xml"
 
 [tool.pyright]
 # Basic type checking settings
-pythonVersion = "3.8"
+pythonVersion = "3.13"
 typeCheckingMode = "basic"
 useLibraryCodeForTypes = true
 

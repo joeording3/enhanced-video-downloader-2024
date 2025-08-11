@@ -107,7 +107,7 @@
       "prettier --write"
     ],
     "*.md": [
-      "python scripts/check_markdown_emojis.py",
+      "python scripts/check_emojis.py . --file-types .md",
       "markdownlint --fix",
       "prettier --write"
     ],

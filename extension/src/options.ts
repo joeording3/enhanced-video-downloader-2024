@@ -103,6 +103,7 @@ export function initOptionsPage(): void {
   setupMessageListener();
   setupLogsUI();
   setupLiveSave();
+  setupHistoryUI();
   loadErrorHistory();
   logger.debug("Options page initialized", { component: "options" });
 
@@ -1101,6 +1102,10 @@ export function setupMessageListener(): void {
       loadSettings();
     } else if (message.type === "serverStatusUpdate") {
       updateOptionsServerStatus(message.status);
+    } else if (message.type === "historyUpdated") {
+      // Refresh both error and full history views on updates
+      void loadErrorHistory(currentHistoryPage, currentHistoryPerPage);
+      void loadDownloadHistory(currentHistoryPage, currentHistoryPerPage);
     }
   });
 }
@@ -1751,6 +1756,58 @@ export async function loadErrorHistory(page = 1, perPage = 25): Promise<void> {
   if (!listEl) return;
   // Render only error entries
   renderHistoryItems(errorEntries, page, perPage, errorEntries.length, listEl);
+}
+
+// --- Download History (full) UI wiring ---
+let currentHistoryPage = 1;
+let currentHistoryPerPage = 25;
+
+export async function loadDownloadHistory(page = 1, perPage = 25): Promise<void> {
+  const listEl = document.getElementById("history-list");
+  const pageInfoEl = document.getElementById("history-page-info");
+  const prevBtn = document.getElementById("history-prev") as HTMLButtonElement | null;
+  const nextBtn = document.getElementById("history-next") as HTMLButtonElement | null;
+  if (!listEl) return;
+
+  currentHistoryPage = page;
+  currentHistoryPerPage = perPage;
+
+  const { history, totalItems } = await fetchHistory(page, perPage);
+  renderHistoryItems(history, page, perPage, totalItems, listEl, pageInfoEl || undefined, prevBtn || undefined, (nextBtn as HTMLButtonElement) || undefined);
+}
+
+export function setupHistoryUI(): void {
+  const perPageSelect = document.getElementById("history-per-page") as HTMLSelectElement | null;
+  const prevBtn = document.getElementById("history-prev") as HTMLButtonElement | null;
+  const nextBtn = document.getElementById("history-next") as HTMLButtonElement | null;
+
+  const getPerPage = (): number => {
+    const raw = perPageSelect?.value || String(currentHistoryPerPage);
+    const n = parseInt(raw, 10);
+    return Number.isFinite(n) && n > 0 ? n : 25;
+  };
+
+  perPageSelect?.addEventListener("change", () => {
+    currentHistoryPage = 1;
+    currentHistoryPerPage = getPerPage();
+    void loadDownloadHistory(currentHistoryPage, currentHistoryPerPage);
+  });
+
+  prevBtn?.addEventListener("click", () => {
+    if (currentHistoryPage > 1) {
+      currentHistoryPage -= 1;
+      void loadDownloadHistory(currentHistoryPage, getPerPage());
+    }
+  });
+
+  nextBtn?.addEventListener("click", () => {
+    // We don't know total here; renderHistoryItems sets disabled states appropriately.
+    currentHistoryPage += 1;
+    void loadDownloadHistory(currentHistoryPage, getPerPage());
+  });
+
+  // Initial load
+  void loadDownloadHistory(currentHistoryPage, getPerPage());
 }
 
 /**

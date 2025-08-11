@@ -6,6 +6,7 @@ including validation, processing, and status management.
 """
 
 import logging
+import os
 import time
 from collections import defaultdict
 from pathlib import Path
@@ -56,8 +57,9 @@ class _RawGalleryData(TypedDict, total=False):
 
 # Rate limiting storage
 _rate_limit_storage: defaultdict[str, list[float]] = defaultdict(list)
-_RATE_LIMIT_WINDOW = 60  # 1 minute window
-_MAX_REQUESTS_PER_WINDOW = 10  # Max 10 requests per minute per IP
+# Allow runtime configuration via environment variables
+_RATE_LIMIT_WINDOW = int(os.getenv("RATE_LIMIT_WINDOW_SECONDS", "60"))
+_MAX_REQUESTS_PER_WINDOW = int(os.getenv("MAX_REQUESTS_PER_WINDOW", "10"))
 
 # Background cleanup tracking
 _last_cleanup_time = 0.0
@@ -95,18 +97,21 @@ def check_rate_limit(ip_address: str) -> bool:
 
 
 def rate_limit_response() -> tuple[Response, int]:
-    """Return rate limit exceeded response."""
-    return (
-        jsonify(
-            {
-                "status": "error",
-                "message": "Rate limit exceeded. Please wait before making more requests.",
-                "error_type": "RATE_LIMIT_EXCEEDED",
-                "downloadId": "unknown",
-            }
-        ),
-        429,
+    """Return rate limit exceeded response with a Retry-After hint."""
+    resp = jsonify(
+        {
+            "status": "error",
+            "message": "Rate limit exceeded. Please wait before making more requests.",
+            "error_type": "RATE_LIMIT_EXCEEDED",
+            "downloadId": "unknown",
+        }
     )
+    try:
+        # Suggest short backoff (10s by default if window is 60s)
+        resp.headers["Retry-After"] = str(min(max(_RATE_LIMIT_WINDOW // 6, 1), _RATE_LIMIT_WINDOW))
+    except Exception:
+        pass
+    return resp, 429
 
 
 def _cleanup_temp_files(temp_file: str) -> None:

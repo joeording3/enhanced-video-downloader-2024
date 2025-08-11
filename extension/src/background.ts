@@ -993,10 +993,14 @@ const initializeExtension = async (): Promise<void> => {
             // ignore queue update errors
           }
 
-          chrome.runtime.sendMessage({
-            type: "downloadStatusUpdate",
-            data: { active, queue: downloadQueue },
-          });
+          chrome.runtime
+            .sendMessage({
+              type: "downloadStatusUpdate",
+              data: { active, queue: downloadQueue },
+            })
+            .catch(() => {
+              // Ignore when no receivers (e.g., popup/options not open)
+            });
         } catch {
           // ignore
         }
