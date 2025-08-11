@@ -5,19 +5,19 @@ This module defines functions to configure and execute video downloads using
 yt-dlp, including option building, progress hooks, process tracking, and error cleanup.
 """
 
-import json
 from contextlib import suppress
-import logging
-import tempfile
 from datetime import datetime, timezone
+import json
+import logging
 from pathlib import Path
+import tempfile
 from typing import Any
 from urllib.parse import urlparse
 
 import browser_cookie3  # type: ignore[import-untyped]
+from flask import jsonify
 import psutil  # Added for type annotations
 import yt_dlp
-from flask import jsonify
 from yt_dlp.utils import sanitize_filename
 
 from server.config import Config
@@ -581,11 +581,8 @@ def _progress_finished(d: dict[str, Any], download_id: str | None) -> None:
             append_history_entry(info_data)
             logger.info(f"[{str_id}] Appended download metadata to history: {info_json_path}")
             # Mark this download as having its history appended
-            try:
+            with suppress(Exception):
                 history_appended_ids.add(str_id)
-            except Exception:
-                # Best-effort; do not block on set operations
-                pass
         except Exception as e:
             logger.warning(f"[{str_id}] Failed to append history entry from {info_json_path}: {e}")
     if filename:
@@ -988,21 +985,18 @@ def _handle_yt_dlp_download_error(
     logger.error(f"[{download_id}] yt-dlp download error for URL {url}: Type='{error_type}', Message='{client_error}'")
 
     # Append a failure entry to history so errors are visible even without the 'finished' hook
-    try:
-            append_history_entry(
-                {
-                    "download_id": download_id,
-                    "url": url,
-                    "status": "error",
-                    "error_type": error_type,
-                    "message": user_msg,
-                    "original_error": client_error,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                }
-            )
-    except Exception:
-        # Do not block error response on history persistence issues
-        pass
+    with suppress(Exception):
+        append_history_entry(
+            {
+                "download_id": download_id,
+                "url": url,
+                "status": "error",
+                "error_type": error_type,
+                "message": user_msg,
+                "original_error": client_error,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+        )
     return (
         jsonify(
             {
@@ -1151,7 +1145,7 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
             exc_info=True,
         )
         # Append a failure entry to history for unexpected server errors
-        try:
+        with suppress(Exception):
             append_history_entry(
                 {
                     "download_id": download_id,
@@ -1162,8 +1156,6 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                 }
             )
-        except Exception:
-            pass
         return (
             jsonify(
                 {
