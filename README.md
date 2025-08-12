@@ -416,7 +416,9 @@ CLI logging/output hygiene
 ### Content Script Features
 
 - **Draggable Download Button**: Appears on video pages with customizable position
-- **Per-Site Memory**: Button position and visibility saved per website
+- **Per-Site Memory**: Button position and visibility saved per website. If you hide
+  the button for a site (via Options/Popup), the content script pauses its injection
+  loop and removes any injected buttons until you show it again.
 - **Visual Feedback**: Button changes appearance during download process
 - **Error Handling**: Clear error messages with troubleshooting suggestions
 

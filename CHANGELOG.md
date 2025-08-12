@@ -37,7 +37,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - Background polls `/api/status` and includes `queuedDetails` (url/title/filename) for queued
     items in broadcast messages; popup renders human-friendly labels for queued entries instead of
     plain IDs.
-  
+
  - Content button visibility and injection control:
    - When a domain is toggled to hide the button, the content script stops the injection loop and
      removes any injected/global buttons and observers. Unhiding restarts injection and performs an

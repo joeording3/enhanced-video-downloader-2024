@@ -206,6 +206,8 @@ Urgent Tasks:
   - [x] Prevent post-click button flicker on YouTube: removed re-append churn in `content.ts` and
         added a short stabilization window after clicks to avoid transient removals while the page
         reflows.
+  - [x] Respect per-domain hidden state without churn: content script now pauses the injection loop
+        and removes existing buttons when hidden for a domain, and resumes cleanly when shown.
 - [ ] Debug API (`GET /debug/paths`) is dev-only and unused in UI; optionally surface in Options
       “Debug” tab or leave as internal.
 
