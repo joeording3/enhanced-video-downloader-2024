@@ -608,6 +608,52 @@ test.describe("Chrome Extension E2E Tests", () => {
     });
 
     /**
+     * Smart Injection: content script should not inject a global button when no media is present
+     */
+    test("smart injection hides button on pages without media", async ({ page }) => {
+      await setupChromeAPIMock(page);
+      // Enable smart injection in mocked storage
+      await page.addInitScript(() => {
+        chrome.storage.local.set({ smartInjectionEnabled: true }, () => {});
+      });
+      // Minimal page without media
+      await page.setContent(
+        "<!DOCTYPE html><html><head><meta charset='utf-8'><title>No Media</title></head><body><main><h1>No media here</h1></main></body></html>"
+      );
+      // Inject built content script into the page
+      const contentPath = path.resolve(__dirname, "../../extension/dist/content.js");
+      await page.addScriptTag({ path: contentPath });
+      // Allow the injection loop to run at least once
+      await page.waitForTimeout(2500);
+      // Ensure no global or injected buttons exist
+      const buttons = await page.$$(`#evd-download-button-main, button.download-button`);
+      expect(buttons.length).toBe(0);
+    });
+
+    /**
+     * Smart Injection: content script should inject a button when media is detected
+     */
+    test("smart injection shows button when media is present", async ({ page }) => {
+      await setupChromeAPIMock(page);
+      // Enable smart injection in mocked storage
+      await page.addInitScript(() => {
+        chrome.storage.local.set({ smartInjectionEnabled: true }, () => {});
+      });
+      // Page with a visible video element
+      await page.setContent(
+        "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Has Media</title></head><body><main><video width='320' height='240' src=''></video></main></body></html>"
+      );
+      // Inject built content script into the page
+      const contentPath = path.resolve(__dirname, "../../extension/dist/content.js");
+      await page.addScriptTag({ path: contentPath });
+      // Allow detection/injection to occur
+      await page.waitForTimeout(3000);
+      // Expect at least one injected button
+      const btn = await page.$(`#evd-download-button-main, button.download-button`);
+      expect(btn).not.toBeNull();
+    });
+
+    /**
      * Test server status display and updates
      */
     test("server status display and updates", async ({ page }) => {
