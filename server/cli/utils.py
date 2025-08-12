@@ -166,7 +166,8 @@ def config_show_command(format: str, filter_keys: tuple[str, ...], section: str,
     """
     Display current server configuration with enhanced formatting and filtering.
 
-    Examples:
+    Examples
+    --------
         videodownloader-server utils config show
         videodownloader-server utils config show --format json
         videodownloader-server utils config show --filter server_port --filter download_dir
@@ -354,7 +355,8 @@ def config_set_command(
     """
     Set server configuration options with enhanced validation and backup.
 
-    Examples:
+    Examples
+    --------
         videodownloader-server utils config set --port {get_server_port()}
         videodownloader-server utils config set --key-value f"server_port={get_server_port()}" \
             --key-value "log_level=debug"
@@ -615,7 +617,8 @@ def logs_view_command(
     """
     View server logs with enhanced filtering and formatting.
 
-    Examples:
+    Examples
+    --------
         videodownloader-server utils logs view --lines 100
         videodownloader-server utils logs view --filter "error" --level error
         videodownloader-server utils logs view --tail --pattern "download.*completed"

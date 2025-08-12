@@ -57,6 +57,7 @@ interface ChromeTabs {
     message: any,
     callback?: (response: any) => void
   ): void;
+  create(createProperties: { url: string }, callback?: (tab?: any) => void): void;
 }
 
 interface ChromeAction {

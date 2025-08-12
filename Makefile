@@ -203,6 +203,12 @@ inventory-report:
 	@python scripts/generate_inventory_report.py || (echo "Inventory report generation failed" && exit 1)
 	@echo "Inventory report written to tmp/ and reports/ (if applicable)"
 
+# Focused audit for ignore/exclude usage across configs and inline suppressions
+audit-ignores:
+	@echo "=== Auditing ignore/exclude usage (Python + ESLint + inline) ==="
+	@python scripts/audit_ignores.py || (echo "Ignore audit failed" && exit 1)
+	@echo "Ignore audit written to reports/ignores_audit.md"
+
 # Analyze test suite redundancy and write report under reports/
 audit-tests-redundancy:
 	@echo "=== Auditing test suite for redundancy ==="
@@ -269,19 +275,19 @@ audit-docs:
 
 # Docstring audit (Python): enforce NumPy/Sphinx-style via Ruff (pydocstyle + RST)
 docstrings-audit:
-	@echo "=== Running Python docstring audit (Ruff: D + RST) ==="
+	@echo "=== Running Python docstring audit (Ruff: D rules, NumPy/Sphinx via napoleon) ==="
 	@mkdir -p reports
-	# Full text report
-	@ruff check server --select D,RST --output-format=full > reports/docstrings_report.txt || true
+	# Full text report (override project ignores to include D100; keep D212/D401 relaxed for now)
+	@ruff check server --select D --ignore D212,D401 --output-format=full > reports/docstrings_report.txt || true
 	# JSON report for tooling
-	@ruff check server --select D,RST --output-format=json > reports/docstrings_report.json || true
+	@ruff check server --select D --ignore D212,D401 --output-format=json > reports/docstrings_report.json || true
 	@echo "Docstring audit complete. See reports/docstrings_report.{txt,json}"
 
 # Attempt autofixes for simple issues (summary-line punctuation, spacing, etc.)
 docstrings-fix:
 	@echo "=== Attempting auto-fixes for docstrings (safe subset) ==="
 	# Use Ruff to apply safe fixes; manual follow-up will still be required for missing/incorrect docs
-	@ruff check server --select D,RST --fix || true
+	@ruff check server --select D --ignore D212,D401 --fix || true
 	@echo "Auto-fix pass complete. Re-run 'make docstrings-audit' to review remaining issues."
 
 # Convenience target: run audit and show a brief summary to console

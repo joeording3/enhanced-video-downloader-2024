@@ -33,14 +33,17 @@ _cache_ttl = 300  # 5 minutes default TTL
 
 
 def cache_result(ttl_seconds: int = 300) -> Callable[[Callable[P, T]], Callable[P, T]]:
-    """
-    Cache function results with TTL.
+    """Cache function results with a time-to-live (TTL).
 
-    Args:
-        ttl_seconds: Time to live for cached results in seconds
+    Parameters
+    ----------
+    ttl_seconds : int, optional
+        Time to live for cached results in seconds, by default 300.
 
-    Returns:
-        Decorated function with caching
+    Returns
+    -------
+    Callable[[Callable[P, T]], Callable[P, T]]
+        A decorator that caches results of the wrapped function.
     """
 
     def decorator(func: Callable[P, T]) -> Callable[P, T]:
@@ -90,11 +93,12 @@ def get_cache_stats() -> dict[str, Any]:
 
 
 def cleanup_expired_cache() -> int:
-    """
-    Remove expired cache entries.
+    """Remove expired cache entries.
 
-    Returns:
-        Number of entries removed
+    Returns
+    -------
+    int
+        Number of entries removed.
     """
     current_time = time.time()
     expired_keys = [key for key, timestamp in _cache_timestamps.items() if current_time - timestamp > _cache_ttl]

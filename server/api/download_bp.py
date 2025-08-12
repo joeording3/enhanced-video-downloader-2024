@@ -88,14 +88,17 @@ def clear_rate_limit_storage() -> None:
 
 
 def check_rate_limit(ip_address: str) -> bool:
-    """
-    Check if the IP address has exceeded the rate limit.
+    """Check if the IP address has exceeded the rate limit.
 
-    Args:
-        ip_address: The client's IP address
+    Parameters
+    ----------
+    ip_address : str
+        The client's IP address.
 
-    Returns:
-        True if rate limit is exceeded, False otherwise
+    Returns
+    -------
+    bool
+        True if rate limit is exceeded, False otherwise.
     """
     current_time = time.time()
     window_start = current_time - _RATE_LIMIT_WINDOW

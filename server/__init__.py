@@ -98,10 +98,14 @@ def handle_internal_error(error: Exception) -> tuple[FlaskResponse, int]:
 def create_app(config: Config) -> Flask:
     """Application factory for the server.
 
-    Args:
-        config: Config object with server settings.
+    Parameters
+    ----------
+    config : Config
+        Config object with server settings.
 
-    Returns:
+    Returns
+    -------
+    Flask
         Flask app instance.
     """
     # Establish project root and default log file path

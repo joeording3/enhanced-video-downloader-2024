@@ -622,30 +622,36 @@ export async function initPopup(): Promise<void> {
 
   // Wire Side Panel open (Chrome Side Panel API)
   const sidepanelBtn = document.getElementById("open-sidepanel");
-  if (sidepanelBtn && (chrome as any).sidePanel && (chrome.sidePanel as any).open) {
+  if (sidepanelBtn) {
     sidepanelBtn.addEventListener("click", async () => {
-      try {
-        // Prefer opening for the current tab when available
-        const tabs = await new Promise<any[]>(resolve => {
-          chrome.tabs.query({ active: true, currentWindow: true }, resolve);
-        });
-        const tabId = tabs?.[0]?.id;
-        if (tabId !== undefined && (chrome.sidePanel as any).setOptions) {
-          await (chrome.sidePanel as any).setOptions({ tabId, path: "extension/dist/popup.html", enabled: true });
-        }
-        await (chrome.sidePanel as any).open({ tabId });
-      } catch {
-        // Fallback: try global open without tab context
+      const hasSidePanel = Boolean((chrome as any).sidePanel && (chrome.sidePanel as any).open);
+      if (hasSidePanel) {
         try {
-          await (chrome.sidePanel as any).open({});
+          const tabs = await new Promise<any[]>(resolve => {
+            chrome.tabs.query({ active: true, currentWindow: true }, resolve);
+          });
+          const tabId = tabs?.[0]?.id;
+          if (tabId !== undefined && (chrome.sidePanel as any).setOptions) {
+            await (chrome.sidePanel as any).setOptions({ tabId, path: "extension/dist/popup.html", enabled: true });
+          }
+          await (chrome.sidePanel as any).open({ tabId });
+          return;
         } catch {
-          // No-op if API not available
+          // fall through to tab fallback
         }
       }
+      // Fallback: open the popup page in a regular tab
+      try {
+        const url = chrome.runtime.getURL("extension/dist/popup.html");
+        chrome.tabs.create({ url }, () => {
+          // consume potential lastError to avoid console noise
+          // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+          (chrome.runtime && chrome.runtime.lastError) || null;
+        });
+      } catch {
+        // ignore
+      }
     });
-  } else if (sidepanelBtn) {
-    // Hide the button if the API is not supported
-    sidepanelBtn.classList.add("hidden");
   }
 
   // Helper to send a message to the active tab's content script
@@ -656,6 +662,8 @@ export async function initPopup(): Promise<void> {
         if (tabId !== undefined) {
           chrome.tabs.sendMessage(tabId, message, resp => {
             // Swallow lastError; content script may not be injected on internal pages
+            // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+            (chrome.runtime && chrome.runtime.lastError) || null;
             if (callback) callback(resp);
           });
         } else if (callback) {

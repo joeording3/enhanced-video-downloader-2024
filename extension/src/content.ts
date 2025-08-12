@@ -856,6 +856,17 @@ async function setButtonHiddenState(hidden: boolean): Promise<void> {
     }
   }
 
+  // Defensive: also toggle the module-level reference if present
+  if (downloadButton && (downloadButton as HTMLButtonElement).classList) {
+    if (hidden) {
+      (downloadButton as HTMLButtonElement).classList.add("hidden");
+      (downloadButton as HTMLButtonElement).classList.remove("evd-visible");
+    } else {
+      (downloadButton as HTMLButtonElement).classList.remove("hidden");
+      (downloadButton as HTMLButtonElement).classList.add("evd-visible");
+    }
+  }
+
   // Determine position to persist
   let x = 10;
   let y = 70;

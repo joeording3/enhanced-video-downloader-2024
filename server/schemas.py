@@ -368,6 +368,23 @@ class ConfigUpdate(BaseModel):
     @field_validator("download_dir")  # This is for ConfigUpdate, not ServerConfig
     @classmethod
     def validate_download_dir_format(cls, v: str | None) -> str | None:
+        """Validate `download_dir` value for update requests.
+
+        Parameters
+        ----------
+        v : str | None
+            Proposed download directory value.
+
+        Returns
+        -------
+        str | None
+            Absolute path string if valid; otherwise None.
+
+        Raises
+        ------
+        DownloadDirValidationError
+            If the provided path is not absolute after expansion.
+        """
         if v is not None:
             path = Path(v)  # Use pathlib.Path
             if str(path).startswith("~"):
@@ -406,10 +423,26 @@ class ResumeRequest(BaseModel):
 
 
 class PriorityRequest(BaseModel):
+    """Schema for setting process priority for a download.
+
+    Attributes
+    ----------
+    priority : int
+        OS process nice value to apply.
+    """
+
     priority: int
 
 
 class HistoryClearRequest(BaseModel):
+    """Schema for history clear requests.
+
+    Attributes
+    ----------
+    action : str
+        Action string, e.g., "clear".
+    """
+
     action: str
 
 

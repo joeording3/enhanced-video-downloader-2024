@@ -89,6 +89,7 @@ declare namespace chrome {
       message: any,
       responseCallback?: (response: any) => void
     ): void;
+    create(createProperties: { url: string }, callback?: (tab?: Tab) => void): void;
   }
 
   export interface Action {

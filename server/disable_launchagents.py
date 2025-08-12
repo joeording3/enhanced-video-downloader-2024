@@ -21,11 +21,15 @@ log = logging.getLogger(__name__)
 def find_video_downloader_agents(include_system: bool = False) -> list[str]:
     """Find all LaunchAgent plist files related to the video downloader.
 
-    Args:
-        include_system: If True, also search system directories. Defaults to False.
+    Parameters
+    ----------
+    include_system : bool, optional
+        If True, also search system directories. Defaults to False.
 
-    Returns:
-        List[str]: Paths to LaunchAgent plist files as strings
+    Returns
+    -------
+    list[str]
+        Paths to LaunchAgent plist files as strings.
     """
     agents: list[str] = []
 
@@ -65,11 +69,15 @@ def find_video_downloader_agents(include_system: bool = False) -> list[str]:
 def get_agent_label(agent_path: str) -> str | None:
     """Retrieve the LaunchAgent label from a plist file.
 
-    Args:
-        agent_path: Path to the LaunchAgent plist file.
+    Parameters
+    ----------
+    agent_path : str
+        Path to the LaunchAgent plist file.
 
-    Returns:
-        The agent label as a string, or None if the label cannot be read.
+    Returns
+    -------
+    str | None
+        The agent label, or None if it cannot be read.
     """
     try:
         return subprocess.check_output(["defaults", "read", agent_path, "Label"], text=True).strip()
@@ -84,10 +92,14 @@ def get_agent_label(agent_path: str) -> str | None:
 def stop_and_unload_agent(label: str, agent_path: str, is_root: bool) -> None:
     """Stop and unload a LaunchAgent service.
 
-    Args:
-        label: The LaunchAgent label.
-        agent_path: Path to the LaunchAgent plist file.
-        is_root: Whether the operation is being performed as root.
+    Parameters
+    ----------
+    label : str
+        The LaunchAgent label.
+    agent_path : str
+        Path to the LaunchAgent plist file.
+    is_root : bool
+        Whether the operation is being performed as root.
     """
     log.info(f"  Agent label: {label}")
     # Stop service
@@ -110,8 +122,10 @@ def stop_and_unload_agent(label: str, agent_path: str, is_root: bool) -> None:
 def rename_agent(agent_path: str) -> None:
     """Rename a LaunchAgent plist file to disable it.
 
-    Args:
-        agent_path: Path to the LaunchAgent plist file to disable.
+    Parameters
+    ----------
+    agent_path : str
+        Path to the LaunchAgent plist file to disable.
     """
     try:
         disabled_path = agent_path + ".DISABLED"
@@ -127,8 +141,10 @@ def rename_agent(agent_path: str) -> None:
 def disable_agents(agents: list[str]) -> None:
     """Permanently disable the identified LaunchAgents.
 
-    Args:
-        agents: List of paths to LaunchAgent plist files
+    Parameters
+    ----------
+    agents : list[str]
+        List of paths to LaunchAgent plist files.
     """
     if not agents:
         log.info("No LaunchAgents found to disable.")

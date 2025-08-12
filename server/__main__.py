@@ -256,14 +256,17 @@ def _process_uses_port(proc: psutil.Process, port: int) -> bool:
 
 
 def kill_process(pid: int) -> bool:
-    """
-    Attempt to kill a process by PID, first gracefully then forcefully.
+    """Attempt to kill a process by PID, first gracefully then forcefully.
 
-    Args:
-        pid: Process ID to kill
+    Parameters
+    ----------
+    pid : int
+        Process ID to kill.
 
-    Returns:
-        True if the kill was successful, False otherwise
+    Returns
+    -------
+    bool
+        True if the kill was successful, False otherwise.
     """
     try:
         proc = psutil.Process(pid)

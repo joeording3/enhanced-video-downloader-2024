@@ -245,10 +245,21 @@ history_appended_ids: set[str] = set()
 
 
 def _try_extract_title_with_ytdlp(url: str, download_id: str | None) -> str | None:
-    """
-    Attempt to extract a reliable title using yt-dlp metadata extraction (no download).
+    """Attempt to extract a reliable title using yt-dlp metadata extraction.
 
-    Returns a title string or None on failure.
+    This performs a metadata-only extraction (no download).
+
+    Parameters
+    ----------
+    url : str
+        Media URL to probe.
+    download_id : str | None
+        Optional download identifier for logging context.
+
+    Returns
+    -------
+    str | None
+        Extracted title string, or None if extraction fails.
     """
     try:
         opts: dict[str, Any] = {
@@ -671,9 +682,11 @@ def _init_download(data: dict[str, Any]) -> tuple[Path | None, str, str, str, bo
     """
     Validate request data and prepare download directory or return error response tuple.
 
-    Returns:
-        Tuple of (download_path, url, download_id, page_title, download_playlist_flag, error_tuple).
-        error_tuple is (response, status) if error occurred, otherwise None.
+    Returns
+    -------
+    tuple[Path | None, str, str, str, bool, tuple[Any, int] | None]
+        (download_path, url, download_id, page_title, download_playlist_flag, error_tuple).
+        error_tuple is (response, status) if error occurred; otherwise None.
     """
     url = data.get("url", "").strip()
     # Accept both camelCase (client) and snake_case (validated) keys
@@ -785,13 +798,23 @@ def _prepare_download_metadata(
     url: str, page_title: str, download_id: str, download_path: Path
 ) -> tuple[str, str, str, str]:
     """
-    Sanitize page title and URL to generate a safe filename, id component, prefix, and output template.
+    Sanitize page title and URL to generate filename components and template.
 
-    Returns:
-        safe_title: sanitized page title
-        sanitized_id: sanitized URL path segment or download_id fallback
-        prefix: combined safe_title and sanitized_id for tmp files
-        output_template: full output path template for yt-dlp
+    Parameters
+    ----------
+    url : str
+        Source media URL.
+    page_title : str
+        Title used for naming the output file.
+    download_id : str
+        Unique identifier for the download.
+    download_path : Path
+        Directory where output files are written.
+
+    Returns
+    -------
+    tuple[str, str, str, str]
+        safe_title, sanitized_id, prefix, output_template.
     """
     # Sanitize title
     logger.info(f"[{download_id}] Received page_title for sanitization: '{page_title}'")
@@ -820,8 +843,19 @@ def _prepare_download_metadata(
 
 # Helper to assert playlist downloads are allowed by config
 def _assert_playlist_allowed(download_id: str, download_playlist: bool) -> tuple[Any, int] | None:
-    """
-    Check server config for playlist permissions and return an error response if disallowed.
+    """Check playlist permissions; return error tuple if disallowed.
+
+    Parameters
+    ----------
+    download_id : str
+        The unique download identifier.
+    download_playlist : bool
+        Whether the request asks to download a playlist.
+
+    Returns
+    -------
+    tuple[Any, int] | None
+        Error response tuple if playlists are not allowed; otherwise None.
     """
     if download_playlist:
         config = Config.load()
@@ -962,8 +996,29 @@ def _handle_yt_dlp_download_error(
     sanitized_id: str,
     exception: Exception,
 ) -> tuple[Any, int]:
-    """
-    Cleanup partial files and map yt-dlp DownloadError into a Flask JSON response.
+    """Map yt-dlp errors into a structured Flask JSON response.
+
+    Also performs cleanup of partial files for the failed download.
+
+    Parameters
+    ----------
+    download_id : str
+        Download identifier.
+    url : str
+        Source media URL.
+    prefix : str
+        Prefix used for temporary files, for cleanup.
+    download_path : Path
+        Directory where temporary files were written.
+    sanitized_id : str
+        Sanitized URL/path component used in filenames.
+    exception : Exception
+        The exception raised by yt-dlp.
+
+    Returns
+    -------
+    tuple[Any, int]
+        Flask response object and HTTP status code.
     """
     # Cleanup partial files
     _cleanup_partial_files(prefix, download_path, download_id)

@@ -181,13 +181,20 @@ ignore = [
     "PLC0415", # Import should be at the top-level of a file (temporarily disabled)
 ]
 
+# File-specific ignores for Ruff (tests and special cases)
+[tool.ruff.lint.per-file-ignores]
+"tests/test_emoji_detection.py" = ["E501"]
+"tests/**/*.py" = [
+    "D100", "D212", "S101", "PT013", "PT018", "ANN401", "ARG001", "ARG002",
+    "PLR2004", "S108", "SLF001", "TRY002", "TRY003", "RET504", "PTH103", "PTH123",
+    "PTH119", "PLR0124", "PIE790", "UP024",
+]
+
 # Docstring configuration (used when selecting D rules via CLI/targets)
 [tool.ruff.lint.pydocstyle]
 # Keep NumPy-style sections (Sphinx napoleon-compatible) while validating
 # reStructuredText via RST plugin during audits
 convention = "numpy"
-
-per-file-ignores = { "tests/test_emoji_detection.py" = ["E501"], "tests/**/*.py" = ["D100", "D212", "S101", "PT013", "PT018", "ANN401", "ARG001", "ARG002", "PLR2004", "S108", "SLF001", "TRY002", "TRY003", "RET504", "PTH103", "PTH123", "PTH119", "PLR0124", "PIE790", "UP024"] }
 
 [tool.mypy]
 # Basic type checking settings

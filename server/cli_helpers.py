@@ -163,11 +163,10 @@ def get_lock_pid() -> int | None:
 def remove_lock_file() -> bool:
     """Remove the server lock file if it exists.
 
-    This function attempts to remove the server lock file and handles any errors
-    that might occur during the removal.
-
-    Returns:
-        bool: True if lock file was removed or didn't exist, False otherwise
+    Returns
+    -------
+    bool
+        True if lock file was removed or didn't exist, False otherwise.
     """
     # Delegate to server.lock.remove_lock_file for proper removal
     try:
