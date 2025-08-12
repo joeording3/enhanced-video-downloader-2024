@@ -165,6 +165,9 @@ Urgent Tasks:
       `extension/src/history.ts`, `server/api/history_bp.py`.
   - [/] Implemented best-effort history sync: append entries and clear via `/api/history` when
     `serverPort` is known.
+  - [x] Popup history fallback: when local `downloadHistory` is empty, fetch paginated history from
+    the server (`GET /api/history?page=..&per_page=..`), normalize fields (`download_id` → `id`,
+    ISO timestamp → epoch), and seed local cache for snappier subsequent loads.
   - [/] Server now appends failure entries on yt-dlp errors and appends a fallback success entry
     after `ydl.download` returns when the `finished` hook did not persist metadata. This ensures
     history reflects both successes and failures even if the process restarts mid-download.
@@ -178,6 +181,9 @@ Urgent Tasks:
     `status: queued` and enqueues the request; `/api/status` includes queued IDs. Files:
     `server/queue.py`, `server/api/download_bp.py`, `server/api/status_bp.py`, docs in
     `server/api/api.md`.
+  - [x] Popup queued details: display title/filename/URL for queued items when available. Background
+    now collects queued item metadata from `/api/status` and includes `queuedDetails` in
+    `downloadStatusUpdate`, `queueUpdated`, and `getQueue` responses.
   - [x] Consolidate Playwright E2E audit details into `tests/testing.md`; remove outdated
         `reports/playwright_quality_audit_report.md` and update references in `README.md` and
         `ARCHITECTURE.md`.

@@ -819,8 +819,16 @@ async function setButtonHiddenState(hidden: boolean): Promise<void> {
     }
   }
 
+  // Fallback: if selector found none, but we have a module-level button, operate on it
+  const targets: HTMLButtonElement[] =
+    btns.length > 0
+      ? btns
+      : (downloadButton && (downloadButton as HTMLButtonElement).classList
+          ? [downloadButton as HTMLButtonElement]
+          : []);
+
   // Toggle visibility classes for all buttons
-  for (const btn of btns) {
+  for (const btn of targets) {
     if (hidden) {
       btn.classList.add("hidden");
       btn.classList.remove("evd-visible");
@@ -852,7 +860,7 @@ async function setButtonHiddenState(hidden: boolean): Promise<void> {
   let x = 10;
   let y = 70;
   try {
-    const anchor = primary || btns[0];
+    const anchor = primary || targets[0];
     if (anchor) {
       const rect = anchor.getBoundingClientRect();
       x = rect.left;

@@ -269,25 +269,25 @@ audit-docs:
 
 # Docstring audit (Python): enforce NumPy/Sphinx-style via Ruff (pydocstyle + RST)
 docstrings-audit:
-    @echo "=== Running Python docstring audit (Ruff: D + RST) ==="
-    @mkdir -p reports
-    # Full text report
-    @ruff check server --select D,RST --output-format=full > reports/docstrings_report.txt || true
-    # JSON report for tooling
-    @ruff check server --select D,RST --output-format=json > reports/docstrings_report.json || true
-    @echo "Docstring audit complete. See reports/docstrings_report.{txt,json}"
+	@echo "=== Running Python docstring audit (Ruff: D + RST) ==="
+	@mkdir -p reports
+	# Full text report
+	@ruff check server --select D,RST --output-format=full > reports/docstrings_report.txt || true
+	# JSON report for tooling
+	@ruff check server --select D,RST --output-format=json > reports/docstrings_report.json || true
+	@echo "Docstring audit complete. See reports/docstrings_report.{txt,json}"
 
 # Attempt autofixes for simple issues (summary-line punctuation, spacing, etc.)
 docstrings-fix:
-    @echo "=== Attempting auto-fixes for docstrings (safe subset) ==="
-    # Use Ruff to apply safe fixes; manual follow-up will still be required for missing/incorrect docs
-    @ruff check server --select D,RST --fix || true
-    @echo "Auto-fix pass complete. Re-run 'make docstrings-audit' to review remaining issues."
+	@echo "=== Attempting auto-fixes for docstrings (safe subset) ==="
+	# Use Ruff to apply safe fixes; manual follow-up will still be required for missing/incorrect docs
+	@ruff check server --select D,RST --fix || true
+	@echo "Auto-fix pass complete. Re-run 'make docstrings-audit' to review remaining issues."
 
 # Convenience target: run audit and show a brief summary to console
 docstrings-report: docstrings-audit
-    @echo "=== Docstring issues summary (top 50) ==="
-    @cat reports/docstrings_report.txt | head -n 200 || true
+	@echo "=== Docstring issues summary (top 50) ==="
+	@cat reports/docstrings_report.txt | head -n 200 || true
 
 # Mutation Testing Targets
 mutation: mutation-js mutation-py

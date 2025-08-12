@@ -620,6 +620,34 @@ export async function initPopup(): Promise<void> {
     });
   }
 
+  // Wire Side Panel open (Chrome Side Panel API)
+  const sidepanelBtn = document.getElementById("open-sidepanel");
+  if (sidepanelBtn && (chrome as any).sidePanel && (chrome.sidePanel as any).open) {
+    sidepanelBtn.addEventListener("click", async () => {
+      try {
+        // Prefer opening for the current tab when available
+        const tabs = await new Promise<any[]>(resolve => {
+          chrome.tabs.query({ active: true, currentWindow: true }, resolve);
+        });
+        const tabId = tabs?.[0]?.id;
+        if (tabId !== undefined && (chrome.sidePanel as any).setOptions) {
+          await (chrome.sidePanel as any).setOptions({ tabId, path: "extension/dist/popup.html", enabled: true });
+        }
+        await (chrome.sidePanel as any).open({ tabId });
+      } catch {
+        // Fallback: try global open without tab context
+        try {
+          await (chrome.sidePanel as any).open({});
+        } catch {
+          // No-op if API not available
+        }
+      }
+    });
+  } else if (sidepanelBtn) {
+    // Hide the button if the API is not supported
+    sidepanelBtn.classList.add("hidden");
+  }
+
   // Helper to send a message to the active tab's content script
   const sendToActiveTab = (message: any, callback?: (response: any) => void): void => {
     try {

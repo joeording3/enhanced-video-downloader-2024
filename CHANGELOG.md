@@ -31,6 +31,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 
 - Server-side history persistence improvements for downloads:
+- Extension history fallback and queued UI details:
+  - Popup now falls back to server history when local storage is empty, requesting
+    `/api/history` with pagination, normalizing fields, and seeding the local cache.
+  - Background polls `/api/status` and includes `queuedDetails` (url/title/filename) for queued
+    items in broadcast messages; popup renders human-friendly labels for queued entries instead of
+    plain IDs.
   - Append a failure entry to `server/data/history.json` when yt-dlp reports a download error or an
     unexpected server exception occurs during a download request.
   - Append a fallback success entry after `ydl.download` returns if the `finished` progress hook did

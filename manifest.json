@@ -38,6 +38,9 @@
       }
     ]
   },
+  "side_panel": {
+    "default_path": "extension/dist/popup.html"
+  },
   "background": {
     "service_worker": "extension/dist/background.js",
     "type": "module"
