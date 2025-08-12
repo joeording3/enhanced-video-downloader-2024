@@ -6,8 +6,8 @@ Urgent Tasks:
 - [/] Options logs: 'Filter Werkzeug' now filters all 200-status messages (status/status_code fields, status=200, HTTP/* 200, and "200 OK" patterns) to hide noise
 - [/] Client must not send URL-based dedupe token as `download_id`; omit field and let server
   generate ID
-- [ ] Add unused-code checks to CI and local workflows
-<!-- working-on: unused-code checks (ts-prune, vulture) -->
+- [/] Add unused-code checks to CI and local workflows
+
 
 - [ ] Wire into `make all`/`check` gates and CI once noise baseline is reviewed
 
@@ -65,8 +65,8 @@ Urgent Tasks:
         element IDs (`download-status`, `download-history`) so logic keeps working.
 
 - **Automation and CI**
-  - [ ] Keep `make lint-unused` non-blocking during triage.
-  - [ ] Add a CI job to run `make lint-unused` and upload `reports/unused_code_report.md`.
+  - [/] Keep `make lint-unused` non-blocking during triage.
+  - [/] Add a CI job to run `make lint-unused` and upload `reports/unused_code_report.md`.
   - [ ] After cleanup, gate CI on `make lint-unused` (warning first, then enforce).
 
 ### Wiring Audit Findings (Backend/UI/CLI integration)

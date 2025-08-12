@@ -8,15 +8,6 @@
   </head>
   <body>
     <div class="container settings-container">
-      <div
-        class="theme-toggle btn btn--secondary"
-        id="theme-toggle"
-        title="Toggle Dark/Light Mode"
-        role="button"
-        aria-label="Toggle Dark/Light Mode"
-      >
-        Light | Dark
-      </div>
 
       <header class="options-header">
         <h1>
@@ -26,23 +17,65 @@
             id="options-header-icon"
           />Settings
         </h1>
-        <div
-          class="server-status"
-          id="server-status"
-          title="Server Connection Status"
-        >
-          <span
-            class="server-status-indicator"
-            id="server-status-indicator"
-          ></span>
-          <span class="server-status-text" id="server-status-text"
-            >Checking...</span
-          >
-        </div>
       </header>
 
       <main>
         <form id="settings-form" autocomplete="off">
+                    <!-- Actions Section -->
+                    <section class="settings-group" data-category="actions">
+                      <h2 class="section-title">        <div
+                        class="server-status"
+                        id="server-status"
+                        title="Server Connection Status"
+                      >
+                        <span
+                          class="server-status-indicator"
+                          id="server-status-indicator"
+                        ></span>
+                        <span class="server-status-text" id="server-status-text"
+                          >Checking...</span
+                        >
+                      </div>
+              </h2>
+                      <div class="section-content">
+                        <div class="settings-actions">
+                          <div
+                          class="btn btn--primary"
+                          id="theme-toggle"
+                          title="Toggle Dark/Light Mode"
+                          role="button"
+                          aria-label="Toggle Dark/Light Mode"
+                        >
+                          Light | Dark
+                        </div>
+
+                          <button
+                            type="button"
+                            id="settings-resume-downloads"
+                            class="btn btn--primary"
+                          >
+                            Resume Partial Downloads
+                          </button>
+                          <button
+                            type="button"
+                            id="settings-clear-history"
+                            class="btn btn--secondary"
+                          >
+                            Clear History
+                          </button>
+                          <button
+                            type="button"
+                            id="settings-clear-positions"
+                            class="btn btn--secondary"
+                            title="Clear all stored positions of the on-page download button across sites"
+                          >
+                            Clear Button Positions
+                          </button>
+                          <button type="button" id="queue-refresh" class="btn btn--secondary">Refresh Queue</button>
+                          <button type="button" id="queue-clear" class="btn btn--secondary">Clear Queue</button>
+                        </div>
+                      </div>
+                    </section>
           <!-- Server Configuration Section -->
           <section class="settings-group" data-category="server">
             <h2 class="section-title">
@@ -280,38 +313,6 @@
             </div>
           </section>
 
-          <!-- Actions Section -->
-          <section class="settings-group" data-category="actions">
-            <h2 class="section-title">Actions</h2>
-            <div class="section-content">
-              <div class="settings-actions">
-                <button
-                  type="button"
-                  id="settings-resume-downloads"
-                  class="btn btn--primary"
-                >
-                  Resume Partial Downloads
-                </button>
-                <button
-                  type="button"
-                  id="settings-clear-history"
-                  class="btn btn--secondary"
-                >
-                  Clear History
-                </button>
-                <button
-                  type="button"
-                  id="settings-clear-positions"
-                  class="btn btn--secondary"
-                  title="Clear all stored positions of the on-page download button across sites"
-                >
-                  Clear Button Positions
-                </button>
-                <button type="button" id="queue-refresh" class="btn btn--secondary">Refresh Queue</button>
-                <button type="button" id="queue-clear" class="btn btn--secondary">Clear Queue</button>
-              </div>
-            </div>
-          </section>
         <!-- Logs Section -->
         <section
           id="log-container"

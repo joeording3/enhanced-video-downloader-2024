@@ -610,7 +610,7 @@ def resume() -> Any:
                     "status": "error",
                     "message": f"Invalid request data: {e}",
                     "error_type": "VALIDATION_ERROR",
-                    "downloadId": raw_data.get("downloadId", "unknown"),  # type: ignore[arg-type]
+                    "downloadId": str(raw_data.get("downloadId", "unknown")),
                 }
             ),
             400,
@@ -623,7 +623,7 @@ def resume() -> Any:
                     "status": "error",
                     "message": f"Server error: {e!s}",
                     "error_type": "SERVER_ERROR",
-                    "downloadId": raw_data.get("downloadId", "unknown"),  # type: ignore[arg-type]
+                    "downloadId": str(raw_data.get("downloadId", "unknown")),
                 }
             ),
             500,

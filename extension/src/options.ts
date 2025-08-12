@@ -1269,7 +1269,7 @@ export function setupLogsUI(): void {
           // Plain text within message: "-> 200" possibly followed by punctuation/space/EOL
           const isStatus200Arrow = /->\s*200(\b|\s|[,}])?/.test(line);
           // HTTP log pattern: "... HTTP/1.1" 200 ... or HTTP/2 200
-          const isHttpVersion200 = /HTTP\/(?:1(?:\.\d)?|2)\"?\s+200\b/i.test(line);
+          const isHttpVersion200 = /HTTP\/(?:1(?:\.\d)?|2)"?\s+200\b/i.test(line);
           // Common phrase: 200 OK
           const is200Ok = /\b200\s+OK\b/i.test(line);
           // JSON for server.request logger with 200 status (robust across spacing)
@@ -1289,6 +1289,103 @@ export function setupLogsUI(): void {
         .join("\n");
     }
     return t;
+  };
+
+  const isFilterOn = (): boolean =>
+    !!(document.getElementById("log-filter-werkzeug") as HTMLInputElement | null)?.checked;
+
+  const countEntriesFromFiltered = (filtered: string): number => {
+    const rawLines = filtered.split("\n");
+    let count = 0;
+
+    // Try NDJSON first
+    try {
+      for (let i = 0; i < rawLines.length; i += 1) {
+        const raw = rawLines[i] || "";
+        const line = raw.trim();
+        if (!line) continue;
+        const firstBrace = line.indexOf("{");
+        if (firstBrace === -1) continue;
+        const jsonPart = line.slice(firstBrace);
+        try {
+          const obj: any = JSON.parse(jsonPart);
+          if (isFilterOn()) {
+            const statusVal =
+              typeof obj.status === "number"
+                ? obj.status
+                : typeof obj.status === "string"
+                ? parseInt(obj.status, 10)
+                : undefined;
+            const statusCodeVal =
+              typeof obj.status_code === "number"
+                ? obj.status_code
+                : typeof obj.status_code === "string"
+                ? parseInt(obj.status_code, 10)
+                : undefined;
+            const msgText = typeof obj.message === "string" ? obj.message : "";
+            const isArrow200 =
+              /->\s*200(\b|\s|[,}])?/.test(msgText) || /->\s*200(\b|\s|[,}])?/.test(line);
+            const isOk200 = /\b200\s+OK\b/i.test(msgText) || /\b200\s+OK\b/i.test(line);
+            const looksHttp200 =
+              /HTTP\/(?:1(?:\.\d)?|2)"?\s+200\b/i.test(msgText) ||
+              /HTTP\/(?:1(?:\.\d)?|2)"?\s+200\b/i.test(line);
+            if (
+              statusVal === 200 ||
+              statusCodeVal === 200 ||
+              isArrow200 ||
+              isOk200 ||
+              looksHttp200
+            ) {
+              continue;
+            }
+          }
+          count += 1;
+        } catch {
+          // ignore JSON parse errors
+        }
+      }
+      if (count > 0) return count;
+    } catch {
+      // fall through
+    }
+
+    // Legacy formats (grouped)
+    const legacyRegex =
+      /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:[,.]\d{3})?)\s*-\s*([^-]+?)\s*-\s*(DEBUG|INFO|WARNING|ERROR|CRITICAL|WARN|TRACE)\s*-\s*([\s\S]*)$/;
+    let currentOpen = false;
+    for (let i = 0; i < rawLines.length; i += 1) {
+      const line = rawLines[i] || "";
+      const m = line.match(legacyRegex);
+      if (m) {
+        if (isFilterOn()) {
+          const msg = m[4] || "";
+          const isArrow200 =
+            /->\s*200(\b|\s|[,}])?/.test(line) || /->\s*200(\b|\s|[,}])?/.test(msg);
+          const is200Ok = /\b200\s+OK\b/i.test(line) || /\b200\s+OK\b/i.test(msg);
+          const isStatusPair200 =
+            /\bstatus\s*[=:]\s*200\b/i.test(line) || /\bstatus_code\s*[=:]\s*200\b/i.test(line);
+          const isHttp200 = /HTTP\/(?:1(?:\.\d)?|2)"?\s+200\b/i.test(line);
+          if (isArrow200 || is200Ok || isStatusPair200 || isHttp200) {
+            currentOpen = false;
+            continue;
+          }
+        }
+        if (currentOpen) count += 1; // close previous
+        currentOpen = true;
+      } else if (
+        currentOpen &&
+        (line.indexOf(" ") === 0 ||
+          line.indexOf("\t") === 0 ||
+          /^(Traceback|File "|\s*\.\.\.|\s*at )/.test(line))
+      ) {
+        // continuation
+      } else if (line.trim().length > 0) {
+        if (currentOpen) count += 1;
+        currentOpen = true;
+      }
+    }
+    if (currentOpen) count += 1;
+    return count;
   };
 
   const renderLogs = (text: string): void => {
@@ -1341,15 +1438,36 @@ export function setupLogsUI(): void {
               if (m) level = m[1].toLowerCase();
             }
             // If filter is enabled, skip any NDJSON entry representing a 200-status request
-            const filterOn = !!(document.getElementById("log-filter-werkzeug") as HTMLInputElement | null)?.checked;
+            const filterOn = !!(
+              document.getElementById("log-filter-werkzeug") as HTMLInputElement | null
+            )?.checked;
             if (filterOn) {
-              const statusVal = typeof obj.status === "number" ? obj.status : (typeof obj.status === "string" ? parseInt(obj.status, 10) : undefined);
-              const statusCodeVal = typeof obj.status_code === "number" ? obj.status_code : (typeof obj.status_code === "string" ? parseInt(obj.status_code, 10) : undefined);
+              const statusVal =
+                typeof obj.status === "number"
+                  ? obj.status
+                  : typeof obj.status === "string"
+                  ? parseInt(obj.status, 10)
+                  : undefined;
+              const statusCodeVal =
+                typeof obj.status_code === "number"
+                  ? obj.status_code
+                  : typeof obj.status_code === "string"
+                  ? parseInt(obj.status_code, 10)
+                  : undefined;
               const msgText = typeof obj.message === "string" ? obj.message : "";
-              const isArrow200 = /->\s*200(\b|\s|[,}])?/.test(msgText) || /->\s*200(\b|\s|[,}])?/.test(line);
+              const isArrow200 =
+                /->\s*200(\b|\s|[,}])?/.test(msgText) || /->\s*200(\b|\s|[,}])?/.test(line);
               const isOk200 = /\b200\s+OK\b/i.test(msgText) || /\b200\s+OK\b/i.test(line);
-              const looksHttp200 = /HTTP\/(?:1(?:\.\d)?|2)\"?\s+200\b/i.test(msgText) || /HTTP\/(?:1(?:\.\d)?|2)\"?\s+200\b/i.test(line);
-              if (statusVal === 200 || statusCodeVal === 200 || isArrow200 || isOk200 || looksHttp200) {
+              const looksHttp200 =
+                /HTTP\/(?:1(?:\.\d)?|2)"?\s+200\b/i.test(msgText) ||
+                /HTTP\/(?:1(?:\.\d)?|2)"?\s+200\b/i.test(line);
+              if (
+                statusVal === 200 ||
+                statusCodeVal === 200 ||
+                isArrow200 ||
+                isOk200 ||
+                looksHttp200
+              ) {
                 continue; // skip this entry
               }
             }
@@ -1399,18 +1517,23 @@ export function setupLogsUI(): void {
         };
 
         var current2: any = null;
-        const filterOn2 = !!(document.getElementById("log-filter-werkzeug") as HTMLInputElement | null)?.checked;
+        const filterOn2 = !!(
+          document.getElementById("log-filter-werkzeug") as HTMLInputElement | null
+        )?.checked;
         for (var i2 = 0; i2 < rawLines.length; i2 += 1) {
           var line2 = rawLines[i2] || "";
           var m2 = line2.match(lineRegex2);
           if (m2) {
             if (filterOn2) {
-              const msg2 = (m2[4] || "");
-              const isArrow200_2 = /->\s*200(\b|\s|[,}])?/.test(line2) || /->\s*200(\b|\s|[,}])?/.test(msg2);
-              const is200Ok_2 = /\b200\s+OK\b/i.test(line2) || /\b200\s+OK\b/i.test(msg2);
-              const isStatusPair200_2 = /\bstatus\s*[=:]\s*200\b/i.test(line2) || /\bstatus_code\s*[=:]\s*200\b/i.test(line2);
-              const isHttp200_2 = /HTTP\/(?:1(?:\.\d)?|2)\"?\s+200\b/i.test(line2);
-              if (isArrow200_2 || is200Ok_2 || isStatusPair200_2 || isHttp200_2) {
+              const msg2 = m2[4] || "";
+              const arrow200 =
+                /->\s*200(\b|\s|[,}])?/.test(line2) || /->\s*200(\b|\s|[,}])?/.test(msg2);
+              const ok200 = /\b200\s+OK\b/i.test(line2) || /\b200\s+OK\b/i.test(msg2);
+              const statusPair200 =
+                /\bstatus\s*[=:]\s*200\b/i.test(line2) ||
+                /\bstatus_code\s*[=:]\s*200\b/i.test(line2);
+              const http200 = /HTTP\/(?:1(?:\.\d)?|2)"?\s+200\b/i.test(line2);
+              if (arrow200 || ok200 || statusPair200 || http200) {
                 // skip starting a new entry for 200 status lines
                 continue;
               }
@@ -1454,17 +1577,21 @@ export function setupLogsUI(): void {
         };
 
         var current: any = null;
-        const filterOn3 = !!(document.getElementById("log-filter-werkzeug") as HTMLInputElement | null)?.checked;
+        const filterOn3 = !!(
+          document.getElementById("log-filter-werkzeug") as HTMLInputElement | null
+        )?.checked;
         for (var i = 0; i < rawLines.length; i += 1) {
           var line = rawLines[i] || "";
           var m = line.match(lineRegex);
           if (m) {
             if (filterOn3) {
-              const msg = (m[4] || "");
-              const isArrow200 = /->\s*200(\b|\s|[,}])?/.test(line) || /->\s*200(\b|\s|[,}])?/.test(msg);
+              const msg = m[4] || "";
+              const isArrow200 =
+                /->\s*200(\b|\s|[,}])?/.test(line) || /->\s*200(\b|\s|[,}])?/.test(msg);
               const is200Ok = /\b200\s+OK\b/i.test(line) || /\b200\s+OK\b/i.test(msg);
-              const isStatusPair200 = /\bstatus\s*[=:]\s*200\b/i.test(line) || /\bstatus_code\s*[=:]\s*200\b/i.test(line);
-              const isHttp200 = /HTTP\/(?:1(?:\.\d)?|2)\"?\s+200\b/i.test(line);
+              const isStatusPair200 =
+                /\bstatus\s*[=:]\s*200\b/i.test(line) || /\bstatus_code\s*[=:]\s*200\b/i.test(line);
+              const isHttp200 = /HTTP\/(?:1(?:\.\d)?|2)"?\s+200\b/i.test(line);
               if (isArrow200 || is200Ok || isStatusPair200 || isHttp200) {
                 // skip this 200-status line
                 continue;
@@ -1551,27 +1678,41 @@ export function setupLogsUI(): void {
   const fetchAndRender = (): void => {
     const uiLimit = limitSelect ? parseInt(limitSelect.value, 10) : 500;
     const recent = recentFirstCheckbox ? !!recentFirstCheckbox.checked : true;
-    // Request more lines than UI limit so client-side filters don't empty the view
-    const requestedLines = (() => {
-      if (!Number.isFinite(uiLimit)) return 1000;
-      if (uiLimit <= 0) return 5000; // "All" in UI: pull a generous chunk
-      const scaled = uiLimit * 10;
+    const wantsAll = !Number.isFinite(uiLimit) || uiLimit <= 0;
+
+    let requested = (() => {
+      if (wantsAll) return 5000;
+      const scaled = (uiLimit || 500) * 10;
       return Math.min(20000, Math.max(scaled, 1000));
     })();
-    chrome.runtime.sendMessage(
-      { type: "getLogs", lines: requestedLines, recent },
-      (response: any) => {
+    const hardCap = 100000;
+
+    const attempt = (): void => {
+      chrome.runtime.sendMessage({ type: "getLogs", lines: requested, recent }, (response: any) => {
         if (chrome.runtime.lastError) {
           renderLogs("Error: " + chrome.runtime.lastError.message);
           return;
         }
-        if (response && response.status === "success") {
-          renderLogs(response.data || "");
-        } else {
+        if (!response || response.status !== "success") {
           renderLogs("Error: " + (response?.message || "Failed to fetch logs"));
+          return;
         }
-      }
-    );
+        const text = response.data || "";
+        if (wantsAll) {
+          renderLogs(text);
+          return;
+        }
+        const filtered = applyFilters(text);
+        const count = countEntriesFromFiltered(filtered);
+        if (count >= uiLimit || requested >= hardCap) {
+          renderLogs(text);
+          return;
+        }
+        requested = Math.min(hardCap, requested * 2);
+        attempt();
+      });
+    };
+    attempt();
   };
 
   refreshBtn?.addEventListener("click", () => {

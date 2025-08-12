@@ -104,7 +104,7 @@ _orig_list_callback = history_group.commands["list"].callback
 list_history = types.SimpleNamespace(callback=_orig_list_callback)
 # Override the click Command callback to delegate to our `list_history.callback`
 history_group.commands["list"].callback = (
-    lambda *args, **kwargs: globals()["list_history"].callback(*args, **kwargs)  # type: ignore[reportUnknownLambdaType]
+    lambda *args, **kwargs: globals()["list_history"].callback(*args, **kwargs)
 )
 
 

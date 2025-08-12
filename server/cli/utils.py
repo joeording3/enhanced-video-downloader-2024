@@ -276,9 +276,9 @@ def _display_table(config_dict: dict[str, Any], verbose: bool) -> None:
     for key, value in config_dict.items():
         # Format value for display
         if isinstance(value, dict):
-            display_value = f"<{len(value)} items>"  # type: ignore[arg-type]
+            display_value = f"<{len(value)} items>"
         elif isinstance(value, list):
-            display_value = f"[{len(value)} items]"  # type: ignore[arg-type]
+            display_value = f"[{len(value)} items]"
         elif value is None:
             display_value = "null"
         else:

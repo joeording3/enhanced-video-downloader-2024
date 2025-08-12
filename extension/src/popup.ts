@@ -37,6 +37,11 @@ export interface DownloadStatus {
 // Module-level state (will be initialized in initPopup)
 let statusTimeout: ReturnType<typeof setTimeout> | null = null;
 let dragSrcIndex: number | null = null;
+let lastDownloadStatusData: {
+  active: Record<string, any>;
+  queue: string[];
+  queuedDetails?: Record<string, { url?: string; title?: string; filename?: string }>;
+} | null = null;
 
 /**
  * Sets a status message in the popup.
@@ -491,126 +496,208 @@ export function handleDragEnd(e: DragEvent): void {
 }
 
 // Render current downloads and queued items
-export function renderDownloadStatus(data: {
+export async function renderDownloadStatus(data: {
   active: Record<string, any>;
   queue: string[];
   queuedDetails?: Record<string, { url?: string; title?: string; filename?: string }>;
-}): void {
+}): Promise<void> {
+  lastDownloadStatusData = data;
   const container = document.getElementById("download-status");
   if (!container) return;
   container.innerHTML = "";
-  const activeIds = Object.keys(data.active || {});
-  const queuedIds = data.queue || [];
+
+  // Determine how many history items to include and current page
+  const itemsPerPageSelect = document.getElementById("items-per-page") as HTMLSelectElement | null;
+  const pageInfoEl = document.getElementById("page-info") as HTMLElement | null;
+  const prevPageBtn = document.getElementById("prev-page") as HTMLButtonElement | null;
+  const nextPageBtn = document.getElementById("next-page") as HTMLButtonElement | null;
+  const perPage = (() => {
+    const v = itemsPerPageSelect?.value;
+    const n = v ? parseInt(v, 10) : 50;
+    return Number.isFinite(n) && n > 0 ? n : 50;
+  })();
+  // Track page in dataset to reuse with prev/next
+  const currentPage = Number(container.dataset.page || "1");
+
+  // Fetch history page
+  const { history, totalItems } = await fetchHistory(currentPage, perPage);
+
+  // Build unified entries: active + queued + history
+  type Unified = {
+    id: string;
+    status: string;
+    label: string;
+    progress?: number;
+    timestamp?: number;
+    url?: string;
+    pageTitle?: string;
+  };
+  const unified: Unified[] = [];
+
+  // Active downloads
+  Object.entries(data.active || {}).forEach(([id, st]) => {
+    const statusObj = st as any;
+    const label = statusObj.filename || statusObj.title || statusObj.url || id;
+    const prog = Number(statusObj.progress);
+    unified.push({
+      id,
+      status: String(statusObj.status || "downloading"),
+      label,
+      progress: prog,
+      timestamp: Date.now(),
+    });
+  });
+
+  // Queued downloads
   const qDetails = data.queuedDetails || {};
-  if (activeIds.length === 0 && queuedIds.length === 0) {
+  (data.queue || []).forEach(id => {
+    const info = qDetails[id] || {};
+    const label = info.title || info.filename || info.url || id;
+    unified.push({ id, status: "queued", label, timestamp: Date.now() - 1 });
+  });
+
+  // History entries (append as-is)
+  history.forEach(h => {
+    const id = String((h as any).id || (h as any).download_id || Math.random());
+    const label = (h.page_title || (h as any).title || h.filename || h.url || id) as string;
+    unified.push({
+      id,
+      status: String(h.status || "completed"),
+      label,
+      timestamp: Number(h.timestamp) || Date.now(),
+      url: h.url as string | undefined,
+      pageTitle: (h.page_title || (h as any).title) as string | undefined,
+    });
+  });
+
+  // Sort unified list: newest first by timestamp; ensure active/queued bubble to top via recent timestamps
+  unified.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+  // Render unified list
+  const ul = document.createElement("ul");
+  ul.id = "download-status"; // ensure styles apply and stays a single list container
+  ul.className = "unified-list";
+  // Remove default bullets so we can use status icons
+  (ul.style as any).listStyleType = "none";
+  unified.forEach(item => {
     const li = document.createElement("li");
-    li.textContent = "No active or queued downloads.";
-    container.appendChild(li);
-    // Also, when no active/queued, ensure the history section remains visible below
-  }
-  // Grouped active and queued items into collapsible sections
-  if (activeIds.length > 0) {
-    const activeDetails = document.createElement("details");
-    activeDetails.open = true;
-    const activeSummary = document.createElement("summary");
-    activeSummary.textContent = "Active Downloads";
-    activeDetails.appendChild(activeSummary);
-    const activeUl = document.createElement("ul");
-    activeIds.forEach(id => {
-      const statusObj = data.active[id];
-      let liEl: HTMLLIElement;
-      if (statusObj.status === "error") {
-        liEl = createErrorListItem(id, {
-          filename: statusObj.filename || id,
-          errorInfo: {
-            type: "Error",
-            message: statusObj.error || "Error",
-            original: statusObj.message || "",
-          },
-        });
-      } else if (statusObj.status === "paused") {
-        liEl = createGenericListItem(id, { status: "paused" });
-        liEl.querySelector("button.resume-button")?.addEventListener("click", () => {
-          chrome.runtime.sendMessage({ type: "resumeDownload", downloadId: id }, () => {});
-        });
-      } else {
-        liEl = createActiveListItem(id, statusObj);
-      }
-      activeUl.appendChild(liEl);
-    });
-    activeDetails.appendChild(activeUl);
-    container.appendChild(activeDetails);
-  }
-  if (queuedIds.length > 0) {
-    const queueDetails = document.createElement("details");
-    queueDetails.open = true;
-    const queueSummary = document.createElement("summary");
-    queueSummary.textContent = "Queued Downloads";
-    queueDetails.appendChild(queueSummary);
-    const queueUl = document.createElement("ul");
-    queuedIds.forEach(id => {
-      const li = createQueuedListItem({ id });
-      const meta = document.createElement("div");
-      meta.className = "queued-meta";
-      const info = qDetails[id] || {};
-      const label = info.title || info.filename || info.url || id;
-      meta.textContent = String(label);
-      li.appendChild(meta);
-      // Enable drag-and-drop reordering for queued items
-      li.setAttribute("draggable", "true");
-      li.addEventListener("dragstart", handleDragStart);
-      li.addEventListener("dragover", handleDragOver);
-      li.addEventListener("dragleave", handleDragLeave);
-      li.addEventListener("drop", handleDrop);
-      li.addEventListener("dragend", handleDragEnd);
-      queueUl.appendChild(li);
-    });
-    queueDetails.appendChild(queueUl);
-    container.appendChild(queueDetails);
-  }
+    li.className = "unified-item status-" + String(item.status).toLowerCase();
+    li.dataset.downloadId = item.id;
 
-  // Ensure queued items are also visible at the top of history as "Queued" with labels for quick context
-  try {
-    const historyListEl = document.getElementById("download-history") as HTMLElement | null;
-    if (historyListEl && queuedIds.length > 0) {
-      // Prepend a lightweight queued header
-      const header = document.createElement("li");
-      header.className = "history-queued-header";
-      header.textContent = "Queued";
-      // Remove any existing header to avoid duplicates
-      const existingHeader = historyListEl.querySelector(".history-queued-header");
-      if (existingHeader) existingHeader.remove();
-      historyListEl.prepend(header);
-
-      // Remove prior injected queued items
-      Array.from(historyListEl.querySelectorAll("li.history-queued-item")).forEach(el => el.remove());
-      // Inject queued items as first entries (non-paginated preview)
-      queuedIds.forEach(id => {
-        const li = document.createElement("li");
-        li.className = "history-item history-queued-item status-queued";
-        li.dataset.itemId = id;
-        const label = (qDetails[id]?.title || qDetails[id]?.filename || qDetails[id]?.url || id) as string;
-        const left = document.createElement("div");
-        left.className = "history-left";
-        const titleDiv = document.createElement("div");
-        const b = document.createElement("b");
-        b.textContent = label;
-        titleDiv.appendChild(b);
-        const statusDiv = document.createElement("div");
-        const statusBold = document.createElement("b");
-        statusBold.textContent = "queued";
-        statusBold.classList.add("status-pill", "is-warning");
-        statusDiv.appendChild(document.createTextNode("Status: "));
-        statusDiv.appendChild(statusBold);
-        left.appendChild(titleDiv);
-        left.appendChild(statusDiv);
-        li.appendChild(left);
-        historyListEl.prepend(li);
-      });
+    // Status icon replacing bullet
+    const normalized = String(item.status || "").toLowerCase();
+    const icon = document.createElement("span");
+    icon.className = "status-icon";
+    // Choose icon per status
+    if (normalized === "queued" || normalized === "pending" || normalized === "waiting") {
+      icon.textContent = "[queued]";
+    } else if (normalized === "downloading" || normalized === "paused") {
+      icon.textContent = "[active]";
+    } else if (["success", "complete", "completed", "done"].includes(normalized)) {
+      icon.textContent = "[done]";
+    } else if (["error", "failed", "fail", "canceled", "cancelled"].includes(normalized)) {
+      icon.textContent = "[error]";
+    } else {
+      icon.textContent = "\u23F1"; // default to queued icon
     }
-  } catch {
-    // ignore history decoration failures
+    icon.setAttribute("aria-hidden", "true");
+    li.appendChild(icon);
+
+    const title = document.createElement("div");
+    title.className = "item-title";
+    title.textContent = item.label;
+    li.appendChild(title);
+
+    if (item.status === "downloading" || item.status === "paused") {
+      const progress = document.createElement("progress");
+      const raw = Number(item.progress);
+      const finite = Number.isFinite(raw) ? raw : 0;
+      const clamped = Math.min(100, Math.max(0, finite));
+      progress.max = 100;
+      progress.value = clamped;
+      li.appendChild(progress);
+      const percentLabel = document.createElement("span");
+      percentLabel.className = "item-percent";
+      percentLabel.textContent = String(Math.round(clamped)) + "%";
+      li.appendChild(percentLabel);
+    }
+
+    const statusPill = document.createElement("span");
+    statusPill.className = "status-pill";
+    statusPill.textContent = item.status;
+    if (["success", "complete", "completed", "done"].includes(normalized)) {
+      statusPill.classList.add("is-success");
+    } else if (["error", "failed", "fail", "canceled", "cancelled"].includes(normalized)) {
+      statusPill.classList.add("is-error");
+    } else if (["queued", "pending", "waiting", "paused"].includes(normalized)) {
+      statusPill.classList.add("is-warning");
+    }
+    li.appendChild(statusPill);
+
+    // Add a cancel button per entry; enable only for queued/active/paused
+    const cancelBtn = document.createElement("button");
+    cancelBtn.className = "btn btn--secondary btn--small cancel-button";
+    cancelBtn.textContent = "Cancel";
+    cancelBtn.title = "Cancel";
+    cancelBtn.setAttribute("aria-label", "Cancel");
+    if (normalized === "queued") {
+      cancelBtn.disabled = false;
+      cancelBtn.addEventListener("click", e => {
+        e.stopPropagation();
+        chrome.runtime.sendMessage({ type: "removeFromQueue", downloadId: item.id }, () => {});
+      });
+    } else if (normalized === "downloading" || normalized === "paused") {
+      cancelBtn.disabled = false;
+      cancelBtn.addEventListener("click", e => {
+        e.stopPropagation();
+        chrome.runtime.sendMessage({ type: "cancelDownload", downloadId: item.id }, () => {});
+      });
+    } else {
+      cancelBtn.disabled = true;
+      cancelBtn.title = "Cannot cancel (not active or queued)";
+    }
+    li.appendChild(cancelBtn);
+
+    // Add a retry button (⟳) for failed/canceled entries
+    if (["error", "failed", "fail", "canceled", "cancelled"].includes(normalized)) {
+      const retryBtn = document.createElement("button");
+      retryBtn.className = "btn btn--secondary btn--small retry-button";
+      retryBtn.textContent = "\u27F3"; // ⟳
+      retryBtn.title = "Retry";
+      retryBtn.setAttribute("aria-label", "Retry");
+      retryBtn.disabled = !item.url;
+      retryBtn.addEventListener("click", e => {
+        e.stopPropagation();
+        if (!item.url) return;
+        chrome.runtime.sendMessage(
+          {
+            type: "downloadVideo",
+            url: item.url,
+            pageTitle: item.pageTitle || item.label,
+          },
+          () => {}
+        );
+      });
+      li.appendChild(retryBtn);
+    }
+
+    ul.appendChild(li);
+  });
+  container.appendChild(ul);
+
+  // Update pagination UI for the history slice
+  if (pageInfoEl) {
+    const startItem = Math.min((currentPage - 1) * perPage + 1, totalItems || 0);
+    const endItem = Math.min(currentPage * perPage, totalItems || 0);
+    pageInfoEl.textContent = totalItems
+      ? `Showing ${startItem}-${endItem} of ${totalItems} items`
+      : "No items";
   }
+  if (prevPageBtn) prevPageBtn.disabled = currentPage <= 1;
+  if (nextPageBtn) nextPageBtn.disabled = totalItems ? currentPage * perPage >= totalItems : true;
+
+  // Persist current page on the container for prev/next handlers
+  container.dataset.page = String(currentPage);
 }
 
 /**
@@ -675,7 +762,11 @@ export async function initPopup(): Promise<void> {
           });
           const tabId = tabs?.[0]?.id;
           if (tabId !== undefined && (chrome.sidePanel as any).setOptions) {
-            await (chrome.sidePanel as any).setOptions({ tabId, path: "extension/dist/popup.html", enabled: true });
+            await (chrome.sidePanel as any).setOptions({
+              tabId,
+              path: "extension/dist/popup.html",
+              enabled: true,
+            });
           }
           await (chrome.sidePanel as any).open({ tabId });
           return;
@@ -686,12 +777,12 @@ export async function initPopup(): Promise<void> {
       // Fallback: open the popup page in a regular tab
       try {
         const url = chrome.runtime.getURL("extension/dist/popup.html");
-          chrome.tabs.create({ url }, () => {
-            const hasError = Boolean(chrome.runtime && (chrome.runtime as any).lastError);
-            if (hasError) {
-              // intentionally ignored; opening a tab can fail on some pages
-            }
-          });
+        chrome.tabs.create({ url }, () => {
+          const hasError = Boolean(chrome.runtime && (chrome.runtime as any).lastError);
+          if (hasError) {
+            // intentionally ignored; opening a tab can fail on some pages
+          }
+        });
       } catch {
         // ignore
       }
@@ -817,18 +908,17 @@ export async function initPopup(): Promise<void> {
     });
   }
 
-  // Initial history load
-  await refreshHistory();
+  // Initial unified render will call fetchHistory via renderDownloadStatus when data arrives
 
   // Set up message listeners
   chrome.runtime.onMessage.addListener((msg: any) => {
     if (msg.type === "downloadStatusUpdate") {
-      renderDownloadStatus(msg.data);
+      void renderDownloadStatus(msg.data);
     } else if (msg.type === "queueUpdated") {
-      renderDownloadStatus({ active: msg.active, queue: msg.queue });
+      void renderDownloadStatus({ active: msg.active, queue: msg.queue });
     } else if (msg.type === "historyUpdated") {
-      // Keep current page if possible
-      void refreshHistory();
+      // Re-render unified list using latest queue/active state
+      if (lastDownloadStatusData) void renderDownloadStatus(lastDownloadStatusData);
     } else if (msg.type === "serverStatusUpdate") {
       updatePopupServerStatus(msg.status);
     }

@@ -749,9 +749,9 @@ def _resume_with_downloader(
 
             # Apply known options first for stable ordering
             if "directory" in opts and opts["directory"] is not None:
-                _append_option("directory", opts["directory"])  # type: ignore[arg-type]
+                _append_option("directory", str(opts["directory"]))
             if "continue" in opts:
-                _append_option("continue", opts["continue"])  # type: ignore[arg-type]
+                _append_option("continue", bool(opts["continue"]))
 
             # Append remaining options (excluding ones we already handled)
             for k, v in opts.items():

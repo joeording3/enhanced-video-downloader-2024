@@ -138,6 +138,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     with min-confidence 60
   - Aggregate target `make lint-unused` runs both; documented in README
 
+### CI
+
+- Add GitHub Actions workflow `unused-code-checks` to run `make lint-unused-report` and upload
+  `reports/unused_code_report.md` (plus raw outputs) as build artifacts. Job is non-blocking during
+  triage to establish a baseline without failing PRs.
+
 - API error handling consistency:
 
   - `/api/download`: continues to surface malformed JSON as a 500 SERVER_ERROR per existing tests;

@@ -127,6 +127,88 @@ h2 {
   background-color: var(--bg-elevated);
 }
 
+/* Unified list rows (queued/active/history together) */
+.unified-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.unified-list .unified-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: calc(var(--list-row-padding-y) - 4px) calc(var(--list-row-padding-x) - 6px);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.85em;
+  line-height: 1.2;
+  color: var(--text-color);
+  background-color: var(--bg-elevated);
+}
+
+/* Ensure unified layout even if parent markup changes */
+#download-status .unified-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.unified-list .unified-item:last-child {
+  border-bottom: none;
+}
+
+.unified-list .status-icon {
+  width: 1.25em;
+  min-width: 1.25em;
+  display: inline-block;
+  text-align: center;
+  opacity: 0.9;
+}
+
+#download-status .status-icon { width: 1.25em; min-width: 1.25em; display: inline-block; text-align: center; }
+
+.unified-list .item-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#download-status .item-title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.unified-list progress {
+  width: 120px;
+  height: 4px;
+  margin: 0 var(--space-sm);
+  accent-color: var(--button-bg);
+}
+
+#download-status progress { width: 120px; height: 4px; margin: 0 var(--space-sm); accent-color: var(--button-bg); }
+
+.unified-list .item-percent {
+  font-size: 0.75em;
+  color: var(--text-secondary);
+  min-width: 2.5em;
+  text-align: right;
+}
+
+#download-status .item-percent { font-size: 0.75em; color: var(--text-secondary); min-width: 2.5em; text-align: right; }
+
+.unified-list .status-pill {
+  margin-left: var(--space-sm);
+}
+
+#download-status .status-pill { margin-left: var(--space-sm); }
+
+.unified-list .cancel-button,
+.unified-list .retry-button {
+  margin-left: var(--space-sm);
+}
+
+#download-status .cancel-button,
+#download-status .retry-button { margin-left: var(--space-sm); }
+
 /* Compact list rows */
 #download-status li,
 #download-history li {
@@ -314,6 +396,28 @@ h2 {
 }
 
 /* WebKit Scrollbar Styles - Now using shared styles from styles.css */
+/* Ensure scrollbars use theme variables for both light and dark themes */
+#download-status::-webkit-scrollbar,
+#download-history::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+#download-status::-webkit-scrollbar-track,
+#download-history::-webkit-scrollbar-track {
+  background: var(--scrollbar-track-color);
+}
+
+#download-status::-webkit-scrollbar-thumb,
+#download-history::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb-color);
+  border-radius: 10px;
+}
+
+#download-status::-webkit-scrollbar-thumb:hover,
+#download-history::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover-color);
+}
 
 /* Input styling - Using shared component classes */
 /* Replace generic input styles with .input component class */

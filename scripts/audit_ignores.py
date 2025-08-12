@@ -115,7 +115,7 @@ def analyze_eslint() -> dict[str, Any]:
 def walk_sources() -> list[Path]:
     ex_dirs = {".git", ".venv", "venv", "node_modules", "dist", "build", "coverage", "htmlcov", "mutants"}
     matched: list[Path] = []
-    for dp, dns, fns in os_walk(ROOT):  # type: ignore[name-defined]
+    for dp, dns, fns in os_walk(ROOT):
         dns[:] = [d for d in dns if d not in ex_dirs]
         matched.extend(
             Path(dp) / fn

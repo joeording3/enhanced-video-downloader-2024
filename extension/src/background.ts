@@ -1003,13 +1003,17 @@ const initializeExtension = async (): Promise<void> => {
 
             // Replace local queue with server queue (excluding any IDs currently active)
             const newQueue = serverQueued.filter(id => !(id in active));
-            if (newQueue.length !== downloadQueue.length || newQueue.some((id, i) => id !== downloadQueue[i])) {
+            if (
+              newQueue.length !== downloadQueue.length ||
+              newQueue.some((id, i) => id !== downloadQueue[i])
+            ) {
               downloadQueue = newQueue;
               changed = true;
             }
 
             // Refresh queuedDetails to only include currently queued IDs
-            const newDetails: Record<string, { url?: string; title?: string; filename?: string }> = {};
+            const newDetails: Record<string, { url?: string; title?: string; filename?: string }> =
+              {};
             newQueue.forEach(id => {
               if (newQueuedDetails[id]) newDetails[id] = newQueuedDetails[id];
               else if (queuedDetails[id]) newDetails[id] = queuedDetails[id];
@@ -1025,7 +1029,10 @@ const initializeExtension = async (): Promise<void> => {
             // Keep activeDownloads in sync so badge counts are accurate
             const oldActiveKeys = Object.keys(activeDownloads);
             const newActiveKeys = Object.keys(active);
-            if (oldActiveKeys.length !== newActiveKeys.length || oldActiveKeys.some(k => !(k in active))) {
+            if (
+              oldActiveKeys.length !== newActiveKeys.length ||
+              oldActiveKeys.some(k => !(k in active))
+            ) {
               Object.keys(activeDownloads).forEach(k => delete (activeDownloads as any)[k]);
               Object.entries(active).forEach(([k, v]) => ((activeDownloads as any)[k] = v as any));
               changed = true;
@@ -1511,17 +1518,25 @@ if (!isTestEnvironment) {
   chrome.runtime.onInstalled.addListener(() => {
     try {
       // Allow opening the side panel by clicking the action icon
-      (chrome.sidePanel as any)?.setPanelBehavior?.({ openPanelOnActionClick: true }).catch?.(() => {});
+      (chrome.sidePanel as any)
+        ?.setPanelBehavior?.({ openPanelOnActionClick: true })
+        .catch?.(() => {});
       // Set a global default path for the side panel
-      (chrome.sidePanel as any)?.setOptions?.({ path: "extension/dist/popup.html" }).catch?.(() => {});
+      (chrome.sidePanel as any)
+        ?.setOptions?.({ path: "extension/dist/popup.html" })
+        .catch?.(() => {});
     } catch {}
     initializeExtension();
   });
 
   chrome.runtime.onStartup.addListener(() => {
     try {
-      (chrome.sidePanel as any)?.setPanelBehavior?.({ openPanelOnActionClick: true }).catch?.(() => {});
-      (chrome.sidePanel as any)?.setOptions?.({ path: "extension/dist/popup.html" }).catch?.(() => {});
+      (chrome.sidePanel as any)
+        ?.setPanelBehavior?.({ openPanelOnActionClick: true })
+        .catch?.(() => {});
+      (chrome.sidePanel as any)
+        ?.setOptions?.({ path: "extension/dist/popup.html" })
+        .catch?.(() => {});
     } catch {}
     initializeExtension();
   });

@@ -1291,20 +1291,22 @@ def _run_restart_server_enhanced(
         if isinstance(cfg_host, str) and cfg_host.strip():
             host = cfg_host
         elif isinstance(prior_meta.get("host"), str):
-            host = prior_meta.get("host")  # type: ignore[assignment]
+            host = str(prior_meta.get("host"))
 
     if not _provided("port"):
         cfg_port = cfg_for_defaults.get_value("server_port")
         if isinstance(cfg_port, int):
-            port = cfg_port
+            port = int(cfg_port)
         elif isinstance(prior_meta.get("port"), int):
-            port = prior_meta.get("port")  # type: ignore[assignment]
+            port = int(prior_meta.get("port"))
     if not _provided("gunicorn") and isinstance(prior_meta.get("gunicorn"), bool):
-        gunicorn = bool(prior_meta.get("gunicorn"))  # type: ignore[assignment]
-    if not _provided("workers") and isinstance(prior_meta.get("workers"), int):
-        workers = int(prior_meta.get("workers"))  # type: ignore[assignment]
+        gunicorn = bool(prior_meta.get("gunicorn"))
+    if not _provided("workers"):
+        pm_workers = prior_meta.get("workers")
+        if isinstance(pm_workers, int):
+            workers = int(pm_workers)
     if not _provided("verbose") and isinstance(prior_meta.get("verbose"), bool):
-        verbose = bool(prior_meta.get("verbose"))  # type: ignore[assignment]
+        verbose = bool(prior_meta.get("verbose"))
     # Daemonization policy on restart: unless user explicitly sets --foreground/--fg or --daemon,
     # default to daemon mode to mimic "stop" then "start" behavior (non-blocking restart).
     if not _provided("daemon") and not _provided("fg"):
@@ -1334,7 +1336,8 @@ def _run_restart_server_enhanced(
                 # Safely retrieve network connections; skip process on failure
                 conns = ()
                 with contextlib.suppress(Exception):
-                    conns = proc.net_connections(kind="inet")  # type: ignore[attr-defined]
+                    if hasattr(proc, "net_connections") and callable(proc.net_connections):
+                        conns = proc.net_connections(kind="inet")
                 if not conns:
                     continue
 

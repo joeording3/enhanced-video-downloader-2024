@@ -908,9 +908,9 @@ async function setButtonHiddenState(hidden: boolean): Promise<void> {
   const targets: HTMLButtonElement[] =
     btns.length > 0
       ? btns
-      : (downloadButton && (downloadButton as HTMLButtonElement).classList
-          ? [downloadButton as HTMLButtonElement]
-          : []);
+      : downloadButton && (downloadButton as HTMLButtonElement).classList
+      ? [downloadButton as HTMLButtonElement]
+      : [];
 
   // Toggle visibility classes for all buttons
   for (const btn of targets) {

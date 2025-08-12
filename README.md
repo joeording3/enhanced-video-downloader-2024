@@ -554,6 +554,7 @@ make check
 # Individual checks
  make lint          # Run linting for Python and JavaScript
  make lint-unused   # Detect unused exports (TS) and dead code (Python)
+ make lint-unused-report # Generate combined markdown report at reports/unused_code_report.md
 make lint-py       # Python linting only (Ruff)
 make lint-js       # JavaScript linting only (ESLint)
 make format-check  # Check code formatting without modifying files

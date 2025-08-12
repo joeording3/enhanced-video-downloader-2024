@@ -97,8 +97,9 @@ def _apply_custom_opts(ydl_opts: dict[str, Any], custom_opts: Any, _download_id:
     """
     # Normalize to a plain dict when possible
     try:
-        if hasattr(custom_opts, "model_dump"):
-            custom_opts = custom_opts.model_dump(mode="json")  # type: ignore[assignment]
+        model_dump_fn = getattr(custom_opts, "model_dump", None)
+        if callable(model_dump_fn):
+            custom_opts = model_dump_fn(mode="json")
     except Exception as e:
         logger.debug("Failed to model_dump yt_dlp_options; using provided value as-is: %s", e)
 
@@ -165,9 +166,10 @@ def _handle_cookies(ydl_opts: dict[str, Any], download_id: str | None) -> None:
     # Otherwise, only attempt to provide a cookiefile if we can safely serialize
     try:
         cj = browser_cookie3.chrome(domain_name="youtube.com")
-        if hasattr(cj, "save"):
+        save_fn = getattr(cj, "save", None)
+        if callable(save_fn):
             with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as tmp_file:
-                cj.save(tmp_file.name)  # type: ignore[attr-defined]
+                save_fn(tmp_file.name)
                 ydl_opts["cookiefile"] = tmp_file.name
             logger.debug(f"[{download_id}] Using cookie file: {tmp_file.name}")
     except Exception as e:
@@ -202,14 +204,15 @@ def build_opts(output_path: str, download_id: str | None = None, download_playli
         ytdlp_config_options: Any = {}
         # Fallback 1: dedicated getter by key
         try:
-            ytdlp_config_options = config.get_value("yt_dlp_options", {})  # type: ignore[attr-defined]
+            ytdlp_config_options = config.get_value("yt_dlp_options", {})
         except Exception:
             ytdlp_config_options = {}
         # Fallback 2: attribute on config
         if not isinstance(ytdlp_config_options, dict):
-            ytdlp_config_options = getattr(config, "yt_dlp_options", {})  # type: ignore[assignment]
-        if hasattr(ytdlp_config_options, "model_dump"):
-            ytdlp_config_options = ytdlp_config_options.model_dump(mode="json")  # type: ignore[assignment]
+            ytdlp_config_options = getattr(config, "yt_dlp_options", {})
+        model_dump = getattr(ytdlp_config_options, "model_dump", None)
+        if callable(model_dump):
+            ytdlp_config_options = model_dump(mode="json")
         if not isinstance(ytdlp_config_options, dict):
             ytdlp_config_options = {}
 
