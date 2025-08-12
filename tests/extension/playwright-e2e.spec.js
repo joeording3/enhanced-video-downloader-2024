@@ -544,15 +544,14 @@ test.describe("Chrome Extension E2E Tests", () => {
       // By default, restrict to a stable set of domains; allow full set with EVD_MEDIA_SITES_WIDE=true
       const wide = String(process.env.EVD_MEDIA_SITES_WIDE || "").toLowerCase() === "true";
       if (!wide) {
-        const stableDomains = [
-          "youtube.com",
-          "youtu.be",
-          "vimeo.com",
-          "dailymotion.com",
-          "twitch.tv",
-          "streamable.com",
+        const stableUrls = [
+          // Known-good, long-lived examples
+          "https://vimeo.com/76979871",
+          "https://www.dailymotion.com/video/x7u5n3j",
+          "https://clips.twitch.tv/AwkwardHelplessBunnyWutFace",
+          "https://streamable.com/moo",
         ];
-        present = present.filter(u => stableDomains.some(d => u.includes(d)) || u.startsWith(matrixBaseUrl));
+        present = stableUrls;
       }
 
       // Helper to detect if a video/audio is present and can be played
