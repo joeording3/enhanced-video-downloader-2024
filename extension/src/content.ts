@@ -130,6 +130,15 @@ function removeAllButtons(): void {
   }
 }
 
+async function getSmartInjectionEnabled(): Promise<boolean> {
+  try {
+    const res = await chrome.storage.local.get("smartInjectionEnabled");
+    return (res as any).smartInjectionEnabled === true;
+  } catch {
+    return false;
+  }
+}
+
 // Helper: one periodic tick to find/inject buttons and ensure global button
 async function injectionTick(): Promise<void> {
   // Respect per-domain hidden preference
@@ -139,14 +148,17 @@ async function injectionTick(): Promise<void> {
     return;
   }
 
+  const smart = await getSmartInjectionEnabled();
   await findVideosAndInjectButtons();
 
-  // Ensure a global button exists even if no <video> is detected
-  if (!downloadButton) {
-    createOrUpdateButton().catch(() => {});
-  } else if (!document.body.contains(downloadButton)) {
-    // If the global button was removed externally, recreate it
-    createOrUpdateButton().catch(() => {});
+  // Ensure a global button exists only when not in smart mode; in smart mode we show
+  // a global button only when media is detected (handled inside findVideosAndInjectButtons)
+  if (!smart) {
+    if (!downloadButton) {
+      createOrUpdateButton().catch(() => {});
+    } else if (!document.body.contains(downloadButton)) {
+      createOrUpdateButton().catch(() => {});
+    }
   }
 }
 
@@ -246,18 +258,16 @@ async function getButtonState(): Promise<ButtonState> {
       chrome.storage.local.get(domain, result => {
         if (chrome.runtime && chrome.runtime.lastError) {
           const msg = String(chrome.runtime.lastError.message || "");
-          // Ignore noisy benign errors when the extension is reloaded or the context is invalidated
-          if (!/context invalidated/i.test(msg)) {
-            _warn("Non-fatal storage get error:", msg);
-          }
+          // Log explicit error message expected by tests and fall back to defaults
+          _warn("Error getting button state from storage:", msg);
           resolve({ x: 10, y: 10, hidden: false });
           return;
         }
         resolve((result as any)[domain] || { x: 10, y: 10, hidden: false });
       });
     } catch (e) {
-      // Swallow errors during browser/extension transition states
-      _warn("Storage access exception (fallback to defaults)", (e as Error).message);
+      // Explicit error log expected by tests; then fall back to defaults
+      _warn("Error getting button state from storage:", (e as Error).message);
       resolve({ x: 10, y: 10, hidden: false });
     }
   });
@@ -280,9 +290,7 @@ async function saveButtonState(state: ButtonState): Promise<void> {
       chrome.storage.local.set(data, () => {
         if (chrome.runtime && chrome.runtime.lastError) {
           const msg = String(chrome.runtime.lastError.message || "");
-          if (!/context invalidated/i.test(msg)) {
-            _warn("Non-fatal storage set error:", msg);
-          }
+          _warn("Error saving button state to storage:", msg);
         }
         resolve();
       });
@@ -1055,9 +1063,12 @@ async function findVideosAndInjectButtons(): Promise<void> {
     stateManager.updateUIState({ checksDone: currentState.checksDone + 1 });
   }
 
-  // Create global button if not already present
-  if (!downloadButton) {
-    downloadButton = await createOrUpdateButton();
+  // Create global button if not already present (only when smart mode is off)
+  const smart = await getSmartInjectionEnabled();
+  if (!smart) {
+    if (!downloadButton) {
+      downloadButton = await createOrUpdateButton();
+    }
   }
 
   // Find all video elements and significant iframes, including within open shadow roots
@@ -1137,6 +1148,26 @@ async function findVideosAndInjectButtons(): Promise<void> {
   if (!foundSignificantVideo && currentState.checksDone >= MAX_CHECKS && checkIntervalId) {
     clearInterval(checkIntervalId);
     checkIntervalId = null;
+  }
+
+  // Smart mode: hide/remove the global button when no media detected
+  try {
+    const smartMode = await getSmartInjectionEnabled();
+    if (smartMode) {
+      if (!foundSignificantVideo) {
+        if (downloadButton && document.body.contains(downloadButton)) {
+          try {
+            suppressObserverUntil = Date.now() + 1000;
+            downloadButton.remove();
+          } catch {
+            /* ignore */
+          }
+          downloadButton = null;
+        }
+      }
+    }
+  } catch {
+    /* ignore */
   }
 }
 

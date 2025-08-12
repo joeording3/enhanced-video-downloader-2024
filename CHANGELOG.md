@@ -7,6 +7,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Smart Injection option for the inline Download button
+  - New toggle in Options → Behavior → General Options
+  - When enabled, the content script only shows the button when a downloadable video is detected; otherwise it stays hidden
+  - Popup SHOW/HIDE per-domain toggle still applies on top of smart mode
+
 ### Fixed
 
 - Popup: Prevent "The provided double value is non-finite" error by sanitizing and clamping active

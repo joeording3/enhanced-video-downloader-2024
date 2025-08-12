@@ -6,7 +6,7 @@ queue used when `max_concurrent_downloads` capacity is reached.
 
 from __future__ import annotations
 
-from typing import Any, TypedDict
+from typing import Any, TypedDict, cast
 
 from flask import Blueprint, jsonify, request
 
@@ -22,6 +22,10 @@ class _QueueItem(TypedDict, total=False):
     page_title: str
     status: str
 
+class _ReorderPayload(TypedDict, total=False):
+    order: list[str]
+    ids: list[str]
+
 
 @queue_bp.route("/queue", methods=["GET"])
 def get_queue() -> Any:
@@ -33,11 +37,13 @@ def get_queue() -> Any:
     }
     """
     try:
-        items: list[dict[str, Any]] = queue_manager.list()
+        items = cast(list[_QueueItem], queue_manager.list())
         # Ensure each item has a downloadId string for clients
         for it in items:
             if "downloadId" not in it and "download_id" in it:
-                it["downloadId"] = it.get("download_id")
+                did = it.get("download_id")
+                if isinstance(did, str):
+                    it["downloadId"] = did
         return jsonify({"queue": items})
     except Exception as e:
         return jsonify({"status": "error", "message": f"Failed to fetch queue: {e}"}), 500
@@ -52,7 +58,8 @@ def reorder_queue() -> Any:
     if request.method == "OPTIONS":
         return "", 204
 
-    data: dict[str, Any] = request.get_json(silent=True) or {}
+    raw = request.get_json(silent=True) or {}
+    data = cast(_ReorderPayload, raw if isinstance(raw, dict) else {})
     order = data.get("order") or data.get("ids")
     if not isinstance(order, list) or not all(isinstance(x, str) for x in order):
         return (

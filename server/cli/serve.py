@@ -17,6 +17,7 @@ from server.cli_helpers import (
     start_server_process,
 )
 from server.config import Config
+from server.lock import get_lock_file_path
 
 logger = logging.getLogger(__name__)
 
@@ -118,7 +119,7 @@ def start_command(
     # Check for port conflicts
     host_str = host or "127.0.0.1"
     port_in_use = is_port_in_use(port, host_str)
-    pid_port = get_lock_pid_port_cli(Path("/tmp/videodownloader.lock"))
+    pid_port = get_lock_pid_port_cli(get_lock_file_path())
 
     # If port is in use by another application (not our server)
     if port_in_use and not pid_port:
@@ -205,6 +206,18 @@ def restart_command(force: bool) -> None:
 # NOTE: The legacy `serve` command group has been removed.
 # The `start`, `stop`, and `restart` commands are now registered at the top level
 # by `server/cli_main.py`. This module only defines the command callbacks.
+
+# Compatibility: provide a serve group for tests that import it
+@click.group(name="serve", invoke_without_command=True)
+def serve_group() -> None:
+    """Server lifecycle commands (start/stop/restart)."""
+    # Print help when invoked without subcommand, matching test expectations
+    ctx = click.get_current_context(silent=True)
+    if ctx and ctx.invoked_subcommand is None:
+        click.echo(ctx.get_help())
+serve_group.add_command(start_command)
+serve_group.add_command(stop_command)
+serve_group.add_command(restart_command)
 
 
 # Expose create_app for tests patching

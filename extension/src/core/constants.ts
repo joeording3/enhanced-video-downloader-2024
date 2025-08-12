@@ -22,6 +22,8 @@ export const STORAGE_KEYS = {
   THEME: "theme",
   BUTTON_STATE: "buttonState",
   HISTORY_ENABLED: "isHistoryEnabled",
+  // Extension-only behavior toggles
+  SMART_INJECTION: "smartInjectionEnabled",
 } as const;
 
 // ============================================================================

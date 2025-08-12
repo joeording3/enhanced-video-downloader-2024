@@ -34,7 +34,8 @@ class TestYtdlpHelperFunctions:
         assert opts["concurrent_fragments"] == 4
         assert opts["noplaylist"] is True
         assert opts["yesplaylist"] is False
-        assert opts["cookies_from_browser"] == "chrome"
+        # New option key used by yt-dlp
+        assert opts["cookiesfrombrowser"] == "chrome"
 
     def test_default_ydl_opts_playlist(self):
         """Test _default_ydl_opts with playlist enabled."""
@@ -227,7 +228,7 @@ class TestYtdlpBuildOpts:
             assert "ignoreerrors" in result
             assert "concurrent_fragments" in result
             assert "noplaylist" in result
-            assert "cookies_from_browser" in result
+            assert "cookiesfrombrowser" in result
             assert "logger" in result
 
     def test_build_opts_with_playlist(self):
@@ -276,7 +277,7 @@ class TestYtdlpIntegration:
             # When download_playlist=False, should have noplaylist, not yesplaylist
             assert "noplaylist" in opts
             assert "yesplaylist" not in opts
-            assert "cookies_from_browser" in opts
+            assert "cookiesfrombrowser" in opts
             assert "logger" in opts
 
     def test_error_mapping_integration(self):

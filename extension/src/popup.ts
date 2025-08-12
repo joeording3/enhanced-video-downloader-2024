@@ -506,10 +506,137 @@ export async function renderDownloadStatus(data: {
   if (!container) return;
   container.innerHTML = "";
 
-  // Fetch all history (no pagination; scroll instead)
-  const { history } = await fetchHistory(1, 10000);
+  // Helper to render a list of unified entries into the container
+  const renderUnified = (unified: Unified[]): void => {
+    // Sort unified list: newest first by timestamp; ensure active/queued bubble to top via recent timestamps
+    unified.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-  // Build unified entries: active + queued + history
+    // Render unified list into the existing container (#download-status)
+    const ul = container as HTMLUListElement;
+    ul.classList.add("unified-list");
+    (ul.style as any).listStyleType = "none";
+    unified.forEach(item => {
+      const li = document.createElement("li");
+      li.className = "unified-item status-" + String(item.status).toLowerCase();
+      li.dataset.downloadId = item.id;
+
+      // Status icon replacing bullet
+      const normalized = String(item.status || "").toLowerCase();
+      const icon = document.createElement("span");
+      icon.className = "status-icon";
+      // Choose icon per status
+      if (normalized === "queued" || normalized === "pending" || normalized === "waiting") {
+        icon.textContent = "[queued]";
+      } else if (normalized === "downloading" || normalized === "paused") {
+        icon.textContent = "[active]";
+      } else if (["success", "complete", "completed", "done"].includes(normalized)) {
+        icon.textContent = "[done]";
+      } else if (["error", "failed", "fail", "canceled", "cancelled"].includes(normalized)) {
+        icon.textContent = "[error]";
+      } else {
+        icon.textContent = "\u23F1"; // default to queued icon
+      }
+      icon.setAttribute("aria-hidden", "true");
+      li.appendChild(icon);
+
+      const title = document.createElement("div");
+      title.className = "item-title";
+      title.textContent = item.label;
+      li.appendChild(title);
+
+      if (item.status === "downloading" || item.status === "paused") {
+        const progress = document.createElement("progress");
+        const raw = Number(item.progress);
+        const finite = Number.isFinite(raw) ? raw : 0;
+        const clamped = Math.min(100, Math.max(0, finite));
+        progress.max = 100;
+        progress.value = clamped;
+        li.appendChild(progress);
+        const percentLabel = document.createElement("span");
+        percentLabel.className = "item-percent";
+        percentLabel.textContent = String(Math.round(clamped)) + "%";
+        li.appendChild(percentLabel);
+      }
+
+      const statusPill = document.createElement("span");
+      statusPill.className = "status-pill";
+      statusPill.textContent = item.status;
+      const normalized2 = String(item.status || "").toLowerCase();
+      if (["success", "complete", "completed", "done"].includes(normalized2)) {
+        statusPill.classList.add("is-success");
+      } else if (["error", "failed", "fail", "canceled", "cancelled"].includes(normalized2)) {
+        statusPill.classList.add("is-error");
+      } else if (["queued", "pending", "waiting", "paused"].includes(normalized2)) {
+        statusPill.classList.add("is-warning");
+      }
+      li.appendChild(statusPill);
+
+      // Add a cancel button per entry; enable only for queued/active/paused
+      const cancelBtn = document.createElement("button");
+      cancelBtn.className = "btn btn--secondary btn--small cancel-button";
+      cancelBtn.textContent = "Cancel";
+      cancelBtn.title = "Cancel";
+      cancelBtn.setAttribute("aria-label", "Cancel");
+      if (normalized === "queued") {
+        cancelBtn.disabled = false;
+        cancelBtn.addEventListener("click", e => {
+          e.stopPropagation();
+          chrome.runtime.sendMessage({ type: "removeFromQueue", downloadId: item.id }, () => {});
+        });
+      } else if (normalized === "downloading" || normalized === "paused") {
+        cancelBtn.disabled = false;
+        cancelBtn.addEventListener("click", e => {
+          e.stopPropagation();
+          chrome.runtime.sendMessage({ type: "cancelDownload", downloadId: item.id }, () => {});
+        });
+      } else {
+        cancelBtn.disabled = true;
+        cancelBtn.title = "Cannot cancel (not active or queued)";
+      }
+      li.appendChild(cancelBtn);
+
+      // Add a resume button for paused entries
+      if (normalized === "paused") {
+        const resumeBtn = document.createElement("button");
+        resumeBtn.className = "resume-button";
+        resumeBtn.textContent = "Resume";
+        resumeBtn.title = "Resume";
+        resumeBtn.setAttribute("aria-label", "Resume");
+        resumeBtn.addEventListener("click", e => {
+          e.stopPropagation();
+          chrome.runtime.sendMessage({ type: "resumeDownload", downloadId: item.id }, () => {});
+        });
+        li.appendChild(resumeBtn);
+      }
+
+      // Add a retry button (⟳) for failed/canceled entries
+      if (["error", "failed", "fail", "canceled", "cancelled"].includes(normalized)) {
+        const retryBtn = document.createElement("button");
+        retryBtn.className = "btn btn--secondary btn--small retry-button";
+        retryBtn.textContent = "\u27F3"; // ⟳
+        retryBtn.title = "Retry";
+        retryBtn.setAttribute("aria-label", "Retry");
+        retryBtn.disabled = !item.url;
+        retryBtn.addEventListener("click", e => {
+          e.stopPropagation();
+          if (!item.url) return;
+          chrome.runtime.sendMessage(
+            {
+              type: "downloadVideo",
+              url: item.url,
+              pageTitle: item.pageTitle || item.label,
+            },
+            () => {}
+          );
+        });
+        li.appendChild(retryBtn);
+      }
+
+      ul.appendChild(li);
+    });
+  };
+
+  // Build unified entries: active + queued (render immediately for responsiveness)
   type Unified = {
     id: string;
     status: string;
@@ -557,120 +684,30 @@ export async function renderDownloadStatus(data: {
     });
   });
 
-  // Sort unified list: newest first by timestamp; ensure active/queued bubble to top via recent timestamps
-  unified.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+  // Render immediate items (active + queued)
+  renderUnified(unified);
 
-  // Render unified list into the existing container (#download-status)
-  const ul = container as HTMLUListElement;
-  ul.classList.add("unified-list");
-  (ul.style as any).listStyleType = "none";
-  unified.forEach(item => {
-    const li = document.createElement("li");
-    li.className = "unified-item status-" + String(item.status).toLowerCase();
-    li.dataset.downloadId = item.id;
-
-    // Status icon replacing bullet
-    const normalized = String(item.status || "").toLowerCase();
-    const icon = document.createElement("span");
-    icon.className = "status-icon";
-    // Choose icon per status
-    if (normalized === "queued" || normalized === "pending" || normalized === "waiting") {
-      icon.textContent = "[queued]";
-    } else if (normalized === "downloading" || normalized === "paused") {
-      icon.textContent = "[active]";
-    } else if (["success", "complete", "completed", "done"].includes(normalized)) {
-      icon.textContent = "[done]";
-    } else if (["error", "failed", "fail", "canceled", "cancelled"].includes(normalized)) {
-      icon.textContent = "[error]";
-    } else {
-      icon.textContent = "\u23F1"; // default to queued icon
-    }
-    icon.setAttribute("aria-hidden", "true");
-    li.appendChild(icon);
-
-    const title = document.createElement("div");
-    title.className = "item-title";
-    title.textContent = item.label;
-    li.appendChild(title);
-
-    if (item.status === "downloading" || item.status === "paused") {
-      const progress = document.createElement("progress");
-      const raw = Number(item.progress);
-      const finite = Number.isFinite(raw) ? raw : 0;
-      const clamped = Math.min(100, Math.max(0, finite));
-      progress.max = 100;
-      progress.value = clamped;
-      li.appendChild(progress);
-      const percentLabel = document.createElement("span");
-      percentLabel.className = "item-percent";
-      percentLabel.textContent = String(Math.round(clamped)) + "%";
-      li.appendChild(percentLabel);
-    }
-
-    const statusPill = document.createElement("span");
-    statusPill.className = "status-pill";
-    statusPill.textContent = item.status;
-    if (["success", "complete", "completed", "done"].includes(normalized)) {
-      statusPill.classList.add("is-success");
-    } else if (["error", "failed", "fail", "canceled", "cancelled"].includes(normalized)) {
-      statusPill.classList.add("is-error");
-    } else if (["queued", "pending", "waiting", "paused"].includes(normalized)) {
-      statusPill.classList.add("is-warning");
-    }
-    li.appendChild(statusPill);
-
-    // Add a cancel button per entry; enable only for queued/active/paused
-    const cancelBtn = document.createElement("button");
-    cancelBtn.className = "btn btn--secondary btn--small cancel-button";
-    cancelBtn.textContent = "Cancel";
-    cancelBtn.title = "Cancel";
-    cancelBtn.setAttribute("aria-label", "Cancel");
-    if (normalized === "queued") {
-      cancelBtn.disabled = false;
-      cancelBtn.addEventListener("click", e => {
-        e.stopPropagation();
-        chrome.runtime.sendMessage({ type: "removeFromQueue", downloadId: item.id }, () => {});
+  // Fetch all history (no pagination; scroll instead) and append when available
+  try {
+    const result: any = await fetchHistory(1, 10000);
+    const histList: any[] = Array.isArray(result?.history) ? result.history : [];
+    const historyUnified: Unified[] = [];
+    for (const h of histList) {
+      const id = String((h as any).id || (h as any).download_id || Math.random());
+      const label = (h.page_title || (h as any).title || h.filename || h.url || id) as string;
+      historyUnified.push({
+        id,
+        status: String(h.status || "completed"),
+        label,
+        timestamp: Number(h.timestamp) || Date.now(),
+        url: h.url as string | undefined,
+        pageTitle: (h.page_title || (h as any).title) as string | undefined,
       });
-    } else if (normalized === "downloading" || normalized === "paused") {
-      cancelBtn.disabled = false;
-      cancelBtn.addEventListener("click", e => {
-        e.stopPropagation();
-        chrome.runtime.sendMessage({ type: "cancelDownload", downloadId: item.id }, () => {});
-      });
-    } else {
-      cancelBtn.disabled = true;
-      cancelBtn.title = "Cannot cancel (not active or queued)";
     }
-    li.appendChild(cancelBtn);
-
-    // Add a retry button (⟳) for failed/canceled entries
-    if (["error", "failed", "fail", "canceled", "cancelled"].includes(normalized)) {
-      const retryBtn = document.createElement("button");
-      retryBtn.className = "btn btn--secondary btn--small retry-button";
-      retryBtn.textContent = "\u27F3"; // ⟳
-      retryBtn.title = "Retry";
-      retryBtn.setAttribute("aria-label", "Retry");
-      retryBtn.disabled = !item.url;
-      retryBtn.addEventListener("click", e => {
-        e.stopPropagation();
-        if (!item.url) return;
-        chrome.runtime.sendMessage(
-          {
-            type: "downloadVideo",
-            url: item.url,
-            pageTitle: item.pageTitle || item.label,
-          },
-          () => {}
-        );
-      });
-      li.appendChild(retryBtn);
-    }
-
-    ul.appendChild(li);
-  });
-  // ul is the container itself; nothing to append
-
-  // No pagination controls; container scrolls
+    renderUnified(historyUnified);
+  } catch {
+    // ignore history rendering errors
+  }
 }
 
 /**

@@ -9,6 +9,7 @@ import json
 import logging
 import os
 from pathlib import Path
+from typing import TypedDict
 
 from flask import Blueprint, Response
 
@@ -75,7 +76,17 @@ def clear_logs() -> Response:
             # Create a fresh log file with a structured initialization entry
             with log_path.open("w", encoding="utf-8") as f:
                 now = datetime.datetime.now(datetime.timezone.utc)
-                init_event = {
+                class _InitEvent(TypedDict):
+                    event: str
+                    archived_to: str
+                    ts: str
+                    start_ts: int
+                    duration_ms: int
+                    message: str
+                    logger: str
+                    level: str
+
+                init_event: _InitEvent = {
                     "event": "log_file_archived",
                     "archived_to": archive_basename,
                     "ts": now.isoformat(),

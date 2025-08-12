@@ -82,9 +82,13 @@ def cleanup_lock_file(fh: TextIO) -> None:
         fh.close()
         path.unlink(missing_ok=True)
     except Exception:
-        # Best-effort cleanup; nothing critical to do on failure, but avoid silence
-        # Avoid importing logging here to keep module lightweight
-        ...
+        # Best-effort cleanup; nothing critical to do on failure
+        try:
+            import logging
+            logging.getLogger(__name__).debug("Lock cleanup failed", exc_info=True)
+        except Exception:
+            # As a last resort, remain silent
+            ...
 
 
 def get_lock_pid(lock_path: Path) -> int | None:

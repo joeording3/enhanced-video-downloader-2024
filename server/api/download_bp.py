@@ -49,7 +49,7 @@ def _add_cors_headers(response: Response) -> Response:
         response.headers.add("Access-Control-Allow-Private-Network", "true")
         response.headers.add("Vary", "Access-Control-Request-Private-Network")
     except Exception:
-        pass
+        logger.debug("Failed to add CORS headers", exc_info=True)
     return response
 
 
@@ -394,7 +394,7 @@ def _process_download_request(raw_data: dict[str, Any]) -> tuple[Any, str | None
             }
     except Exception:
         # Best effort; do not block request processing
-        pass
+        logger.debug("Failed to pre-populate queued status entry", exc_info=True)
 
     # Proceed with the download
     return handle_ytdlp_download(validated_data), None
@@ -452,7 +452,7 @@ def download() -> Any:
                     },
                 )
             except Exception:
-                pass
+                logger.debug("Failed to log safe download request fields", exc_info=True)
 
             # If server is at capacity, enqueue and return queued status immediately
             try:

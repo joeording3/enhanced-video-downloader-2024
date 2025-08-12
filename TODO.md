@@ -2,17 +2,11 @@
 
 Urgent Tasks:
 
-- [/] log viewer on options page not working - no logs displayed
-- [/] Options logs: 'Filter Werkzeug' now filters all 200-status messages (status/status_code fields, status=200, HTTP/* 200, and "200 OK" patterns) to hide noise
 - [/] Client must not send URL-based dedupe token as `download_id`; omit field and let server
   generate ID
 - [/] Add unused-code checks to CI and local workflows
 
 - [ ] Wire into `make all`/`check` gates and CI once noise baseline is reviewed
-
-<!-- working-on: options logs viewer wired to background API -->
-
-<!-- working-on: post-test cleanup wiring -->
 - [ ] Tighten ignore/exclude usage across tooling
   <!-- working-on: ignore-audit follow-ups -->
   - [ ] Prune inline suppressions: add rationale or remove (tracked by `tmp/ignores_inline.csv`)
@@ -156,6 +150,15 @@ Legacy/Stub Cleanup:
   - [/] Align backgrounds to `--container-bg` and headers to `--header-bg`
   - [/] Normalize history/logs styles; use variables for dark-mode notification colors
   - [/] Make injected download button larger and reactive on click (bounce + success/error states)
+
+### New Feature: Smart Injection
+
+- [/] Add Smart Injection toggle in Options → Behavior → General Options (`settings-smart-injection`)
+- [/] Persist preference in local storage key `smartInjectionEnabled`
+- [/] Content script respects smart mode:
+  - [/] When ON: inject only when media is detected; hide/remove global button if none
+  - [/] When OFF: preserve current behavior (always create global button, plus per-video injection)
+- [/] Preserve popup SHOW/HIDE per-domain toggle behavior
 
 ### Hardcoded Variables Cleanup
 

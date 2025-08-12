@@ -82,7 +82,8 @@ def _default_ydl_opts(output_path: str, download_playlist: bool) -> dict[str, An
         "logger": logging.getLogger("yt_dlp_native"),
         "noplaylist": not download_playlist,
         "yesplaylist": download_playlist,
-        "cookies_from_browser": "chrome",
+        # Prefer session cookies directly from the user's browser (yt-dlp's official option)
+        "cookiesfrombrowser": "chrome",
     }
 
 
@@ -165,14 +166,14 @@ def _assign_progress_hook(ydl_opts: dict[str, Any], download_id: str) -> None:
 
 
 def _handle_cookies(ydl_opts: dict[str, Any], download_id: str | None) -> None:
-    # If cookies_from_browser is set, let yt-dlp handle cookie extraction natively
-    if ydl_opts.get("cookies_from_browser"):
+    # When cookiesfrombrowser is set, let yt-dlp handle cookie extraction natively
+    if ydl_opts.get("cookiesfrombrowser"):
         return
     # Otherwise, only attempt to provide a cookiefile if we can safely serialize
     try:
         cj = browser_cookie3.chrome(domain_name="youtube.com")
         try:
-            save_method = cast(Any, cj.save)
+            save_method = cast(Any, getattr(cj, "save", None))
         except Exception:
             save_method = None
         if callable(save_method):
@@ -609,6 +610,18 @@ def _progress_finished(d: dict[str, Any], download_id: str | None) -> None:
     if filename:
         # Log completion with explicit 'reported as FINISHED' for consistency
         logger.info(f"Download {str_id} reported as FINISHED: '{filename}'")
+        # Additional guard: detect zero-byte or tiny files and record a hint
+        try:
+            p = Path(filename)
+            if p.exists():
+                size = p.stat().st_size
+                if size == 0:
+                    logger.warning(
+                        f"[{str_id}] Finished file is zero bytes; downstream may classify this as an error."
+                    )
+        except Exception:
+            # best effort
+            pass
     else:
         logger.warning(f"Download {str_id} finished with no filename provided")
 
@@ -1169,6 +1182,30 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
                     logger.debug(f"[{download_id}] Unregistering download process")
                     unregister_download_process(current_process)
 
+        # Detect zero-byte output and perform automatic fallback retry if needed
+        try:
+            media_candidates_all = [
+                p for p in download_path.glob(f"{prefix}.*") if not (p.name.endswith(".part") or p.name.endswith(".info.json"))
+            ]
+            final_file = media_candidates_all[0] if media_candidates_all else None
+            if final_file and final_file.exists() and final_file.stat().st_size == 0:
+                logger.warning(f"[{download_id}] Detected zero-byte file '{final_file.name}'. Retrying with fallback format mp4 (itag 18) as single stream.")
+                # Remove the empty stub before retry
+                with suppress(Exception):
+                    final_file.unlink()
+                # Build fallback options: prefer format 18/mp4; allow unmerged single stream
+                fallback_outtmpl = str(download_path / f"{prefix}.%(ext)s")
+                fallback_opts = build_opts(fallback_outtmpl, download_id, download_playlist_val)
+                # Force single-stream mp4 and avoid merge
+                fallback_opts["format"] = "18/mp4/best[ext=mp4]/best"
+                fallback_opts.pop("merge_output_format", None)
+                # Re-run yt-dlp with fallback
+                with yt_dlp.YoutubeDL(fallback_opts) as ydl_fb:  # type: ignore[import-untyped]
+                    ydl_fb.download([url])
+                logger.info(f"[{download_id}] Fallback retry completed.")
+        except Exception as fb_err:
+            logger.warning(f"[{download_id}] Fallback retry encountered an error: {fb_err}")
+
         # Fallback: if the progress hook did not append history, attempt to append now
         try:
             if str(download_id) not in history_appended_ids:
@@ -1191,6 +1228,12 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
                         if not (p.name.endswith(".part") or p.name.endswith(".info.json"))
                     ]
                     chosen = media_candidates[0] if media_candidates else None
+                    # Clarify when the file is empty and ensure cleanup
+                    if chosen and chosen.exists() and chosen.stat().st_size == 0:
+                        logger.warning(f"[{download_id}] Appending history for zero-byte file and cleaning up stub: {chosen}")
+                        with suppress(Exception):
+                            chosen.unlink()
+                        chosen = None
                     append_history_entry(
                         {
                             "download_id": download_id,

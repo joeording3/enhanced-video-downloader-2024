@@ -412,6 +412,9 @@ CLI logging/output hygiene
   live when new history entries are added.
 - **Server Status**: Real-time server connectivity status
 - **Settings Persistence**: All settings are automatically saved and restored
+- **Smart Injection**: Toggle whether the in-page Download button is shown only when a downloadable
+  video is detected. When enabled, the button stays hidden on pages without media; per-domain
+  SHOW/HIDE from the popup still applies.
 
 ### Content Script Features
 
@@ -421,6 +424,8 @@ CLI logging/output hygiene
   loop and removes any injected buttons until you show it again.
 - **Visual Feedback**: Button changes appearance during download process
 - **Error Handling**: Clear error messages with troubleshooting suggestions
+- **Smart Injection (optional)**: When enabled in Options, the global button isn’t injected unless a
+  downloadable video is detected; individual per-video buttons are injected near detected media.
 
 ### Background Features
 

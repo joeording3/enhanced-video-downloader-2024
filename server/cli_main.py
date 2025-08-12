@@ -1356,7 +1356,7 @@ def _run_restart_server_enhanced(
             _wait_for_port_release(h, p, timeout=3)
     except Exception:
         # Non-fatal; proceed to start sequence regardless
-        pass
+        log.debug("Error during pre-restart port/process cleanup", exc_info=True)
 
     # Start the server with enhanced options
     click.echo("  Starting server with new configuration...")
@@ -1472,7 +1472,7 @@ def _wait_for_port_release(host: str, port: int, timeout: int = 5) -> bool:
                 return True
         except Exception:
             # If the check fails, be conservative and wait
-            pass
+            log.debug("Port check failed during wait_for_port_release", exc_info=True)
         time.sleep(0.5)
     return not is_port_in_use(port, host)
 

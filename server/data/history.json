@@ -1,5 +1,31 @@
 [
   {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
+    "timestamp": "2025-08-12T19:01:17.539537+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-12T19:01:17.537155+00:00"
+  },
+  {
+    "download_id": "1755024644694",
+    "url": "https://www.youtube.com/shorts/484bPKsLa1o",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: ERROR: The downloaded file is empty. Contact support if this persists.",
+    "original_error": "ERROR: The downloaded file is empty",
+    "timestamp": "2025-08-12T18:50:55.347415+00:00"
+  },
+  {
     "download_id": "1754974283252",
     "url": "https://www.youtube.com/shorts/stna6kRi3aM",
     "status": "complete",

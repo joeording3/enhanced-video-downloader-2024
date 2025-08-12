@@ -18,9 +18,30 @@ import sys
 import tempfile
 import threading
 import time
-from collections.abc import Callable  # Added Any, Callable, Tuple
+from collections.abc import (
+    Callable,  # Added Any, Callable, Tuple
+    Mapping,
+)
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict, cast
+
+
+class _HistoryItem(TypedDict, total=False):
+    download_id: str
+    url: str
+    filename: str
+    file_size: int
+
+_ResumeOptions = TypedDict(
+    "_ResumeOptions",
+    {
+        "directory": str,
+        "continue": bool,
+        "nice": str | int,
+    },
+    total=False,
+)
+
 
 import click
 import gunicorn.app.base  # type: ignore[import-untyped]
@@ -349,16 +370,22 @@ def resume_failed_downloads(
     _report_failed_summary(resumed, failed, non_resumable, logger)
 
 
-def _reorder_by_priority(download_ids: list[str], history_items: list[dict[str, Any]]) -> list[str]:
+from collections.abc import Sequence
+
+
+def _reorder_by_priority(download_ids: list[str], history_items: Sequence[dict[str, Any] | _HistoryItem]) -> list[str]:
     """Reorder downloads by priority (highest priority first)."""
     # Create a mapping of download_id to priority
-    priority_map = {}
+    priority_map: dict[str, int] = {}
     for item in history_items:
-        download_id = item.get("download_id")
+        download_id_val = item.get("download_id")
+        download_id = str(download_id_val) if isinstance(download_id_val, str) else None
         if download_id in download_ids:
             # Use file size as priority indicator (larger files = higher priority)
-            file_size = item.get("file_size", 0)
-            priority_map[download_id] = file_size
+            fs_val = item.get("file_size", 0)
+            file_size = int(fs_val) if isinstance(fs_val, int) else 0
+            if download_id is not None:
+                priority_map[download_id] = file_size
 
     # Sort by priority (descending)
     return sorted(download_ids, key=lambda x: priority_map.get(x, 0), reverse=True)
@@ -703,7 +730,7 @@ def _build_resume_options(downloader_type: str, url: str, download_dir: Path, pr
         return opts
     if downloader_type == "gallery-dl":
         # Basic gallery-dl options
-        opts = {
+        opts: _ResumeOptions = {
             "directory": str(download_dir),
             "continue": True,
         }
@@ -736,9 +763,9 @@ def _resume_with_downloader(
                 if isinstance(v, bool):
                     if v:
                         cmd.append(key)
-                elif isinstance(v, str | int | float):
+                elif isinstance(v, (str, int, float)):
                     cmd.extend([key, str(v)])
-                elif isinstance(v, list | tuple):
+                elif isinstance(v, (list, tuple)):
                     for item in v:
                         cmd.extend([key, str(item)])
                 # ignore None/unknown types silently
@@ -754,7 +781,7 @@ def _resume_with_downloader(
                 _append_option("continue", bool(opts["continue"]))
 
             # Append remaining options (excluding ones we already handled)
-            for k, v in opts.items():
+            for k, v in cast(Mapping[str, Any], opts).items():
                 if k in {"directory", "continue"}:
                     continue
                 _append_option(str(k), v)

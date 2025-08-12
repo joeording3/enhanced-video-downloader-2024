@@ -663,6 +663,29 @@ function setupLiveSave(): void {
       void sendPartialUpdate({ debug_mode: !!enableDebug.checked });
     });
   }
+
+  // Smart Injection toggle (extension-only behavior; stored locally)
+  const smartInjection = document.getElementById(
+    "settings-smart-injection"
+  ) as HTMLInputElement | null;
+  if (smartInjection) {
+    // Initialize from storage
+    try {
+      chrome.storage.local.get("smartInjectionEnabled", res => {
+        const enabled = (res as any).smartInjectionEnabled;
+        smartInjection.checked = enabled === true; // default false
+      });
+    } catch {
+      /* ignore */
+    }
+    smartInjection.addEventListener("change", () => {
+      try {
+        chrome.storage.local.set({ smartInjectionEnabled: !!smartInjection.checked });
+      } catch {
+        /* ignore */
+      }
+    });
+  }
 }
 
 /**
