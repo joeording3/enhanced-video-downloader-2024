@@ -8,7 +8,6 @@ Urgent Tasks:
   generate ID
 - [/] Add unused-code checks to CI and local workflows
 
-
 - [ ] Wire into `make all`/`check` gates and CI once noise baseline is reviewed
 
 <!-- working-on: options logs viewer wired to background API -->

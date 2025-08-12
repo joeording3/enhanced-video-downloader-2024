@@ -506,21 +506,8 @@ export async function renderDownloadStatus(data: {
   if (!container) return;
   container.innerHTML = "";
 
-  // Determine how many history items to include and current page
-  const itemsPerPageSelect = document.getElementById("items-per-page") as HTMLSelectElement | null;
-  const pageInfoEl = document.getElementById("page-info") as HTMLElement | null;
-  const prevPageBtn = document.getElementById("prev-page") as HTMLButtonElement | null;
-  const nextPageBtn = document.getElementById("next-page") as HTMLButtonElement | null;
-  const perPage = (() => {
-    const v = itemsPerPageSelect?.value;
-    const n = v ? parseInt(v, 10) : 50;
-    return Number.isFinite(n) && n > 0 ? n : 50;
-  })();
-  // Track page in dataset to reuse with prev/next
-  const currentPage = Number(container.dataset.page || "1");
-
-  // Fetch history page
-  const { history, totalItems } = await fetchHistory(currentPage, perPage);
+  // Fetch all history (no pagination; scroll instead)
+  const { history } = await fetchHistory(1, 10000);
 
   // Build unified entries: active + queued + history
   type Unified = {
@@ -573,11 +560,9 @@ export async function renderDownloadStatus(data: {
   // Sort unified list: newest first by timestamp; ensure active/queued bubble to top via recent timestamps
   unified.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-  // Render unified list
-  const ul = document.createElement("ul");
-  ul.id = "download-status"; // ensure styles apply and stays a single list container
-  ul.className = "unified-list";
-  // Remove default bullets so we can use status icons
+  // Render unified list into the existing container (#download-status)
+  const ul = container as HTMLUListElement;
+  ul.classList.add("unified-list");
   (ul.style as any).listStyleType = "none";
   unified.forEach(item => {
     const li = document.createElement("li");
@@ -683,21 +668,9 @@ export async function renderDownloadStatus(data: {
 
     ul.appendChild(li);
   });
-  container.appendChild(ul);
+  // ul is the container itself; nothing to append
 
-  // Update pagination UI for the history slice
-  if (pageInfoEl) {
-    const startItem = Math.min((currentPage - 1) * perPage + 1, totalItems || 0);
-    const endItem = Math.min(currentPage * perPage, totalItems || 0);
-    pageInfoEl.textContent = totalItems
-      ? `Showing ${startItem}-${endItem} of ${totalItems} items`
-      : "No items";
-  }
-  if (prevPageBtn) prevPageBtn.disabled = currentPage <= 1;
-  if (nextPageBtn) nextPageBtn.disabled = totalItems ? currentPage * perPage >= totalItems : true;
-
-  // Persist current page on the container for prev/next handlers
-  container.dataset.page = String(currentPage);
+  // No pagination controls; container scrolls
 }
 
 /**

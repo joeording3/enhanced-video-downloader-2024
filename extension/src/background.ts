@@ -1137,6 +1137,28 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           sendResponse({ queue: downloadQueue, active: activeDownloads, queuedDetails });
           break;
 
+        case "setContentButtonHidden": {
+          const hidden = !!message.hidden;
+          try {
+            // Broadcast to all tabs to update hidden state
+            chrome.tabs.query({ active: false, currentWindow: false } as any, tabs => {
+              for (const t of tabs) {
+                if (t.id !== undefined) {
+                  try {
+                    chrome.tabs.sendMessage(t.id, { type: "toggleButtonVisibility", hidden });
+                  } catch {
+                    /* ignore */
+                  }
+                }
+              }
+            });
+          } catch {
+            /* ignore */
+          }
+          sendResponse({ status: "success" });
+          break;
+        }
+
         case "clearHistory": {
           const result = await handleClearHistory(storageService);
           sendResponse(result);

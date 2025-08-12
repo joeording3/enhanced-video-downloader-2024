@@ -11,7 +11,7 @@ import tempfile
 from contextlib import suppress
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol, cast, runtime_checkable
 from urllib.parse import urlparse
 
 import browser_cookie3  # type: ignore[import-untyped]
@@ -86,6 +86,12 @@ def _default_ydl_opts(output_path: str, download_playlist: bool) -> dict[str, An
     }
 
 
+@runtime_checkable
+class _HasModelDump(Protocol):
+    def model_dump(self, *, mode: str = "json") -> dict[str, Any]:
+        ...
+
+
 def _apply_custom_opts(ydl_opts: dict[str, Any], custom_opts: Any, _download_id: str | None) -> None:
     """Merge custom yt-dlp options into ydl_opts, tolerating various input shapes.
 
@@ -97,9 +103,8 @@ def _apply_custom_opts(ydl_opts: dict[str, Any], custom_opts: Any, _download_id:
     """
     # Normalize to a plain dict when possible
     try:
-        model_dump_fn = getattr(custom_opts, "model_dump", None)
-        if callable(model_dump_fn):
-            custom_opts = model_dump_fn(mode="json")
+        if isinstance(custom_opts, _HasModelDump):
+            custom_opts = custom_opts.model_dump(mode="json")
     except Exception as e:
         logger.debug("Failed to model_dump yt_dlp_options; using provided value as-is: %s", e)
 
@@ -166,10 +171,13 @@ def _handle_cookies(ydl_opts: dict[str, Any], download_id: str | None) -> None:
     # Otherwise, only attempt to provide a cookiefile if we can safely serialize
     try:
         cj = browser_cookie3.chrome(domain_name="youtube.com")
-        save_fn = getattr(cj, "save", None)
-        if callable(save_fn):
+        try:
+            save_method = cast(Any, cj.save)
+        except Exception:
+            save_method = None
+        if callable(save_method):
             with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as tmp_file:
-                save_fn(tmp_file.name)
+                save_method(tmp_file.name)
                 ydl_opts["cookiefile"] = tmp_file.name
             logger.debug(f"[{download_id}] Using cookie file: {tmp_file.name}")
     except Exception as e:
@@ -210,9 +218,8 @@ def build_opts(output_path: str, download_id: str | None = None, download_playli
         # Fallback 2: attribute on config
         if not isinstance(ytdlp_config_options, dict):
             ytdlp_config_options = getattr(config, "yt_dlp_options", {})
-        model_dump = getattr(ytdlp_config_options, "model_dump", None)
-        if callable(model_dump):
-            ytdlp_config_options = model_dump(mode="json")
+        if isinstance(ytdlp_config_options, _HasModelDump):
+            ytdlp_config_options = ytdlp_config_options.model_dump(mode="json")
         if not isinstance(ytdlp_config_options, dict):
             ytdlp_config_options = {}
 

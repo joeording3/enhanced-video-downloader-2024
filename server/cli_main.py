@@ -1296,9 +1296,11 @@ def _run_restart_server_enhanced(
     if not _provided("port"):
         cfg_port = cfg_for_defaults.get_value("server_port")
         if isinstance(cfg_port, int):
-            port = int(cfg_port)
-        elif isinstance(prior_meta.get("port"), int):
-            port = int(prior_meta.get("port"))
+            port = cfg_port
+        else:
+            pm_port = prior_meta.get("port")
+            if isinstance(pm_port, int):
+                port = pm_port
     if not _provided("gunicorn") and isinstance(prior_meta.get("gunicorn"), bool):
         gunicorn = bool(prior_meta.get("gunicorn"))
     if not _provided("workers"):

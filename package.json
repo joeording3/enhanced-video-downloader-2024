@@ -45,7 +45,8 @@
     "test:playwright:headed": "playwright test --headed",
     "test:playwright:debug": "playwright test --debug",
     "lint:unused:ts": "ts-prune -p tsconfig.json --error",
-    "lint:unused:ts:report": "ts-prune -p tsconfig.json"
+    "lint:unused:ts:report": "ts-prune -p tsconfig.json",
+    "report:unused": "bash scripts/generate_unused_code_report.sh"
   },
   "repository": {
     "type": "git",

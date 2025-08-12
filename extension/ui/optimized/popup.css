@@ -74,18 +74,18 @@ body {
 /* Replace generic button styles with .btn component class */
 
 /* Main controls */
-.main-controls {
-  display: flex;
-  flex-wrap: wrap; /* allow wrapping in narrow side panel */
-  gap: var(--form-row-gap);
+.main-controls.toolbar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-sm);
   margin-bottom: var(--section-gap);
 }
 
-.main-controls button {
-  flex: 1 1 30%;
-  text-align: center;
-  padding: var(--button-padding-y) var(--button-padding-x);
+.main-controls.toolbar button {
+  min-width: 0;
+  padding: 8px 10px;
   font-size: 0.9em;
+  white-space: nowrap;
 }
 
 /* List styling (Current Downloads & History) */
@@ -98,13 +98,13 @@ h2 {
   line-height: var(--line-height-tight);
 }
 
-#download-status, /* For current downloads */
+#download-status, /* For unified list container */
 #download-history {
   list-style-type: none;
   padding: 0;
   margin: 0 0 var(--space-md) 0;
-  max-height: clamp(120px, 40vh, 420px); /* responsive heights */
-  overflow-y: auto;
+  max-height: clamp(160px, 45vh, 440px); /* increase to reduce nested scrollbars */
+  overflow-y: auto; /* only this container scrolls */
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   background-color: var(--bg-elevated);
@@ -129,50 +129,14 @@ h2 {
 @media (max-width: 380px) {
   body { padding: var(--space-sm); }
   .header h1 { font-size: 0.95em; }
-  .main-controls button { flex: 1 1 48%; }
+  .main-controls.toolbar { grid-template-columns: repeat(3, 1fr); }
 }
 
 @media (max-width: 300px) {
-  .main-controls button { flex: 1 1 100%; }
+  .main-controls.toolbar { grid-template-columns: 1fr; }
 }
 
 /* History Controls */
-.history-controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--space-sm) 0;
-  margin-bottom: var(--space-md);
-}
-
-.history-controls-middle-group {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
-}
-
-.history-controls label {
-  margin-bottom: 0;
-  margin-right: var(--space-sm);
-  font-weight: var(--font-weight-normal);
-  font-size: 0.9em;
-  color: var(--label-text);
-}
-
-.history-controls select {
-  width: auto;
-  padding: var(--space-sm);
-  font-size: 0.9em;
-  background-color: var(--select-bg);
-  color: var(--select-text);
-  border: 1px solid var(--select-border);
-  border-radius: var(--radius-md);
-}
-
-.history-controls button {
-  padding: var(--space-sm) var(--space-md);
-  font-size: 0.9em;
-}
 
 #page-info {
   font-size: 0.9em;
@@ -219,6 +183,8 @@ h2 {
 #download-history::-webkit-scrollbar-thumb {
   background-color: var(--scrollbar-thumb-color);
   border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 
 #download-status::-webkit-scrollbar-thumb:hover,

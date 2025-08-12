@@ -1,6 +1,6 @@
 # Unused Code Report
 
-Generated on: 2025-08-12 16:52:51 UTC
+Generated on: 2025-08-12 18:48:17 UTC
 
 ## TypeScript (ts-prune)
 
@@ -11,7 +11,7 @@ extension/src/popup.ts:465 - handleDragOver
 extension/src/popup.ts:472 - handleDragLeave
 extension/src/popup.ts:477 - handleDrop
 extension/src/popup.ts:494 - handleDragEnd
-extension/src/popup.ts:707 - updatePopupServerStatus (used in module)
+extension/src/popup.ts:680 - updatePopupServerStatus (used in module)
 extension/src/popup.ts:27 - DownloadStatus
 extension/src/core/constants.ts:399 - getTestServerPort (used in module)
 extension/src/core/constants.ts:404 - getTestClientPort (used in module)

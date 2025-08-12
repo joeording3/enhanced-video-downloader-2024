@@ -1,6 +1,6 @@
 # Makefile for Enhanced Video Downloader
 
-.PHONY: all all-continue check install-dev build-js test test-py test-js lint lint-py lint-js lint-md format format-py format-js format-md format-check format-check-py format-check-js format-check-md coverage coverage-py coverage-js clean test-fast test-js-fast test-integration test-js-slow test-slow generate-ignores test-audit audit-coverage audit-mutation audit-performance audit-docs mutation mutation-py mutation-js emoji-check markdown-check check-junk-folders cleanup-junk-folders monitor-junk-folders lint-unused lint-unused-ts lint-unused-py lint-unused-report clean-temp clean-temp-reports clean-reserved-names coverage-update inventory-report audit-tests-redundancy setup-uv docstrings-audit docstrings-fix docstrings-report
+.PHONY: all all-continue check install-dev build-js test test-py test-js lint lint-py lint-js lint-md format format-py format-js format-md format-check format-check-py format-check-js format-check-md coverage coverage-py coverage-js clean test-fast test-js-fast test-integration test-js-slow test-slow generate-ignores test-audit audit-coverage audit-mutation audit-performance audit-docs mutation mutation-py mutation-js emoji-check markdown-check check-junk-folders cleanup-junk-folders monitor-junk-folders lint-unused lint-unused-ts lint-unused-py clean-temp clean-temp-reports clean-reserved-names coverage-update inventory-report audit-tests-redundancy setup-uv docstrings-audit docstrings-fix docstrings-report
 
 all:
 	@echo "=== Running All Quality Checks ==="
@@ -109,29 +109,6 @@ lint-unused-py:
 	@echo "=== Checking unused Python code with vulture (including tests) ==="
 	@. ./.venv/bin/activate && vulture server tests --min-confidence 60 || true
 	@echo "vulture check complete"
-
-# Generate a combined markdown report for unused-code findings (non-blocking)
-lint-unused-report:
-	@echo "=== Generating unused code report (TypeScript + Python) ==="
-	@mkdir -p reports
-	@echo "# Unused Code Report" > reports/unused_code_report.md
-	@echo "" >> reports/unused_code_report.md
-	@echo "Generated on: $$(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> reports/unused_code_report.md
-	@echo "" >> reports/unused_code_report.md
-	@echo "## TypeScript (ts-prune)" >> reports/unused_code_report.md
-	@npx ts-prune -p tsconfig.json > reports/ts_prune.txt || true
-	@echo "" >> reports/unused_code_report.md
-	@echo '```' >> reports/unused_code_report.md
-	@cat reports/ts_prune.txt >> reports/unused_code_report.md || true
-	@echo '```' >> reports/unused_code_report.md
-	@echo "" >> reports/unused_code_report.md
-	@echo "## Python (vulture)" >> reports/unused_code_report.md
-	@python -m vulture server tests --min-confidence 60 > reports/vulture.txt || true
-	@echo "" >> reports/unused_code_report.md
-	@echo '```' >> reports/unused_code_report.md
-	@cat reports/vulture.txt >> reports/unused_code_report.md || true
-	@echo '```' >> reports/unused_code_report.md
-	@echo "Unused code report written to reports/unused_code_report.md"
 
 lint-md:
 	@echo "=== Checking Markdown Files ==="

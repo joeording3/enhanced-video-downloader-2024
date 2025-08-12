@@ -91,18 +91,18 @@ body {
 /* Replace generic button styles with .btn component class */
 
 /* Main controls */
-.main-controls {
-  display: flex;
-  flex-wrap: wrap; /* allow wrapping in narrow side panel */
-  gap: var(--form-row-gap);
+.main-controls.toolbar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-sm);
   margin-bottom: var(--section-gap);
 }
 
-.main-controls button {
-  flex: 1 1 30%;
-  text-align: center;
-  padding: var(--button-padding-y) var(--button-padding-x);
+.main-controls.toolbar button {
+  min-width: 0;
+  padding: 8px 10px;
   font-size: 0.9em;
+  white-space: nowrap;
 }
 
 /* List styling (Current Downloads & History) */
@@ -115,13 +115,13 @@ h2 {
   line-height: var(--line-height-tight);
 }
 
-#download-status, /* For current downloads */
+#download-status, /* For unified list container */
 #download-history {
   list-style-type: none;
   padding: 0;
   margin: 0 0 var(--space-md) 0;
-  max-height: clamp(120px, 40vh, 420px); /* responsive heights */
-  overflow-y: auto;
+  max-height: clamp(160px, 45vh, 440px); /* increase to reduce nested scrollbars */
+  overflow-y: auto; /* only this container scrolls */
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   background-color: var(--bg-elevated);
@@ -137,6 +137,7 @@ h2 {
 .unified-list .unified-item {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: var(--space-sm);
   padding: calc(var(--list-row-padding-y) - 4px) calc(var(--list-row-padding-x) - 6px);
   border-bottom: 1px solid var(--border-color);
@@ -144,6 +145,7 @@ h2 {
   line-height: 1.2;
   color: var(--text-color);
   background-color: var(--bg-elevated);
+  white-space: nowrap; /* keep elements on one row */
 }
 
 /* Ensure unified layout even if parent markup changes */
@@ -204,6 +206,8 @@ h2 {
 .unified-list .cancel-button,
 .unified-list .retry-button {
   margin-left: var(--space-sm);
+  min-width: 56px; /* ensure buttons fit at min width */
+  padding: 4px 8px;
 }
 
 #download-status .cancel-button,
@@ -307,13 +311,13 @@ h2 {
 @media (max-width: 380px) {
   body { padding: var(--space-sm); }
   .header h1 { font-size: 0.95em; }
-  .main-controls button { flex: 1 1 48%; }
+  .main-controls.toolbar { grid-template-columns: repeat(3, 1fr); }
   .priority-controls .priority-select,
   .priority-controls .priority-set-button { flex: 1 1 100%; }
 }
 
 @media (max-width: 300px) {
-  .main-controls button { flex: 1 1 100%; }
+  .main-controls.toolbar { grid-template-columns: 1fr; }
 }
 
 /* History Controls */
@@ -412,6 +416,8 @@ h2 {
 #download-history::-webkit-scrollbar-thumb {
   background-color: var(--scrollbar-thumb-color);
   border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 
 #download-status::-webkit-scrollbar-thumb:hover,

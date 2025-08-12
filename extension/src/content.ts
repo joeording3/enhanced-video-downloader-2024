@@ -238,16 +238,26 @@ async function getButtonState(): Promise<ButtonState> {
   const domain = getHostname();
   return new Promise(resolve => {
     try {
+      // Guard for transient invalidation during extension reloads
+      if (!chrome || !chrome.storage || !chrome.storage.local || typeof chrome.storage.local.get !== "function") {
+        // Storage unavailable (extension context invalidated). Fall back silently.
+        return resolve({ x: 10, y: 10, hidden: false });
+      }
       chrome.storage.local.get(domain, result => {
-        if (chrome.runtime.lastError) {
-          error("Error getting button state from storage:", chrome.runtime.lastError.message);
+        if (chrome.runtime && chrome.runtime.lastError) {
+          const msg = String(chrome.runtime.lastError.message || "");
+          // Ignore noisy benign errors when the extension is reloaded or the context is invalidated
+          if (!/context invalidated/i.test(msg)) {
+            _warn("Non-fatal storage get error:", msg);
+          }
           resolve({ x: 10, y: 10, hidden: false });
           return;
         }
         resolve((result as any)[domain] || { x: 10, y: 10, hidden: false });
       });
     } catch (e) {
-      error("Error getting button state from storage:", (e as Error).message);
+      // Swallow errors during browser/extension transition states
+      _warn("Storage access exception (fallback to defaults)", (e as Error).message);
       resolve({ x: 10, y: 10, hidden: false });
     }
   });
@@ -263,12 +273,22 @@ async function saveButtonState(state: ButtonState): Promise<void> {
   const host = getHostname();
   const data = { [host]: state };
   return new Promise(resolve => {
-    chrome.storage.local.set(data, () => {
-      if (chrome.runtime.lastError) {
-        error("Error saving button state to storage:", chrome.runtime.lastError.message);
+    try {
+      if (!chrome || !chrome.storage || !chrome.storage.local || typeof chrome.storage.local.set !== "function") {
+        return resolve();
       }
+      chrome.storage.local.set(data, () => {
+        if (chrome.runtime && chrome.runtime.lastError) {
+          const msg = String(chrome.runtime.lastError.message || "");
+          if (!/context invalidated/i.test(msg)) {
+            _warn("Non-fatal storage set error:", msg);
+          }
+        }
+        resolve();
+      });
+    } catch {
       resolve();
-    });
+    }
   });
 }
 
@@ -732,10 +752,12 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
     });
   }
 
-  // Ensure visibility on create/update
+  // Ensure visibility on create/update only when not hidden
   try {
-    btn.classList.add("evd-visible");
-    btn.classList.remove("hidden");
+    if (!state.hidden) {
+      btn.classList.add("evd-visible");
+      btn.classList.remove("hidden");
+    }
   } catch {
     /* no-op */
   }
@@ -1131,6 +1153,7 @@ async function init(): Promise<void> {
 
   // Listen for messages from background script or popup
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    try {
     if (message.type === "resetButtonPosition") {
       resetButtonPosition().then(() => sendResponse({ success: true }));
       return true; // Keep channel open for async response
@@ -1148,6 +1171,11 @@ async function init(): Promise<void> {
         .catch(() => sendResponse({ success: false, hidden: false }))
         .finally(() => undefined);
       return true; // Keep channel open for async response
+    }
+    } catch {
+      // Ignore message errors during context changes
+      try { sendResponse({ success: false }); } catch {}
+      return false;
     }
     return false;
   });

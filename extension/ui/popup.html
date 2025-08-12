@@ -44,7 +44,7 @@
       </header>
 
       <main>
-        <section class="main-controls" aria-labelledby="main-controls-heading">
+        <section class="main-controls toolbar" aria-labelledby="main-controls-heading">
           <h2 id="main-controls-heading" class="visually-hidden">
             Main Controls
           </h2>
@@ -69,35 +69,7 @@
           <!-- Active and queued downloads -->
           <ul id="download-status"></ul>
           <div class="spacing-sm"></div>
-          <!-- History (with pagination controls) -->
-          <div class="history-controls">
-            <button
-              id="prev-page"
-              class="btn btn--secondary"
-              disabled
-              aria-label="Previous History Page"
-            >
-              &laquo; Prev
-            </button>
-            <span class="history-controls-middle-group">
-              <label for="items-per-page">Items:</label>
-              <select id="items-per-page" aria-label="Items per page">
-                <option value="10">10</option>
-                <option value="25">25</option>
-                <option value="50" selected>50</option>
-                <option value="100">100</option>
-              </select>
-              <span id="page-info" aria-live="polite">Page 1 of 1</span>
-            </span>
-            <button
-              id="next-page"
-              class="btn btn--secondary"
-              disabled
-              aria-label="Next History Page"
-            >
-              Next &raquo;
-            </button>
-          </div>
+          <!-- History controls removed; unified list is scrollable -->
           <ul id="download-history"></ul>
         </section>
         <div id="status" aria-live="polite"></div>

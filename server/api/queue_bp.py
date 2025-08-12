@@ -6,13 +6,21 @@ queue used when `max_concurrent_downloads` capacity is reached.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, TypedDict
 
 from flask import Blueprint, jsonify, request
 
 from server.queue import queue_manager
 
 queue_bp = Blueprint("queue_api", __name__, url_prefix="/api")
+
+
+class _QueueItem(TypedDict, total=False):
+    downloadId: str
+    download_id: str
+    url: str
+    page_title: str
+    status: str
 
 
 @queue_bp.route("/queue", methods=["GET"])
@@ -25,7 +33,7 @@ def get_queue() -> Any:
     }
     """
     try:
-        items = queue_manager.list()
+        items: list[dict[str, Any]] = queue_manager.list()
         # Ensure each item has a downloadId string for clients
         for it in items:
             if "downloadId" not in it and "download_id" in it:
@@ -44,7 +52,7 @@ def reorder_queue() -> Any:
     if request.method == "OPTIONS":
         return "", 204
 
-    data = request.get_json(silent=True) or {}
+    data: dict[str, Any] = request.get_json(silent=True) or {}
     order = data.get("order") or data.get("ids")
     if not isinstance(order, list) or not all(isinstance(x, str) for x in order):
         return (
