@@ -251,7 +251,12 @@ async function getButtonState(): Promise<ButtonState> {
   return new Promise(resolve => {
     try {
       // Guard for transient invalidation during extension reloads
-      if (!chrome || !chrome.storage || !chrome.storage.local || typeof chrome.storage.local.get !== "function") {
+      if (
+        !chrome ||
+        !chrome.storage ||
+        !chrome.storage.local ||
+        typeof chrome.storage.local.get !== "function"
+      ) {
         // Storage unavailable (extension context invalidated). Fall back silently.
         return resolve({ x: 10, y: 10, hidden: false });
       }
@@ -290,7 +295,12 @@ async function saveButtonState(state: ButtonState): Promise<void> {
   const data = { [host]: state };
   return new Promise(resolve => {
     try {
-      if (!chrome || !chrome.storage || !chrome.storage.local || typeof chrome.storage.local.set !== "function") {
+      if (
+        !chrome ||
+        !chrome.storage ||
+        !chrome.storage.local ||
+        typeof chrome.storage.local.set !== "function"
+      ) {
         return resolve();
       }
       chrome.storage.local.set(data, () => {
@@ -1204,27 +1214,29 @@ async function init(): Promise<void> {
   // Listen for messages from background script or popup
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     try {
-    if (message.type === "resetButtonPosition") {
-      resetButtonPosition().then(() => sendResponse({ success: true }));
-      return true; // Keep channel open for async response
-    } else if (message.type === "toggleButtonVisibility") {
-      const hidden = message.hidden;
-      setButtonHiddenState(hidden)
-        .then(() => sendResponse({ success: true }))
-        .catch(() => sendResponse({ success: false }))
-        .finally(() => undefined);
-      return true; // Keep channel open for async response
-    } else if (message.type === "getButtonVisibility") {
-      // Respond with current per-domain hidden state
-      getButtonState()
-        .then(state => sendResponse({ success: true, hidden: !!state.hidden }))
-        .catch(() => sendResponse({ success: false, hidden: false }))
-        .finally(() => undefined);
-      return true; // Keep channel open for async response
-    }
+      if (message.type === "resetButtonPosition") {
+        resetButtonPosition().then(() => sendResponse({ success: true }));
+        return true; // Keep channel open for async response
+      } else if (message.type === "toggleButtonVisibility") {
+        const hidden = message.hidden;
+        setButtonHiddenState(hidden)
+          .then(() => sendResponse({ success: true }))
+          .catch(() => sendResponse({ success: false }))
+          .finally(() => undefined);
+        return true; // Keep channel open for async response
+      } else if (message.type === "getButtonVisibility") {
+        // Respond with current per-domain hidden state
+        getButtonState()
+          .then(state => sendResponse({ success: true, hidden: !!state.hidden }))
+          .catch(() => sendResponse({ success: false, hidden: false }))
+          .finally(() => undefined);
+        return true; // Keep channel open for async response
+      }
     } catch {
       // Ignore message errors during context changes
-      try { sendResponse({ success: false }); } catch {}
+      try {
+        sendResponse({ success: false });
+      } catch {}
       return false;
     }
     return false;

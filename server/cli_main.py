@@ -1102,12 +1102,14 @@ def _cli_stop_pre_checks() -> list[psutil.Process]:
                     if not proc.is_running():
                         continue
                     from typing import Any, cast
+
                     net_conns = getattr(proc, "net_connections", None)
                     conns_list: list[Any] = []
                     if callable(net_conns):
                         obj = net_conns(kind="inet")
                         try:
                             from collections.abc import Iterable
+
                             conns_list = list(cast(Iterable[Any], obj))
                         except Exception:
                             conns_list = []

@@ -158,24 +158,27 @@ def get_all_status() -> Response:
                     "troubleshooting": error.get("troubleshooting", suggestion),
                     "status": "error",
                 }
-        # Include queued (server-side) items
-        try:
-            queued = queue_manager.list()
-            # Represent queued items minimally under their id
-            for item in queued:
-                did = str(item.get("downloadId") or item.get("download_id") or "unknown")
-                if did and did not in combined:
-                    combined[did] = {"status": "queued", "url": item.get("url", "")}
-        except Exception:
-            # Non-fatal: queue listing is best-effort
-            # Avoid noisy logs for expected failures; keep at debug level
+        # Optionally include queued (server-side) items if requested by client
+        include_queue = request.args.get("include_queue", "").lower() in {"1", "true", "yes"}
+        if include_queue:
             try:
-                # Use local import to avoid circulars in some test runtimes
-                import logging
-                logging.getLogger(__name__).debug("Failed to include queued items in /status", exc_info=True)
+                queued = queue_manager.list()
+                # Represent queued items minimally under their id
+                for item in queued:
+                    did = str(item.get("downloadId") or item.get("download_id") or "unknown")
+                    if did and did not in combined:
+                        combined[did] = {"status": "queued", "url": item.get("url", "")}
             except Exception:
-                # As a last resort, remain silent
-                ...
+                # Non-fatal: queue listing is best-effort
+                # Avoid noisy logs for expected failures; keep at debug level
+                try:
+                    # Use local import to avoid circulars in some test runtimes
+                    import logging
+
+                    logging.getLogger(__name__).debug("Failed to include queued items in /status", exc_info=True)
+                except Exception:
+                    # As a last resort, remain silent
+                    ...
 
         return jsonify(combined)
 

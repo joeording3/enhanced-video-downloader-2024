@@ -22,6 +22,7 @@ class _QueueItem(TypedDict, total=False):
     page_title: str
     status: str
 
+
 class _ReorderPayload(TypedDict, total=False):
     order: list[str]
     ids: list[str]

@@ -69,7 +69,6 @@
     "**/Library/Python/*/lib/python*/site-packages",
     "**/Library/Python/*/lib/python*/dist-packages",
     "**/.local/lib/python*/site-packages",
-    "**/.local/lib/python*/dist-packages",
-
+    "**/.local/lib/python*/dist-packages"
   ]
 }

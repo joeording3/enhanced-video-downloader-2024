@@ -9,18 +9,20 @@ Urgent Tasks:
 - [ ] Wire into `make all`/`check` gates and CI once noise baseline is reviewed
   - [/] Content: handle transient storage/messaging invalidation cleanly
     <!-- working-on: content storage/messaging guards -->
-    - [/] `getButtonState()` treats "Extension context invalidated" as benign and falls back to defaults without noisy logs
-    - [/] Guard `chrome.runtime.sendMessage` when runtime is unavailable; emit concise error and exit gracefully
+    - [/] `getButtonState()` treats "Extension context invalidated" as benign and falls back to
+      defaults without noisy logs
+    - [/] Guard `chrome.runtime.sendMessage` when runtime is unavailable; emit concise error and
+      exit gracefully
     - [ ] Monitor real-site logs for any remaining "undefined" messages and normalize
 - [ ] Tighten ignore/exclude usage across tooling
-  <!-- working-on: ignore-audit follow-ups -->
+    <!-- working-on: ignore-audit follow-ups -->
   - [ ] Prune inline suppressions: add rationale or remove (tracked by `tmp/ignores_inline.csv`)
   - [ ] Trim per-file ignores under tests once noise is addressed
-<!-- working-on: api-json-errors -->
+  <!-- working-on: api-json-errors -->
 - [/] Reduce duplicate startup logs: add one-time guard in `server/__init__.py:create_app` to log
-    "Server application initialized..." only once per process.
+  "Server application initialized..." only once per process.
 - [/] Make yt-dlp options parsing robust: accept JSON strings and Pydantic models in
-    `server/downloads/ytdlp.py` for `yt_dlp_options`; keep safe defaults when invalid.
+  `server/downloads/ytdlp.py` for `yt_dlp_options`; keep safe defaults when invalid.
 - [ ] Replace silent `pass` blocks with logging/handling in:
   - `server/cli_helpers.py` (loops and maintenance utils)
   - [/] `server/cli_main.py` (loop around verification)
@@ -60,10 +62,12 @@ Urgent Tasks:
   - [/] Popup: guard against non-finite progress values causing "The provided double value is
     non-finite" in `createActiveListItem`; clamp to [0,100] and round label.
   - [/] Popup: Combine Active/Queued and History into a single "Downloads" section; keep existing
-        element IDs (`download-status`, `download-history`) so logic keeps working.
+    element IDs (`download-status`, `download-history`) so logic keeps working.
   - [/] Background: stop forcing scans when a cached port exists from Options; prefer cached port
     and only scan when missing.
-  - [/] Background: if no cached `serverPort`, use `serverConfig.server_port` from storage and cache it.
+  - [/] Background: if no cached `serverPort`, use `serverConfig.server_port` from storage and cache
+    it.
+  - [/] Background: fetch config via multiple loopback hosts and fall back to cached config if fetch fails.
 
 - **Automation and CI**
   - [/] Keep `make lint-unused` non-blocking during triage.
@@ -161,7 +165,8 @@ Legacy/Stub Cleanup:
 
 ### New Feature: Smart Injection
 
-- [/] Add Smart Injection toggle in Options → Behavior → General Options (`settings-smart-injection`)
+- [/] Add Smart Injection toggle in Options → Behavior → General Options
+  (`settings-smart-injection`)
 - [/] Persist preference in local storage key `smartInjectionEnabled`
 - [/] Content script respects smart mode:
   - [/] When ON: inject only when media is detected; hide/remove global button if none
@@ -176,8 +181,8 @@ Legacy/Stub Cleanup:
 - [ ] Audit extension code to remove duplicated `"/api/..."` strings; import and use endpoint
       constants instead.
 - [/] Replace hardcoded lock path in `server/cli/serve.py` (`/tmp/videodownloader.lock`) with the
-       centralized lock path helpers from `server/lock.py` (e.g., `get_lock_file_path`) to ensure
-       cross-platform behavior.
+  centralized lock path helpers from `server/lock.py` (e.g., `get_lock_file_path`) to ensure
+  cross-platform behavior.
 - [ ] Review server/CLI default host strings; keep loopback binds but ensure they are centralized
       and documented.
 - [ ] Document any remaining, justified literals (tests/manifest permissions) in README policy.

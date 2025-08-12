@@ -85,6 +85,7 @@ def cleanup_lock_file(fh: TextIO) -> None:
         # Best-effort cleanup; nothing critical to do on failure
         try:
             import logging
+
             logging.getLogger(__name__).debug("Lock cleanup failed", exc_info=True)
         except Exception:
             # As a last resort, remain silent

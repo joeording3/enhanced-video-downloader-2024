@@ -76,6 +76,7 @@ def clear_logs() -> Response:
             # Create a fresh log file with a structured initialization entry
             with log_path.open("w", encoding="utf-8") as f:
                 now = datetime.datetime.now(datetime.timezone.utc)
+
                 class _InitEvent(TypedDict):
                     event: str
                     archived_to: str

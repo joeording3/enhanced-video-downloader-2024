@@ -206,6 +206,7 @@ def restart_command(force: bool) -> None:
 # The `start`, `stop`, and `restart` commands are now registered at the top level
 # by `server/cli_main.py`. This module only defines the command callbacks.
 
+
 # Compatibility: provide a serve group for tests that import it
 @click.group(name="serve", invoke_without_command=True)
 def serve_group() -> None:
@@ -214,6 +215,8 @@ def serve_group() -> None:
     ctx = click.get_current_context(silent=True)
     if ctx and ctx.invoked_subcommand is None:
         click.echo(ctx.get_help())
+
+
 serve_group.add_command(start_command)
 serve_group.add_command(stop_command)
 serve_group.add_command(restart_command)

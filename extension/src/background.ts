@@ -207,7 +207,11 @@ const handleNetworkChange = async (online: boolean): Promise<void> => {
         }
       }
 
-      const port = await findServerPort(false);
+      // If a port is already configured/cached, skip scanning to avoid noisy logs
+      let port = await storageService.getPort();
+      if (typeof port !== "number" || !Number.isFinite(port)) {
+        port = await findServerPort(false);
+      }
       if (port !== null) {
         log("Server reconnected on port " + port);
         showNotification(
@@ -575,14 +579,21 @@ const checkServerStatus = async (port: number): Promise<boolean> =>
 // Additional functions (stub implementations to be completed)
 const fetchServerConfig = async (port: number): Promise<Partial<ServerConfig>> => {
   try {
-    const response = await fetch(`http://127.0.0.1:${port}/api/config`);
-    if (response.ok) {
-      const config = await response.json();
-      return config;
-    } else {
-      log(`Failed to fetch config from server: ${response.status}`);
-      return {};
+    // Try multiple hostnames to avoid loopback blocking issues
+    const hosts = ["127.0.0.1", "localhost", "[::1]"];
+    for (const host of hosts) {
+      try {
+        const response = await fetch(`http://${host}:${port}/api/config`);
+        if (response.ok) {
+          const config = await response.json();
+          return config;
+        }
+      } catch {
+        // try next host
+      }
     }
+    log(`Failed to fetch config from server on any host for port ${port}`);
+    return {};
   } catch (error) {
     log(`Error fetching server config: ${error}`);
     return {};
@@ -966,7 +977,11 @@ const initializeExtension = async (): Promise<void> => {
     await initializeActionIconTheme();
 
     // Perform initial server discovery
-    const port = await findServerPort(false);
+    // Prefer existing configured/cached port; only scan if missing
+    let port = await storageService.getPort();
+    if (typeof port !== "number" || !Number.isFinite(port)) {
+      port = await findServerPort(false);
+    }
     if (port !== null) {
       log("Discovered server on port " + port);
       // Broadcast server status after discovery
@@ -1200,7 +1215,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         case "getConfig":
           // Fetch server config when a port is known; otherwise return current cached state
           if (port) {
-            const config = await fetchServerConfig(port);
+            let config = await fetchServerConfig(port);
+            // If server fetch failed or returned empty, fall back to cached/local config
+            if (!config || (typeof config === "object" && Object.keys(config).length === 0)) {
+              try {
+                config = await storageService.getConfig();
+              } catch {
+                config = {} as any;
+              }
+            }
             sendResponse({ status: "success", data: config });
           } else {
             const serverState = stateManager.getServerState();

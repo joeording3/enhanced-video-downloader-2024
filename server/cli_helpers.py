@@ -21,37 +21,19 @@ import time
 from collections.abc import (
     Callable,  # Added Any, Callable, Tuple
     Mapping,
+    Sequence,
 )
 from pathlib import Path
 from typing import Any, Protocol, TypedDict, cast
 
-
-class _HistoryItem(TypedDict, total=False):
-    download_id: str
-    url: str
-    filename: str
-    file_size: int
-
-_ResumeOptions = TypedDict(
-    "_ResumeOptions",
-    {
-        "directory": str,
-        "continue": bool,
-        "nice": str | int,
-    },
-    total=False,
-)
-
-
+# Third-party imports
 import click
 import gunicorn.app.base  # type: ignore[import-untyped]
 import psutil
 import yt_dlp  # type: ignore[import-untyped]
 
+# Local application imports
 from server import create_app
-
-# Import server.cli functions for restart command
-# Removed to avoid circular import - these functions are not used in this module
 from server.cli_resume_helpers import derive_resume_url, get_part_files, validate_scan_directory
 from server.config import Config
 from server.constants import DEFAULT_SERVER_PORT
@@ -64,6 +46,24 @@ from server.lock import get_lock_pid as _get_lock_pid
 from server.lock import get_lock_pid_port as _get_lock_pid_port
 from server.lock import remove_lock_file as _remove_lock
 from server.utils import find_available_port as core_find_available_port
+
+
+class _HistoryItem(TypedDict, total=False):
+    download_id: str
+    url: str
+    filename: str
+    file_size: int
+
+
+_ResumeOptions = TypedDict(
+    "_ResumeOptions",
+    {
+        "directory": str,
+        "continue": bool,
+        "nice": str | int,
+    },
+    total=False,
+)
 
 
 # Minimal interface for yt_dlp objects that support download(list[str])
@@ -375,9 +375,6 @@ def resume_failed_downloads(
 
     # Report summary
     _report_failed_summary(resumed, failed, non_resumable, logger)
-
-
-from collections.abc import Sequence
 
 
 def _reorder_by_priority(download_ids: list[str], history_items: Sequence[dict[str, Any] | _HistoryItem]) -> list[str]:
@@ -772,9 +769,9 @@ def _resume_with_downloader(
                 if isinstance(v, bool):
                     if v:
                         cmd.append(key)
-                elif isinstance(v, (str, int, float)):
+                elif isinstance(v, str | int | float):
                     cmd.extend([key, str(v)])
-                elif isinstance(v, (list, tuple)):
+                elif isinstance(v, list | tuple):
                     for item in v:
                         cmd.extend([key, str(item)])
                 # ignore None/unknown types silently
@@ -959,10 +956,8 @@ def ensure_caddy_proxy_running(
 
                 def _line_has_log_block(text: str) -> bool:
                     stripped = text.strip()
-                    return (
-                        stripped.startswith(("log ", "log{"))
-                        or stripped == "log {"
-                    )
+                    return stripped.startswith(("log ", "log{")) or stripped == "log {"
+
                 have_log_block = any(_line_has_log_block(line_text) for line_text in lines)
 
                 inserted_log = False

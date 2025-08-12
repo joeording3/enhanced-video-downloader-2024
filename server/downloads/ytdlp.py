@@ -89,8 +89,7 @@ def _default_ydl_opts(output_path: str, download_playlist: bool) -> dict[str, An
 
 @runtime_checkable
 class _HasModelDump(Protocol):
-    def model_dump(self, *, mode: str = "json") -> dict[str, Any]:
-        ...
+    def model_dump(self, *, mode: str = "json") -> dict[str, Any]: ...
 
 
 def _apply_custom_opts(ydl_opts: dict[str, Any], custom_opts: Any, _download_id: str | None) -> None:
@@ -616,9 +615,7 @@ def _progress_finished(d: dict[str, Any], download_id: str | None) -> None:
             if p.exists():
                 size = p.stat().st_size
                 if size == 0:
-                    logger.warning(
-                        f"[{str_id}] Finished file is zero bytes; downstream may classify this as an error."
-                    )
+                    logger.warning(f"[{str_id}] Finished file is zero bytes; downstream may classify this as an error.")
         except Exception:
             # best effort
             pass
@@ -1185,11 +1182,15 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
         # Detect zero-byte output and perform automatic fallback retry if needed
         try:
             media_candidates_all = [
-                p for p in download_path.glob(f"{prefix}.*") if not (p.name.endswith(".part") or p.name.endswith(".info.json"))
+                p
+                for p in download_path.glob(f"{prefix}.*")
+                if not (p.name.endswith(".part") or p.name.endswith(".info.json"))
             ]
             final_file = media_candidates_all[0] if media_candidates_all else None
             if final_file and final_file.exists() and final_file.stat().st_size == 0:
-                logger.warning(f"[{download_id}] Detected zero-byte file '{final_file.name}'. Retrying with fallback format mp4 (itag 18) as single stream.")
+                logger.warning(
+                    f"[{download_id}] Detected zero-byte file '{final_file.name}'. Retrying with fallback format mp4 (itag 18) as single stream."
+                )
                 # Remove the empty stub before retry
                 with suppress(Exception):
                     final_file.unlink()
@@ -1230,7 +1231,9 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
                     chosen = media_candidates[0] if media_candidates else None
                     # Clarify when the file is empty and ensure cleanup
                     if chosen and chosen.exists() and chosen.stat().st_size == 0:
-                        logger.warning(f"[{download_id}] Appending history for zero-byte file and cleaning up stub: {chosen}")
+                        logger.warning(
+                            f"[{download_id}] Appending history for zero-byte file and cleaning up stub: {chosen}"
+                        )
                         with suppress(Exception):
                             chosen.unlink()
                         chosen = None
