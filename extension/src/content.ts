@@ -90,6 +90,91 @@ const isJest =
   process.env &&
   typeof process.env.JEST_WORKER_ID !== "undefined";
 
+// Helper: check if current domain is set to hidden
+async function isDomainHidden(): Promise<boolean> {
+  try {
+    const state = await getButtonState();
+    return !!state.hidden;
+  } catch {
+    return false;
+  }
+}
+
+// Helper: remove all injected/global buttons and related observers
+function removeAllButtons(): void {
+  try {
+    for (const [, btn] of Array.from(injectedButtons.entries())) {
+      if (btn && document.body.contains(btn)) {
+        btn.remove();
+      }
+    }
+    injectedButtons.clear();
+  } catch {
+    /* ignore */
+  }
+  try {
+    if (downloadButton && document.body.contains(downloadButton)) {
+      downloadButton.remove();
+    }
+  } catch {
+    /* ignore */
+  }
+  downloadButton = null;
+  try {
+    if (buttonObserver) {
+      buttonObserver.disconnect();
+      buttonObserver = null;
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+// Helper: one periodic tick to find/inject buttons and ensure global button
+async function injectionTick(): Promise<void> {
+  // Respect per-domain hidden preference
+  if (await isDomainHidden()) {
+    // Ensure removal if hidden toggled during runtime
+    removeAllButtons();
+    return;
+  }
+
+  await findVideosAndInjectButtons();
+
+  // Ensure a global button exists even if no <video> is detected
+  if (!downloadButton) {
+    createOrUpdateButton().catch(() => {});
+  } else if (!document.body.contains(downloadButton)) {
+    // If the global button was removed externally, recreate it
+    createOrUpdateButton().catch(() => {});
+  }
+}
+
+function startInjectionLoop(): void {
+  if (checkIntervalId) return;
+  checkIntervalId = window.setInterval(() => {
+    injectionTick().catch(() => {});
+  }, CHECK_INTERVAL);
+}
+
+function stopInjectionLoop(): void {
+  if (checkIntervalId) {
+    clearInterval(checkIntervalId);
+    checkIntervalId = null;
+  }
+}
+
+async function updateInjectionLoopBasedOnHidden(): Promise<void> {
+  if (await isDomainHidden()) {
+    stopInjectionLoop();
+    removeAllButtons();
+  } else {
+    startInjectionLoop();
+    // Kick an immediate tick for responsiveness
+    await injectionTick();
+  }
+}
+
 /**
  * Compute a score for a potential media element. Higher is better.
  * Prefers larger, longer, and metadata-ready HTMLVideoElements. For iframes, prefers larger area.
@@ -889,6 +974,9 @@ async function setButtonHiddenState(hidden: boolean): Promise<void> {
   }
 
   await saveButtonState({ x, y, hidden });
+
+  // Manage injection loop based on new hidden state
+  await updateInjectionLoopBasedOnHidden();
 }
 
 /**
@@ -926,6 +1014,17 @@ async function findVideosAndInjectButtons(): Promise<void> {
   // Don't run on extension pages
   if (window.location.href.includes("chrome-extension://")) {
     return;
+  }
+
+  // Respect per-domain hidden preference
+  try {
+    if (await isDomainHidden()) {
+      // Ensure buttons are removed if hidden
+      removeAllButtons();
+      return;
+    }
+  } catch {
+    // ignore
   }
 
   // Count each scan attempt to allow interval shutdown when nothing is found
@@ -1027,23 +1126,8 @@ async function init(): Promise<void> {
   // document.addEventListener("mousemove", onDrag); // This was moved to mousedown
   // document.addEventListener("mouseup", onDragEnd); // This was moved to mousedown
 
-  await findVideosAndInjectButtons();
-
-  // Set up interval to check for new videos
-  if (!checkIntervalId) {
-    checkIntervalId = window.setInterval(() => {
-      findVideosAndInjectButtons();
-      // Ensure a global button exists even if no <video> is detected
-      if (!downloadButton) {
-        createOrUpdateButton().catch(() => {});
-      } else {
-        // If the global button was removed externally, recreate it
-        if (!document.body.contains(downloadButton)) {
-          createOrUpdateButton().catch(() => {});
-        }
-      }
-    }, CHECK_INTERVAL);
-  }
+  // Start or stop injection based on current hidden state
+  await updateInjectionLoopBasedOnHidden();
 
   // Listen for messages from background script or popup
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -1052,7 +1136,10 @@ async function init(): Promise<void> {
       return true; // Keep channel open for async response
     } else if (message.type === "toggleButtonVisibility") {
       const hidden = message.hidden;
-      setButtonHiddenState(hidden).then(() => sendResponse({ success: true }));
+      setButtonHiddenState(hidden)
+        .then(() => sendResponse({ success: true }))
+        .catch(() => sendResponse({ success: false }))
+        .finally(() => undefined);
       return true; // Keep channel open for async response
     } else if (message.type === "getButtonVisibility") {
       // Respond with current per-domain hidden state

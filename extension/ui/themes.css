@@ -59,6 +59,11 @@ body.dark-theme {
 
 /* ===== COMPONENT-SPECIFIC DARK THEME RULES ===== */
 
+/* Ensure panels/popups stretch to the host width */
+body, .container {
+  width: 100%;
+}
+
 body.dark-theme .btn--secondary {
   --btn-bg: var(--bg-button-dark);
   --btn-color: var(--text-primary-dark);

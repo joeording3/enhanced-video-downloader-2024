@@ -924,8 +924,7 @@ def ensure_caddy_proxy_running(
                 def _line_has_log_block(text: str) -> bool:
                     stripped = text.strip()
                     return (
-                        stripped.startswith("log ")
-                        or stripped.startswith("log{")
+                        stripped.startswith(("log ", "log{"))
                         or stripped == "log {"
                     )
                 have_log_block = any(_line_has_log_block(line_text) for line_text in lines)

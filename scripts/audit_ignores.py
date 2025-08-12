@@ -117,9 +117,11 @@ def walk_sources() -> list[Path]:
     matched: list[Path] = []
     for dp, dns, fns in os_walk(ROOT):  # type: ignore[name-defined]
         dns[:] = [d for d in dns if d not in ex_dirs]
-        for fn in fns:
-            if fn.endswith((".py", ".ts", ".tsx", ".js")):
-                matched.append(Path(dp) / fn)
+        matched.extend(
+            Path(dp) / fn
+            for fn in fns
+            if fn.endswith((".py", ".ts", ".tsx", ".js"))
+        )
     return matched
 
 
@@ -211,10 +213,9 @@ def main() -> int:
     lines.append("- Review per-file ignores that use wide globs (e.g., tests/**/*.py) and narrow when possible.\n")
     lines.append("- Consider removing global D* docstring or typing rules from Ruff ignore; enforce via dedicated workflows.\n")
 
-    REPORTS_DIR.write_text  # satisfy type checkers that directory exists
     (REPORTS_DIR / "ignores_audit.md").write_text("".join(lines), encoding="utf-8")
 
-    print("Ignore audit complete. See reports/ignores_audit.md and tmp/ignores_inline.csv")
+    sys.stdout.write("Ignore audit complete. See reports/ignores_audit.md and tmp/ignores_inline.csv\n")
     return 0
 
 
