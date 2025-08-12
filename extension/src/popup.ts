@@ -643,11 +643,12 @@ export async function initPopup(): Promise<void> {
       // Fallback: open the popup page in a regular tab
       try {
         const url = chrome.runtime.getURL("extension/dist/popup.html");
-        chrome.tabs.create({ url }, () => {
-          // consume potential lastError to avoid console noise
-          // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-          (chrome.runtime && chrome.runtime.lastError) || null;
-        });
+          chrome.tabs.create({ url }, () => {
+            const hasError = Boolean(chrome.runtime && (chrome.runtime as any).lastError);
+            if (hasError) {
+              // intentionally ignored; opening a tab can fail on some pages
+            }
+          });
       } catch {
         // ignore
       }
@@ -662,8 +663,7 @@ export async function initPopup(): Promise<void> {
         if (tabId !== undefined) {
           chrome.tabs.sendMessage(tabId, message, resp => {
             // Swallow lastError; content script may not be injected on internal pages
-            // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-            (chrome.runtime && chrome.runtime.lastError) || null;
+            const hasError = Boolean(chrome.runtime && (chrome.runtime as any).lastError);
             if (callback) callback(resp);
           });
         } else if (callback) {

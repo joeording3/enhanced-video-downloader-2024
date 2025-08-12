@@ -184,7 +184,7 @@ def _parse_download_raw() -> dict[str, Any]:
     """
     data: Any = request.get_json(force=True)
     if isinstance(data, dict):
-        return data  # type: ignore[return-value]
+        return cast(dict[str, Any], data)
     return {}
 
 
@@ -463,7 +463,7 @@ def download() -> Any:
             if len(download_process_registry) >= max_concurrent:
                 # Ensure a downloadId exists for queue tracking
                 if not raw_data.get("downloadId") and not raw_data.get("download_id"):
-                    raw_data["downloadId"] = str(int(time.time() * 1000))  # type: ignore[index]
+                    raw_data["downloadId"] = str(int(time.time() * 1000))
                 queue_manager.enqueue(dict(raw_data))
                 queue_manager.start()
                 unified_response = jsonify(
@@ -493,17 +493,17 @@ def download() -> Any:
             # Bad JSON/malformed payload; align with existing behavior to return 500 with sanitized body
             logger.warning(f"Bad request payload for download: {e}")
             unified_response = _download_error_response(
-                "Server error: Invalid JSON payload", "SERVER_ERROR", raw_data.get("downloadId", "unknown"), 500
+                "Server error: Invalid JSON payload", "SERVER_ERROR", str(raw_data.get("downloadId", "unknown")), 500
             )
         except ValidationError as e:
             logger.warning(f"Invalid download request: {e}")
             unified_response = _download_error_response(
-                f"Invalid request data: {e}", "VALIDATION_ERROR", raw_data.get("downloadId", "unknown"), 400
+                f"Invalid request data: {e}", "VALIDATION_ERROR", str(raw_data.get("downloadId", "unknown")), 400
             )
         except Exception as e:
             logger.error(f"Unexpected error processing download request: {e}", exc_info=True)
             unified_response = _download_error_response(
-                f"Server error: {e!s}", "SERVER_ERROR", raw_data.get("downloadId", "unknown"), 500
+                f"Server error: {e!s}", "SERVER_ERROR", str(raw_data.get("downloadId", "unknown")), 500
             )
 
     return unified_response
@@ -554,7 +554,7 @@ def gallery_dl() -> Any:
                     "status": "error",
                     "message": f"Invalid request data: {e}",
                     "error_type": "VALIDATION_ERROR",
-                    "downloadId": raw_data.get("downloadId", "unknown"),  # type: ignore[arg-type]
+                    "downloadId": str(raw_data.get("downloadId", "unknown")),
                 }
             ),
             400,
@@ -567,7 +567,7 @@ def gallery_dl() -> Any:
                     "status": "error",
                     "message": f"Server error: {e!s}",
                     "error_type": "SERVER_ERROR",
-                    "downloadId": raw_data.get("downloadId", "unknown"),  # type: ignore[arg-type]
+                    "downloadId": str(raw_data.get("downloadId", "unknown")),
                 }
             ),
             500,

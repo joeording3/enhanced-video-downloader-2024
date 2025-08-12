@@ -434,60 +434,6 @@ body.dark-theme #disclaimer {
 }
 
 /* ===== Download History (Options) ===== */
-#download-history-container .history-controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--space-sm) 0;
-  margin-bottom: var(--space-md);
-}
-
-#download-history-container .history-controls-middle-group {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
-}
-
-#download-history-container .history-controls label {
-  margin-bottom: 0;
-  margin-right: var(--space-sm);
-  font-weight: var(--font-weight-normal);
-  font-size: 0.9em;
-  color: var(--label-text);
-}
-
-#download-history-container .history-controls select {
-  width: auto;
-  padding: var(--space-sm);
-  font-size: 0.9em;
-  background-color: var(--select-bg);
-  color: var(--select-text);
-  border: 1px solid var(--select-border);
-  border-radius: var(--radius-md);
-}
-
-#download-history-container .history-controls button {
-  padding: var(--space-sm) var(--space-md);
-  font-size: 0.9em;
-}
-
-#history-page-info {
-  font-size: 0.9em;
-  color: var(--text-color);
-  white-space: nowrap;
-  line-height: var(--line-height-tight);
-}
-
-#history-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background-color: var(--bg-elevated);
-  max-height: 420px;
-  overflow-y: auto;
-}
 
 /* Empty state */
 

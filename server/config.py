@@ -20,15 +20,15 @@ try:
     load_dotenv()
 except ImportError:
     # Type stubs for when dotenv is not available
-    def find_dotenv() -> str | None:  # type: ignore[assignment]
+    def find_dotenv() -> str | None:
         """Stub function when python-dotenv is not available."""
         return None
 
-    def load_dotenv() -> bool:  # type: ignore[assignment]
+    def load_dotenv() -> bool:
         """Stub function when python-dotenv is not available."""
         return False
 
-    def set_key(*_args: Any, **_kwargs: Any) -> tuple[bool | None, str, str]:  # type: ignore[assignment]
+    def set_key(*_args: Any, **_kwargs: Any) -> tuple[bool | None, str, str]:
         """Stub function when python-dotenv is not available."""
         return None, "", ""
 
@@ -43,7 +43,7 @@ class Config:
 
     # JSON config file support removed; configuration is derived solely from environment variables.
 
-    def __init__(self, config_data: ServerConfig | dict[str, Any]) -> None:  # type: ignore[reportMissingSuperCall]
+    def __init__(self, config_data: ServerConfig | dict[str, Any]) -> None:
         """
         Initialize Config instance with provided data.
 

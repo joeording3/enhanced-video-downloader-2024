@@ -15,7 +15,7 @@
 /* General styles */
 html {
   background-color: var(--background-color);
-  width: 400px; /* Popup width */
+  width: 100%; /* responsive: fill popup or side panel */
   min-height: 100%;
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb-color) var(--scrollbar-track-color);
@@ -76,12 +76,13 @@ body {
 /* Main controls */
 .main-controls {
   display: flex;
+  flex-wrap: wrap; /* allow wrapping in narrow side panel */
   gap: var(--form-row-gap);
   margin-bottom: var(--section-gap);
 }
 
 .main-controls button {
-  flex: 1;
+  flex: 1 1 30%;
   text-align: center;
   padding: var(--button-padding-y) var(--button-padding-x);
   font-size: 0.9em;
@@ -102,23 +103,31 @@ h2 {
   list-style-type: none;
   padding: 0;
   margin: 0 0 var(--space-md) 0;
-  max-height: 120px; /* Adjust as needed */
+  max-height: clamp(120px, 40vh, 420px); /* responsive heights */
   overflow-y: auto;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   background-color: var(--bg-elevated);
 }
 
+/* Compact list rows */
+
 /* Empty state styling for lists */
 
 /* Status text styling for list items - Now using shared styles from styles.css */
 
 /* Progress bar (if used in popup) */
-progress {
-  width: 100%;
-  height: 6px;
-  margin-top: var(--space-sm);
-  accent-color: var(--button-bg);
+/* Progress bar compact styling with overlay percent */
+
+/* Responsive tweaks for narrow side panels */
+@media (max-width: 380px) {
+  body { padding: var(--space-sm); }
+  .header h1 { font-size: 0.95em; }
+  .main-controls button { flex: 1 1 48%; }
+}
+
+@media (max-width: 300px) {
+  .main-controls button { flex: 1 1 100%; }
 }
 
 /* History Controls */

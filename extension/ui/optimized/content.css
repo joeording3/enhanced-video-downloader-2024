@@ -88,3 +88,11 @@ button[id^="evd-download-button-"] {
   background-color: var(--error) !important;
   opacity: 0.7;
 }
+
+/* Hidden state should fully remove the button from layout and interactions */
+button.evd-drag-handle.download-button.hidden,
+button[id^="evd-download-button-"].hidden {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}

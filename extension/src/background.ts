@@ -424,20 +424,15 @@ const getCurrentTheme = async (): Promise<Theme> => {
 const broadcastServerStatus = async (): Promise<void> => {
   const status = await getServerStatus();
 
-  // Update icon based on server status
+  // Update only the icon based on server status; do not change badge text here
   if (status === "connected") {
-    // Use the current theme's icon paths
     const iconPaths = getActionIconPaths();
     const currentTheme = await getCurrentTheme();
     chrome.action.setIcon({ path: iconPaths[currentTheme] });
-    (chrome.action as any).setBadgeText?.({ text: "" });
   } else {
-    // Use error icon (could be a different icon or just the current theme with badge)
     const iconPaths = getActionIconPaths();
     const currentTheme = await getCurrentTheme();
     chrome.action.setIcon({ path: iconPaths[currentTheme] });
-    (chrome.action as any).setBadgeText?.({ text: "!" });
-    (chrome.action as any).setBadgeBackgroundColor?.({ color: "#f44336" });
   }
 
   // Broadcast status to all UI components
@@ -626,15 +621,12 @@ const findServerPort = async (
     warn: warnFn = warn,
   } = deps || {};
 
-  // Show badge indicator if forcing scan
-  if (startScan && (chrome.action as any)?.setBadgeText) {
+  // Avoid changing badge text during scans to prevent flicker; optionally adjust background color
+  if (startScan && (chrome.action as any)?.setBadgeBackgroundColor) {
     try {
-      (chrome.action as any).setBadgeBackgroundColor({
-        color: "#ffc107",
-      });
-      (chrome.action as any).setBadgeText({ text: "SCAN" }); // Use plain ASCII string
+      (chrome.action as any).setBadgeBackgroundColor({ color: "#ffc107" });
     } catch (e) {
-      /* ignore errors setting badge */
+      /* ignore */
     }
   }
 
@@ -642,19 +634,8 @@ const findServerPort = async (
   stateManager.updateServerState({ scanInProgress: true });
 
   try {
-    // Progress callback for user feedback
-    const onProgress = (current: number, total: number) => {
-      if (startScan && (chrome.action as any)?.setBadgeText) {
-        try {
-          const percentage = Math.round((current / total) * 100);
-          (chrome.action as any).setBadgeText({
-            text: String(percentage) + "%",
-          }); // Use string concatenation
-        } catch (e) {
-          /* ignore errors setting badge */
-        }
-      }
-    };
+    // Keep existing badge text stable during scans
+    const onProgress = (_current: number, _total: number) => {};
 
     // Perform discovery with timeout and progress
     const port = await discover(
@@ -706,16 +687,7 @@ const findServerPort = async (
     stateManager.updateServerState({ backoffInterval: newBackoffInterval });
     return null;
   } finally {
-    // Clear badge after scanning
-    if (startScan && (chrome.action as any)?.setBadgeText) {
-      try {
-        (chrome.action as any).setBadgeText({ text: "" }); // Clear badge text, no emoji
-      } catch (e) {
-        /* ignore errors clearing badge */
-      }
-    }
-
-    // Clear scanning state
+    // Clear scanning state only; do not modify badge text
     stateManager.updateServerState({ scanInProgress: false });
   }
 };
@@ -730,17 +702,8 @@ const updateIcon = (): void => {
       .then(currentTheme => {
         const iconPath = iconPaths[currentTheme];
 
-        // Update icon based on server status
-        if (serverState.status === "connected") {
-          chrome.action.setIcon({ path: iconPath });
-          // Clear badge when connected
-          (chrome.action as any).setBadgeText?.({ text: "" });
-        } else {
-          chrome.action.setIcon({ path: iconPath });
-          // Show error badge when disconnected
-          (chrome.action as any).setBadgeText?.({ text: "!" });
-          (chrome.action as any).setBadgeBackgroundColor?.({ color: "#f44336" });
-        }
+        // Only update icon; leave badge text unchanged to avoid flicker
+        chrome.action.setIcon({ path: iconPath });
       })
       .catch(error => {
         warn("Failed to update icon:", error);
@@ -1034,26 +997,45 @@ const initializeExtension = async (): Promise<void> => {
             }
           });
 
-          // Merge server queued ids with local queue, remove any that are now active
+          // Make the server-reported queue authoritative to prevent stale queued entries
           try {
-            const union = Array.from(new Set<string>([...downloadQueue, ...serverQueued]));
-            const filtered = union.filter(id => !(id in active));
-            if (filtered.length !== downloadQueue.length || serverQueued.length > 0) {
-              downloadQueue = filtered;
-              // Refresh queuedDetails: keep only current queued ids, prefer latest details
-              const filteredSet = new Set(filtered);
-              // Drop removed ids
-              Object.keys(queuedDetails).forEach(id => {
-                if (!filteredSet.has(id)) delete (queuedDetails as any)[id];
-              });
-              // Upsert latest details
-              filtered.forEach(id => {
-                if (newQueuedDetails[id]) queuedDetails[id] = newQueuedDetails[id];
-              });
+            let changed = false;
+
+            // Replace local queue with server queue (excluding any IDs currently active)
+            const newQueue = serverQueued.filter(id => !(id in active));
+            if (newQueue.length !== downloadQueue.length || newQueue.some((id, i) => id !== downloadQueue[i])) {
+              downloadQueue = newQueue;
+              changed = true;
+            }
+
+            // Refresh queuedDetails to only include currently queued IDs
+            const newDetails: Record<string, { url?: string; title?: string; filename?: string }> = {};
+            newQueue.forEach(id => {
+              if (newQueuedDetails[id]) newDetails[id] = newQueuedDetails[id];
+              else if (queuedDetails[id]) newDetails[id] = queuedDetails[id];
+            });
+            const oldKeys = Object.keys(queuedDetails);
+            const newKeys = Object.keys(newDetails);
+            if (oldKeys.length !== newKeys.length || oldKeys.some(k => !(k in newDetails))) {
+              Object.keys(queuedDetails).forEach(k => delete (queuedDetails as any)[k]);
+              Object.entries(newDetails).forEach(([k, v]) => ((queuedDetails as any)[k] = v));
+              changed = true;
+            }
+
+            // Keep activeDownloads in sync so badge counts are accurate
+            const oldActiveKeys = Object.keys(activeDownloads);
+            const newActiveKeys = Object.keys(active);
+            if (oldActiveKeys.length !== newActiveKeys.length || oldActiveKeys.some(k => !(k in active))) {
+              Object.keys(activeDownloads).forEach(k => delete (activeDownloads as any)[k]);
+              Object.entries(active).forEach(([k, v]) => ((activeDownloads as any)[k] = v as any));
+              changed = true;
+            }
+
+            if (changed) {
               _updateQueueAndBadge();
             }
           } catch {
-            // ignore queue update errors
+            // ignore queue/active update errors
           }
 
           chrome.runtime

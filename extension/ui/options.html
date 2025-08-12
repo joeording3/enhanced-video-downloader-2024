@@ -307,25 +307,11 @@
                 >
                   Clear Button Positions
                 </button>
-              </div>
-            </div>
-          </section>
-
-          <!-- Queue Admin Section -->
-          <section class="settings-group" data-category="queue">
-            <h2 class="section-title">Queue Admin</h2>
-            <div class="section-content">
-              <div class="settings-actions">
                 <button type="button" id="queue-refresh" class="btn btn--secondary">Refresh Queue</button>
                 <button type="button" id="queue-clear" class="btn btn--secondary">Clear Queue</button>
               </div>
-              <ul id="queue-list" aria-label="Queued Items"></ul>
             </div>
           </section>
-
-          <!-- Save Button moved to Server Configuration section -->
-        </form>
-
         <!-- Logs Section -->
         <section
           id="log-container"
@@ -386,37 +372,6 @@
             <div id="log-display"></div>
           </div>
         </section>
-
-        <!-- Error History Section -->
-        <!-- Download History Section -->
-        <section
-          id="download-history-container"
-          aria-labelledby="download-history-title"
-          class="settings-group"
-          data-category="history"
-        >
-          <h2 class="section-title" id="download-history-title">
-            <button type="button" class="accordion-toggle" aria-expanded="true" aria-controls="history-section-content">Download History</button>
-          </h2>
-          <div class="section-content" id="history-section-content" role="region" aria-labelledby="download-history-title">
-            <div class="history-controls">
-              <button id="history-prev" class="btn btn--secondary" disabled aria-label="Previous History Page">&laquo; Prev</button>
-              <span class="history-controls-middle-group">
-                <label for="history-per-page">Items:</label>
-                <select id="history-per-page" aria-label="Items per page">
-                  <option value="10">10</option>
-                  <option value="25" selected>25</option>
-                  <option value="50">50</option>
-                  <option value="100">100</option>
-                </select>
-                <span id="history-page-info" aria-live="polite">Page 1 of 1</span>
-              </span>
-              <button id="history-next" class="btn btn--secondary" disabled aria-label="Next History Page">Next &raquo;</button>
-            </div>
-            <ul id="history-list"></ul>
-          </div>
-        </section>
-
       <footer>
         <p id="disclaimer">
           Disclaimer: Ensure you have permission to download content. The author

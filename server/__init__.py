@@ -152,7 +152,7 @@ def create_app(config: Config) -> Flask:
                 f"Server application initialized for {host_for_log}:{port_for_log} | log_file={active_log_path}"
             )
             # Mark as logged to avoid duplicate lines from repeated create_app calls in the same process
-            create_app.evd_startup_logged = True  # type: ignore[attr-defined]
+            create_app.evd_startup_logged = True
     except Exception:
         # Do not block startup on logging issues
         pass
@@ -178,7 +178,7 @@ def create_app(config: Config) -> Flask:
     app.after_request(add_security_headers)
 
     # Log API requests (method, path, status) with structured timing fields
-    @app.after_request  # type: ignore[misc]
+    @app.after_request
     def _log_api_requests(response: FlaskResponse) -> FlaskResponse:
         try:
             if request.path.startswith("/api"):
@@ -189,7 +189,7 @@ def create_app(config: Config) -> Flask:
                 try:
                     from flask import g as flask_g  # local import to avoid top-level import cycles
                 except Exception:
-                    flask_g = None  # type: ignore[assignment]
+                    flask_g = None
                 start_attr = getattr(flask_g, "evd_request_start", None) if flask_g is not None else None
                 if isinstance(start_attr, (float | int)):
                     start_ts_ms = int(float(start_attr) * 1000)
@@ -215,7 +215,7 @@ def create_app(config: Config) -> Flask:
             pass
         return response
 
-    @app.before_request  # type: ignore[misc]
+    @app.before_request
     def _record_start_time() -> None:
         # Store start time on flask.g to satisfy linters and keep request scope
         try:

@@ -8,7 +8,7 @@ Urgent Tasks:
 - [ ] Add unused-code checks to CI and local workflows
 <!-- working-on: unused-code checks (ts-prune, vulture) -->
 
-  - [ ] Wire into `make all`/`check` gates and CI once noise baseline is reviewed
+- [ ] Wire into `make all`/`check` gates and CI once noise baseline is reviewed
 
 <!-- working-on: options logs viewer wired to background API -->
 
@@ -18,9 +18,9 @@ Urgent Tasks:
   - [ ] Prune inline suppressions: add rationale or remove (tracked by `tmp/ignores_inline.csv`)
   - [ ] Trim per-file ignores under tests once noise is addressed
 <!-- working-on: api-json-errors -->
-  - [/] Reduce duplicate startup logs: add one-time guard in `server/__init__.py:create_app` to log
+- [/] Reduce duplicate startup logs: add one-time guard in `server/__init__.py:create_app` to log
     "Server application initialized..." only once per process.
-  - [/] Make yt-dlp options parsing robust: accept JSON strings and Pydantic models in
+- [/] Make yt-dlp options parsing robust: accept JSON strings and Pydantic models in
     `server/downloads/ytdlp.py` for `yt_dlp_options`; keep safe defaults when invalid.
 - [ ] Replace silent `pass` blocks with logging/handling in:
   - `server/cli_helpers.py` (loops and maintenance utils)
@@ -156,7 +156,6 @@ Legacy/Stub Cleanup:
   - [/] Align backgrounds to `--container-bg` and headers to `--header-bg`
   - [/] Normalize history/logs styles; use variables for dark-mode notification colors
   - [/] Make injected download button larger and reactive on click (bounce + success/error states)
-
 
 ### Hardcoded Variables Cleanup
 
@@ -393,7 +392,6 @@ Legacy/Stub Cleanup:
 - [ ] Monitor for new type ignore patterns
 - [ ] Ensure new test files maintain docstring standards
 - [ ] Track third-party library type stub availability
- 
 
 ### Success Metrics to Track
 

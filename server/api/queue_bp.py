@@ -15,7 +15,7 @@ from server.queue import queue_manager
 queue_bp = Blueprint("queue_api", __name__, url_prefix="/api")
 
 
-@queue_bp.route("/queue", methods=["GET"])  # type: ignore[misc]
+@queue_bp.route("/queue", methods=["GET"])
 def get_queue() -> Any:
     """Return the current queued items.
 
@@ -35,7 +35,7 @@ def get_queue() -> Any:
         return jsonify({"status": "error", "message": f"Failed to fetch queue: {e}"}), 500
 
 
-@queue_bp.route("/queue/reorder", methods=["POST", "OPTIONS"])  # type: ignore[misc]
+@queue_bp.route("/queue/reorder", methods=["POST", "OPTIONS"])
 def reorder_queue() -> Any:
     """Reorder pending items according to the provided list of IDs.
 
@@ -64,7 +64,7 @@ def reorder_queue() -> Any:
         return jsonify({"status": "error", "message": f"Failed to reorder queue: {e}"}), 500
 
 
-@queue_bp.route("/queue/<download_id>/remove", methods=["POST", "OPTIONS"])  # type: ignore[misc]
+@queue_bp.route("/queue/<download_id>/remove", methods=["POST", "OPTIONS"])
 def remove_from_queue(download_id: str) -> Any:
     """Remove a pending item by its download ID."""
     if request.method == "OPTIONS":

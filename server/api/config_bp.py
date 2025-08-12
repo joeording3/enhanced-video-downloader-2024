@@ -15,14 +15,14 @@ from flask.wrappers import Response
 from server.config import Config
 
 try:  # Prefer real dotenv if available
-    from dotenv import find_dotenv, set_key  # type: ignore[import]
+    from dotenv import find_dotenv, set_key
 except Exception:  # Fallbacks
 
-    def find_dotenv() -> str | None:  # type: ignore[return-type]
+    def find_dotenv() -> str | None:
         """Return None when python-dotenv is unavailable (stub)."""
         return None
 
-    def set_key(*_args: Any, **_kwargs: Any) -> tuple[bool | None, str, str]:  # type: ignore[return-type]
+    def set_key(*_args: Any, **_kwargs: Any) -> tuple[bool | None, str, str]:
         """Stub set_key to satisfy type checkers when dotenv is missing."""
         return None, "", ""
 

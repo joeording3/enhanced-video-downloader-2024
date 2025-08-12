@@ -1270,6 +1270,10 @@ export function setupLogsUI(): void {
           return !(isWerkzeug || isStatus200Json || isStatus200Arrow || isServerRequest200);
         })
         .join("\n");
+      // If filtering removed everything, fall back to unfiltered content so the user still sees logs
+      if (t.trim().length === 0 && text.trim().length > 0) {
+        t = text;
+      }
     }
     return t;
   };
@@ -1279,7 +1283,13 @@ export function setupLogsUI(): void {
     if (displayDiv) {
       displayDiv.textContent = "";
       const pre = document.createElement("pre");
-      const rawLines = (filtered || "(no logs)").split("\n");
+      // If nothing remains after filtering, show a simple placeholder without a misleading level badge
+      if (filtered.trim().length === 0) {
+        pre.textContent = "(no logs)";
+        displayDiv.appendChild(pre);
+        return;
+      }
+      const rawLines = filtered.split("\n");
 
       // First, try to parse as NDJSON (one JSON object per line)
       let entries = [] as Array<{

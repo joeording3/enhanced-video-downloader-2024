@@ -12,7 +12,6 @@ import threading
 from collections import deque
 from typing import Any
 
-from flask import Flask as _Flask
 from flask import current_app
 
 from .config import Config
@@ -128,16 +127,11 @@ class DownloadQueueManager:
     def _run_download_task(task: dict[str, Any]) -> None:
         """Execute a queued download using the existing handler."""
         # Ensure there's an app context if required by downstream code
-        # Access the underlying Flask object when available
-        app: _Flask | None = None
-        # Avoid accessing private member; use current_app proxy directly when available
-        if current_app:  # type: ignore[truthy-function]
-            app = current_app  # type: ignore[assignment]
-
-        if app is not None:
-            # Run within app context for safety (jsonify/config/logging)
+        # Use a duck-typed check for an app_context callable to avoid type suppressions
+        app_context_func = getattr(current_app, "app_context", None)
+        if callable(app_context_func):
             try:
-                with app.app_context():  # type: ignore[union-attr]
+                with app_context_func():  # pyright: ignore[reportGeneralTypeIssues]
                     handle_ytdlp_download(task)
             except Exception:
                 # Swallow exceptions; errors are logged by the handler

@@ -252,7 +252,12 @@ def _process_uses_port(proc: psutil.Process, port: int) -> bool:
     bool
         True if the process is using the port, False otherwise.
     """
-    return any(conn.laddr.port == port for conn in proc.net_connections(kind="inet"))
+    try:
+        net_conns = getattr(proc, "net_connections", None)
+        conns = net_conns(kind="inet") if callable(net_conns) else ()
+        return any(getattr(conn.laddr, "port", None) == port for conn in conns)
+    except Exception:
+        return False
 
 
 def kill_process(pid: int) -> bool:

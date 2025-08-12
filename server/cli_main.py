@@ -1101,8 +1101,9 @@ def _cli_stop_pre_checks() -> list[psutil.Process]:
                 try:
                     if not proc.is_running():
                         continue
-                    conns = proc.net_connections(kind="inet")  # type: ignore[attr-defined]
-                    if any(getattr(c.laddr, "port", None) == fallback_port for c in conns):
+                    net_conns = getattr(proc, "net_connections", None)
+                    conns_list = net_conns(kind="inet") if callable(net_conns) else ()
+                    if any(getattr(c.laddr, "port", None) == fallback_port for c in conns_list):
                         pid_to_process.setdefault(proc.pid, proc)
                 except Exception:
                     continue

@@ -70,6 +70,10 @@ body.dark-theme .btn--secondary {
 }
 
 /* Button Sizes */
+.btn--small {
+  padding: calc(var(--button-padding-y) - 2px) calc(var(--button-padding-x) - 4px);
+  font-size: var(--font-size-sm);
+}
 
 /* ===== INPUT COMPONENTS ===== */
 

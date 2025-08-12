@@ -7,7 +7,7 @@ This module provides functions to load and save extraction rule definitions from
 import contextlib
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 # Update the rules file path to use the config directory
 CONFIG_DIR = Path(__file__).parent / "config"
@@ -28,9 +28,9 @@ def load_extraction_rules() -> list[dict[str, Any]]:
         with RULES_PATH.open(encoding="utf-8") as f:
             data: Any = json.load(f)
             # Ensure the loaded data is a list of dictionaries
-            if isinstance(data, list) and all(isinstance(item, dict) for item in data):  # type: ignore[arg-type]
+            if isinstance(data, list) and all(isinstance(item, dict) for item in data):
                 # Cast to proper type after validation
-                return data  # type: ignore[return-value]
+                return cast(list[dict[str, Any]], data)
             return []
     except (OSError, json.JSONDecodeError):
         return []

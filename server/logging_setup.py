@@ -119,7 +119,7 @@ class JSONLineFormatter(logging.Formatter):
                 continue
             # Best-effort: only include simple JSON-serializable values
             try:
-                json.dumps(value)  # type: ignore[arg-type]
+                json.dumps(value)
             except Exception:
                 continue
             payload[key] = value

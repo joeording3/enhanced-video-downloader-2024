@@ -6,7 +6,7 @@ entries via GET and POST requests.
 """
 
 import logging
-from typing import Any
+from typing import Any, cast
 
 from flask import Blueprint, jsonify, request
 from flask.wrappers import Response
@@ -85,12 +85,12 @@ def _handle_history_append(data: dict[str, Any]) -> tuple[Response, int]:
 def _history_post(data: Any) -> tuple[Response, int]:
     """Handle POST /history: sync full history, clear, or append entry."""
     if isinstance(data, list):
-        # Type annotation to help pyright
-        history_list: list[dict[str, Any]] = data  # type: ignore[assignment]
+        # Narrow dynamic payload to expected list shape
+        history_list = cast(list[dict[str, Any]], data)
         return _handle_history_sync(history_list)
 
     if isinstance(data, dict):
-        data_dict: dict[str, Any] = data  # type: ignore[assignment]
+        data_dict = cast(dict[str, Any], data)
         action: str | None = data_dict.get("action")
         if action == "clear":
             return _handle_history_clear()

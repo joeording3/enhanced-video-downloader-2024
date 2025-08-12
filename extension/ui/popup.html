@@ -64,17 +64,12 @@
         </section>
         <div class="spacing-md"></div>
         <div id="config-error-display" class="error-display"></div>
-        <section
-          id="current-downloads-container"
-          aria-labelledby="current-downloads-heading"
-        >
-          <h2 id="current-downloads-heading">Current Downloads</h2>
+        <section id="downloads-section" aria-labelledby="downloads-heading">
+          <h2 id="downloads-heading">Downloads</h2>
+          <!-- Active and queued downloads -->
           <ul id="download-status"></ul>
-        </section>
-
-        <div class="spacing-sm"></div>
-        <section id="history-section" aria-labelledby="history-heading">
-          <h2 id="history-heading">History</h2>
+          <div class="spacing-sm"></div>
+          <!-- History (with pagination controls) -->
           <div class="history-controls">
             <button
               id="prev-page"
