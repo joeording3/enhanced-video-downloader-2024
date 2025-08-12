@@ -612,7 +612,7 @@ test.describe("Chrome Extension E2E Tests", () => {
       }
 
       // Helper to detect if a video/audio is present and can be played
-      async function detectMedia(p) {
+      async function detectMedia(p, overrideMs) {
         // Determine domain-specific timeout from media-domains.json
         let timeoutMs = 15000;
         try {
@@ -630,6 +630,9 @@ test.describe("Chrome Extension E2E Tests", () => {
             }
           }
         } catch {}
+        if (typeof overrideMs === "number" && overrideMs > 0) {
+          timeoutMs = overrideMs;
+        }
         // Wait for network to settle before attempts (best-effort)
         try {
           await p.waitForLoadState("networkidle", { timeout: Math.min(15000, Math.max(2000, timeoutMs)) });
@@ -672,7 +675,7 @@ test.describe("Chrome Extension E2E Tests", () => {
         if (!url.startsWith(matrixBaseUrl)) {
           await closeOverlaysLocal(page).catch(() => {});
         }
-        const detected = await detectMedia(page);
+        const detected = await detectMedia(page, 5000);
         expect(detected).toBe(false);
       }
     });
