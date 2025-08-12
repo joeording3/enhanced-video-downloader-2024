@@ -101,6 +101,8 @@ export async function applyPopupTheme(forceTheme?: "light" | "dark"): Promise<vo
   }
 
   document.body.classList.toggle("dark-theme", isDark);
+  // Always use compact density for popup to maximize information density
+  document.body.classList.add("compact");
 
   // Update logo src based on theme
   const logo = document.querySelector("img[src*='icon']") as HTMLImageElement;
@@ -409,7 +411,7 @@ export function createActiveListItem(
   statusText.textContent = statusObj.status;
   li.appendChild(statusText);
   const btn = document.createElement("button");
-  btn.className = "pause-button";
+  btn.className = "btn btn--secondary btn--small pause-button";
   btn.textContent = "Pause";
   btn.addEventListener("click", () => {
     chrome.runtime.sendMessage({ type: "pauseDownload", downloadId }, () => {});
@@ -419,7 +421,7 @@ export function createActiveListItem(
   const priorityWrapper = document.createElement("div");
   priorityWrapper.className = "priority-controls";
   const select = document.createElement("select");
-  select.className = "priority-select";
+  select.className = "input input--select input--small priority-select";
   const priorityOptions = [
     { label: "Low (+10)", value: 10 },
     { label: "Below normal (+5)", value: 5 },
@@ -433,7 +435,7 @@ export function createActiveListItem(
     select.appendChild(o);
   });
   const setBtn = document.createElement("button");
-  setBtn.className = "priority-set-button";
+  setBtn.className = "btn btn--secondary btn--small priority-set-button";
   setBtn.textContent = "Set Priority";
   setBtn.addEventListener("click", () => {
     const val = parseInt(select.value, 10);
@@ -489,12 +491,17 @@ export function handleDragEnd(e: DragEvent): void {
 }
 
 // Render current downloads and queued items
-export function renderDownloadStatus(data: { active: Record<string, any>; queue: string[] }): void {
+export function renderDownloadStatus(data: {
+  active: Record<string, any>;
+  queue: string[];
+  queuedDetails?: Record<string, { url?: string; title?: string; filename?: string }>;
+}): void {
   const container = document.getElementById("download-status");
   if (!container) return;
   container.innerHTML = "";
   const activeIds = Object.keys(data.active || {});
   const queuedIds = data.queue || [];
+  const qDetails = data.queuedDetails || {};
   if (activeIds.length === 0 && queuedIds.length === 0) {
     const li = document.createElement("li");
     li.textContent = "No active or queued downloads.";
@@ -543,6 +550,12 @@ export function renderDownloadStatus(data: { active: Record<string, any>; queue:
     const queueUl = document.createElement("ul");
     queuedIds.forEach(id => {
       const li = createQueuedListItem({ id });
+      const meta = document.createElement("div");
+      meta.className = "queued-meta";
+      const info = qDetails[id] || {};
+      const label = info.title || info.filename || info.url || id;
+      meta.textContent = String(label);
+      li.appendChild(meta);
       // Enable drag-and-drop reordering for queued items
       li.setAttribute("draggable", "true");
       li.addEventListener("dragstart", handleDragStart);

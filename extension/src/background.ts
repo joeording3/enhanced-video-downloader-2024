@@ -319,6 +319,7 @@ interface DownloadStatus {
 // Forward declaration for functions used by debouncedUpdateQueueUI or early setup
 let downloadQueue: string[] = []; // Stores URLs of queued videos
 const activeDownloads: Record<string, DownloadStatus> = {}; // Store {url: {status, progress, filename}}
+const queuedDetails: Record<string, { url?: string; title?: string; filename?: string }> = {};
 
 // Export the variables to ensure they're not optimized out
 export { downloadQueue, activeDownloads };
@@ -332,6 +333,7 @@ const updateQueueUI = (): void => {
       type: "queueUpdated",
       queue: downloadQueue,
       active: activeDownloads,
+      queuedDetails,
     })
     .catch(() => {
       // Catch errors if the popup is not open or the receiver doesn't exist.
@@ -1016,9 +1018,17 @@ const initializeExtension = async (): Promise<void> => {
           const data = await res.json();
           const active: Record<string, any> = {};
           const serverQueued: string[] = [];
+          const newQueuedDetails: Record<
+            string,
+            { url?: string; title?: string; filename?: string }
+          > = {};
           Object.entries(data || {}).forEach(([id, obj]) => {
             if ((obj as any)?.status === "queued") {
               serverQueued.push(id);
+              const url = (obj as any)?.url as string | undefined;
+              const title = (obj as any)?.title as string | undefined;
+              const filename = (obj as any)?.filename as string | undefined;
+              newQueuedDetails[id] = { url, title, filename };
             } else {
               active[id] = obj;
             }
@@ -1030,6 +1040,16 @@ const initializeExtension = async (): Promise<void> => {
             const filtered = union.filter(id => !(id in active));
             if (filtered.length !== downloadQueue.length || serverQueued.length > 0) {
               downloadQueue = filtered;
+              // Refresh queuedDetails: keep only current queued ids, prefer latest details
+              const filteredSet = new Set(filtered);
+              // Drop removed ids
+              Object.keys(queuedDetails).forEach(id => {
+                if (!filteredSet.has(id)) delete (queuedDetails as any)[id];
+              });
+              // Upsert latest details
+              filtered.forEach(id => {
+                if (newQueuedDetails[id]) queuedDetails[id] = newQueuedDetails[id];
+              });
               _updateQueueAndBadge();
             }
           } catch {
@@ -1039,7 +1059,7 @@ const initializeExtension = async (): Promise<void> => {
           chrome.runtime
             .sendMessage({
               type: "downloadStatusUpdate",
-              data: { active, queue: downloadQueue },
+              data: { active, queue: downloadQueue, queuedDetails },
             })
             .catch(() => {
               // Ignore when no receivers (e.g., popup/options not open)
@@ -1125,7 +1145,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         case "getQueue":
           // This logic remains untouched
-          sendResponse({ queue: downloadQueue, active: activeDownloads });
+          sendResponse({ queue: downloadQueue, active: activeDownloads, queuedDetails });
           break;
 
         case "clearHistory": {
@@ -1469,6 +1489,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           try {
             // Optimistic update
             downloadQueue = downloadQueue.filter(q => q !== id);
+            delete (queuedDetails as any)[id];
             _updateQueueAndBadge();
             // Also remove on the server if available
             if (port) {

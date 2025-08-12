@@ -126,11 +126,13 @@ h2 {
   background-color: var(--bg-elevated);
 }
 
+/* Compact list rows */
 #download-status li,
 #download-history li {
-  padding: var(--list-row-padding-y) var(--list-row-padding-x);
+  padding: calc(var(--list-row-padding-y) - 4px) calc(var(--list-row-padding-x) - 6px);
   border-bottom: 1px solid var(--border-color);
-  font-size: 0.9em;
+  font-size: 0.85em;
+  line-height: 1.2;
   color: var(--text-color);
   background-color: var(--bg-elevated);
 }
@@ -175,11 +177,46 @@ h2 {
 }
 
 /* Progress bar (if used in popup) */
-progress {
+/* Progress bar compact styling with overlay percent */
+.active-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto auto;
+  grid-column-gap: var(--space-sm);
+  grid-row-gap: var(--space-xs);
+}
+
+.active-item > div:first-child {
+  grid-column: 1 / -1;
+  font-weight: var(--font-weight-bold);
+  font-size: 0.9em;
+}
+
+.active-item progress {
+  grid-column: 1 / -1;
   width: 100%;
-  height: 6px;
-  margin-top: var(--space-sm);
+  height: 4px;
+  margin-top: var(--space-xs);
   accent-color: var(--button-bg);
+}
+
+.item-percent {
+  margin: 0;
+  justify-self: end;
+  font-size: 0.75em;
+  color: var(--text-secondary);
+}
+
+.item-status {
+  margin-right: var(--space-sm);
+  font-size: 0.8em;
+}
+
+.priority-controls {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
 }
 
 /* History Controls */

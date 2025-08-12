@@ -9,8 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- Popup: Prevent "The provided double value is non-finite" error by sanitizing and clamping
-  active download progress values in `createActiveListItem` to the [0, 100] range and rounding the
+- Popup: Prevent "The provided double value is non-finite" error by sanitizing and clamping active
+  download progress values in `createActiveListItem` to the [0, 100] range and rounding the
   displayed percentage.
 - Extension background messaging: prevent noisy connection errors by ensuring broadcast
   `chrome.runtime.sendMessage(...)` calls handle the no-receiver case via callbacks or
@@ -24,6 +24,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Playwright E2E: Stabilized opt-in real-site test (YouTube Shorts drag-and-click). The test now
   clamps the injected download button into the viewport and falls back to a JS-triggered click when
   actionability fails, preventing intermittent "element is outside of the viewport" failures.
+- Content script: Prevent transient disappearance of the floating Download button after click on
+  YouTube. Removed an unnecessary remove→append cycle that triggered the MutationObserver and added
+  a short post-click stabilization window to avoid removing/re-adding during page reflows.
 
 ### Added
 

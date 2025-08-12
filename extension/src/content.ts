@@ -48,6 +48,8 @@ const MAX_CHECKS = UI_CONSTANTS.MAX_VIDEO_CHECKS;
 const VIDEO_SELECTOR = DOM_SELECTORS.VIDEO_SELECTORS;
 const MIN_VIDEO_WIDTH = UI_CONSTANTS.MIN_VIDEO_WIDTH;
 const MIN_VIDEO_HEIGHT = UI_CONSTANTS.MIN_VIDEO_HEIGHT;
+// Avoid DOM churn immediately after user interaction (click/drag) to prevent flicker
+const POST_CLICK_STABILIZE_MS = 3000;
 
 // Visual guidelines are enforced via CSS classes in content.css
 
@@ -74,6 +76,8 @@ let activeDragButton: HTMLElement | null = null;
 let suppressClicksUntil = 0;
 let lastPointerDownAt = 0;
 let lastPointerDownPos: { x: number; y: number } | null = null;
+// Suppress MutationObserver-triggered re-add when we remove intentionally
+let suppressObserverUntil = 0;
 
 // Utility functions - now using centralized logger
 const log = (...args: any[]): void => logger.info(args.join(" "), { component: "content" });
@@ -382,15 +386,7 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
 
   // Ensure button has correct style
   ensureDownloadButtonStyle(btn);
-  // Re-append to end of body to ensure it is above later siblings for stacking contexts
-  try {
-    if (btn.parentElement === document.body) {
-      document.body.removeChild(btn);
-      document.body.appendChild(btn);
-    }
-  } catch {
-    // ignore
-  }
+  // Do not remove/re-append the button here; this can trigger MutationObserver and cause flicker
 
   // Add event listeners for dragging
   btn.addEventListener("mousedown", e => {
@@ -488,8 +484,21 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
         return;
       }
 
-      // Treat as click only when not currently dragging
+      // Treat as click only when not currently dragging (and pointer didn't move significantly)
       if (!currentState.isDragging) {
+        // If we have a recent pointerdown position, verify minimal movement threshold
+        if (lastPointerDownPos) {
+          const movement = Math.hypot(
+            (e as MouseEvent).clientX - lastPointerDownPos.x,
+            (e as MouseEvent).clientY - lastPointerDownPos.y
+          );
+          if (movement > 3) {
+            // Consider it a drag; do not initiate download
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            return;
+          }
+        }
         // Update last click time
         stateManager.updateUIState({ lastClickTime: now });
         e.preventDefault();
@@ -614,6 +623,10 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
       for (const mutation of mutations) {
         for (const node of Array.from(mutation.removedNodes)) {
           if (node instanceof HTMLElement && node.id && node.id.startsWith(BUTTON_ID_PREFIX)) {
+            // Skip re-adding if within intentional suppression window
+            if (Date.now() < suppressObserverUntil) {
+              continue;
+            }
             log("Button was removed, re-adding");
             createOrUpdateButton();
             return;
@@ -626,6 +639,14 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
       childList: true,
       subtree: true,
     });
+  }
+
+  // Ensure visibility on create/update
+  try {
+    btn.classList.add("evd-visible");
+    btn.classList.remove("hidden");
+  } catch {
+    /* no-op */
   }
 
   return btn;
@@ -673,7 +694,9 @@ function onDrag(event: MouseEvent): void {
     try {
       (activeDragButton || downloadButton)?.classList.add("evd-visible");
       (activeDragButton || downloadButton)?.classList.remove("hidden");
-    } catch {}
+    } catch {
+      /* no-op */
+    }
   }
 }
 
@@ -914,28 +937,40 @@ async function findVideosAndInjectButtons(): Promise<void> {
 
   const foundSignificantVideo = allCandidates.length > 0;
   if (foundSignificantVideo) {
+    const sinceClick = Date.now() - stateManager.getUIState().lastClickTime;
+    const withinStabilizeWindow = sinceClick >= 0 && sinceClick < POST_CLICK_STABILIZE_MS;
     const primary = selectPrimaryMediaCandidate(allCandidates);
     if (primary && !injectedButtons.has(primary)) {
       await createOrUpdateButton(primary);
     }
 
     // If a global button exists, remove it to avoid duplicates when a primary media is present
-    if (downloadButton && document.body.contains(downloadButton)) {
-      try {
-        downloadButton.remove();
-      } catch {
-        // ignore
+    if (!withinStabilizeWindow) {
+      if (downloadButton && document.body.contains(downloadButton)) {
+        try {
+          suppressObserverUntil = Date.now() + 1000;
+          downloadButton.remove();
+        } catch {
+          // ignore
+        }
+        downloadButton = null;
       }
-      downloadButton = null;
     }
 
     // Ensure only one injected button tied to media exists; remove others
-    for (const [el, btn] of Array.from(injectedButtons.entries())) {
-      if (el !== primary) {
-        if (btn && document.body.contains(btn)) {
-          btn.remove();
+    if (!withinStabilizeWindow) {
+      for (const [el, btn] of Array.from(injectedButtons.entries())) {
+        if (el !== primary) {
+          if (btn && document.body.contains(btn)) {
+            try {
+              suppressObserverUntil = Date.now() + 1000;
+              btn.remove();
+            } catch {
+              // ignore
+            }
+          }
+          injectedButtons.delete(el);
         }
-        injectedButtons.delete(el);
       }
     }
   }

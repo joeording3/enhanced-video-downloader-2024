@@ -1,6 +1,6 @@
 # Makefile for Enhanced Video Downloader
 
-.PHONY: all all-continue check install-dev build-js test test-py test-js lint lint-py lint-js lint-md format format-py format-js format-md format-check format-check-py format-check-js format-check-md coverage coverage-py coverage-js clean test-fast test-js-fast test-integration test-js-slow test-slow generate-ignores test-audit audit-coverage audit-mutation audit-performance audit-docs mutation mutation-py mutation-js emoji-check markdown-check check-junk-folders cleanup-junk-folders monitor-junk-folders lint-unused lint-unused-ts lint-unused-py clean-temp clean-temp-reports clean-reserved-names coverage-update inventory-report audit-tests-redundancy setup-uv
+.PHONY: all all-continue check install-dev build-js test test-py test-js lint lint-py lint-js lint-md format format-py format-js format-md format-check format-check-py format-check-js format-check-md coverage coverage-py coverage-js clean test-fast test-js-fast test-integration test-js-slow test-slow generate-ignores test-audit audit-coverage audit-mutation audit-performance audit-docs mutation mutation-py mutation-js emoji-check markdown-check check-junk-folders cleanup-junk-folders monitor-junk-folders lint-unused lint-unused-ts lint-unused-py clean-temp clean-temp-reports clean-reserved-names coverage-update inventory-report audit-tests-redundancy setup-uv docstrings-audit docstrings-fix docstrings-report
 
 all:
 	@echo "=== Running All Quality Checks ==="
@@ -266,6 +266,28 @@ audit-docs:
 	@echo "Checking for TODO/FIXME in tests..."
 	grep -r "TODO\|FIXME" tests/ || echo "No TODO/FIXME found in tests"
 	@echo "Documentation audit complete."
+
+# Docstring audit (Python): enforce NumPy/Sphinx-style via Ruff (pydocstyle + RST)
+docstrings-audit:
+    @echo "=== Running Python docstring audit (Ruff: D + RST) ==="
+    @mkdir -p reports
+    # Full text report
+    @ruff check server --select D,RST --output-format=full > reports/docstrings_report.txt || true
+    # JSON report for tooling
+    @ruff check server --select D,RST --output-format=json > reports/docstrings_report.json || true
+    @echo "Docstring audit complete. See reports/docstrings_report.{txt,json}"
+
+# Attempt autofixes for simple issues (summary-line punctuation, spacing, etc.)
+docstrings-fix:
+    @echo "=== Attempting auto-fixes for docstrings (safe subset) ==="
+    # Use Ruff to apply safe fixes; manual follow-up will still be required for missing/incorrect docs
+    @ruff check server --select D,RST --fix || true
+    @echo "Auto-fix pass complete. Re-run 'make docstrings-audit' to review remaining issues."
+
+# Convenience target: run audit and show a brief summary to console
+docstrings-report: docstrings-audit
+    @echo "=== Docstring issues summary (top 50) ==="
+    @cat reports/docstrings_report.txt | head -n 200 || true
 
 # Mutation Testing Targets
 mutation: mutation-js mutation-py

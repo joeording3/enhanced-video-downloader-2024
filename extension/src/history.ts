@@ -9,7 +9,7 @@ import { HistoryEntry } from "./types";
 export const historyStorageKey = "downloadHistory";
 
 /**
- * Fetches history entries with pagination
+ * Fetches history entries with pagination. Falls back to server /api/history if local storage is empty.
  * @param page - Page number to fetch
  * @param perPage - Number of items per page
  * @returns Promise resolving to history entries and total count
@@ -21,31 +21,97 @@ export async function fetchHistory(
   history: HistoryEntry[];
   totalItems: number;
 }> {
-  return new Promise((resolve, reject) => {
+  // Helper to normalize entries (ensure numeric timestamps and id presence)
+  const normalizeEntries = (items: HistoryEntry[]): HistoryEntry[] =>
+    items.map((item: HistoryEntry) => ({
+      ...item,
+      id: (item as any).id || (item as any).download_id || crypto.randomUUID(),
+      timestamp:
+        typeof item.timestamp === "number"
+          ? item.timestamp
+          : item.timestamp
+          ? Date.parse(String(item.timestamp)) || Date.now()
+          : Date.now(),
+    }));
+
+  // Read from local storage first
+  const local = await new Promise<HistoryEntry[]>(resolve => {
     chrome.storage.local.get({ [historyStorageKey]: [] }, result => {
       if (chrome.runtime.lastError) {
         console.warn("[EVD][HISTORY] Error fetching history:", chrome.runtime.lastError.message);
-        return resolve({ history: [], totalItems: 0 });
+        return resolve([]);
       }
-      // Ensure items have a timestamp for sorting, default to 0 if missing
-      const allHistory = (result[historyStorageKey] || []).map((item: HistoryEntry) => ({
-        ...item,
-        timestamp: item.timestamp || 0,
-      }));
-      // Sort by timestamp descending (newest first)
-      allHistory.sort(
-        (a: HistoryEntry, b: HistoryEntry) => (b.timestamp as number) - (a.timestamp as number)
-      );
-
-      // Handle pagination
-      const totalItems = allHistory.length;
-      const startIndex = (page - 1) * perPage;
-      const endIndex = startIndex + perPage;
-      const paginatedHistory = allHistory.slice(startIndex, endIndex);
-
-      resolve({ history: paginatedHistory, totalItems });
+      resolve((result[historyStorageKey] as HistoryEntry[]) || []);
     });
   });
+
+  // If we have local items, paginate/sort and return
+  if (local && local.length > 0) {
+    const all = normalizeEntries(local);
+    // Sort by timestamp descending (newest first)
+    all.sort((a, b) => (b.timestamp as number) - (a.timestamp as number));
+    const totalItems = all.length;
+    const startIndex = (page - 1) * perPage;
+    const endIndex = startIndex + perPage;
+    const paginated = all.slice(startIndex, endIndex);
+    return { history: paginated, totalItems };
+  }
+
+  // Fallback: attempt to fetch from server if a port is known
+  try {
+    const { serverPort } = await chrome.storage.local.get("serverPort");
+    const port = serverPort as number | undefined;
+    if (!port) return { history: [], totalItems: 0 };
+
+    const url = new URL(`http://127.0.0.1:${port}/api/history`);
+    // Ask server to paginate for efficiency; still normalize locally
+    url.searchParams.set("page", String(page));
+    url.searchParams.set("per_page", String(perPage));
+
+    const res = await fetch(url.toString());
+    if (!res.ok) return { history: [], totalItems: 0 };
+    const data = (await res.json()) as { history?: any[]; total_items?: number };
+
+    const serverItemsRaw: HistoryEntry[] = (data.history as any[]) || [];
+    // Map server fields to our HistoryEntry shape
+    const mapped: HistoryEntry[] = serverItemsRaw.map((it: any) => ({
+      id: it.id || it.download_id || crypto.randomUUID(),
+      url: it.url,
+      status: it.status,
+      filename: it.filename,
+      filepath: it.filepath,
+      page_title: it.page_title || it.title,
+      title: it.title,
+      error: it.error || it.message,
+      timestamp: it.timestamp ? Date.parse(String(it.timestamp)) || Date.now() : Date.now(),
+    }));
+
+    const normalized = normalizeEntries(mapped);
+
+    // Seed local storage (best-effort) with the first page to make UI snappier next time
+    try {
+      // We will not clobber any future locally-added items; only set if still empty
+      const confirmLocal = await new Promise<HistoryEntry[]>(resolve => {
+        chrome.storage.local.get({ [historyStorageKey]: [] }, r =>
+          resolve(r[historyStorageKey] || [])
+        );
+      });
+      if (!confirmLocal || confirmLocal.length === 0) {
+        // Keep a bounded cache locally; store only what we retrieved
+        await new Promise<void>(resolve => {
+          chrome.storage.local.set({ [historyStorageKey]: normalized }, () => resolve());
+        });
+      }
+    } catch {
+      // ignore seeding failures
+    }
+
+    const totalItems = typeof data.total_items === "number" ? data.total_items : normalized.length;
+    return { history: normalized, totalItems };
+  } catch (e) {
+    console.warn("[EVD][HISTORY] Server history fetch failed:", (e as Error).message);
+    return { history: [], totalItems: 0 };
+  }
 }
 
 /**
@@ -424,11 +490,17 @@ export async function removeHistoryItemAndNotify(itemId?: string | number): Prom
  */
 function sanitizeFilename(name: string): string {
   // Remove invalid characters for filenames
-  return name
-    .replace(/[/\\?%*:|"<>]/g, "-") // Replace invalid chars with dash
-    .replace(/\s+/g, "_") // Replace spaces with underscore
-    .replace(/^\.+/, "") // Remove leading dots
-    .trim();
+  return (
+    name
+      // Replace invalid characters (except forward slash handled separately below)
+      .replace(/[\\?%*:|"<>]/g, "-")
+      // Replace forward slashes
+      .replace(/\//g, "-")
+      // Replace spaces with underscore
+      .replace(/\s+/g, "_")
+      .replace(/^\.+/, "") // Remove leading dots
+      .trim()
+  );
 }
 
 function computeDisplayTitle(item: HistoryEntry): string {

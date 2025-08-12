@@ -114,10 +114,9 @@ Urgent Tasks:
   - [ ] Collapse duplicate/migrated constants in `server/constants.py`.
   - [ ] Remove unreferenced validators/fields in `server/schemas.py`, or ensure they are referenced
         by pydantic models.
-  
-  - [/] Popup: guard against non-finite progress values causing
-        "The provided double value is non-finite" in `createActiveListItem`;
-        clamp to [0,100] and round label.
+
+  - [/] Popup: guard against non-finite progress values causing "The provided double value is
+    non-finite" in `createActiveListItem`; clamp to [0,100] and round label.
 
 - **Automation and CI**
   - [ ] Keep `make lint-unused` non-blocking during triage.
@@ -185,6 +184,9 @@ Urgent Tasks:
   - [x] Stabilized opt-in real-site Playwright test for YouTube Shorts by clamping the injected
         button into the viewport and adding a JS click fallback when Playwright actionability fails.
         This eliminates intermittent "element is outside of the viewport" errors.
+  - [x] Prevent post-click button flicker on YouTube: removed re-append churn in `content.ts` and
+        added a short stabilization window after clicks to avoid transient removals while the page
+        reflows.
 - [ ] Debug API (`GET /debug/paths`) is dev-only and unused in UI; optionally surface in Options
       “Debug” tab or leave as internal.
 
