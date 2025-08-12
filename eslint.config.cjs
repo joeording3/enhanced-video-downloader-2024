@@ -110,24 +110,15 @@ module.exports = defineConfig([
     },
   },
 
-  // Disable ESLint core rules that conflict with Prettier
+  // Disable ESLint core rules that conflict with Prettier (keep minimal set)
   {
     rules: {
-      "arrow-parens": "off",
-      "comma-dangle": "off",
-      "comma-spacing": "off",
-      "eol-last": "off",
-      "func-call-spacing": "off",
-      indent: "off",
-      "key-spacing": "off",
-      "keyword-spacing": "off",
+      // Rely on Prettier for formatting; avoid turning off unrelated correctness rules
       "no-extra-semi": "off",
-      "object-curly-spacing": "off",
       quotes: "off",
       semi: "off",
-      "space-before-function-paren": "off",
-      "space-in-parens": "off",
-      "space-infix-ops": "off",
+      indent: "off",
+      "comma-dangle": "off",
     },
   },
 
@@ -197,15 +188,18 @@ module.exports = defineConfig([
       "@typescript-eslint": tseslint,
     },
     rules: {
-      // Disable unused variable checks for TS files (handled by plugin rules or code cleanup)
+      // Prefer plugin's unused-vars with underscores convention
       "no-unused-vars": "off",
-      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { "vars": "all", "args": "after-used", "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }
+      ],
       "prefer-const": "warn",
-      "no-console": "off",
+      "no-console": "warn",
       "block-spacing": "error",
       "@typescript-eslint/explicit-function-return-type": "off",
-      "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-non-null-assertion": "off",
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-non-null-assertion": "warn",
     },
   },
 ]);

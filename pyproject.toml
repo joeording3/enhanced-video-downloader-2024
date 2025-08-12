@@ -170,12 +170,8 @@ ignore = [
     "PLR2004", # Magic value used in comparison
     "S101",   # Use of assert detected (common in tests)
     "S108",   # Probable insecure usage of temporary file
-    "D100",   # Missing docstring in public module
-    "D212",   # Multi-line docstring summary should start at the first line
-    "D401",   # First line should be in imperative mood
     "PT013",  # Incorrect import of pytest
     "PT018",  # Assertion should be broken down into multiple parts
-    "ANN401", # Dynamically typed expressions are disallowed
     "FA100",  # Add from __future__ import annotations
     "ARG005", # Unused lambda argument
     "PLC0415", # Import should be at the top-level of a file (temporarily disabled)
@@ -185,7 +181,7 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "tests/test_emoji_detection.py" = ["E501"]
 "tests/**/*.py" = [
-    "D100", "D212", "S101", "PT013", "PT018", "ANN401", "ARG001", "ARG002",
+    "D212", "S101", "PT013", "PT018", "ARG001", "ARG002",
     "PLR2004", "S108", "SLF001", "TRY002", "TRY003", "RET504", "PTH103", "PTH123",
     "PTH119", "PLR0124", "PIE790", "UP024",
 ]

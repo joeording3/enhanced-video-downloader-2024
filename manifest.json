@@ -5,6 +5,7 @@
   "description": "Download videos from various platforms with ease. Supports multiple formats and resolutions.",
   "permissions": [
     "storage",
+    "sidePanel",
     "notifications",
     "activeTab",
     "scripting",

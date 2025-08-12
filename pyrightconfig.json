@@ -54,9 +54,6 @@
     "**/.venv",
     "**/coverage_html",
     "**/htmlcov",
-    "**/tests",
-    "**/extension",
-    "**/scripts",
     "**/reports",
     "**/tmp",
     "**/logs",
@@ -73,8 +70,6 @@
     "**/Library/Python/*/lib/python*/dist-packages",
     "**/.local/lib/python*/site-packages",
     "**/.local/lib/python*/dist-packages",
-    "server/cli_helpers.py",
-    "server/downloads/ytdlp.py",
-    "server/__main__.py"
+    
   ]
 }

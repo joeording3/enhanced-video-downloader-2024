@@ -1527,10 +1527,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 if (!isTestEnvironment) {
   // Set up initialization on service worker lifecycle events
   chrome.runtime.onInstalled.addListener(() => {
+    try {
+      // Allow opening the side panel by clicking the action icon
+      (chrome.sidePanel as any)?.setPanelBehavior?.({ openPanelOnActionClick: true }).catch?.(() => {});
+      // Set a global default path for the side panel
+      (chrome.sidePanel as any)?.setOptions?.({ path: "extension/dist/popup.html" }).catch?.(() => {});
+    } catch {}
     initializeExtension();
   });
 
   chrome.runtime.onStartup.addListener(() => {
+    try {
+      (chrome.sidePanel as any)?.setPanelBehavior?.({ openPanelOnActionClick: true }).catch?.(() => {});
+      (chrome.sidePanel as any)?.setOptions?.({ path: "extension/dist/popup.html" }).catch?.(() => {});
+    } catch {}
     initializeExtension();
   });
 }
