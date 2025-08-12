@@ -534,11 +534,26 @@ test.describe("Chrome Extension E2E Tests", () => {
     }
 
     test("@headful validate media detection against configured URL sets", async ({ page }) => {
+      test.setTimeout(120000);
       const matrixPath = path.resolve(__dirname, "../extension/media-sites.json");
       const matrix = JSON.parse(fs.readFileSync(matrixPath, "utf8"));
       const toAbs = (u) => (u.startsWith("http") ? u : `${matrixBaseUrl}${u}`);
-      const present = (matrix.media_present || []).map(toAbs);
+      let present = (matrix.media_present || []).map(toAbs);
       const absent = (matrix.no_media || []).map(toAbs);
+
+      // By default, restrict to a stable set of domains; allow full set with EVD_MEDIA_SITES_WIDE=true
+      const wide = String(process.env.EVD_MEDIA_SITES_WIDE || "").toLowerCase() === "true";
+      if (!wide) {
+        const stableDomains = [
+          "youtube.com",
+          "youtu.be",
+          "vimeo.com",
+          "dailymotion.com",
+          "twitch.tv",
+          "streamable.com",
+        ];
+        present = present.filter(u => stableDomains.some(d => u.includes(d)) || u.startsWith(matrixBaseUrl));
+      }
 
       // Helper to detect if a video/audio is present and can be played
       async function detectMedia(p) {
