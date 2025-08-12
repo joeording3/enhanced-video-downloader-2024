@@ -257,9 +257,14 @@ async function getButtonState(): Promise<ButtonState> {
       }
       chrome.storage.local.get(domain, result => {
         if (chrome.runtime && chrome.runtime.lastError) {
-          const msg = String(chrome.runtime.lastError.message || "");
-          // Log explicit error message expected by tests and fall back to defaults
-          _warn("Error getting button state from storage:", msg);
+          const raw = chrome.runtime.lastError.message;
+          const msg = typeof raw === "string" && raw.length > 0 ? raw : "Unknown storage error";
+          if (/Extension context invalidated/i.test(msg)) {
+            _warn("Storage access unavailable (context invalidated). Using defaults.");
+          } else {
+            // Log explicit error message expected by tests and fall back to defaults
+            _warn("Error getting button state from storage:", msg);
+          }
           resolve({ x: 10, y: 10, hidden: false });
           return;
         }
@@ -267,7 +272,8 @@ async function getButtonState(): Promise<ButtonState> {
       });
     } catch (e) {
       // Explicit error log expected by tests; then fall back to defaults
-      _warn("Error getting button state from storage:", (e as Error).message);
+      const msg = (e as Error)?.message || "Unknown storage error";
+      _warn("Error getting button state from storage:", msg);
       resolve({ x: 10, y: 10, hidden: false });
     }
   });
@@ -654,11 +660,24 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
           }
 
           // Send message to background script (server will generate downloadId)
+          // Guard: if the runtime messaging channel is unavailable (e.g., context invalidated),
+          // surface a clean error without throwing.
+          if (!chrome || !chrome.runtime || typeof chrome.runtime.sendMessage !== "function") {
+            error("Error initiating download: runtime messaging unavailable (context invalidated)");
+            btn.classList.remove("download-sending");
+            btn.classList.add("download-error");
+            setTimeout(() => {
+              btn.classList.remove("download-error");
+            }, 2000);
+            return;
+          }
+
           chrome.runtime.sendMessage(
             { type: "downloadVideo", url: url, pageTitle: document.title },
             response => {
               if (chrome.runtime.lastError) {
-                error("Error sending download request:", chrome.runtime.lastError.message);
+                const msg = chrome.runtime.lastError.message || "Unknown error";
+                error("Error sending download request:", msg);
                 btn.classList.remove("download-sending");
                 btn.classList.add("download-error");
                 setTimeout(() => {

@@ -670,19 +670,7 @@ export async function renderDownloadStatus(data: {
     unified.push({ id, status: "queued", label, timestamp: Date.now() - 1 });
   });
 
-  // History entries (append as-is)
-  history.forEach(h => {
-    const id = String((h as any).id || (h as any).download_id || Math.random());
-    const label = (h.page_title || (h as any).title || h.filename || h.url || id) as string;
-    unified.push({
-      id,
-      status: String(h.status || "completed"),
-      label,
-      timestamp: Number(h.timestamp) || Date.now(),
-      url: h.url as string | undefined,
-      pageTitle: (h.page_title || (h as any).title) as string | undefined,
-    });
-  });
+  // Do not block on history; it will be appended below once fetched
 
   // Render immediate items (active + queued)
   renderUnified(unified);

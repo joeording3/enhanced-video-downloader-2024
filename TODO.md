@@ -167,7 +167,7 @@ Legacy/Stub Cleanup:
       `extension/src/core/constants.ts`.
 - [ ] Audit extension code to remove duplicated `"/api/..."` strings; import and use endpoint
       constants instead.
- - [/] Replace hardcoded lock path in `server/cli/serve.py` (`/tmp/videodownloader.lock`) with the
+- [/] Replace hardcoded lock path in `server/cli/serve.py` (`/tmp/videodownloader.lock`) with the
        centralized lock path helpers from `server/lock.py` (e.g., `get_lock_file_path`) to ensure
        cross-platform behavior.
 - [ ] Review server/CLI default host strings; keep loopback binds but ensure they are centralized
