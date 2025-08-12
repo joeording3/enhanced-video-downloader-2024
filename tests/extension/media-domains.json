@@ -1,0 +1,31 @@
+{
+  "youtube.com": {
+    "timeout_ms": 15000,
+    "play_selectors": [".ytp-large-play-button", "button.ytp-play-button", "button[aria-label*='Play' i]"]
+  },
+  "youtu.be": {
+    "timeout_ms": 15000,
+    "play_selectors": [".ytp-large-play-button", "button.ytp-play-button", "button[aria-label*='Play' i]"]
+  },
+  "vimeo.com": {
+    "timeout_ms": 15000,
+    "play_selectors": ["button[aria-label*='Play' i]", "button[class*='play' i]", "button:has-text('Play')"]
+  },
+  "dailymotion.com": {
+    "timeout_ms": 15000,
+    "play_selectors": [".dmp_PlayButton", "button[aria-label*='Play' i]", "button:has-text('Play')"]
+  },
+  "twitch.tv": {
+    "timeout_ms": 20000,
+    "play_selectors": [".player-overlay", ".video-player__overlay", "button[aria-label*='Play' i]"]
+  },
+  "clips.twitch.tv": {
+    "timeout_ms": 20000,
+    "play_selectors": [".player-overlay", ".video-player__overlay", "button[aria-label*='Play' i]"]
+  },
+  "streamable.com": {
+    "timeout_ms": 15000,
+    "play_selectors": ["#player button[aria-label*='Play' i]", "#player .play", "button:has-text('Play')"]
+  }
+}
+

@@ -340,6 +340,63 @@ test.describe("Chrome Extension E2E Tests", () => {
       const port = typeof addr === "string" ? 0 : addr?.port || 0;
       matrixBaseUrl = `http://127.0.0.1:${port}`;
     });
+    // Local overlay/consent cleanup for matrix tests (mirrors the real-site helper)
+    async function closeOverlaysLocal(page) {
+      const clickSelectors = [
+        "button#onetrust-accept-btn-handler",
+        "button#onetrust-accept-btn",
+        "button[aria-label='Agree']",
+        "button:has-text('I Agree')",
+        "button:has-text('Accept All')",
+        "button:has-text('Accept Cookies')",
+        "button:has-text('Continue')",
+        "button:has-text('I am over 18')",
+        "button:has-text('Enter')",
+        "#agreeButton",
+        ".cc-allow",
+        "#cookie-accept",
+        "#cookie-accept-all",
+      ];
+      for (const sel of clickSelectors) {
+        const btn = page.locator(sel).first();
+        if (await btn.count()) {
+          try { await btn.click({ timeout: 1000 }); } catch {}
+        }
+      }
+      const removalSelectors = [
+        "#ageDisclaimerWrapper",
+        "#age_disclaimer",
+        ".age-gate",
+        ".age-modal",
+        ".modal-age-verification",
+        ".consentModal",
+        "#consentModal",
+        "[id*='consent']",
+        "[class*='consent']",
+        "#qc-cmp2-container",
+        ".qc-cmp2-container",
+        "#sp_message_container_*",
+        "#didomi-notice",
+        "#notice",
+        ".cookie-banner",
+        ".cookie-consent",
+      ];
+      try {
+        await page.evaluate(selectors => {
+          selectors.forEach(sel => {
+            try { document.querySelectorAll(sel).forEach(el => el.remove()); } catch {}
+          });
+          const overlays = Array.from(document.querySelectorAll("div,section,aside,header,footer"));
+          overlays.forEach(el => {
+            const style = window.getComputedStyle(el);
+            const isOverlay = (style.position === "fixed" || style.position === "sticky") &&
+              parseInt(style.zIndex || "0", 10) > 1000 &&
+              (el.clientHeight > window.innerHeight * 0.4 || el.clientWidth > window.innerWidth * 0.4);
+            if (isOverlay) el.remove();
+          });
+        }, removalSelectors);
+      } catch {}
+    }
 
     test.afterAll(async () => {
       if (matrixServer) {
@@ -593,14 +650,10 @@ test.describe("Chrome Extension E2E Tests", () => {
         try {
           await page.waitForLoadState("networkidle", { timeout: 12000 });
         } catch {}
-        // Use existing helper if defined in this scope
-        try {
-          // @ts-ignore
-          if (typeof closeOverlays === "function" && !url.startsWith(matrixBaseUrl)) {
-            // @ts-ignore
-            await closeOverlays(page);
-          }
-        } catch {}
+        // Best-effort overlay cleanup
+        if (!url.startsWith(matrixBaseUrl)) {
+          await closeOverlaysLocal(page).catch(() => {});
+        }
         const detected = await detectMedia(page);
         expect(detected).toBe(true);
       }
@@ -609,13 +662,9 @@ test.describe("Chrome Extension E2E Tests", () => {
         try {
           await page.waitForLoadState("networkidle", { timeout: 12000 });
         } catch {}
-        try {
-          // @ts-ignore
-          if (typeof closeOverlays === "function" && !url.startsWith(matrixBaseUrl)) {
-            // @ts-ignore
-            await closeOverlays(page);
-          }
-        } catch {}
+        if (!url.startsWith(matrixBaseUrl)) {
+          await closeOverlaysLocal(page).catch(() => {});
+        }
         const detected = await detectMedia(page);
         expect(detected).toBe(false);
       }
