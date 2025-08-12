@@ -5,88 +5,23 @@ Urgent Tasks:
 - [/] log viewer on options page not working - no logs displayed
 - [/] Client must not send URL-based dedupe token as `download_id`; omit field and let server
   generate ID
-- [x] Options: Replace generic "Field is valid" for dropdowns with meaningful, contextual info. Add
-      explanatory help for "Console Log Level" with per-option descriptions and validation.
-- [x] Options UI: Consolidate "Runtime (requires restart)" settings into the "Server Configuration"
-      section and relocate "Save Settings" and "Restart Server" buttons there for clarity
-- [x] Remove outdated test audit reports (`reports/test_audit_report.md`,
-      `reports/test_audit_summary.md`); migrated content into `tests/testing.md` and removed
-      references in `README.md` and `ARCHITECTURE.md`.
-- [x] Remove outdated `reports/test_audit_report.md`; migrate key notes into `tests/testing.md` and
-      keep `reports/test_audit_summary.md`.
-- [x] Remove outdated `reports/mutation_analysis_report.md`; migrate key actionable notes into
-      `tests/testing.md` under Mutation Testing Status.
 - [ ] Add unused-code checks to CI and local workflows
-  <!-- working-on: unused-code checks (ts-prune, vulture) -->
+<!-- working-on: unused-code checks (ts-prune, vulture) -->
 
-  - [x] Add ts-prune scripts and Make targets
-  - [x] Add vulture to dev deps and Make target scanning `server` and `tests`
   - [ ] Wire into `make all`/`check` gates and CI once noise baseline is reviewed
 
-  <!-- working-on: options logs viewer wired to background API -->
+<!-- working-on: options logs viewer wired to background API -->
 
-- [x] Full pipeline health: lint, format-check, tests, coverage all green via `make all`
-  - Fixed ESLint/Prettier issues in Playwright E2E
-  - Auto-formatted JSON
-  - No blocking lints remain
-- [x] Prevent stale lock file from affecting CLI status tests by removing `server/data/server.lock`
-      before `make test-py` (wired in `Makefile:test-py`)
-- [x] Add automatic temp/cache cleanup and reserved-name scrubbing after test runs
 <!-- working-on: post-test cleanup wiring -->
- - [ ] Tighten ignore/exclude usage across tooling
-   <!-- working-on: ignore-audit follow-ups -->
-   - [x] Add `make audit-ignores` and script to inventory global/per-file/inline suppressions
-   - [x] Remove global Ruff ignores for D/ANN401; rely on targeted exceptions only
-   - [x] Reduce Pyright excludes; re-enable analysis for `tests/`, `extension/`, `scripts/`, and server files
-   - [x] Review ESLint global disables; keep minimal Prettier-conflict set; make Prettier a warning
-   - [ ] Prune inline suppressions: add rationale or remove (tracked by `tmp/ignores_inline.csv`)
-   - [ ] Trim per-file ignores under tests once noise is addressed
-- [x] Enhance CLI restart: reuse previous run mode/flags automatically when not provided (persisted
-      in `server/data/server.lock.json`); normalize invalid hostnames and stabilize auto-port with
-      SO_REUSEADDR-aware port checks to avoid transient false "in use" on restart.
-- [x] Remove 'Choose' folder button from Options. The download directory field now only accepts a
-- [x] Scripts/docs hygiene: add Make targets for manual utilities (coverage-update,
-      inventory-report, audit-tests-redundancy, setup-uv); update docs to remove references to
-      deleted/legacy scripts and reflect current `scripts/` contents. pathname typed/pasted by the
-      user. Validation accepts absolute paths and `~`-prefixed paths (the server expands `~`).
-- [x] Implement `run_cleanup()` in `server/cli/utils.py` and add tests
-- [x] Align JSON error semantics across endpoints; document in README and CHANGELOG
+- [ ] Tighten ignore/exclude usage across tooling
+  <!-- working-on: ignore-audit follow-ups -->
+  - [ ] Prune inline suppressions: add rationale or remove (tracked by `tmp/ignores_inline.csv`)
+  - [ ] Trim per-file ignores under tests once noise is addressed
 <!-- working-on: api-json-errors -->
-- [x] Server log noise reductions and fixes: standardized JSON parsing errors in
-      `server/api/download_bp.py`, completed error logging in `server/api/logs_bp.py`, ensured
-      restart and resume modules log with appropriate levels; verified via tests.
-  - [x] Honor `LOG_FILE` for file logging in app factory and redirect test logs to temp files.
-  - [x] Autouse pytest fixture sets `ENVIRONMENT=testing` and defaults `SERVER_PORT=5006` to prevent
-        conflicts and log noise in `server_output.log`.
-  - [x] Add session-scoped autouse fixture to set `LOG_FILE` before any tests run, preventing early
-        initializations or blueprint-only apps from writing to production `server_output.log`.
-  - [x] Auto-port in tests: dynamically choose an available port in the test range and expose it via
-        `test_server_port` fixture; avoid any hard-coded ports in tests. Added `TEST_SERVER_PORT` to
-        `.env` as the documented default.
-  - [x] Switch to structured JSON (NDJSON) logging with optional `start_ts` and `duration_ms` fields
-        for easy sorting and analysis; standardized request logs include timing when available.
   - [/] Reduce duplicate startup logs: add one-time guard in `server/__init__.py:create_app` to log
     "Server application initialized..." only once per process.
   - [/] Make yt-dlp options parsing robust: accept JSON strings and Pydantic models in
     `server/downloads/ytdlp.py` for `yt_dlp_options`; keep safe defaults when invalid.
-- [x] Options Log Viewer: parse NDJSON, derive level from prefix, filter-first then limit display,
-      suppress `werkzeug` and status 200 entries; iteratively fetch more lines until the filtered
-      set reaches the UI limit. Added unit tests to verify filter + limit order and iterative fetch.
-- [x] Options Page: Make major sections collapsible (Server Configuration, Download Settings,
-      Behavior Settings, Server Logs, Download History) with accessible accordion controls and
-      persisted open/closed state per section.
-- [x] Add explicit startup INFO log line and wire Gunicorn access/error logs to the same log file by
-      default via CLI helpers. Update README and CHANGELOG to document behavior.
-- [x] Keep CLI output clean: use plain, minimal console formatter at WARNING by default; route all
-      structured JSON to the log file; suppress server child stdout/stderr in foreground runs;
-      ensure Gunicorn access/error logs go to `LOG_FILE`.
-- [x] Remove Declarative Net Request (DNR) usage and `rules.json`; update manifest and docs.
-- [x] Centralize log-path resolution via `server/logging_setup.resolve_log_path` and update
-      `server/api/logs_bp.py` and `server/api/logs_manage_bp.py` to use it; document precedence in
-      README. Tighten `_validate_lines` message while preserving client response text.
-- [x] Background messaging noise: suppress connection error by ensuring
-      `chrome.runtime.sendMessage(...)` calls use a callback or `.catch(...)` when no receivers are
-      present.
 - [ ] Replace silent `pass` blocks with logging/handling in:
   - `server/cli_helpers.py` (loops and maintenance utils)
   - `server/cli_main.py` (loop around verification)
@@ -125,6 +60,8 @@ Urgent Tasks:
 
   - [/] Popup: guard against non-finite progress values causing "The provided double value is
     non-finite" in `createActiveListItem`; clamp to [0,100] and round label.
+  - [/] Popup: Combine Active/Queued and History into a single "Downloads" section; keep existing
+        element IDs (`download-status`, `download-history`) so logic keeps working.
 
 - **Automation and CI**
   - [ ] Keep `make lint-unused` non-blocking during triage.
@@ -173,9 +110,6 @@ Urgent Tasks:
       `extension/src/history.ts`, `server/api/history_bp.py`.
   - [/] Implemented best-effort history sync: append entries and clear via `/api/history` when
     `serverPort` is known.
-  - [x] Popup history fallback: when local `downloadHistory` is empty, fetch paginated history from
-    the server (`GET /api/history?page=..&per_page=..`), normalize fields (`download_id` → `id`,
-    ISO timestamp → epoch), and seed local cache for snappier subsequent loads.
   - [/] Server now appends failure entries on yt-dlp errors and appends a fallback success entry
     after `ydl.download` returns when the `finished` hook did not persist metadata. This ensures
     history reflects both successes and failures even if the process restarts mid-download.
@@ -189,25 +123,6 @@ Urgent Tasks:
     `status: queued` and enqueues the request; `/api/status` includes queued IDs. Files:
     `server/queue.py`, `server/api/download_bp.py`, `server/api/status_bp.py`, docs in
     `server/api/api.md`.
-  - [x] Popup queued details: display title/filename/URL for queued items when available. Background
-    now collects queued item metadata from `/api/status` and includes `queuedDetails` in
-    `downloadStatusUpdate`, `queueUpdated`, and `getQueue` responses.
-  - [x] Content toggle hide behavior: when hidden on a domain, the extension now stops attempting
-    to inject the button entirely and removes any existing injected buttons/observers. Unhiding
-    restarts the injection loop.
-  - [x] Content hidden CSS now fully hides the button (`display:none; pointer-events:none`) instead
-    of making it semi-transparent.
-  - [x] Consolidate Playwright E2E audit details into `tests/testing.md`; remove outdated
-        `reports/playwright_quality_audit_report.md` and update references in `README.md` and
-        `ARCHITECTURE.md`.
-  - [x] Stabilized opt-in real-site Playwright test for YouTube Shorts by clamping the injected
-        button into the viewport and adding a JS click fallback when Playwright actionability fails.
-        This eliminates intermittent "element is outside of the viewport" errors.
-  - [x] Prevent post-click button flicker on YouTube: removed re-append churn in `content.ts` and
-        added a short stabilization window after clicks to avoid transient removals while the page
-        reflows.
-  - [x] Respect per-domain hidden state without churn: content script now pauses the injection loop
-        and removes existing buttons when hidden for a domain, and resumes cleanly when shown.
 - [ ] Debug API (`GET /debug/paths`) is dev-only and unused in UI; optionally surface in Options
       “Debug” tab or leave as internal.
 
@@ -241,13 +156,7 @@ Legacy/Stub Cleanup:
   - [/] Align backgrounds to `--container-bg` and headers to `--header-bg`
   - [/] Normalize history/logs styles; use variables for dark-mode notification colors
   - [/] Make injected download button larger and reactive on click (bounce + success/error states)
-  - [x] Popup: Clean up dark/light theme rules by relying on variable aliases only; removed
-        `body.dark-theme` overrides from `extension/ui/popup.css` and added theme aliases to
-        `extension/ui/themes.css` (`--row-alt-bg`, `--bg-elevated`, `--error-bg-tint-light` → dark
-        tint)
 
-- [x] Remove obsolete `server/data/server.json` (unused; superseded by env config and lock metadata
-      JSON)
 
 ### Hardcoded Variables Cleanup
 
@@ -270,25 +179,13 @@ Legacy/Stub Cleanup:
 - [ ] Replace remaining `console.*` calls in `popup.ts` and `options.ts` with centralized `logger`
 - [ ] Remove `validatePort()` in `extension/src/options.ts` and use `validationService` port
       validator
-- [x] Recreate and finish CSS design system consolidation (variables, themes, components, base) and
-      ensure imports in `popup.css`, `options.css`, and `content.css` (documented in
-      Architecture/README)
 
 ## 1.2 Fix Critical JavaScript/TypeScript Modules [WEEK 1-2]
 
 **background-logic.ts (87.36% → EXCEEDED 70% target by 17%)**
 
-- [x] Strengthen existing tests with better behavioral assertions
-- [x] Add tests for edge cases and error conditions (handleSetConfig, handleGetHistory,
-      handleClearHistory)
-- [x] Test utility functions with various input combinations (timeout handling, batch processing)
-- [x] Add integration tests for helper function usage (progress callbacks, storage service
-      integration)
-- [x] Verify Chrome API interactions are properly mocked and tested
-
 **background-helpers.ts (72.06% → target 70%)** **ALREADY ABOVE TARGET**
 
-- [x] Module already exceeds target score
 - [ ] Consider additional edge case tests for robustness
 - [ ] Monitor for any score regressions
 
@@ -496,10 +393,7 @@ Legacy/Stub Cleanup:
 - [ ] Monitor for new type ignore patterns
 - [ ] Ensure new test files maintain docstring standards
 - [ ] Track third-party library type stub availability
-- [x] Prevent Hypothesis tests from creating junk folders in repo root by confining generated paths
-      to `tmp/hypothesis_download_dirs` and loading a local Hypothesis profile; updated `Makefile`
-      junk check to ignore `.benchmarks`; fixed `Makefile` recipe indentation in
-      `check-junk-folders` to avoid make parsing errors
+ 
 
 ### Success Metrics to Track
 
