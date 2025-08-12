@@ -7,6 +7,11 @@ Urgent Tasks:
 - [/] Add unused-code checks to CI and local workflows
 
 - [ ] Wire into `make all`/`check` gates and CI once noise baseline is reviewed
+  - [/] Content: handle transient storage/messaging invalidation cleanly
+    <!-- working-on: content storage/messaging guards -->
+    - [/] `getButtonState()` treats "Extension context invalidated" as benign and falls back to defaults without noisy logs
+    - [/] Guard `chrome.runtime.sendMessage` when runtime is unavailable; emit concise error and exit gracefully
+    - [ ] Monitor real-site logs for any remaining "undefined" messages and normalize
 - [ ] Tighten ignore/exclude usage across tooling
   <!-- working-on: ignore-audit follow-ups -->
   - [ ] Prune inline suppressions: add rationale or remove (tracked by `tmp/ignores_inline.csv`)
