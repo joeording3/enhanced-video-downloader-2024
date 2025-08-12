@@ -133,7 +133,7 @@ export function renderHistoryItems(
   historyListElement?: HTMLElement,
   pageInfoElement?: HTMLElement,
   prevPageBtn?: HTMLButtonElement,
-  nextPageBtn?: HTMLButtonButton,
+  nextPageBtn?: HTMLButtonElement,
   options?: { preserveExisting?: boolean }
 ): void {
   if (!historyListElement) {
@@ -165,11 +165,11 @@ export function renderHistoryItems(
     }
 
     // Disable pagination buttons if they exist and are DOM elements
-    if (prevPageBtn && prevPageBtn instanceof Element) {
+    if (prevPageBtn && prevPageBtn instanceof HTMLButtonElement) {
       prevPageBtn.disabled = true;
     }
 
-    if (nextPageBtn && nextPageBtn instanceof Element) {
+    if (nextPageBtn && nextPageBtn instanceof HTMLButtonElement) {
       nextPageBtn.disabled = true;
     }
 
@@ -325,11 +325,11 @@ export function renderHistoryItems(
   }
 
   // Update pagination button states
-  if (prevPageBtn && prevPageBtn instanceof Element) {
+  if (prevPageBtn && prevPageBtn instanceof HTMLButtonElement) {
     prevPageBtn.disabled = page <= 1;
   }
 
-  if (nextPageBtn && nextPageBtn instanceof Element) {
+  if (nextPageBtn && nextPageBtn instanceof HTMLButtonElement) {
     // If totalItems is 0 but we have items, calculate based on items length
     const actualTotal = totalItems || historyItems.length;
     nextPageBtn.disabled = page * perPage >= actualTotal;

@@ -1287,10 +1287,6 @@ export function setupLogsUI(): void {
           );
         })
         .join("\n");
-      // If filtering removed everything, fall back to unfiltered content so the user still sees logs
-      if (t.trim().length === 0 && text.trim().length > 0) {
-        t = text;
-      }
     }
     return t;
   };
@@ -1344,6 +1340,19 @@ export function setupLogsUI(): void {
               const m = prefix.match(/\b(debug|info|warning|error|critical|trace|warn)\b/i);
               if (m) level = m[1].toLowerCase();
             }
+            // If filter is enabled, skip any NDJSON entry representing a 200-status request
+            const filterOn = !!(document.getElementById("log-filter-werkzeug") as HTMLInputElement | null)?.checked;
+            if (filterOn) {
+              const statusVal = typeof obj.status === "number" ? obj.status : (typeof obj.status === "string" ? parseInt(obj.status, 10) : undefined);
+              const statusCodeVal = typeof obj.status_code === "number" ? obj.status_code : (typeof obj.status_code === "string" ? parseInt(obj.status_code, 10) : undefined);
+              const msgText = typeof obj.message === "string" ? obj.message : "";
+              const isArrow200 = /->\s*200(\b|\s|[,}])?/.test(msgText) || /->\s*200(\b|\s|[,}])?/.test(line);
+              const isOk200 = /\b200\s+OK\b/i.test(msgText) || /\b200\s+OK\b/i.test(line);
+              const looksHttp200 = /HTTP\/(?:1(?:\.\d)?|2)\"?\s+200\b/i.test(msgText) || /HTTP\/(?:1(?:\.\d)?|2)\"?\s+200\b/i.test(line);
+              if (statusVal === 200 || statusCodeVal === 200 || isArrow200 || isOk200 || looksHttp200) {
+                continue; // skip this entry
+              }
+            }
             entries.push({
               timestamp: iso,
               logger: typeof obj.logger === "string" ? obj.logger : undefined,
@@ -1390,10 +1399,22 @@ export function setupLogsUI(): void {
         };
 
         var current2: any = null;
+        const filterOn2 = !!(document.getElementById("log-filter-werkzeug") as HTMLInputElement | null)?.checked;
         for (var i2 = 0; i2 < rawLines.length; i2 += 1) {
           var line2 = rawLines[i2] || "";
           var m2 = line2.match(lineRegex2);
           if (m2) {
+            if (filterOn2) {
+              const msg2 = (m2[4] || "");
+              const isArrow200_2 = /->\s*200(\b|\s|[,}])?/.test(line2) || /->\s*200(\b|\s|[,}])?/.test(msg2);
+              const is200Ok_2 = /\b200\s+OK\b/i.test(line2) || /\b200\s+OK\b/i.test(msg2);
+              const isStatusPair200_2 = /\bstatus\s*[=:]\s*200\b/i.test(line2) || /\bstatus_code\s*[=:]\s*200\b/i.test(line2);
+              const isHttp200_2 = /HTTP\/(?:1(?:\.\d)?|2)\"?\s+200\b/i.test(line2);
+              if (isArrow200_2 || is200Ok_2 || isStatusPair200_2 || isHttp200_2) {
+                // skip starting a new entry for 200 status lines
+                continue;
+              }
+            }
             if (current2) entries.push(current2);
             var lvlRaw2 = (m2[3] || "").trim().toLowerCase();
             current2 = {
@@ -1433,10 +1454,22 @@ export function setupLogsUI(): void {
         };
 
         var current: any = null;
+        const filterOn3 = !!(document.getElementById("log-filter-werkzeug") as HTMLInputElement | null)?.checked;
         for (var i = 0; i < rawLines.length; i += 1) {
           var line = rawLines[i] || "";
           var m = line.match(lineRegex);
           if (m) {
+            if (filterOn3) {
+              const msg = (m[4] || "");
+              const isArrow200 = /->\s*200(\b|\s|[,}])?/.test(line) || /->\s*200(\b|\s|[,}])?/.test(msg);
+              const is200Ok = /\b200\s+OK\b/i.test(line) || /\b200\s+OK\b/i.test(msg);
+              const isStatusPair200 = /\bstatus\s*[=:]\s*200\b/i.test(line) || /\bstatus_code\s*[=:]\s*200\b/i.test(line);
+              const isHttp200 = /HTTP\/(?:1(?:\.\d)?|2)\"?\s+200\b/i.test(line);
+              if (isArrow200 || is200Ok || isStatusPair200 || isHttp200) {
+                // skip this 200-status line
+                continue;
+              }
+            }
             if (current) entries.push(current);
             var lvlRaw = (m[3] || "").trim().toLowerCase();
             current = {
