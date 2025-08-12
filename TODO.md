@@ -18,11 +18,11 @@ Urgent Tasks:
     `server/downloads/ytdlp.py` for `yt_dlp_options`; keep safe defaults when invalid.
 - [ ] Replace silent `pass` blocks with logging/handling in:
   - `server/cli_helpers.py` (loops and maintenance utils)
-  - `server/cli_main.py` (loop around verification)
-  - `server/api/download_bp.py` (partial file cleanup)
-  - `server/api/status_bp.py` (average speed computation)
+  - `server/cli_main.py` (loop around verification) [/]
+  - `server/api/download_bp.py` (partial file cleanup) [/]
+  - `server/api/status_bp.py` (average speed computation) [/]
   - `server/__main__.py` (process scanning and config save)
-  - `server/lock.py` (unlink/parse/read errors)
+  - `server/lock.py` (unlink/parse/read errors) [/]
 
 ## Bundle Size Optimization (from latest analysis)
 
@@ -167,7 +167,7 @@ Legacy/Stub Cleanup:
       `extension/src/core/constants.ts`.
 - [ ] Audit extension code to remove duplicated `"/api/..."` strings; import and use endpoint
       constants instead.
-- [ ] Replace hardcoded lock path in `server/cli/serve.py` (`/tmp/videodownloader.lock`) with the
+- [/] Replace hardcoded lock path in `server/cli/serve.py` (`/tmp/videodownloader.lock`) with the
       centralized lock path helpers from `server/lock.py` (e.g., `get_lock_file_path`) to ensure
       cross-platform behavior.
 - [ ] Review server/CLI default host strings; keep loopback binds but ensure they are centralized
