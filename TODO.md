@@ -33,6 +33,14 @@ Urgent Tasks:
       before `make test-py` (wired in `Makefile:test-py`)
 - [x] Add automatic temp/cache cleanup and reserved-name scrubbing after test runs
 <!-- working-on: post-test cleanup wiring -->
+ - [ ] Tighten ignore/exclude usage across tooling
+   <!-- working-on: ignore-audit follow-ups -->
+   - [x] Add `make audit-ignores` and script to inventory global/per-file/inline suppressions
+   - [x] Remove global Ruff ignores for D/ANN401; rely on targeted exceptions only
+   - [x] Reduce Pyright excludes; re-enable analysis for `tests/`, `extension/`, `scripts/`, and server files
+   - [x] Review ESLint global disables; keep minimal Prettier-conflict set; make Prettier a warning
+   - [ ] Prune inline suppressions: add rationale or remove (tracked by `tmp/ignores_inline.csv`)
+   - [ ] Trim per-file ignores under tests once noise is addressed
 - [x] Enhance CLI restart: reuse previous run mode/flags automatically when not provided (persisted
       in `server/data/server.lock.json`); normalize invalid hostnames and stabilize auto-port with
       SO_REUSEADDR-aware port checks to avoid transient false "in use" on restart.
@@ -184,6 +192,11 @@ Urgent Tasks:
   - [x] Popup queued details: display title/filename/URL for queued items when available. Background
     now collects queued item metadata from `/api/status` and includes `queuedDetails` in
     `downloadStatusUpdate`, `queueUpdated`, and `getQueue` responses.
+  - [x] Content toggle hide behavior: when hidden on a domain, the extension now stops attempting
+    to inject the button entirely and removes any existing injected buttons/observers. Unhiding
+    restarts the injection loop.
+  - [x] Content hidden CSS now fully hides the button (`display:none; pointer-events:none`) instead
+    of making it semi-transparent.
   - [x] Consolidate Playwright E2E audit details into `tests/testing.md`; remove outdated
         `reports/playwright_quality_audit_report.md` and update references in `README.md` and
         `ARCHITECTURE.md`.

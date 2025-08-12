@@ -37,6 +37,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - Background polls `/api/status` and includes `queuedDetails` (url/title/filename) for queued
     items in broadcast messages; popup renders human-friendly labels for queued entries instead of
     plain IDs.
+  
+ - Content button visibility and injection control:
+   - When a domain is toggled to hide the button, the content script stops the injection loop and
+     removes any injected/global buttons and observers. Unhiding restarts injection and performs an
+     immediate tick for responsiveness.
+   - `.hidden` now fully hides the button via `display: none` and disables interactions, instead of
+     leaving a semi-transparent button.
   - Append a failure entry to `server/data/history.json` when yt-dlp reports a download error or an
     unexpected server exception occurs during a download request.
   - Append a fallback success entry after `ydl.download` returns if the `finished` progress hook did
@@ -115,6 +122,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `reports/css_comprehensive_report.md` (all issues already resolved and reflected in codebase).
 
 ### Tooling
+- Docstrings and ignores audit:
+  - Added `make docstrings-audit` and auto-fix pass; updated server docstrings to NumPy/Sphinx style; audit reports saved under `reports/docstrings_report.{txt,json}`.
+  - Added `make audit-ignores` (`scripts/audit_ignores.py`) to inventory global/per-file/inline suppressions for Ruff, Pyright, ESLint; writes `reports/ignores_audit.md` and `tmp/ignores_inline.csv`.
+  - Tightened Ruff by removing global ignores for D/ANN401; rely on targeted exceptions only. Kept tests-specific per-file ignores minimal.
+  - Reduced Pyright excludes: re-enabled analysis for `tests/`, `extension/`, `scripts/`, and previously excluded server files.
+  - Trimmed ESLint global disables to only essential Prettier conflicts; made Prettier a warning to enable incremental formatting; added `no-empty: warn` for TS temporarily.
+
 
 - Add unused-code detection tools:
 
