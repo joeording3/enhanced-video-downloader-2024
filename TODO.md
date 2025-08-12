@@ -6,6 +6,12 @@ Urgent Tasks:
   generate ID
 - [/] Add unused-code checks to CI and local workflows
 
+- [/] E2E Media Detection Matrix robustness
+  - [/] Add iframe postMessage-based player API triggers (YouTube, Vimeo, Dailymotion, Twitch, Streamable)
+  - [/] Invoke domain-specific selectors in frames; repeat autoplay attempts and direct media clicks
+  - [/] Support per-domain timeouts via `tests/extension/media-domains.json` and wait for `networkidle`
+  - [ ] Optional: whitelist stable URLs for CI and gate broader list behind manual flag
+
 - [ ] Wire into `make all`/`check` gates and CI once noise baseline is reviewed
   - [/] Content: handle transient storage/messaging invalidation cleanly
     <!-- working-on: content storage/messaging guards -->

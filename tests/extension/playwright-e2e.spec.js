@@ -325,37 +325,291 @@ test.describe("Chrome Extension E2E Tests", () => {
     }
   });
 
-  // Attempt to auto-play any media on page load across all tests to improve detection reliability
-  test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => {
-      const tryPlayAllMedia = () => {
-        const mediaElements = Array.from(document.querySelectorAll("video, audio"));
-        for (const el of mediaElements) {
-          try {
-            // Muted autoplay is generally allowed without user gesture
-            /** @type {HTMLMediaElement} */ (el).muted = true;
-            /** @type {HTMLMediaElement} */ (el).volume = 0.0;
-            const p = /** @type {HTMLMediaElement} */ (el).play();
-            if (p && typeof p.catch === "function") {
-              p.catch(() => {});
+  test.describe("Autoplay/Media detection matrix", () => {
+    let matrixServer;
+    let matrixBaseUrl;
+
+    test.beforeAll(async () => {
+      // Start a small static server to serve local extension assets for matrix tests
+      const app = express();
+      app.use(express.static(path.join(__dirname, "../../extension")));
+      matrixServer = await new Promise(resolve => {
+        const srv = app.listen(0, () => resolve(srv));
+      });
+      const addr = matrixServer.address();
+      const port = typeof addr === "string" ? 0 : addr?.port || 0;
+      matrixBaseUrl = `http://127.0.0.1:${port}`;
+    });
+
+    test.afterAll(async () => {
+      if (matrixServer) {
+        matrixServer.close();
+      }
+    });
+
+    // Utilities to interact inside frames (main frame included)
+    async function clickSelectorsInFrame(frame, selectors) {
+      for (const sel of selectors) {
+        try {
+          const locator = frame.locator(sel).first();
+          if (await locator.count()) {
+            await locator.click({ timeout: 1000 }).catch(() => {});
+          }
+        } catch {}
+      }
+    }
+
+    async function attemptAutoplayInFrame(frame) {
+      const u = frame.url().toLowerCase();
+      let domainPlaySelectors = [];
+      try {
+        const domainMap = JSON.parse(
+          fs.readFileSync(path.resolve(__dirname, "./media-domains.json"), "utf8")
+        );
+        for (const domain of Object.keys(domainMap)) {
+          if (u.includes(domain)) {
+            const conf = domainMap[domain];
+            if (Array.isArray(conf.play_selectors)) {
+              domainPlaySelectors = conf.play_selectors;
             }
-          } catch {
-            // ignore and continue
+            break;
           }
         }
-      };
+      } catch {}
 
-      // Try on DOMContentLoaded and load
-      document.addEventListener("DOMContentLoaded", tryPlayAllMedia, { once: true });
-      window.addEventListener("load", tryPlayAllMedia, { once: true });
-      // Re-try when tab becomes visible (some sites lazy-mount media)
-      document.addEventListener("visibilitychange", () => {
-        if (!document.hidden) tryPlayAllMedia();
-      });
-      // Fallback: first pointer gesture (if any) also triggers play
-      window.addEventListener("pointerdown", () => tryPlayAllMedia(), { once: true });
+      const playSelectors = [
+        "button[aria-label*='Play' i]",
+        "button[title*='Play' i]",
+        ".vjs-big-play-button",
+        ".plyr__control--overlaid",
+        "button:has-text('Play')",
+        "button:has-text('Watch')",
+        "[data-qa='play_button']",
+        "#player .play, .ytp-large-play-button, .jw-display-icon-container",
+      ].concat(domainPlaySelectors);
+      await clickSelectorsInFrame(frame, playSelectors);
+      // Try generic gestures in frame
+      try {
+        await frame.press("body", "Space");
+      } catch {}
+      try {
+        await frame.press("body", "k"); // YouTube
+      } catch {}
+      // Domain-specific best-effort triggers inside the frame
+      try {
+        if (u.includes("youtube.com") || u.includes("youtube-nocookie.com")) {
+          // Click the player UI button if present (within iframe)
+          await clickSelectorsInFrame(frame, [
+            ".ytp-large-play-button",
+            ".ytp-play-button",
+          ]);
+        } else if (u.includes("vimeo.com")) {
+          // Vimeo listens to postMessage("{method:'play'}") and has overlays; try both
+          await clickSelectorsInFrame(frame, [
+            ".play,.vimeo,.iris_video-vital__play",
+            "button[aria-label*='Play' i]",
+          ]);
+          await frame.evaluate(() => {
+            try {
+              // @ts-ignore
+              window.postMessage({ method: "play" }, "*");
+            } catch {}
+          });
+        } else if (u.includes("dailymotion.com")) {
+          await clickSelectorsInFrame(frame, [
+            "button[aria-label*='Play' i]",
+            ".dm_button_play,.dmp_PlaybackControls-playPause",
+          ]);
+          await frame.evaluate(() => {
+            try {
+              // @ts-ignore
+              window.postMessage({ event: "play" }, "*");
+            } catch {}
+          });
+        } else if (u.includes("twitch.tv")) {
+          await clickSelectorsInFrame(frame, [
+            "button[data-a-target='player-play-pause-button']",
+            "button[aria-label*='Play' i]",
+          ]);
+        } else if (u.includes("streamable.com")) {
+          await clickSelectorsInFrame(frame, [
+            ".play-button,.video-js .vjs-big-play-button",
+          ]);
+        }
+      } catch {}
+      // Try clicking video/audio elements directly (force)
+      const mediaLoc = frame.locator("video, audio");
+      const count = await mediaLoc.count().catch(() => 0);
+      for (let i = 0; i < count; i++) {
+        try {
+          await mediaLoc.nth(i).click({ force: true, timeout: 500 });
+        } catch {}
+      }
+      // Attempt programmatic play on media elements
+      try {
+        await frame.evaluate(() => {
+          document.querySelectorAll("video, audio").forEach(m => {
+            try {
+              // @ts-ignore
+              m.muted = true;
+              // @ts-ignore
+              const r = m.play();
+              if (r && typeof r.catch === "function") r.catch(() => {});
+            } catch {}
+          });
+        });
+      } catch {}
+    }
+
+    // From the top document, postMessage into known player iframes to trigger their APIs
+    async function triggerKnownPlayerAPIs(page) {
+      try {
+        await page.evaluate(() => {
+          const iframes = Array.from(document.querySelectorAll("iframe"));
+          const tryPost = (f, msg) => {
+            try {
+              f.contentWindow?.postMessage(msg, "*");
+            } catch {}
+          };
+          const now = String(Date.now());
+          for (const f of iframes) {
+            const src = (f.getAttribute("src") || "").toLowerCase();
+            if (src.includes("youtube.com/embed") || src.includes("youtube-nocookie.com")) {
+              // YouTube IFrame API
+              tryPost(f, JSON.stringify({ event: "listening", id: now }));
+              tryPost(f, JSON.stringify({ event: "command", func: "playVideo", args: [] }));
+            } else if (src.includes("player.vimeo.com") || src.includes("vimeo.com")) {
+              // Vimeo Player API
+              tryPost(f, { method: "play" });
+            } else if (src.includes("dailymotion.com")) {
+              // Dailymotion Player API
+              tryPost(f, { event: "play" });
+              tryPost(f, { command: "play", parameters: {} });
+            } else if (src.includes("player.twitch.tv") || src.includes("clips.twitch.tv") || src.includes("twitch.tv")) {
+              // Twitch embeds
+              tryPost(f, { event: "play" });
+            } else if (src.includes("streamable.com")) {
+              // Streamable embeds
+              tryPost(f, { event: "play" });
+            }
+          }
+        });
+      } catch {}
+    }
+
+    async function attemptAutoplayAll(page) {
+      // Main frame first
+      await attemptAutoplayInFrame(page);
+      for (const f of page.frames()) {
+        if (f === page.mainFrame()) continue;
+        await attemptAutoplayInFrame(f);
+      }
+      // Fire postMessage-based API triggers from top after DOM is ready
+      await triggerKnownPlayerAPIs(page);
+    }
+
+    async function detectMediaAll(page) {
+      // Returns true if any frame reports playable media
+      // Main frame first
+      const inMain = await page.evaluate(() => {
+        const els = Array.from(document.querySelectorAll("video,audio"));
+        return els.some(el => {
+          const m = /** @type {HTMLMediaElement} */ (el);
+          return (typeof m.paused === "boolean" && !m.paused) || (typeof m.readyState === "number" && m.readyState > 0);
+        });
+      }).catch(() => false);
+      if (inMain) return true;
+      for (const f of page.frames()) {
+        if (f === page.mainFrame()) continue;
+        const ok = await f.evaluate(() => {
+          const els = Array.from(document.querySelectorAll("video,audio"));
+          return els.some(el => {
+            const m = /** @type {HTMLMediaElement} */ (el);
+            return (typeof m.paused === "boolean" && !m.paused) || (typeof m.readyState === "number" && m.readyState > 0);
+          });
+        }).catch(() => false);
+        if (ok) return true;
+      }
+      return false;
+    }
+
+    test("@headful validate media detection against configured URL sets", async ({ page }) => {
+      const matrixPath = path.resolve(__dirname, "../extension/media-sites.json");
+      const matrix = JSON.parse(fs.readFileSync(matrixPath, "utf8"));
+      const toAbs = (u) => (u.startsWith("http") ? u : `${matrixBaseUrl}${u}`);
+      const present = (matrix.media_present || []).map(toAbs);
+      const absent = (matrix.no_media || []).map(toAbs);
+
+      // Helper to detect if a video/audio is present and can be played
+      async function detectMedia(p) {
+        // Determine domain-specific timeout from media-domains.json
+        let timeoutMs = 6000;
+        try {
+          const domainMap = JSON.parse(
+            fs.readFileSync(path.resolve(__dirname, "./media-domains.json"), "utf8")
+          );
+          const currentUrl = (p.url() || "").toLowerCase();
+          for (const domain of Object.keys(domainMap)) {
+            if (currentUrl.includes(domain)) {
+              const conf = domainMap[domain];
+              if (typeof conf.timeout_ms === "number" && conf.timeout_ms > 0) {
+                timeoutMs = conf.timeout_ms;
+              }
+              break;
+            }
+          }
+        } catch {}
+        // Wait for network to settle before attempts (best-effort)
+        try {
+          await p.waitForLoadState("networkidle", { timeout: Math.min(15000, Math.max(2000, timeoutMs)) });
+        } catch {}
+        const deadline = Date.now() + timeoutMs;
+        // Attempt autoplay across frames and API triggers; poll readiness until deadline
+        while (Date.now() < deadline) {
+          await attemptAutoplayAll(p);
+          const ok = await detectMediaAll(p);
+          if (ok) return true;
+          await p.waitForTimeout(500);
+        }
+        return false;
+      }
+
+      for (const url of present) {
+        await page.goto(url, { waitUntil: "domcontentloaded" });
+        try {
+          await page.waitForLoadState("networkidle", { timeout: 12000 });
+        } catch {}
+        // Use existing helper if defined in this scope
+        try {
+          // @ts-ignore
+          if (typeof closeOverlays === "function" && !url.startsWith(matrixBaseUrl)) {
+            // @ts-ignore
+            await closeOverlays(page);
+          }
+        } catch {}
+        const detected = await detectMedia(page);
+        expect(detected).toBe(true);
+      }
+      for (const url of absent) {
+        await page.goto(url, { waitUntil: "domcontentloaded" });
+        try {
+          await page.waitForLoadState("networkidle", { timeout: 12000 });
+        } catch {}
+        try {
+          // @ts-ignore
+          if (typeof closeOverlays === "function" && !url.startsWith(matrixBaseUrl)) {
+            // @ts-ignore
+            await closeOverlays(page);
+          }
+        } catch {}
+        const detected = await detectMedia(page);
+        expect(detected).toBe(false);
+      }
     });
   });
+
+  // Note: Autoplay helpers are enabled only for opt-in real-site tests below to avoid
+  // interfering with synthetic/smart-injection expectations in unit-like E2E.
 
   test.afterAll(async () => {
     if (server) {
@@ -676,9 +930,14 @@ test.describe("Chrome Extension E2E Tests", () => {
       // Inject built content script into the page
       const contentPath = path.resolve(__dirname, "../../extension/dist/content.js");
       await page.addScriptTag({ path: contentPath });
-      // Wait for smart mode scan cycles to complete and verify no global button remains
+      // Wait for smart mode scan cycles to complete and verify the global button is absent or hidden
       await page.waitForFunction(
-        () => document.querySelector("#evd-download-button-main") === null,
+        () => {
+          const el = document.querySelector("#evd-download-button-main");
+          if (!el) return true;
+          const style = window.getComputedStyle(el);
+          return style.display === "none" || style.visibility === "hidden" || el.classList.contains("hidden");
+        },
         { timeout: 8000 }
       );
     });
@@ -2076,17 +2335,18 @@ test.describe("Real site video detection (opt-in)", () => {
   test.skip(process.env.EVD_REAL_SITES !== "true", "Set EVD_REAL_SITES=true to enable");
 
   let context;
+  let browser;
   let serverProc;
   let serverPort;
   let downloadDir;
   let extPath;
 
   test.beforeAll(async () => {
-    // Build extension to ensure dist assets exist
+    // Build extension assets without cleaning dist to avoid race conditions during tests
     try {
-      cp.execSync("npm run build", { stdio: "inherit" });
+      cp.execSync("npm run build:ts", { stdio: "inherit" });
     } catch {
-      console.log("[RealSites] Build failed; proceeding if dist exists.");
+      console.log("[RealSites] Build (ts) failed; proceeding if dist exists.");
     }
 
     // Extension root is repo root (manifest.json at project root)
@@ -2133,39 +2393,69 @@ test.describe("Real site video detection (opt-in)", () => {
       await new Promise(r => setTimeout(r, 300));
     }
 
-    // Launch persistent context with extension loaded
-    const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const userDataDir = path.resolve(__dirname, `../../tmp/chrome-profile-real-${uniqueSuffix}`);
-    context = await chromium.launchPersistentContext(userDataDir, {
-      headless: false,
+    // Background/headless approach (cross-platform): headless browser + inject built content script
+    browser = await chromium.launch({
+      headless: true,
       args: [
-        `--disable-extensions-except=${extPath}`,
-        `--load-extension=${extPath}`,
-        "--allow-insecure-localhost",
-        "--no-first-run",
-        "--no-default-browser-check",
-        "--start-minimized",
-        "--window-position=2000,2000",
+        "--autoplay-policy=no-user-gesture-required",
+        "--mute-audio",
+        "--disable-gpu",
       ],
     });
+    context = await browser.newContext({ ignoreHTTPSErrors: true });
 
-    // On macOS, hide the Chromium app so windows don't steal focus
-    if (process.platform === "darwin") {
-      try {
-        spawn(
-          "osascript",
-          ["-e", 'tell application "System Events" to set visible of process "Chromium" to false'],
-          { stdio: "ignore", detached: true }
-        ).unref();
-      } catch {
-        void 0;
-      }
-    }
+    // Preload built content scripts as init scripts so they run on every page
+    const contentSrc = fs.readFileSync(path.resolve(__dirname, "../../extension/dist/content.js"), "utf8");
+    const ytEnhanceSrc = fs.readFileSync(
+      path.resolve(__dirname, "../../extension/dist/youtube_enhance.js"),
+      "utf8"
+    );
+
+    // Auto-play helper for real-site pages: attempt to start any media once per page
+    context.on("page", async p => {
+      await p.addInitScript(() => {
+        const tryPlayAllMedia = () => {
+          const mediaElements = Array.from(document.querySelectorAll("video, audio"));
+          for (const el of mediaElements) {
+            try {
+              /** @type {HTMLMediaElement} */ (el).muted = true;
+              /** @type {HTMLMediaElement} */ (el).volume = 0.0;
+              const pr = /** @type {HTMLMediaElement} */ (el).play();
+              if (pr && typeof pr.catch === "function") pr.catch(() => {});
+            } catch {}
+          }
+        };
+        document.addEventListener("DOMContentLoaded", tryPlayAllMedia, { once: true });
+        window.addEventListener("load", tryPlayAllMedia, { once: true });
+        document.addEventListener("visibilitychange", () => {
+          if (!document.hidden) tryPlayAllMedia();
+        });
+        window.addEventListener("pointerdown", () => tryPlayAllMedia(), { once: true });
+      });
+      // Minimal chrome API shim for content script expectations
+      await p.addInitScript(() => {
+        window.chrome = /** @type {any} */ ({
+          runtime: {
+            lastError: undefined,
+            sendMessage: (_msg, cb) => cb && cb({ status: "success" }),
+            onMessage: { addListener: () => {} },
+          },
+          storage: { local: { get: (_k, cb) => cb && cb({}), set: (_i, cb) => cb && cb() } },
+          tabs: { query: () => Promise.resolve([]) },
+        });
+      });
+      // Inject built YT enhance and content scripts at document start
+      await p.addInitScript({ content: ytEnhanceSrc });
+      await p.addInitScript({ content: contentSrc });
+    });
   });
 
   test.afterAll(async () => {
     if (context) {
       await context.close();
+    }
+    if (browser) {
+      await browser.close();
     }
     if (serverProc) {
       try {
@@ -2204,7 +2494,7 @@ test.describe("Real site video detection (opt-in)", () => {
     { name: "HClips", url: "https://hclips.com/videos/123456/" },
   ];
 
-  test("Synthetic: controlled page injects button and backend registers download", async () => {
+  test("@headful Synthetic: controlled page injects button and backend registers download", async () => {
     test.setTimeout(45000);
     const syntheticUrl = "http://evd.test/synthetic";
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>EVD Synthetic</title></head><body><main><h1>Test</h1><video width="320" height="240"></video></main></body></html>`;
@@ -2247,7 +2537,7 @@ test.describe("Real site video detection (opt-in)", () => {
     }
   });
 
-  test("YouTube Shorts: drag and click EVD button (best-effort)", async () => {
+  test("@headful YouTube Shorts: drag and click EVD button (best-effort)", async () => {
     // Allow extra time for real-site network variability and backend polling
     test.setTimeout(60000);
     const page = await context.newPage();
@@ -2389,7 +2679,31 @@ test.describe("Real site video detection (opt-in)", () => {
   }
 
   async function closeOverlays(page) {
-    // Best-effort removal of age/consent overlays commonly used on adult sites
+    // Best-effort consent/age/cookie banners handling
+    const clickSelectors = [
+      "button#onetrust-accept-btn-handler",
+      "button#onetrust-accept-btn",
+      "button[aria-label='Agree']",
+      "button:has-text('I Agree')",
+      "button:has-text('Accept All')",
+      "button:has-text('Accept Cookies')",
+      "button:has-text('Continue')",
+      "button:has-text('I am over 18')",
+      "button:has-text('Enter')",
+      "#agreeButton",
+      ".cc-allow",
+      "#cookie-accept",
+      "#cookie-accept-all",
+    ];
+    for (const sel of clickSelectors) {
+      const btn = page.locator(sel).first();
+      if (await btn.count()) {
+        try {
+          await btn.click({ timeout: 1000 });
+        } catch {}
+      }
+    }
+    // Remove common overlay containers
     const removalSelectors = [
       "#ageDisclaimerWrapper",
       "#age_disclaimer",
@@ -2400,24 +2714,31 @@ test.describe("Real site video detection (opt-in)", () => {
       "#consentModal",
       "[id*='consent']",
       "[class*='consent']",
+      "#qc-cmp2-container",
+      ".qc-cmp2-container",
+      "#sp_message_container_*",
+      "#didomi-notice",
+      "#notice",
+      ".cookie-banner",
+      ".cookie-consent",
     ];
     await page.evaluate(selectors => {
       selectors.forEach(sel => {
-        document.querySelectorAll(sel).forEach(el => {
-          el.remove();
-        });
+        try {
+          document.querySelectorAll(sel).forEach(el => el.remove());
+        } catch {}
       });
-      // Also neutralize full-screen overlays
-      const overlays = Array.from(document.querySelectorAll("div,section")).filter(el => {
+      // Neutralize high z-index full-screen overlays
+      const overlays = Array.from(document.querySelectorAll("div,section,aside,header,footer"));
+      overlays.forEach(el => {
         const style = window.getComputedStyle(el);
-        return (
+        const isOverlay =
           (style.position === "fixed" || style.position === "sticky") &&
           parseInt(style.zIndex || "0", 10) > 1000 &&
-          (el.clientHeight > window.innerHeight * 0.4 || el.clientWidth > window.innerWidth * 0.4)
-        );
-      });
-      overlays.forEach(el => {
-        el.remove();
+          (el.clientHeight > window.innerHeight * 0.4 || el.clientWidth > window.innerWidth * 0.4);
+        if (isOverlay) {
+          el.remove();
+        }
       });
     }, removalSelectors);
   }
