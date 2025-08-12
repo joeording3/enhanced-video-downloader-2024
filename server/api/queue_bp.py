@@ -58,10 +58,10 @@ def reorder_queue() -> Any:
     if request.method == "OPTIONS":
         return "", 204
 
-    raw = request.get_json(silent=True) or {}
+    raw: dict[str, Any] | Any = request.get_json(silent=True) or {}
     data = cast(_ReorderPayload, raw if isinstance(raw, dict) else {})
     order = data.get("order") or data.get("ids")
-    if not isinstance(order, list) or not all(isinstance(x, str) for x in order):
+    if not isinstance(order, list):
         return (
             jsonify(
                 {

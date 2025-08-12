@@ -162,32 +162,8 @@ export async function discoverServerPort(
   // Scan remaining port range (excluding default) with timeout and parallel checking for efficiency
   const portRange = Array.from({ length: totalPorts - 1 }, (_, i) => defaultPort + i + 1);
 
-  // Fallback: also scan the small, well-known test range [5000..5010] used by our test harness
-  // when it lies outside the configured range. This keeps normal operation fast while making
-  // the extension resilient in test environments where process.env is unavailable.
-  const TEST_RANGE_START = 5000;
-  const TEST_RANGE_END = 5010;
-  const isJestEnv =
-    typeof process !== "undefined" &&
-    process.env &&
-    typeof process.env.JEST_WORKER_ID !== "undefined";
-  const configuredStart = defaultPort;
-  const configuredEnd = maxPort;
-  const overlapsTestRange = !(configuredEnd < TEST_RANGE_START || configuredStart > TEST_RANGE_END);
-  if (!overlapsTestRange && !isJestEnv) {
-    const extra = Array.from(
-      { length: TEST_RANGE_END - TEST_RANGE_START + 1 },
-      (_, i) => TEST_RANGE_START + i
-    ).filter(p => p !== defaultPort);
-    // De-duplicate while preserving order
-    const seen = new Set<number>(portRange);
-    for (const p of extra) {
-      if (!seen.has(p)) {
-        portRange.push(p);
-        seen.add(p);
-      }
-    }
-  }
+  // Note: Avoid scanning any implicit test ranges in normal runtime.
+  // Rely strictly on the configured range from constants.
 
   // Check ports in batches to avoid overwhelming the system
   const batchSize = 5;

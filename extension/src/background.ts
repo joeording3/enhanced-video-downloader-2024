@@ -194,7 +194,7 @@ const handleNetworkChange = async (online: boolean): Promise<void> => {
         }
       }
 
-      const port = await findServerPort(true);
+      const port = await findServerPort(false);
       if (port !== null) {
         log("Server reconnected on port " + port);
         showNotification(
@@ -953,7 +953,7 @@ const initializeExtension = async (): Promise<void> => {
     await initializeActionIconTheme();
 
     // Perform initial server discovery
-    const port = await findServerPort(true);
+    const port = await findServerPort(false);
     if (port !== null) {
       log("Discovered server on port " + port);
       // Broadcast server status after discovery

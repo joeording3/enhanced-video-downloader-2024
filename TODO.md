@@ -61,6 +61,8 @@ Urgent Tasks:
     non-finite" in `createActiveListItem`; clamp to [0,100] and round label.
   - [/] Popup: Combine Active/Queued and History into a single "Downloads" section; keep existing
         element IDs (`download-status`, `download-history`) so logic keeps working.
+  - [/] Background: stop forcing scans when a cached port exists from Options; prefer cached port
+    and only scan when missing.
 
 - **Automation and CI**
   - [/] Keep `make lint-unused` non-blocking during triage.

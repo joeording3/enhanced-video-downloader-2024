@@ -349,7 +349,7 @@ def resume_failed_downloads(
     total = len(failed_ids)
     resumed = 0
     failed = 0
-    non_resumable = []
+    non_resumable: list[str] = []
 
     if progress_callback:
         progress_callback(0, total, "Starting resume operation")
@@ -361,7 +361,7 @@ def resume_failed_downloads(
 
         resumed += batch_results["resumed"]
         failed += batch_results["failed"]
-        non_resumable.extend(batch_results["non_resumable"])
+        non_resumable.extend(cast(list[str], batch_results["non_resumable"]))
 
         if progress_callback:
             progress_callback(i + len(batch), total, f"Processed batch {i // max_concurrent + 1}")
@@ -379,13 +379,12 @@ def _reorder_by_priority(download_ids: list[str], history_items: Sequence[dict[s
     priority_map: dict[str, int] = {}
     for item in history_items:
         download_id_val = item.get("download_id")
-        download_id = str(download_id_val) if isinstance(download_id_val, str) else None
+        download_id = download_id_val if isinstance(download_id_val, str) else None
         if download_id in download_ids:
             # Use file size as priority indicator (larger files = higher priority)
             fs_val = item.get("file_size", 0)
             file_size = int(fs_val) if isinstance(fs_val, int) else 0
-            if download_id is not None:
-                priority_map[download_id] = file_size
+            priority_map[download_id] = file_size
 
     # Sort by priority (descending)
     return sorted(download_ids, key=lambda x: priority_map.get(x, 0), reverse=True)
@@ -514,7 +513,7 @@ def resume_incomplete_downloads(
     total = len(incomplete_files)
     resumed = 0
     errors = 0
-    non_resumable = []
+    non_resumable: list[str] = []
 
     if progress_callback:
         progress_callback(0, total, "Starting resume operation")
@@ -526,7 +525,7 @@ def resume_incomplete_downloads(
 
         resumed += batch_results["resumed"]
         errors += batch_results["errors"]
-        non_resumable.extend(batch_results["non_resumable"])
+        non_resumable.extend(cast(list[str], batch_results["non_resumable"]))
 
         if progress_callback:
             progress_callback(i + len(batch), total, f"Processed batch {i // max_concurrent + 1}")
@@ -729,11 +728,12 @@ def _build_resume_options(downloader_type: str, url: str, download_dir: Path, pr
 
         return opts
     if downloader_type == "gallery-dl":
-        # Basic gallery-dl options
-        opts: _ResumeOptions = {
+        # Basic gallery-dl options; build into a flexible dict while hinting known fields
+        known: _ResumeOptions = {
             "directory": str(download_dir),
             "continue": True,
         }
+        opts: dict[str, Any] = dict(known)
 
         if priority is not None:
             opts["nice"] = str(priority)
@@ -1049,11 +1049,16 @@ def cli_build_opts(url: str, output_template: str, extra_params: dict[str, Any] 
                 raise AttributeError("Invalid configuration format")  # noqa: TRY003, TRY301
 
             if hasattr(cfg, "get_download_options"):
-                return cfg.get_download_options()
+                raw = cfg.get_download_options()
+                return cast(dict[str, Any], raw)
             if hasattr(cfg, "as_dict"):
-                return cfg.as_dict().get("yt_dlp_options", {}).copy()
+                raw_dict = cfg.as_dict()
+                if isinstance(raw_dict, dict):
+                    yt = raw_dict.get("yt_dlp_options", {})
+                    return cast(dict[str, Any], yt.copy() if isinstance(yt, dict) else {})
             if isinstance(cfg, dict):
-                return cfg.get("yt_dlp_options", {}).copy()
+                yt = cfg.get("yt_dlp_options", {})
+                return cast(dict[str, Any], yt.copy() if isinstance(yt, dict) else {})
             _raise_invalid_config()
             return {}  # Unreachable but satisfies type checker
 
