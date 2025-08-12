@@ -63,6 +63,7 @@ Urgent Tasks:
         element IDs (`download-status`, `download-history`) so logic keeps working.
   - [/] Background: stop forcing scans when a cached port exists from Options; prefer cached port
     and only scan when missing.
+  - [/] Background: if no cached `serverPort`, use `serverConfig.server_port` from storage and cache it.
 
 - **Automation and CI**
   - [/] Keep `make lint-unused` non-blocking during triage.

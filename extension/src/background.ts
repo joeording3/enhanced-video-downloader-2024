@@ -138,9 +138,22 @@ const storageService: StorageService = {
   },
   async getPort(): Promise<number | null> {
     try {
-      const result = await chrome.storage.local.get(_portStorageKey);
-      if (result && typeof result === "object") {
-        return (result as any)[_portStorageKey] || null;
+      // Try cached serverPort first; if missing, fall back to serverConfig.server_port
+      const result = await chrome.storage.local.get([_portStorageKey, _configStorageKey]);
+      const cached = (result as any)?.[_portStorageKey];
+      if (typeof cached === "number" && Number.isFinite(cached)) {
+        return cached;
+      }
+      const cfg = (result as any)?.[_configStorageKey] || {};
+      const configured = cfg.server_port;
+      if (typeof configured === "number" && Number.isFinite(configured)) {
+        // Cache it for future fast reads
+        try {
+          await chrome.storage.local.set({ [_portStorageKey]: configured });
+        } catch {
+          /* ignore */
+        }
+        return configured;
       }
       return null;
     } catch {

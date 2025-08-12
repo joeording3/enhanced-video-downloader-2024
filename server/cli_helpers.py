@@ -23,7 +23,7 @@ from collections.abc import (
     Mapping,
 )
 from pathlib import Path
-from typing import Any, TypedDict, cast
+from typing import Any, Protocol, TypedDict, cast
 
 
 class _HistoryItem(TypedDict, total=False):
@@ -64,6 +64,13 @@ from server.lock import get_lock_pid as _get_lock_pid
 from server.lock import get_lock_pid_port as _get_lock_pid_port
 from server.lock import remove_lock_file as _remove_lock
 from server.utils import find_available_port as core_find_available_port
+
+
+# Minimal interface for yt_dlp objects that support download(list[str])
+class _HasDownload(Protocol):
+    def download(self, url_list: list[str]) -> int:  # pragma: no cover - protocol
+        ...
+
 
 # Alias derive_resume_url for backward compatibility and tests
 _derive_resume_url = derive_resume_url
@@ -428,7 +435,8 @@ def _process_resume_batch(
 
             # Attempt resume
             with yt_dlp.YoutubeDL(opts) as ydl:  # type: ignore[import-untyped]
-                ydl.download([url])
+                downloader = cast(_HasDownload, ydl)
+                downloader.download([url])
         except Exception as e:
             logger.exception(f"Failed to resume {download_id}")
             return {"status": "failed", "reason": str(e)}
@@ -751,7 +759,8 @@ def _resume_with_downloader(
     try:
         if downloader_type == "yt-dlp":
             with yt_dlp.YoutubeDL(opts) as ydl:  # type: ignore[import-untyped]
-                ydl.download([url])
+                downloader = cast(_HasDownload, ydl)
+                downloader.download([url])
             return True
         if downloader_type == "gallery-dl":
             # Build gallery-dl command from options
