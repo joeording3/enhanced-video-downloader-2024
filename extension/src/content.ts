@@ -226,11 +226,17 @@ function ensureDownloadButtonStyle(buttonElement: HTMLElement): void {
     0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
 
   // Phase 1: Ensure visibility via class toggles (no inline fallbacks)
-  if (computedStyle.display === "none" || buttonElement.classList.contains("hidden")) {
-    buttonElement.classList.remove("hidden");
+  // Respect explicit hidden state: do not force-show if user hid the button.
+  if (buttonElement.classList.contains("hidden")) {
+    // Ensure we don't mark as visible when explicitly hidden
+    if (buttonElement.classList.contains("evd-visible")) {
+      buttonElement.classList.remove("evd-visible");
+      _styleAdjusted = true;
+    }
+  } else if (computedStyle.display === "none") {
     buttonElement.classList.add("evd-visible");
     _styleAdjusted = true;
-    log("EVD button was hidden; made visible via class.");
+    log("EVD button was hidden by page styles; made visible via class.");
   } else if (!buttonElement.classList.contains("evd-visible")) {
     buttonElement.classList.add("evd-visible");
   }

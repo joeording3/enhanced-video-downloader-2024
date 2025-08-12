@@ -167,10 +167,14 @@ export async function discoverServerPort(
   // the extension resilient in test environments where process.env is unavailable.
   const TEST_RANGE_START = 5000;
   const TEST_RANGE_END = 5010;
+  const isJestEnv =
+    typeof process !== "undefined" &&
+    process.env &&
+    typeof process.env.JEST_WORKER_ID !== "undefined";
   const configuredStart = defaultPort;
   const configuredEnd = maxPort;
   const overlapsTestRange = !(configuredEnd < TEST_RANGE_START || configuredStart > TEST_RANGE_END);
-  if (!overlapsTestRange) {
+  if (!overlapsTestRange && !isJestEnv) {
     const extra = Array.from(
       { length: TEST_RANGE_END - TEST_RANGE_START + 1 },
       (_, i) => TEST_RANGE_START + i

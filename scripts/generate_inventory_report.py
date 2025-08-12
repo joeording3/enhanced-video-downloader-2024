@@ -8,7 +8,7 @@ Catalogs matches with file path, line number, match type, full text, and context
 For each ignore entry, temporarily removes the directive, re-runs the relevant linter or type checker,
 and records whether an error resurfaces (justified) or not (stale).
 For docstring checks:
-  - Python: runs pydocstyle --convention=numpy
+  - Python: runs Ruff with pydocstyle (D) and reStructuredText (RST) rules
   - JS/TS: runs ESLint with eslint-plugin-jsdoc (via configured eslint.config.cjs)
   - JSON: parses objects with "$schema" and ensures each object has "description" properties.
 Aggregates results and outputs:
@@ -229,7 +229,7 @@ def scan_docstring_entries(path: Path) -> list[dict[str, Any]]:
 
 def test_docstrings_py(path: Path) -> tuple[int | None, str]:
     """
-    Run pydocstyle on a Python file to check NumPy-style docstrings.
+    Run Ruff (D + RST rules) on a Python file to check NumPy/Sphinx-style docstrings.
 
     Parameters
     ----------
@@ -241,7 +241,8 @@ def test_docstrings_py(path: Path) -> tuple[int | None, str]:
     tuple
         (returncode, output string)
     """
-    cmd = ["pydocstyle", "--convention=numpy", str(path)]
+    # Use ruff to check both pydocstyle (D) and reStructuredText (RST) issues
+    cmd = ["ruff", "check", "--select", "D,RST", str(path)]
     code, out = run_command(cmd)
     return code, out
 
