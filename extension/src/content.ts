@@ -458,6 +458,25 @@ function ensureDownloadButtonStyle(buttonElement: HTMLElement): void {
  * @returns Promise resolving to the created or updated button element.
  */
 async function createOrUpdateButton(videoElement: HTMLElement | null = null): Promise<HTMLElement> {
+  // In smart-injection mode, do not create a global button when no media is present
+  if (!videoElement) {
+    const smartMode = await getSmartInjectionEnabled();
+    if (smartMode) {
+      // Remove any stray main button if present
+      try {
+        const stray = document.getElementById("evd-download-button-main");
+        if (stray && document.body.contains(stray)) {
+          stray.remove();
+        }
+      } catch {
+        /* ignore */
+      }
+      downloadButton = null;
+      // Signal to callers that global creation is suppressed in smart mode
+      return Promise.reject(new Error("smart-injection: global button suppressed"));
+    }
+  }
+
   // If we already have a button and no video is specified, return existing button
   if (downloadButton && !videoElement) {
     ensureDownloadButtonStyle(downloadButton);
@@ -756,6 +775,14 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
     // Store in centralized state and assign to global button
     stateManager.updateUIState({ buttonPosition: { x: 10, y: 10 } });
     downloadButton = btn;
+    // Ensure this global button is hidden by default until media is detected
+    try {
+      btn.style.display = "none";
+      btn.classList.add("hidden");
+      btn.classList.remove("evd-visible");
+    } catch {
+      /* ignore */
+    }
   }
 
   // Apply hidden state if needed
@@ -775,8 +802,20 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
             if (Date.now() < suppressObserverUntil) {
               continue;
             }
-            log("Button was removed, re-adding");
-            createOrUpdateButton();
+            // In smart-injection mode, avoid blindly re-adding a global button when none is needed.
+            // Defer to the normal injection tick, which only creates buttons when appropriate.
+            (async () => {
+              try {
+                const smart = await getSmartInjectionEnabled();
+                if (smart) {
+                  await injectionTick();
+                } else {
+                  await createOrUpdateButton();
+                }
+              } catch {
+                /* ignore */
+              }
+            })();
             return;
           }
         }
@@ -956,10 +995,25 @@ async function setButtonHiddenState(hidden: boolean): Promise<void> {
 
   // If showing but no button exists, create one so user can see it
   if (!primary && !hidden) {
+    // Respect Smart Injection: do not create a global button proactively
+    // when smart mode is enabled. The media detection loop will inject
+    // when appropriate.
     try {
-      primary = (await createOrUpdateButton()) as HTMLButtonElement;
+      const smart = await getSmartInjectionEnabled();
+      if (!smart) {
+        try {
+          primary = (await createOrUpdateButton()) as HTMLButtonElement;
+        } catch {
+          primary = null;
+        }
+      }
     } catch {
-      primary = null;
+      // On error reading smart flag, fall back to creating the button
+      try {
+        primary = (await createOrUpdateButton()) as HTMLButtonElement;
+      } catch {
+        primary = null;
+      }
     }
   }
 
@@ -1184,6 +1238,7 @@ async function findVideosAndInjectButtons(): Promise<void> {
     const smartMode = await getSmartInjectionEnabled();
     if (smartMode) {
       if (!foundSignificantVideo) {
+        // Remove tracked global button reference if present
         if (downloadButton && document.body.contains(downloadButton)) {
           try {
             suppressObserverUntil = Date.now() + 1000;
@@ -1192,6 +1247,16 @@ async function findVideosAndInjectButtons(): Promise<void> {
             /* ignore */
           }
           downloadButton = null;
+        }
+        // Also remove any stray main button element that may exist without our reference
+        try {
+          const strayMain = document.getElementById("evd-download-button-main");
+          if (strayMain && document.body.contains(strayMain)) {
+            suppressObserverUntil = Date.now() + 1000;
+            strayMain.remove();
+          }
+        } catch {
+          /* ignore */
         }
       }
     }
@@ -1210,6 +1275,42 @@ async function init(): Promise<void> {
 
   // Start or stop injection based on current hidden state
   await updateInjectionLoopBasedOnHidden();
+
+  // If smart injection is enabled, proactively ensure no global button is present
+  try {
+    if (await getSmartInjectionEnabled()) {
+      const stray = document.getElementById("evd-download-button-main");
+      if (stray && document.body.contains(stray)) {
+        try {
+          stray.remove();
+        } catch {
+          /* ignore */
+        }
+      }
+      downloadButton = null;
+      // Best-effort delayed purge in case other observers re-add briefly
+      setTimeout(() => {
+        try {
+          const s = document.getElementById("evd-download-button-main");
+          if (s && document.body.contains(s)) s.remove();
+        } catch {
+          /* ignore */
+        }
+      }, 100);
+    }
+  } catch {
+    /* ignore */
+  }
+
+  // If Smart Injection is enabled, proactively ensure no global button remains on pages
+  try {
+    const smart = await getSmartInjectionEnabled();
+    if (smart) {
+      removeAllButtons();
+    }
+  } catch {
+    /* ignore */
+  }
 
   // Listen for messages from background script or popup
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

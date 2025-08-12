@@ -34,8 +34,8 @@ class TestYtdlpHelperFunctions:
         assert opts["concurrent_fragments"] == 4
         assert opts["noplaylist"] is True
         assert opts["yesplaylist"] is False
-        # New option key used by yt-dlp
-        assert opts["cookiesfrombrowser"] == "chrome"
+        # New option key used by yt-dlp (list form)
+        assert opts["cookiesfrombrowser"] == ["chrome"]
 
     def test_default_ydl_opts_playlist(self):
         """Test _default_ydl_opts with playlist enabled."""
@@ -465,20 +465,28 @@ class TestYtdlpErrorHandling:
         """Test map_error_message with common error patterns."""
         # Test various error patterns that should be mapped
         result1 = map_error_message("Video unavailable")
-        assert result1 == ("YT_DLP_VIDEO_UNAVAILABLE",
-                          "This video is unavailable. It may have been removed or set to private.")
+        assert result1 == (
+            "YT_DLP_VIDEO_UNAVAILABLE",
+            "This video is unavailable. It may have been removed or set to private.",
+        )
 
         result2 = map_error_message("private video")
-        assert result2 == ("YT_DLP_PRIVATE_VIDEO",
-                          "This video is private and cannot be downloaded.")
+        assert result2 == (
+            "YT_DLP_PRIVATE_VIDEO",
+            "This video is private and cannot be downloaded.",
+        )
 
         result3 = map_error_message("not available in your country")
-        assert result3 == ("YT_DLP_GEO_RESTRICTED",
-                          "This video is not available in your country or region.")
+        assert result3 == (
+            "YT_DLP_GEO_RESTRICTED",
+            "This video is not available in your country or region.",
+        )
 
         result4 = map_error_message("Video is protected by DRM")
-        assert result4 == ("YT_DLP_DRM_PROTECTED",
-                          "This video is protected by DRM and cannot be downloaded.")
+        assert result4 == (
+            "YT_DLP_DRM_PROTECTED",
+            "This video is protected by DRM and cannot be downloaded.",
+        )
 
     def test_map_error_message_unknown_error(self):
         """Test map_error_message with unknown error."""

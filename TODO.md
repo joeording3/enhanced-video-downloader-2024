@@ -67,7 +67,8 @@ Urgent Tasks:
     and only scan when missing.
   - [/] Background: if no cached `serverPort`, use `serverConfig.server_port` from storage and cache
     it.
-  - [/] Background: fetch config via multiple loopback hosts and fall back to cached config if fetch fails.
+  - [/] Background: fetch config via multiple loopback hosts and fall back to cached config if fetch
+    fails.
 
 - **Automation and CI**
   - [/] Keep `make lint-unused` non-blocking during triage.

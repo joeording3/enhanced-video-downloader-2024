@@ -95,6 +95,17 @@ export function initOptionsPage(): void {
     console.error("Error initializing theme:", error);
   });
 
+  // Initialize server status immediately
+  try {
+    chrome.runtime.sendMessage({ type: "getServerStatus" }, (resp: any) => {
+      if (!chrome.runtime.lastError && resp && resp.status) {
+        updateOptionsServerStatus(resp.status);
+      }
+    });
+  } catch {
+    // ignore
+  }
+
   loadSettings();
   setupEventListeners();
   setupValidation();

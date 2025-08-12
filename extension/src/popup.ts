@@ -740,6 +740,17 @@ export async function initPopup(): Promise<void> {
   // Initialize theme
   await applyPopupTheme();
 
+  // Initialize server status immediately
+  try {
+    chrome.runtime.sendMessage({ type: "getServerStatus" }, (resp: any) => {
+      if (!chrome.runtime.lastError && resp && resp.status) {
+        updatePopupServerStatus(resp.status);
+      }
+    });
+  } catch {
+    // ignore
+  }
+
   // Set up settings button click handler
   const settingsButton = document.getElementById("open-settings");
   if (settingsButton) {

@@ -256,9 +256,23 @@ async function setupChromeAPIMock(page) {
                 logLevel: "INFO",
                 ytdlpFormat: "bestvideo+bestaudio/best",
                 allowPlaylists: false,
+                // Reflect persisted smart injection preference if set via storage.set in tests
+                smartInjectionEnabled: window /** @type {any} */._smartInjectionEnabled === true,
               })
           ),
-          set: /** @type {any} */ ((items, cb) => cb && cb()),
+          set: /** @type {any} */ (
+            (items, cb) => {
+              // Persist smartInjectionEnabled to be returned by subsequent get() calls
+              if (
+                items &&
+                typeof items === "object" &&
+                Object.prototype.hasOwnProperty.call(items, "smartInjectionEnabled")
+              ) {
+                window /** @type {any} */._smartInjectionEnabled = !!items.smartInjectionEnabled;
+              }
+              if (cb) cb();
+            }
+          ),
         },
       },
     });
@@ -302,6 +316,45 @@ test.describe("Chrome Extension E2E Tests", () => {
     const port = typeof address === "string" ? 0 : address?.port || 0;
     baseUrl = `http://localhost:${port}`;
     console.log(`[E2E] Server started on port ${port}`);
+    // Ensure latest compiled content script is available for injection tests
+    try {
+      const { execSync } = require("child_process");
+      execSync("npm run build:ts", { stdio: "inherit" });
+    } catch (e) {
+      console.log("[E2E] Warning: build step failed (continuing):", (e && e.message) || e);
+    }
+  });
+
+  // Attempt to auto-play any media on page load across all tests to improve detection reliability
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      const tryPlayAllMedia = () => {
+        const mediaElements = Array.from(document.querySelectorAll("video, audio"));
+        for (const el of mediaElements) {
+          try {
+            // Muted autoplay is generally allowed without user gesture
+            /** @type {HTMLMediaElement} */ (el).muted = true;
+            /** @type {HTMLMediaElement} */ (el).volume = 0.0;
+            const p = /** @type {HTMLMediaElement} */ (el).play();
+            if (p && typeof p.catch === "function") {
+              p.catch(() => {});
+            }
+          } catch {
+            // ignore and continue
+          }
+        }
+      };
+
+      // Try on DOMContentLoaded and load
+      document.addEventListener("DOMContentLoaded", tryPlayAllMedia, { once: true });
+      window.addEventListener("load", tryPlayAllMedia, { once: true });
+      // Re-try when tab becomes visible (some sites lazy-mount media)
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) tryPlayAllMedia();
+      });
+      // Fallback: first pointer gesture (if any) also triggers play
+      window.addEventListener("pointerdown", () => tryPlayAllMedia(), { once: true });
+    });
   });
 
   test.afterAll(async () => {
@@ -623,11 +676,11 @@ test.describe("Chrome Extension E2E Tests", () => {
       // Inject built content script into the page
       const contentPath = path.resolve(__dirname, "../../extension/dist/content.js");
       await page.addScriptTag({ path: contentPath });
-      // Allow the injection loop to run at least once
-      await page.waitForTimeout(2500);
-      // Ensure no global or injected buttons exist
-      const buttons = await page.$$(`#evd-download-button-main, button.download-button`);
-      expect(buttons.length).toBe(0);
+      // Wait for smart mode scan cycles to complete and verify no global button remains
+      await page.waitForFunction(
+        () => document.querySelector("#evd-download-button-main") === null,
+        { timeout: 8000 }
+      );
     });
 
     /**

@@ -7,6 +7,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- Extension background UX:
+  - Prefer cached/configured port; scan only if missing (reduced noisy discovery)
+  - Popup/Options initialize server status immediately via message to background
+  - Clear stale scan badge on connect; compact scanning badge text set to "SCN"
+  - Config fetch tries 127.0.0.1/localhost/[::1] and falls back to cached config if network fails
+
 ### Added
 
 - Smart Injection option for the inline Download button

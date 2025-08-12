@@ -143,6 +143,9 @@ def get_all_status() -> Response:
         combined = {}
         # Include progress entries with enhanced data
         for download_id, status in progress_data.items():
+            # Ignore ephemeral queued placeholders to keep default response minimal/empty
+            if status.get("status") == "queued":
+                continue
             combined[download_id] = _enhance_status_data(status)
 
         # Include errors and troubleshooting suggestions

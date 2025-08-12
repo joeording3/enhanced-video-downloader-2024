@@ -83,7 +83,8 @@ def _default_ydl_opts(output_path: str, download_playlist: bool) -> dict[str, An
         "noplaylist": not download_playlist,
         "yesplaylist": download_playlist,
         # Prefer session cookies directly from the user's browser (yt-dlp's official option)
-        "cookiesfrombrowser": "chrome",
+        # Use list/tuple form to satisfy yt-dlp's browser spec parser
+        "cookiesfrombrowser": ["chrome"],
     }
 
 
@@ -280,7 +281,8 @@ def _try_extract_title_with_ytdlp(url: str, download_id: str | None) -> str | No
             # Reuse native logger to keep output consolidated
             "logger": logging.getLogger("yt_dlp_native"),
             # Prefer browser cookies for YouTube edge cases (e.g., Shorts)
-            "cookies_from_browser": "chrome",
+            # Use the correct key and list/tuple form per yt-dlp Python API
+            "cookiesfrombrowser": ["chrome"],
         }
         with yt_dlp.YoutubeDL(opts) as ydl:  # type: ignore[import-untyped]
             info = ydl.extract_info(url, download=False)
@@ -1189,7 +1191,8 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
             final_file = media_candidates_all[0] if media_candidates_all else None
             if final_file and final_file.exists() and final_file.stat().st_size == 0:
                 logger.warning(
-                    f"[{download_id}] Detected zero-byte file '{final_file.name}'. Retrying with fallback format mp4 (itag 18) as single stream."
+                    f"[{download_id}] Detected zero-byte file '{final_file.name}'. "
+                    "Retrying with fallback format mp4 (itag 18) as single stream."
                 )
                 # Remove the empty stub before retry
                 with suppress(Exception):
