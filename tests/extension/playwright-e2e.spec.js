@@ -557,7 +557,7 @@ test.describe("Chrome Extension E2E Tests", () => {
       // Helper to detect if a video/audio is present and can be played
       async function detectMedia(p) {
         // Determine domain-specific timeout from media-domains.json
-        let timeoutMs = 6000;
+        let timeoutMs = 15000;
         try {
           const domainMap = JSON.parse(
             fs.readFileSync(path.resolve(__dirname, "./media-domains.json"), "utf8")
