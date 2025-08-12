@@ -1101,8 +1101,16 @@ def _cli_stop_pre_checks() -> list[psutil.Process]:
                 try:
                     if not proc.is_running():
                         continue
+                    from typing import Any, cast
+                    from collections.abc import Iterable
                     net_conns = getattr(proc, "net_connections", None)
-                    conns_list = net_conns(kind="inet") if callable(net_conns) else ()
+                    conns_list: list[Any] = []
+                    if callable(net_conns):
+                        obj = net_conns(kind="inet")
+                        try:
+                            conns_list = list(cast(Iterable[Any], obj))
+                        except Exception:
+                            conns_list = []
                     if any(getattr(c.laddr, "port", None) == fallback_port for c in conns_list):
                         pid_to_process.setdefault(proc.pid, proc)
                 except Exception:

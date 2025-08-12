@@ -3,6 +3,7 @@
 Urgent Tasks:
 
 - [/] log viewer on options page not working - no logs displayed
+- [/] Options logs: 'Filter Werkzeug' now filters all 200-status messages (status/status_code fields, status=200, HTTP/* 200, and "200 OK" patterns) to hide noise
 - [/] Client must not send URL-based dedupe token as `download_id`; omit field and let server
   generate ID
 - [ ] Add unused-code checks to CI and local workflows

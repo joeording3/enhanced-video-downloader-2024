@@ -1262,12 +1262,29 @@ export function setupLogsUI(): void {
           const isWerkzeug = /werkzeug/i.test(line);
           // JSON: "status": 200 or "status": "200"
           const isStatus200Json = /"status"\s*:\s*"?200"?(\b|\s|[,}])/.test(line);
+          // JSON: "status_code": 200 or "status_code": "200"
+          const isStatusCode200Json = /"status_code"\s*:\s*"?200"?(\b|\s|[,}])/.test(line);
+          // key-value forms: status=200 or status: 200 (common text logs)
+          const isStatusEq200 = /\bstatus\s*[=:]\s*200\b/i.test(line);
           // Plain text within message: "-> 200" possibly followed by punctuation/space/EOL
           const isStatus200Arrow = /->\s*200(\b|\s|[,}])?/.test(line);
+          // HTTP log pattern: "... HTTP/1.1" 200 ... or HTTP/2 200
+          const isHttpVersion200 = /HTTP\/(?:1(?:\.\d)?|2)\"?\s+200\b/i.test(line);
+          // Common phrase: 200 OK
+          const is200Ok = /\b200\s+OK\b/i.test(line);
           // JSON for server.request logger with 200 status (robust across spacing)
           const isServerRequest200 =
             /"logger"\s*:\s*"server\.request"[\s\S]*?"status"\s*:\s*"?200"?/i.test(line);
-          return !(isWerkzeug || isStatus200Json || isStatus200Arrow || isServerRequest200);
+          return !(
+            isWerkzeug ||
+            isStatus200Json ||
+            isStatusCode200Json ||
+            isStatusEq200 ||
+            isStatus200Arrow ||
+            isHttpVersion200 ||
+            is200Ok ||
+            isServerRequest200
+          );
         })
         .join("\n");
       // If filtering removed everything, fall back to unfiltered content so the user still sees logs

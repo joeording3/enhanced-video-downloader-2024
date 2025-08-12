@@ -133,7 +133,8 @@ export function renderHistoryItems(
   historyListElement?: HTMLElement,
   pageInfoElement?: HTMLElement,
   prevPageBtn?: HTMLButtonElement,
-  nextPageBtn?: HTMLButtonElement
+  nextPageBtn?: HTMLButtonButton,
+  options?: { preserveExisting?: boolean }
 ): void {
   if (!historyListElement) {
     console.error("[EVD][HISTORY] No history list element provided to renderHistory");
@@ -149,8 +150,10 @@ export function renderHistoryItems(
     return;
   }
 
-  // Clear the list
-  historyListElement.innerHTML = "";
+  // Clear the list unless asked to preserve existing content (to allow prepending queued items)
+  if (!options || options.preserveExisting !== true) {
+    historyListElement.innerHTML = "";
+  }
 
   // If we have no items, show a message
   if (!historyItems || historyItems.length === 0) {

@@ -506,7 +506,7 @@ export function renderDownloadStatus(data: {
     const li = document.createElement("li");
     li.textContent = "No active or queued downloads.";
     container.appendChild(li);
-    return;
+    // Also, when no active/queued, ensure the history section remains visible below
   }
   // Grouped active and queued items into collapsible sections
   if (activeIds.length > 0) {
@@ -567,6 +567,49 @@ export function renderDownloadStatus(data: {
     });
     queueDetails.appendChild(queueUl);
     container.appendChild(queueDetails);
+  }
+
+  // Ensure queued items are also visible at the top of history as "Queued" with labels for quick context
+  try {
+    const historyListEl = document.getElementById("download-history") as HTMLElement | null;
+    if (historyListEl && queuedIds.length > 0) {
+      // Prepend a lightweight queued header
+      const header = document.createElement("li");
+      header.className = "history-queued-header";
+      header.textContent = "Queued";
+      // Remove any existing header to avoid duplicates
+      const existingHeader = historyListEl.querySelector(".history-queued-header");
+      if (existingHeader) existingHeader.remove();
+      historyListEl.prepend(header);
+
+      // Remove prior injected queued items
+      Array.from(historyListEl.querySelectorAll("li.history-queued-item")).forEach(el => el.remove());
+      // Inject queued items as first entries (non-paginated preview)
+      queuedIds.forEach(id => {
+        const li = document.createElement("li");
+        li.className = "history-item history-queued-item status-queued";
+        li.dataset.itemId = id;
+        const label = (qDetails[id]?.title || qDetails[id]?.filename || qDetails[id]?.url || id) as string;
+        const left = document.createElement("div");
+        left.className = "history-left";
+        const titleDiv = document.createElement("div");
+        const b = document.createElement("b");
+        b.textContent = label;
+        titleDiv.appendChild(b);
+        const statusDiv = document.createElement("div");
+        const statusBold = document.createElement("b");
+        statusBold.textContent = "queued";
+        statusBold.classList.add("status-pill", "is-warning");
+        statusDiv.appendChild(document.createTextNode("Status: "));
+        statusDiv.appendChild(statusBold);
+        left.appendChild(titleDiv);
+        left.appendChild(statusDiv);
+        li.appendChild(left);
+        historyListEl.prepend(li);
+      });
+    }
+  } catch {
+    // ignore history decoration failures
   }
 }
 

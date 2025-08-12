@@ -253,8 +253,18 @@ def _process_uses_port(proc: psutil.Process, port: int) -> bool:
         True if the process is using the port, False otherwise.
     """
     try:
+        from typing import Any
+        from collections.abc import Iterable
+        
+        from typing import cast
         net_conns = getattr(proc, "net_connections", None)
-        conns = net_conns(kind="inet") if callable(net_conns) else ()
+        conns: list[Any] = []
+        if callable(net_conns):
+            conns_obj = net_conns(kind="inet")
+            try:
+                conns = list(cast(Iterable[Any], conns_obj))
+            except Exception:
+                conns = []
         return any(getattr(conn.laddr, "port", None) == port for conn in conns)
     except Exception:
         return False
