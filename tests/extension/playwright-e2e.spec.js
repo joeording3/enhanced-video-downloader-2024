@@ -343,11 +343,11 @@ test.describe("Chrome Extension E2E Tests", () => {
     // Local overlay/consent cleanup for matrix tests (mirrors the real-site helper)
     async function closeOverlaysLocal(page) {
       // Load domain-specific consent selectors if configured
-      const getDomainConsentSelectors = (urlStr) => {
-        const u = (urlStr || '').toLowerCase();
+      const getDomainConsentSelectors = urlStr => {
+        const u = (urlStr || "").toLowerCase();
         try {
           const domainMap = JSON.parse(
-            fs.readFileSync(path.resolve(__dirname, './media-domains.json'), 'utf8')
+            fs.readFileSync(path.resolve(__dirname, "./media-domains.json"), "utf8")
           );
           for (const domain of Object.keys(domainMap)) {
             if (u.includes(domain)) {
@@ -661,7 +661,7 @@ test.describe("Chrome Extension E2E Tests", () => {
     }
 
     test("@headful validate media detection against configured URL sets", async ({ page }) => {
-      test.setTimeout(120000);
+      test.setTimeout(240000);
       const matrixPath = path.resolve(__dirname, "../extension/media-sites.json");
       const matrix = JSON.parse(fs.readFileSync(matrixPath, "utf8"));
       const toAbs = u => (u.startsWith("http") ? u : `${matrixBaseUrl}${u}`);

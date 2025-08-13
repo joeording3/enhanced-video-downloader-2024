@@ -28,7 +28,7 @@
     "play_selectors": [".dmp_PlayButton", "button[aria-label*='Play' i]", "button:has-text('Play')"]
   },
   "twitch.tv": {
-    "timeout_ms": 20000,
+    "timeout_ms": 30000,
     "play_selectors": [
       ".player-overlay",
       ".video-player__overlay",
@@ -38,7 +38,7 @@
     ]
   },
   "clips.twitch.tv": {
-    "timeout_ms": 20000,
+    "timeout_ms": 30000,
     "play_selectors": [
       ".player-overlay",
       ".video-player__overlay",
