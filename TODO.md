@@ -2,15 +2,40 @@
 
 Urgent Tasks:
 
+- [ ] media detection - continued improvements
+  - [ ] examine [yt-dlp](https://github.com/yt-dlp/yt-dlp) for detection improvements and patterns
+  - [ ] examine [gallery-dl](https://github.com/mikf/gallery-dl) for detection improvements and patterns
+  - [ ] Add more player API hooks (Facebook, Wistia, VK) and dynamic media attachment polling
+
 - [/] Client must not send URL-based dedupe token as `download_id`; omit field and let server
   generate ID
 - [/] Add unused-code checks to CI and local workflows
 
 - [/] E2E Media Detection Matrix robustness
-  - [/] Add iframe postMessage-based player API triggers (YouTube, Vimeo, Dailymotion, Twitch, Streamable)
+
+  - [/] Add iframe postMessage-based player API triggers (YouTube, Vimeo, Dailymotion, Twitch,
+    Streamable)
   - [/] Invoke domain-specific selectors in frames; repeat autoplay attempts and direct media clicks
-  - [/] Support per-domain timeouts via `tests/extension/media-domains.json` and wait for `networkidle`
-  - [ ] Optional: whitelist stable URLs for CI and gate broader list behind manual flag
+  - [/] Support per-domain timeouts via `tests/extension/media-domains.json` and wait for
+    `networkidle`
+  - [/] Optional: whitelist stable URLs for CI and gate broader list behind manual flag (defaults to
+    stable set; full set with `EVD_MEDIA_SITES_WIDE=true`)
+  - [/] Global ad iframe ignore via `tests/extension/ad-origins.json`; skip ad frames in autoplay,
+    detection, and iframe API triggers
+  - [/] Add detailed `[MATRIX][DBG]` logs for selector clicks, iframe API triggers, media readiness,
+    networkidle waits, and polling iterations
+  - [/] Honor per-domain `consent_selectors` during overlay cleanup (main frame and iframes)
+  - [/] JWPlayer programmatic play and jw postMessage triggers for JW-based sites; added targeted
+    selectors
+  - [/] Hypnotube-specific container clicks and scroll-into-view; increase JW-site timeouts
+  - [/] Incremental runners: `EVD_MEDIA_URL`/`EVD_MEDIA_FILTER` and `scripts/run_matrix_seq.js` for
+    sequential per-URL runs with summary
+  - [/] Navigation skip-on-failure for present URLs to avoid aborting the wide matrix on transient
+    network errors
+  - [/] Increase headful matrix timeout to 240s; bump Twitch and other JW-site timeouts
+  - [ ] Next steps: extend ad-origins from uBlock Origin lists; add more player API hooks (Facebook,
+    Wistia, VK); add domain-specific scroll-and-click heuristics where needed; surface Makefile target
+    for wide run and keep CI on stable set
 
 - [ ] Wire into `make all`/`check` gates and CI once noise baseline is reviewed
   - [/] Content: handle transient storage/messaging invalidation cleanly
