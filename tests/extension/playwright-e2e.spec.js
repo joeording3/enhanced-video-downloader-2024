@@ -554,6 +554,27 @@ test.describe("Chrome Extension E2E Tests", () => {
           ]);
         } else if (u.includes("streamable.com")) {
           await clickSelectorsInFrame(frame, [".play-button,.video-js .vjs-big-play-button"]);
+        } else if (u.includes("hypnotube.com")) {
+          // Hypnotube often requires a container click before media is attached to DOM
+          await clickSelectorsInFrame(frame, [
+            ".jw-display-icon-container",
+            "button.jw-icon-display",
+            "#player",
+            ".player,.video-player,.video-container,.player__overlay",
+          ]);
+          try {
+            await frame.evaluate(() => {
+              try {
+                const c = document.querySelector('#player') || document.querySelector('.player');
+                if (c) c.scrollIntoView({ block: 'center' });
+                // Best-effort jwplayer postMessage listener variants
+                // @ts-ignore
+                window.postMessage({ jwplayer: 'play' }, '*');
+                // @ts-ignore
+                window.postMessage({ event: 'play' }, '*');
+              } catch {}
+            });
+          } catch {}
         }
       } catch {}
       // Attempt JWPlayer programmatic play if present in this frame
