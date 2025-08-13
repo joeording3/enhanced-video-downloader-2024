@@ -527,6 +527,20 @@ test.describe("Chrome Extension E2E Tests", () => {
           await clickSelectorsInFrame(frame, [".play-button,.video-js .vjs-big-play-button"]);
         }
       } catch {}
+      // Attempt JWPlayer programmatic play if present in this frame
+      try {
+        await frame.evaluate(() => {
+          try {
+            const anyWindow = /** @type {any} */ (window);
+            if (typeof anyWindow.jwplayer === "function") {
+              try {
+                const api = anyWindow.jwplayer();
+                if (api && typeof api.play === "function") api.play();
+              } catch {}
+            }
+          } catch {}
+        });
+      } catch {}
       // Try clicking video/audio elements directly (force)
       const mediaLoc = frame.locator("video, audio");
       const count = await mediaLoc.count().catch(() => 0);
@@ -581,6 +595,15 @@ test.describe("Chrome Extension E2E Tests", () => {
               src.includes("twitch.tv")
             ) {
               // Twitch embeds
+              tryPost(f, { event: "play" });
+            } else if (
+              src.includes("jwplayer") ||
+              src.includes("jwplatform") ||
+              src.includes("cdn.jwplayer.com") ||
+              (src.includes("embed") && src.includes("jw"))
+            ) {
+              // JWPlayer embeds (best-effort)
+              tryPost(f, { jwplayer: "play" });
               tryPost(f, { event: "play" });
             } else if (src.includes("streamable.com")) {
               // Streamable embeds

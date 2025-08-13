@@ -70,7 +70,7 @@
     ]
   },
   "hypnotube.com": {
-    "timeout_ms": 20000,
+    "timeout_ms": 25000,
     "consent_selectors": [
       "button:has-text('I am over 18')",
       "button:has-text('Enter')",
@@ -85,7 +85,7 @@
     ]
   },
   "youjizz.com": {
-    "timeout_ms": 20000,
+    "timeout_ms": 25000,
     "consent_selectors": [
       "button:has-text('I Agree')",
       "button:has-text('Accept All')",
@@ -101,7 +101,7 @@
     ]
   },
   "eporner.com": {
-    "timeout_ms": 20000,
+    "timeout_ms": 25000,
     "consent_selectors": [
       "button:has-text('I Agree')",
       "button:has-text('Accept')",
