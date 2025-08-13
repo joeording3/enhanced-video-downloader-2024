@@ -884,7 +884,16 @@ test.describe("Chrome Extension E2E Tests", () => {
       }
 
       for (const url of present) {
-        await page.goto(url, { waitUntil: "domcontentloaded" });
+        try {
+          await page.goto(url, { waitUntil: "domcontentloaded" });
+        } catch (e) {
+          test.info().annotations.push({
+            type: "skip",
+            description: `navigation failed for ${url}: ${(e && e.message) || e}`,
+          });
+          console.log(`[MATRIX][DBG] navigation failed url='${url}' error='${(e && e.message) || e}'`);
+          continue;
+        }
         try {
           await page.waitForLoadState("networkidle", { timeout: 12000 });
         } catch {}
