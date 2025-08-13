@@ -360,7 +360,9 @@ test.describe("Chrome Extension E2E Tests", () => {
       for (const sel of clickSelectors) {
         const btn = page.locator(sel).first();
         if (await btn.count()) {
-          try { await btn.click({ timeout: 1000 }); } catch {}
+          try {
+            await btn.click({ timeout: 1000 });
+          } catch {}
         }
       }
       const removalSelectors = [
@@ -384,14 +386,18 @@ test.describe("Chrome Extension E2E Tests", () => {
       try {
         await page.evaluate(selectors => {
           selectors.forEach(sel => {
-            try { document.querySelectorAll(sel).forEach(el => el.remove()); } catch {}
+            try {
+              document.querySelectorAll(sel).forEach(el => el.remove());
+            } catch {}
           });
           const overlays = Array.from(document.querySelectorAll("div,section,aside,header,footer"));
           overlays.forEach(el => {
             const style = window.getComputedStyle(el);
-            const isOverlay = (style.position === "fixed" || style.position === "sticky") &&
+            const isOverlay =
+              (style.position === "fixed" || style.position === "sticky") &&
               parseInt(style.zIndex || "0", 10) > 1000 &&
-              (el.clientHeight > window.innerHeight * 0.4 || el.clientWidth > window.innerWidth * 0.4);
+              (el.clientHeight > window.innerHeight * 0.4 ||
+                el.clientWidth > window.innerWidth * 0.4);
             if (isOverlay) el.remove();
           });
         }, removalSelectors);
@@ -456,10 +462,7 @@ test.describe("Chrome Extension E2E Tests", () => {
       try {
         if (u.includes("youtube.com") || u.includes("youtube-nocookie.com")) {
           // Click the player UI button if present (within iframe)
-          await clickSelectorsInFrame(frame, [
-            ".ytp-large-play-button",
-            ".ytp-play-button",
-          ]);
+          await clickSelectorsInFrame(frame, [".ytp-large-play-button", ".ytp-play-button"]);
         } else if (u.includes("vimeo.com")) {
           // Vimeo listens to postMessage("{method:'play'}") and has overlays; try both
           await clickSelectorsInFrame(frame, [
@@ -489,9 +492,7 @@ test.describe("Chrome Extension E2E Tests", () => {
             "button[aria-label*='Play' i]",
           ]);
         } else if (u.includes("streamable.com")) {
-          await clickSelectorsInFrame(frame, [
-            ".play-button,.video-js .vjs-big-play-button",
-          ]);
+          await clickSelectorsInFrame(frame, [".play-button,.video-js .vjs-big-play-button"]);
         }
       } catch {}
       // Try clicking video/audio elements directly (force)
@@ -542,7 +543,11 @@ test.describe("Chrome Extension E2E Tests", () => {
               // Dailymotion Player API
               tryPost(f, { event: "play" });
               tryPost(f, { command: "play", parameters: {} });
-            } else if (src.includes("player.twitch.tv") || src.includes("clips.twitch.tv") || src.includes("twitch.tv")) {
+            } else if (
+              src.includes("player.twitch.tv") ||
+              src.includes("clips.twitch.tv") ||
+              src.includes("twitch.tv")
+            ) {
               // Twitch embeds
               tryPost(f, { event: "play" });
             } else if (src.includes("streamable.com")) {
@@ -568,23 +573,33 @@ test.describe("Chrome Extension E2E Tests", () => {
     async function detectMediaAll(page) {
       // Returns true if any frame reports playable media
       // Main frame first
-      const inMain = await page.evaluate(() => {
-        const els = Array.from(document.querySelectorAll("video,audio"));
-        return els.some(el => {
-          const m = /** @type {HTMLMediaElement} */ (el);
-          return (typeof m.paused === "boolean" && !m.paused) || (typeof m.readyState === "number" && m.readyState > 0);
-        });
-      }).catch(() => false);
-      if (inMain) return true;
-      for (const f of page.frames()) {
-        if (f === page.mainFrame()) continue;
-        const ok = await f.evaluate(() => {
+      const inMain = await page
+        .evaluate(() => {
           const els = Array.from(document.querySelectorAll("video,audio"));
           return els.some(el => {
             const m = /** @type {HTMLMediaElement} */ (el);
-            return (typeof m.paused === "boolean" && !m.paused) || (typeof m.readyState === "number" && m.readyState > 0);
+            return (
+              (typeof m.paused === "boolean" && !m.paused) ||
+              (typeof m.readyState === "number" && m.readyState > 0)
+            );
           });
-        }).catch(() => false);
+        })
+        .catch(() => false);
+      if (inMain) return true;
+      for (const f of page.frames()) {
+        if (f === page.mainFrame()) continue;
+        const ok = await f
+          .evaluate(() => {
+            const els = Array.from(document.querySelectorAll("video,audio"));
+            return els.some(el => {
+              const m = /** @type {HTMLMediaElement} */ (el);
+              return (
+                (typeof m.paused === "boolean" && !m.paused) ||
+                (typeof m.readyState === "number" && m.readyState > 0)
+              );
+            });
+          })
+          .catch(() => false);
         if (ok) return true;
       }
       return false;
@@ -594,7 +609,7 @@ test.describe("Chrome Extension E2E Tests", () => {
       test.setTimeout(120000);
       const matrixPath = path.resolve(__dirname, "../extension/media-sites.json");
       const matrix = JSON.parse(fs.readFileSync(matrixPath, "utf8"));
-      const toAbs = (u) => (u.startsWith("http") ? u : `${matrixBaseUrl}${u}`);
+      const toAbs = u => (u.startsWith("http") ? u : `${matrixBaseUrl}${u}`);
       let present = (matrix.media_present || []).map(toAbs);
       const absent = (matrix.no_media || []).map(toAbs);
 
@@ -609,6 +624,15 @@ test.describe("Chrome Extension E2E Tests", () => {
           "https://streamable.com/moo",
         ];
         present = stableUrls;
+      }
+
+      // Optional filtering for incremental runs
+      const exactUrl = process.env.EVD_MEDIA_URL && String(process.env.EVD_MEDIA_URL);
+      const filterSubstr = process.env.EVD_MEDIA_FILTER && String(process.env.EVD_MEDIA_FILTER).toLowerCase();
+      if (exactUrl) {
+        present = present.filter(u => u === exactUrl);
+      } else if (filterSubstr) {
+        present = present.filter(u => u.toLowerCase().includes(filterSubstr));
       }
 
       // Helper to detect if a video/audio is present and can be played
@@ -635,7 +659,9 @@ test.describe("Chrome Extension E2E Tests", () => {
         }
         // Wait for network to settle before attempts (best-effort)
         try {
-          await p.waitForLoadState("networkidle", { timeout: Math.min(15000, Math.max(2000, timeoutMs)) });
+          await p.waitForLoadState("networkidle", {
+            timeout: Math.min(15000, Math.max(2000, timeoutMs)),
+          });
         } catch {}
         const deadline = Date.now() + timeoutMs;
         // Attempt autoplay across frames and API triggers; poll readiness until deadline
@@ -1009,7 +1035,11 @@ test.describe("Chrome Extension E2E Tests", () => {
           const el = document.querySelector("#evd-download-button-main");
           if (!el) return true;
           const style = window.getComputedStyle(el);
-          return style.display === "none" || style.visibility === "hidden" || el.classList.contains("hidden");
+          return (
+            style.display === "none" ||
+            style.visibility === "hidden" ||
+            el.classList.contains("hidden")
+          );
         },
         { timeout: 8000 }
       );
@@ -2469,16 +2499,15 @@ test.describe("Real site video detection (opt-in)", () => {
     // Background/headless approach (cross-platform): headless browser + inject built content script
     browser = await chromium.launch({
       headless: true,
-      args: [
-        "--autoplay-policy=no-user-gesture-required",
-        "--mute-audio",
-        "--disable-gpu",
-      ],
+      args: ["--autoplay-policy=no-user-gesture-required", "--mute-audio", "--disable-gpu"],
     });
     context = await browser.newContext({ ignoreHTTPSErrors: true });
 
     // Preload built content scripts as init scripts so they run on every page
-    const contentSrc = fs.readFileSync(path.resolve(__dirname, "../../extension/dist/content.js"), "utf8");
+    const contentSrc = fs.readFileSync(
+      path.resolve(__dirname, "../../extension/dist/content.js"),
+      "utf8"
+    );
     const ytEnhanceSrc = fs.readFileSync(
       path.resolve(__dirname, "../../extension/dist/youtube_enhance.js"),
       "utf8"
