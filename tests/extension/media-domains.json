@@ -85,7 +85,7 @@
     ]
   },
   "youjizz.com": {
-    "timeout_ms": 25000,
+    "timeout_ms": 30000,
     "consent_selectors": [
       "button:has-text('I Agree')",
       "button:has-text('Accept All')",
@@ -101,7 +101,7 @@
     ]
   },
   "eporner.com": {
-    "timeout_ms": 25000,
+    "timeout_ms": 30000,
     "consent_selectors": [
       "button:has-text('I Agree')",
       "button:has-text('Accept')",
@@ -123,6 +123,21 @@
     ],
     "play_selectors": [
       ".vjs-big-play-button",
+      "button[aria-label*='Play' i]",
+      "button:has-text('Play')"
+    ]
+  },
+  "xhamster.com": {
+    "timeout_ms": 30000,
+    "consent_selectors": [
+      "button:has-text('I Agree')",
+      "button:has-text('Accept All')",
+      "button:has-text('Enter')",
+      "button:has-text('Continue')"
+    ],
+    "play_selectors": [
+      ".vjs-big-play-button",
+      ".xh-player .vjs-big-play-button",
       "button[aria-label*='Play' i]",
       "button:has-text('Play')"
     ]
