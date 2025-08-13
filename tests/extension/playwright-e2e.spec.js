@@ -684,6 +684,7 @@ test.describe("Chrome Extension E2E Tests", () => {
           await closeOverlaysLocal(page).catch(() => {});
         }
         const detected = await detectMedia(page);
+        console.log(`[MATRIX] present URL=${url} detected=${detected}`);
         if (!detected) {
           test.info().annotations.push({
             type: "skip",
@@ -702,6 +703,7 @@ test.describe("Chrome Extension E2E Tests", () => {
           await closeOverlaysLocal(page).catch(() => {});
         }
         const detected = await detectMedia(page, 5000);
+        console.log(`[MATRIX] absent URL=${url} detected=${detected}`);
         expect(detected).toBe(false);
       }
     });
