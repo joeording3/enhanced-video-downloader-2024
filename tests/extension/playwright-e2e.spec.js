@@ -342,6 +342,24 @@ test.describe("Chrome Extension E2E Tests", () => {
     });
     // Local overlay/consent cleanup for matrix tests (mirrors the real-site helper)
     async function closeOverlaysLocal(page) {
+      // Load domain-specific consent selectors if configured
+      const getDomainConsentSelectors = (urlStr) => {
+        const u = (urlStr || '').toLowerCase();
+        try {
+          const domainMap = JSON.parse(
+            fs.readFileSync(path.resolve(__dirname, './media-domains.json'), 'utf8')
+          );
+          for (const domain of Object.keys(domainMap)) {
+            if (u.includes(domain)) {
+              const conf = domainMap[domain];
+              if (Array.isArray(conf.consent_selectors)) return conf.consent_selectors;
+              break;
+            }
+          }
+        } catch {}
+        return [];
+      };
+
       const clickSelectors = [
         "button#onetrust-accept-btn-handler",
         "button#onetrust-accept-btn",
@@ -357,11 +375,25 @@ test.describe("Chrome Extension E2E Tests", () => {
         "#cookie-accept",
         "#cookie-accept-all",
       ];
-      for (const sel of clickSelectors) {
+      // Merge domain-specific selectors for the main page
+      const pageConsent = getDomainConsentSelectors(await page.url());
+      const allMainSelectors = clickSelectors.concat(pageConsent);
+      for (const sel of allMainSelectors) {
         const btn = page.locator(sel).first();
         if (await btn.count()) {
           try {
             await btn.click({ timeout: 1000 });
+          } catch {}
+        }
+      }
+      // Try inside iframes as well
+      for (const f of page.frames()) {
+        if (f === page.mainFrame()) continue;
+        const frameConsent = getDomainConsentSelectors(f.url());
+        for (const sel of frameConsent) {
+          try {
+            const locator = f.locator(sel).first();
+            if (await locator.count()) await locator.click({ timeout: 1000 });
           } catch {}
         }
       }
@@ -628,7 +660,8 @@ test.describe("Chrome Extension E2E Tests", () => {
 
       // Optional filtering for incremental runs
       const exactUrl = process.env.EVD_MEDIA_URL && String(process.env.EVD_MEDIA_URL);
-      const filterSubstr = process.env.EVD_MEDIA_FILTER && String(process.env.EVD_MEDIA_FILTER).toLowerCase();
+      const filterSubstr =
+        process.env.EVD_MEDIA_FILTER && String(process.env.EVD_MEDIA_FILTER).toLowerCase();
       if (exactUrl) {
         present = present.filter(u => u === exactUrl);
       } else if (filterSubstr) {
