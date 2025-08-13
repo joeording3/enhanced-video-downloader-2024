@@ -448,10 +448,10 @@ test.describe("Chrome Extension E2E Tests", () => {
         try {
           const locator = frame.locator(sel).first();
           if (await locator.count()) {
-          await locator.click({ timeout: 1000 }).catch(() => {});
-          try {
-            console.log(`[MATRIX][DBG] clicked selector='${sel}' in frame='${frame.url()}'`);
-          } catch {}
+            await locator.click({ timeout: 1000 }).catch(() => {});
+            try {
+              console.log(`[MATRIX][DBG] clicked selector='${sel}' in frame='${frame.url()}'`);
+            } catch {}
           }
         } catch {}
       }
@@ -485,29 +485,33 @@ test.describe("Chrome Extension E2E Tests", () => {
         "[data-qa='play_button']",
         "#player .play, .ytp-large-play-button, .jw-display-icon-container",
       ].concat(domainPlaySelectors);
-    await clickSelectorsInFrame(frame, playSelectors);
-    try {
-      const summary = await frame
-        .evaluate(() => {
-          const els = Array.from(document.querySelectorAll("video,audio"));
-          const playing = els.filter(el => {
-            const m = /** @type {HTMLMediaElement} */ (el);
-            return typeof m.paused === "boolean" && !m.paused;
-          }).length;
-          const ready = els.filter(el => {
-            const m = /** @type {HTMLMediaElement} */ (el);
-            return typeof m.readyState === "number" && m.readyState > 0;
-          }).length;
-          const times = els.slice(0, 3).map(el => /** @type {HTMLMediaElement} */ (el).currentTime || 0);
-          return { count: els.length, playing, ready, times };
-        })
-        .catch(() => null);
-      if (summary) {
-        console.log(
-          `[MATRIX][DBG] frame='${frame.url()}' media count=${summary.count} playing=${summary.playing} ready=${summary.ready} times=${summary.times.join(",")}`
-        );
-      }
-    } catch {}
+      await clickSelectorsInFrame(frame, playSelectors);
+      try {
+        const summary = await frame
+          .evaluate(() => {
+            const els = Array.from(document.querySelectorAll("video,audio"));
+            const playing = els.filter(el => {
+              const m = /** @type {HTMLMediaElement} */ (el);
+              return typeof m.paused === "boolean" && !m.paused;
+            }).length;
+            const ready = els.filter(el => {
+              const m = /** @type {HTMLMediaElement} */ (el);
+              return typeof m.readyState === "number" && m.readyState > 0;
+            }).length;
+            const times = els
+              .slice(0, 3)
+              .map(el => /** @type {HTMLMediaElement} */ (el).currentTime || 0);
+            return { count: els.length, playing, ready, times };
+          })
+          .catch(() => null);
+        if (summary) {
+          console.log(
+            `[MATRIX][DBG] frame='${frame.url()}' media count=${summary.count} playing=${
+              summary.playing
+            } ready=${summary.ready} times=${summary.times.join(",")}`
+          );
+        }
+      } catch {}
       // Try generic gestures in frame
       try {
         await frame.press("body", "Space");
@@ -648,7 +652,9 @@ test.describe("Chrome Extension E2E Tests", () => {
         if (actions && Array.isArray(actions) && actions.length) {
           for (const a of actions) {
             try {
-              console.log(`[MATRIX][DBG] postMessage triggered for iframe src='${a.src}' type='${a.type}'`);
+              console.log(
+                `[MATRIX][DBG] postMessage triggered for iframe src='${a.src}' type='${a.type}'`
+              );
             } catch {}
           }
         } else {
@@ -658,10 +664,26 @@ test.describe("Chrome Extension E2E Tests", () => {
     }
 
     async function attemptAutoplayAll(page) {
+      // Load global ad origins list
+      let adOrigins = [];
+      try {
+        adOrigins = JSON.parse(
+          fs.readFileSync(path.resolve(__dirname, "./ad-origins.json"), "utf8")
+        );
+      } catch {}
+      const isAdFrame = (urlStr) => {
+        const u = (urlStr || "").toLowerCase();
+        return adOrigins.some((p) => u.includes(p));
+      };
+
       // Main frame first
       await attemptAutoplayInFrame(page);
       for (const f of page.frames()) {
         if (f === page.mainFrame()) continue;
+        if (isAdFrame(f.url())) {
+          console.log(`[MATRIX][DBG] skipping ad frame during autoplay: ${f.url()}`);
+          continue;
+        }
         await attemptAutoplayInFrame(f);
       }
       // Fire postMessage-based API triggers from top after DOM is ready
@@ -669,6 +691,18 @@ test.describe("Chrome Extension E2E Tests", () => {
     }
 
     async function detectMediaAll(page) {
+      // Load global ad origins list
+      let adOrigins = [];
+      try {
+        adOrigins = JSON.parse(
+          fs.readFileSync(path.resolve(__dirname, "./ad-origins.json"), "utf8")
+        );
+      } catch {}
+      const isAdFrame = (urlStr) => {
+        const u = (urlStr || "").toLowerCase();
+        return adOrigins.some((p) => u.includes(p));
+      };
+
       // Returns true if any frame reports playable media
       // Main frame first
       const inMain = await page
@@ -686,6 +720,10 @@ test.describe("Chrome Extension E2E Tests", () => {
       if (inMain) return true;
       for (const f of page.frames()) {
         if (f === page.mainFrame()) continue;
+        if (isAdFrame(f.url())) {
+          console.log(`[MATRIX][DBG] skipping ad frame during detect: ${f.url()}`);
+          continue;
+        }
         const ok = await f
           .evaluate(() => {
             const els = Array.from(document.querySelectorAll("video,audio"));
@@ -763,7 +801,11 @@ test.describe("Chrome Extension E2E Tests", () => {
           });
           console.log(`[MATRIX][DBG] networkidle reached url='${p.url()}' timeoutMs=${timeoutMs}`);
         } catch (e) {
-          console.log(`[MATRIX][DBG] networkidle timeout url='${p.url()}' timeoutMs=${timeoutMs} error='${(e && e.message) || e}'`);
+          console.log(
+            `[MATRIX][DBG] networkidle timeout url='${p.url()}' timeoutMs=${timeoutMs} error='${
+              (e && e.message) || e
+            }'`
+          );
         }
         const deadline = Date.now() + timeoutMs;
         // Attempt autoplay across frames and API triggers; poll readiness until deadline
@@ -772,7 +814,11 @@ test.describe("Chrome Extension E2E Tests", () => {
           await attemptAutoplayAll(p);
           const ok = await detectMediaAll(p);
           if (ok) {
-            console.log(`[MATRIX][DBG] detected media url='${p.url()}' after=${timeoutMs - (deadline - Date.now())}ms iterations=${iter}`);
+            console.log(
+              `[MATRIX][DBG] detected media url='${p.url()}' after=${
+                timeoutMs - (deadline - Date.now())
+              }ms iterations=${iter}`
+            );
             return true;
           }
           if (iter % 3 === 0) {
