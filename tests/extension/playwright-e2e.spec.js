@@ -609,6 +609,36 @@ test.describe("Chrome Extension E2E Tests", () => {
           const acted = [];
           for (const f of iframes) {
             const src = (f.getAttribute("src") || "").toLowerCase();
+            // Skip obvious ad frames by src patterns (best-effort mirror of ad-origins)
+            const adHints = [
+              "doubleclick.net",
+              "googlesyndication.com",
+              "googletagservices.com",
+              "adservice.google",
+              "adnxs.com",
+              "rubiconproject.com",
+              "criteo.com",
+              "pubmatic.com",
+              "openx.net",
+              "taboola.com",
+              "outbrain.com",
+              "scorecardresearch.com",
+              "exoclick.com",
+              "juicyads.com",
+              "magsrv.com",
+              "trafficjunky.com",
+              "trafficfactory.biz",
+              "onclasrv.com",
+              "spotxchange.com",
+              "servedbyadbutler.com",
+              "adform.net",
+              "media.net",
+              "revcontent.com",
+              "/ads",
+              "adzerk.net",
+              "zqtk.net",
+            ];
+            if (adHints.some(h => src.includes(h))) continue;
             if (src.includes("youtube.com/embed") || src.includes("youtube-nocookie.com")) {
               // YouTube IFrame API
               tryPost(f, JSON.stringify({ event: "listening", id: now }));
