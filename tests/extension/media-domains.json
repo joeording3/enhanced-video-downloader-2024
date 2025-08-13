@@ -1,15 +1,27 @@
 {
   "youtube.com": {
     "timeout_ms": 15000,
-    "play_selectors": [".ytp-large-play-button", "button.ytp-play-button", "button[aria-label*='Play' i]"]
+    "play_selectors": [
+      ".ytp-large-play-button",
+      "button.ytp-play-button",
+      "button[aria-label*='Play' i]"
+    ]
   },
   "youtu.be": {
     "timeout_ms": 15000,
-    "play_selectors": [".ytp-large-play-button", "button.ytp-play-button", "button[aria-label*='Play' i]"]
+    "play_selectors": [
+      ".ytp-large-play-button",
+      "button.ytp-play-button",
+      "button[aria-label*='Play' i]"
+    ]
   },
   "vimeo.com": {
     "timeout_ms": 15000,
-    "play_selectors": ["button[aria-label*='Play' i]", "button[class*='play' i]", "button:has-text('Play')"]
+    "play_selectors": [
+      "button[aria-label*='Play' i]",
+      "button[class*='play' i]",
+      "button:has-text('Play')"
+    ]
   },
   "dailymotion.com": {
     "timeout_ms": 15000,
@@ -25,7 +37,64 @@
   },
   "streamable.com": {
     "timeout_ms": 15000,
-    "play_selectors": ["#player button[aria-label*='Play' i]", "#player .play", "button:has-text('Play')"]
+    "play_selectors": [
+      "#player button[aria-label*='Play' i]",
+      "#player .play",
+      "button:has-text('Play')"
+    ]
+  },
+  "tube8.com": {
+    "timeout_ms": 20000,
+    "consent_selectors": [
+      "button:has-text('I Agree')",
+      "button:has-text('Accept All')",
+      "button:has-text('Enter')"
+    ],
+    "play_selectors": [
+      ".video-js .vjs-big-play-button",
+      "#player .play",
+      "button[aria-label*='Play' i]",
+      "button:has-text('Play')"
+    ]
+  },
+  "hypnotube.com": {
+    "timeout_ms": 20000,
+    "consent_selectors": [
+      "button:has-text('I am over 18')",
+      "button:has-text('Enter')",
+      "button:has-text('Continue')"
+    ],
+    "play_selectors": [
+      ".vjs-big-play-button",
+      "button[aria-label*='Play' i]",
+      "button:has-text('Play')"
+    ]
+  },
+  "youjizz.com": {
+    "timeout_ms": 20000,
+    "consent_selectors": [
+      "button:has-text('I Agree')",
+      "button:has-text('Accept All')",
+      "button:has-text('Enter')"
+    ],
+    "play_selectors": [
+      "#player button",
+      "#player .play",
+      "button[aria-label*='Play' i]",
+      "button:has-text('Play')"
+    ]
+  },
+  "hclips.com": {
+    "timeout_ms": 20000,
+    "consent_selectors": [
+      "button:has-text('I Agree')",
+      "button:has-text('Accept All')",
+      "button:has-text('Enter')"
+    ],
+    "play_selectors": [
+      ".vjs-big-play-button",
+      "button[aria-label*='Play' i]",
+      "button:has-text('Play')"
+    ]
   }
 }
-
