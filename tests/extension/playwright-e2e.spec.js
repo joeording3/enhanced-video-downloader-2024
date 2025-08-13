@@ -448,7 +448,10 @@ test.describe("Chrome Extension E2E Tests", () => {
         try {
           const locator = frame.locator(sel).first();
           if (await locator.count()) {
-            await locator.click({ timeout: 1000 }).catch(() => {});
+          await locator.click({ timeout: 1000 }).catch(() => {});
+          try {
+            console.log(`[MATRIX][DBG] clicked selector='${sel}' in frame='${frame.url()}'`);
+          } catch {}
           }
         } catch {}
       }
@@ -482,7 +485,29 @@ test.describe("Chrome Extension E2E Tests", () => {
         "[data-qa='play_button']",
         "#player .play, .ytp-large-play-button, .jw-display-icon-container",
       ].concat(domainPlaySelectors);
-      await clickSelectorsInFrame(frame, playSelectors);
+    await clickSelectorsInFrame(frame, playSelectors);
+    try {
+      const summary = await frame
+        .evaluate(() => {
+          const els = Array.from(document.querySelectorAll("video,audio"));
+          const playing = els.filter(el => {
+            const m = /** @type {HTMLMediaElement} */ (el);
+            return typeof m.paused === "boolean" && !m.paused;
+          }).length;
+          const ready = els.filter(el => {
+            const m = /** @type {HTMLMediaElement} */ (el);
+            return typeof m.readyState === "number" && m.readyState > 0;
+          }).length;
+          const times = els.slice(0, 3).map(el => /** @type {HTMLMediaElement} */ (el).currentTime || 0);
+          return { count: els.length, playing, ready, times };
+        })
+        .catch(() => null);
+      if (summary) {
+        console.log(
+          `[MATRIX][DBG] frame='${frame.url()}' media count=${summary.count} playing=${summary.playing} ready=${summary.ready} times=${summary.times.join(",")}`
+        );
+      }
+    } catch {}
       // Try generic gestures in frame
       try {
         await frame.press("body", "Space");
@@ -540,6 +565,7 @@ test.describe("Chrome Extension E2E Tests", () => {
             }
           } catch {}
         });
+        console.log(`[MATRIX][DBG] attempted jwplayer().play() in frame='${frame.url()}'`);
       } catch {}
       // Try clicking video/audio elements directly (force)
       const mediaLoc = frame.locator("video, audio");
@@ -568,7 +594,7 @@ test.describe("Chrome Extension E2E Tests", () => {
     // From the top document, postMessage into known player iframes to trigger their APIs
     async function triggerKnownPlayerAPIs(page) {
       try {
-        await page.evaluate(() => {
+        const actions = await page.evaluate(() => {
           const iframes = Array.from(document.querySelectorAll("iframe"));
           const tryPost = (f, msg) => {
             try {
@@ -576,19 +602,23 @@ test.describe("Chrome Extension E2E Tests", () => {
             } catch {}
           };
           const now = String(Date.now());
+          const acted = [];
           for (const f of iframes) {
             const src = (f.getAttribute("src") || "").toLowerCase();
             if (src.includes("youtube.com/embed") || src.includes("youtube-nocookie.com")) {
               // YouTube IFrame API
               tryPost(f, JSON.stringify({ event: "listening", id: now }));
               tryPost(f, JSON.stringify({ event: "command", func: "playVideo", args: [] }));
+              acted.push({ src, type: "youtube" });
             } else if (src.includes("player.vimeo.com") || src.includes("vimeo.com")) {
               // Vimeo Player API
               tryPost(f, { method: "play" });
+              acted.push({ src, type: "vimeo" });
             } else if (src.includes("dailymotion.com")) {
               // Dailymotion Player API
               tryPost(f, { event: "play" });
               tryPost(f, { command: "play", parameters: {} });
+              acted.push({ src, type: "dailymotion" });
             } else if (
               src.includes("player.twitch.tv") ||
               src.includes("clips.twitch.tv") ||
@@ -596,6 +626,7 @@ test.describe("Chrome Extension E2E Tests", () => {
             ) {
               // Twitch embeds
               tryPost(f, { event: "play" });
+              acted.push({ src, type: "twitch" });
             } else if (
               src.includes("jwplayer") ||
               src.includes("jwplatform") ||
@@ -605,12 +636,24 @@ test.describe("Chrome Extension E2E Tests", () => {
               // JWPlayer embeds (best-effort)
               tryPost(f, { jwplayer: "play" });
               tryPost(f, { event: "play" });
+              acted.push({ src, type: "jwplayer" });
             } else if (src.includes("streamable.com")) {
               // Streamable embeds
               tryPost(f, { event: "play" });
+              acted.push({ src, type: "streamable" });
             }
           }
+          return acted;
         });
+        if (actions && Array.isArray(actions) && actions.length) {
+          for (const a of actions) {
+            try {
+              console.log(`[MATRIX][DBG] postMessage triggered for iframe src='${a.src}' type='${a.type}'`);
+            } catch {}
+          }
+        } else {
+          console.log(`[MATRIX][DBG] no iframe API triggers fired`);
+        }
       } catch {}
     }
 
@@ -716,17 +759,30 @@ test.describe("Chrome Extension E2E Tests", () => {
         // Wait for network to settle before attempts (best-effort)
         try {
           await p.waitForLoadState("networkidle", {
-            timeout: Math.min(15000, Math.max(2000, timeoutMs)),
+            timeout: Math.min(20000, Math.max(3000, timeoutMs)),
           });
-        } catch {}
+          console.log(`[MATRIX][DBG] networkidle reached url='${p.url()}' timeoutMs=${timeoutMs}`);
+        } catch (e) {
+          console.log(`[MATRIX][DBG] networkidle timeout url='${p.url()}' timeoutMs=${timeoutMs} error='${(e && e.message) || e}'`);
+        }
         const deadline = Date.now() + timeoutMs;
         // Attempt autoplay across frames and API triggers; poll readiness until deadline
+        let iter = 0;
         while (Date.now() < deadline) {
           await attemptAutoplayAll(p);
           const ok = await detectMediaAll(p);
-          if (ok) return true;
+          if (ok) {
+            console.log(`[MATRIX][DBG] detected media url='${p.url()}' after=${timeoutMs - (deadline - Date.now())}ms iterations=${iter}`);
+            return true;
+          }
+          if (iter % 3 === 0) {
+            const frames = p.frames().map(f => f.url());
+            console.log(`[MATRIX][DBG] poll iter=${iter} url='${p.url()}' frames=${frames.length}`);
+          }
+          iter++;
           await p.waitForTimeout(500);
         }
+        console.log(`[MATRIX][DBG] detection failed url='${p.url()}' after timeoutMs=${timeoutMs}`);
         return false;
       }
 
