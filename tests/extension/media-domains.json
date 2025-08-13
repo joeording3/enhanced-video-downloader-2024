@@ -29,11 +29,23 @@
   },
   "twitch.tv": {
     "timeout_ms": 20000,
-    "play_selectors": [".player-overlay", ".video-player__overlay", "button[aria-label*='Play' i]"]
+    "play_selectors": [
+      ".player-overlay",
+      ".video-player__overlay",
+      "button[data-a-target='player-play-pause-button']",
+      "button[data-a-target='player-overlay-click-handler']",
+      "button[aria-label*='Play' i]"
+    ]
   },
   "clips.twitch.tv": {
     "timeout_ms": 20000,
-    "play_selectors": [".player-overlay", ".video-player__overlay", "button[aria-label*='Play' i]"]
+    "play_selectors": [
+      ".player-overlay",
+      ".video-player__overlay",
+      "button[data-a-target='player-play-pause-button']",
+      "button[data-a-target='player-overlay-click-handler']",
+      "button[aria-label*='Play' i]"
+    ]
   },
   "streamable.com": {
     "timeout_ms": 15000,
@@ -66,6 +78,8 @@
     ],
     "play_selectors": [
       ".vjs-big-play-button",
+      ".jw-display-icon-container",
+      "button.jw-icon-display",
       "button[aria-label*='Play' i]",
       "button:has-text('Play')"
     ]
@@ -80,6 +94,22 @@
     "play_selectors": [
       "#player button",
       "#player .play",
+      ".jw-display-icon-container",
+      "button.jw-icon-display",
+      "button[aria-label*='Play' i]",
+      "button:has-text('Play')"
+    ]
+  },
+  "eporner.com": {
+    "timeout_ms": 20000,
+    "consent_selectors": [
+      "button:has-text('I Agree')",
+      "button:has-text('Accept')",
+      "button:has-text('Enter')"
+    ],
+    "play_selectors": [
+      ".vjs-big-play-button",
+      "#playbtn, .play-btn, .btn-play",
       "button[aria-label*='Play' i]",
       "button:has-text('Play')"
     ]
