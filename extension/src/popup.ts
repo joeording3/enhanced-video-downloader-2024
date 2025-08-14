@@ -783,8 +783,20 @@ export async function renderDownloadStatus(data: {
       paused: 1,
     };
     const byId = new Map<string, Unified>();
+    const canonUrl = (u?: string): string => {
+      if (!u) return "";
+      try {
+        const p = new URL(u);
+        const host = p.hostname.replace(/^www\./i, "").toLowerCase();
+        const path = p.pathname.replace(/\/$/, "");
+        return host + path.toLowerCase();
+      } catch {
+        return String(u);
+      }
+    };
     const take = (item: Unified): void => {
-      const key = (item.url || "") ? (item.url as string) : item.id; // prefer URL-based dedupe
+      // Prefer stable download id when present; fallback to canonicalized URL
+      const key = item.id || canonUrl(item.url as string | undefined);
       const existing = byId.get(key);
       if (!existing) {
         byId.set(key, item);
