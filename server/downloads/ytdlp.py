@@ -624,6 +624,38 @@ def _progress_finished(d: dict[str, Any], download_id: str | None) -> None:
     else:
         logger.warning(f"Download {str_id} finished with no filename provided")
 
+    # Mark status as finished so clients stop rendering as active.
+    # Only update existing entries to avoid creating new progress entries in this hook.
+    try:
+        with progress_lock:
+            old = progress_data.get(str_id)
+            if isinstance(old, dict) and old:
+                history = old.get("history") or []
+                # Append a final snapshot if percent not at 100%
+                if not history or str(history[-1].get("percent", "")).strip() != "100%":
+                    from datetime import datetime, timezone
+
+                    history.append(
+                        {
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                            "percent": "100%",
+                            "downloaded": old.get("total") or old.get("downloaded") or None,
+                            "total": old.get("total") or None,
+                            "speed": old.get("speed") or "",
+                            "eta": "0s",
+                            "improved_eta": "",
+                        }
+                    )
+                progress_data[str_id] = {
+                    **old,
+                    "status": "finished",
+                    "history": history,
+                    "last_update": datetime.now(timezone.utc).isoformat(),
+                }
+    except Exception:
+        # Best-effort; do not break hook processing
+        pass
+
 
 def _progress_error(d: dict[str, Any], download_id: str | None) -> None:
     """Handle 'error' status updates from yt-dlp."""
@@ -1262,6 +1294,7 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
                     "status": "success",
                     "message": "Download initiated successfully and reported as complete by yt-dlp.",
                     "downloadId": download_id,
+                    "url": url,
                 }
             ),
             200,

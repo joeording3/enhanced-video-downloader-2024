@@ -76,7 +76,8 @@ export async function fetchHistory(
     // Map server fields to our HistoryEntry shape
     const mapped: HistoryEntry[] = serverItemsRaw.map((it: any) => ({
       id: it.id || it.download_id || crypto.randomUUID(),
-      url: it.url,
+      // Prefer url; fall back to webpage_url if provided by info JSON
+      url: it.url || it.webpage_url || it.original_url,
       status: it.status,
       filename: it.filename,
       filepath: it.filepath,

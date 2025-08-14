@@ -132,6 +132,21 @@ def _enhance_status_data(status: dict[str, Any]) -> dict[str, Any]:
             recent_history = history[-10:]  # Last 10 updates
             enhanced_status["progress_trend"] = _analyze_progress_trend(recent_history)
 
+    # Ensure a top-level URL is available when possible
+    try:
+        if not enhanced_status.get("url"):
+            # Prefer explicit url, then metadata.webpage_url/original_url/url
+            meta = enhanced_status.get("metadata") or {}
+            if isinstance(meta, dict):
+                for key in ("webpage_url", "original_url", "url"):
+                    val = meta.get(key)
+                    if isinstance(val, str) and val:
+                        enhanced_status["url"] = val
+                        break
+    except Exception:
+        # Best effort only
+        ...
+
     return enhanced_status
 
 
@@ -155,12 +170,28 @@ def get_all_status() -> Response:
             if download_id in combined:
                 combined[download_id]["error"] = error
                 combined[download_id]["troubleshooting"] = error.get("troubleshooting", suggestion)
+                # Surface top-level url from error if not already present
+                try:
+                    if not combined[download_id].get("url") and isinstance(error, dict):
+                        err_url = error.get("url") or error.get("original_url")
+                        if isinstance(err_url, str) and err_url:
+                            combined[download_id]["url"] = err_url
+                except Exception:
+                    ...
             else:
                 combined[download_id] = {
                     "error": error,
                     "troubleshooting": error.get("troubleshooting", suggestion),
                     "status": "error",
                 }
+                # Also include url if present on error object
+                try:
+                    if isinstance(error, dict):
+                        err_url = error.get("url") or error.get("original_url")
+                        if isinstance(err_url, str) and err_url:
+                            combined[download_id]["url"] = err_url
+                except Exception:
+                    ...
         # Optionally include queued (server-side) items if requested by client
         include_queue = request.args.get("include_queue", "").lower() in {"1", "true", "yes"}
         if include_queue:
