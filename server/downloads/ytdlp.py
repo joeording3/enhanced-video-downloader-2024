@@ -1295,6 +1295,7 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
                     "message": "Download initiated successfully and reported as complete by yt-dlp.",
                     "downloadId": download_id,
                     "url": url,
+                    "page_title": page_title,
                 }
             ),
             200,

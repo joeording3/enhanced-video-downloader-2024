@@ -728,7 +728,12 @@ export async function renderDownloadStatus(data: {
   // Active downloads
   Object.entries(data.active || {}).forEach(([id, st]) => {
     const statusObj = st as any;
-    const label = computeLabel(statusObj.title, statusObj.filename, statusObj.url, id);
+    const label = computeLabel(
+      (statusObj as any).title || (statusObj as any).page_title,
+      statusObj.filename,
+      statusObj.url,
+      id
+    );
     const prog = Number(statusObj.progress);
     const norm = normalizeStatus(String(statusObj.status || "downloading"));
     unified.push({
@@ -793,15 +798,16 @@ export async function renderDownloadStatus(data: {
     };
     const byId = new Map<string, Unified>();
     const take = (item: Unified): void => {
-      const existing = byId.get(item.id);
+      const key = (item.url || "") ? (item.url as string) : item.id; // prefer URL-based dedupe
+      const existing = byId.get(key);
       if (!existing) {
-        byId.set(item.id, item);
+        byId.set(key, item);
         return;
       }
       const a = priority[String(existing.status).toLowerCase()] || 0;
       const b = priority[String(item.status).toLowerCase()] || 0;
       if (b > a || (b === a && (item.timestamp || 0) > (existing.timestamp || 0))) {
-        byId.set(item.id, item);
+        byId.set(key, item);
       }
     };
 

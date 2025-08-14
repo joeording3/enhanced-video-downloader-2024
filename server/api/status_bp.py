@@ -147,6 +147,19 @@ def _enhance_status_data(status: dict[str, Any]) -> dict[str, Any]:
         # Best effort only
         ...
 
+    # Ensure a top-level title if present in metadata (for UI labels)
+    try:
+        if not enhanced_status.get("title") and not enhanced_status.get("page_title"):
+            meta = enhanced_status.get("metadata") or {}
+            if isinstance(meta, dict):
+                for key in ("title", "fulltitle", "webpage_title", "page_title"):
+                    val = meta.get(key)
+                    if isinstance(val, str) and val:
+                        enhanced_status["title"] = val
+                        break
+    except Exception:
+        ...
+
     return enhanced_status
 
 

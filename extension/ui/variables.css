@@ -27,7 +27,7 @@
   --surface-padding: var(--space-xl);
   --card-padding: var(--space-lg);
   --button-padding-y: var(--space-sm);
-  --button-padding-x: var(--space-lg);
+  --button-padding-x: var(--space-md);
   --control-padding-y: var(--space-sm);
   --control-padding-x: var(--space-md);
 
@@ -259,7 +259,7 @@ body.compact {
   --surface-padding: var(--space-lg);
   --card-padding: var(--space-md);
   --button-padding-y: calc(var(--space-sm) - 2px);
-  --button-padding-x: var(--space-md);
+  --button-padding-x: var(--space-sm);
   --control-padding-y: calc(var(--space-sm) - 2px);
   --control-padding-x: var(--space-sm);
   --section-gap: var(--space-lg);
