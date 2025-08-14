@@ -668,14 +668,25 @@ export async function renderDownloadStatus(data: {
   };
   const unified: Unified[] = [];
 
+  // Status normalizer to enforce a single final state for completed downloads
+  const normalizeStatus = (raw: string): string => {
+    const s = String(raw || "").toLowerCase();
+    if (["success", "complete", "completed", "done", "finished"].includes(s)) return "completed";
+    if (["fail", "failed"].includes(s)) return "error";
+    if (["cancelled"].includes(s)) return "canceled";
+    if (["waiting"].includes(s)) return "queued";
+    return s || "queued";
+  };
+
   // Active downloads
   Object.entries(data.active || {}).forEach(([id, st]) => {
     const statusObj = st as any;
     const label = statusObj.filename || statusObj.title || statusObj.url || id;
     const prog = Number(statusObj.progress);
+    const norm = normalizeStatus(String(statusObj.status || "downloading"));
     unified.push({
       id,
-      status: String(statusObj.status || "downloading"),
+      status: norm,
       label,
       progress: prog,
       timestamp: Date.now(),
@@ -706,14 +717,43 @@ export async function renderDownloadStatus(data: {
       const label = (h.page_title || (h as any).title || h.filename || h.url || id) as string;
       historyUnified.push({
         id,
-        status: String(h.status || "completed"),
+        status: normalizeStatus(String(h.status || "completed")),
         label,
         timestamp: Number(h.timestamp) || Date.now(),
         url: h.url as string | undefined,
         pageTitle: (h.page_title || (h as any).title) as string | undefined,
       });
     }
-    renderUnified(historyUnified);
+
+    // Merge and deduplicate by id, preferring final statuses
+    const priority: Record<string, number> = {
+      completed: 5,
+      error: 4,
+      canceled: 3,
+      downloading: 2,
+      queued: 1,
+      paused: 1,
+    };
+    const byId = new Map<string, Unified>();
+    const take = (item: Unified): void => {
+      const existing = byId.get(item.id);
+      if (!existing) {
+        byId.set(item.id, item);
+        return;
+      }
+      const a = priority[String(existing.status).toLowerCase()] || 0;
+      const b = priority[String(item.status).toLowerCase()] || 0;
+      if (b > a || (b === a && (item.timestamp || 0) > (existing.timestamp || 0))) {
+        byId.set(item.id, item);
+      }
+    };
+
+    // Prefer history entries when they indicate completion/error; otherwise keep active/queued
+    [...unified, ...historyUnified].forEach(take);
+
+    // Re-render final merged list
+    container.innerHTML = "";
+    renderUnified(Array.from(byId.values()));
   } catch {
     // ignore history rendering errors
   }
