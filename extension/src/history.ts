@@ -536,6 +536,18 @@ export async function removeHistoryItem(itemId?: string | number): Promise<void>
  */
 export async function removeHistoryItemAndNotify(itemId?: string | number): Promise<void> {
   await removeHistoryItem(itemId);
+  try {
+    // Best-effort delete on server as well (if accessible)
+    const { serverPort } = await chrome.storage.local.get("serverPort");
+    const port = serverPort as number | undefined;
+    if (port && itemId) {
+      await fetch(`http://127.0.0.1:${port}/api/history`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete_one", id: itemId }),
+      }).catch(() => {});
+    }
+  } catch {}
   chrome.runtime.sendMessage({ type: "historyUpdated" });
 }
 
@@ -566,6 +578,17 @@ export async function removeHistoryItemByUrl(url?: string): Promise<void> {
 
 export async function removeHistoryItemByUrlAndNotify(url?: string): Promise<void> {
   await removeHistoryItemByUrl(url);
+  try {
+    const { serverPort } = await chrome.storage.local.get("serverPort");
+    const port = serverPort as number | undefined;
+    if (port && url) {
+      await fetch(`http://127.0.0.1:${port}/api/history`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete_one", url }),
+      }).catch(() => {});
+    }
+  } catch {}
   chrome.runtime.sendMessage({ type: "historyUpdated" });
 }
 

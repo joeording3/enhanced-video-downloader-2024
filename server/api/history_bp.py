@@ -82,6 +82,28 @@ def _handle_history_append(data: dict[str, Any]) -> tuple[Response, int]:
         return _error_response(str(e), 500)
 
 
+def _handle_history_delete_one(data: dict[str, Any]) -> tuple[Response, int]:
+    """Delete a single history entry by id or url."""
+    try:
+        history = load_history()
+        entry_id = data.get("id")
+        url = data.get("url")
+        new_history: list[dict[str, Any]]
+        if entry_id:
+            new_history = [h for h in history if str(h.get("id")) != str(entry_id)]
+        elif url:
+            new_history = [h for h in history if h.get("url") != url]
+        else:
+            return _error_response("Missing id or url", 400)
+        if len(new_history) == len(history):
+            return _error_response("Entry not found", 404)
+        if not save_history(new_history):
+            return _error_response("Failed to update history", 500)
+        return _success_response("Entry deleted", 200)
+    except Exception as e:
+        return _error_response(f"Failed to delete entry: {e}", 500)
+
+
 def _history_post(data: Any) -> tuple[Response, int]:
     """Handle POST /history: sync full history, clear, or append entry."""
     if isinstance(data, list):
@@ -94,6 +116,8 @@ def _history_post(data: Any) -> tuple[Response, int]:
         action: str | None = data_dict.get("action")
         if action == "clear":
             return _handle_history_clear()
+        if action == "delete_one":
+            return _handle_history_delete_one(data_dict)
         return _handle_history_append(data_dict)
 
     return _error_response("Invalid payload.", 400)
