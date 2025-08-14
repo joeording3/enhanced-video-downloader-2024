@@ -179,14 +179,16 @@ h2 {
 
 #download-status .item-title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+/* Uniform progress bar sizing across entries */
 .unified-list progress {
-  width: 120px;
+  width: 140px;
   height: 4px;
   margin: 0 var(--space-sm);
   accent-color: var(--button-bg);
+  flex: 0 0 140px; /* lock width to avoid layout shift */
 }
 
-#download-status progress { width: 120px; height: 4px; margin: 0 var(--space-sm); accent-color: var(--button-bg); }
+#download-status progress { width: 140px; height: 4px; margin: 0 var(--space-sm); accent-color: var(--button-bg); flex: 0 0 140px; }
 
 .unified-list .item-percent {
   font-size: 0.75em;

@@ -548,7 +548,7 @@ export async function renderDownloadStatus(data: {
       title.textContent = item.label;
       li.appendChild(title);
 
-      if (item.status === "downloading" || item.status === "paused") {
+      if (normalized === "downloading" || normalized === "paused") {
         const progress = document.createElement("progress");
         const raw = Number(item.progress);
         const finite = Number.isFinite(raw) ? raw : 0;
@@ -562,21 +562,7 @@ export async function renderDownloadStatus(data: {
         li.appendChild(percentLabel);
       }
 
-      // If status is finished/complete and progress field exists, render 100%
-      if (
-        ["finished", "complete", "completed", "success", "done"].includes(
-          String(item.status).toLowerCase()
-        )
-      ) {
-        const progress = document.createElement("progress");
-        progress.max = 100;
-        progress.value = 100;
-        li.appendChild(progress);
-        const percentLabel = document.createElement("span");
-        percentLabel.className = "item-percent";
-        percentLabel.textContent = "100%";
-        li.appendChild(percentLabel);
-      }
+      // Do not render progress or percent for completed entries
 
       const statusPill = document.createElement("span");
       statusPill.className = "status-pill";
