@@ -19,6 +19,13 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
+# Ensure .env variables are loaded early for all CLI invocations
+try:
+    from dotenv import find_dotenv, load_dotenv  # type: ignore[import-untyped]
+except Exception:
+    load_dotenv = None  # type: ignore[assignment]
+    find_dotenv = None  # type: ignore[assignment]
+
 # Third-party modules
 import click
 import psutil
@@ -75,6 +82,23 @@ PROJECT_ROOT = SCRIPT_DIR.parent  # Correctly assumes cli.py is in server/
 LOCK_PATH = get_lock_file_path()
 LOCK_META_PATH = LOCK_PATH.with_suffix(".json")
 SERVER_MAIN_SCRIPT = SCRIPT_DIR / "__main__.py"
+
+# Load .env once at import time so downstream os.getenv reads see values
+try:
+    if load_dotenv is not None:
+        # Prefer project-root .env regardless of current working directory
+        env_path = (SCRIPT_DIR.parent / ".env").resolve()
+        # If not present, fall back to auto-discovery
+        if env_path.exists():
+            load_dotenv(dotenv_path=str(env_path), override=False)
+        else:
+            # find_dotenv returns '' when not found; ignore in that case
+            discovered = find_dotenv(usecwd=True) if find_dotenv is not None else ""
+            if discovered:
+                load_dotenv(dotenv_path=discovered, override=False)
+except Exception:
+    # Never fail CLI if dotenv loading has issues
+    pass
 
 
 # Helper functions adapted moved to server/cli_helpers.py
@@ -230,7 +254,7 @@ def _cli_build_command(_cfg: Config, host: str, port: int, gunicorn: bool, worke
         from server.logging_setup import resolve_log_path
 
         project_root = Path(__file__).parent.parent
-        env_log = os.getenv("LOG_FILE")
+        env_log = os.getenv("LOG_PATH")
         cfg_log = _cfg.get_value("log_path")
         log_path = resolve_log_path(project_root, env_log, cfg_log, purpose="manage")
 
@@ -303,7 +327,11 @@ def _run_start_server(
 ):
     """Start the server with all CLI options for use by start_server command and tests."""
     log = logging.getLogger("server.cli")
-    log.info(
+
+    # Configure CLI logging immediately so early logs are human-readable and respect verbosity
+    _cli_set_logging(verbose)
+    # Log initial raw parameters at DEBUG to avoid noisy default prints in normal mode
+    log.debug(
         f"_run_start_server called with: daemon={daemon}, host={host}, port={port}, "
         + f"download_dir={download_dir}, gunicorn={gunicorn}, workers={workers}, "
         + f"verbose={verbose}, force={force}, timeout={timeout}, "
@@ -312,7 +340,6 @@ def _run_start_server(
 
     # Call the actual helper functions that are mocked in tests
     cfg = _cli_load_config(ctx)
-    _cli_set_logging(verbose)
 
     resolved_host, resolved_port, resolved_download_dir = _resolve_start_params(cfg, host, port, download_dir)
 
@@ -340,28 +367,46 @@ def _run_start_server(
 
     env_gunicorn = _truthy(os.getenv("EVD_GUNICORN"))
     env_verbose = _truthy(os.getenv("EVD_VERBOSE"))
-    # Workers are forced to 1 regardless of env or CLI
-    env_workers_raw = None
-    env_workers = 1
+    env_workers_raw = os.getenv("EVD_WORKERS")
+    try:
+        env_workers = int(env_workers_raw) if env_workers_raw is not None else None
+    except Exception:
+        env_workers = None
 
     # Log environment-provided defaults explicitly for visibility
-    log.info(
+    log.debug(
         "Startup env defaults: EVD_GUNICORN=%s, EVD_WORKERS=%s, EVD_VERBOSE=%s",
         env_gunicorn,
-        env_workers if env_workers_raw is not None else None,
+        env_workers,
         env_verbose,
     )
 
-    effective_gunicorn = gunicorn or env_gunicorn
+    # Precedence for mode flags: CLI > env > default
+    effective_gunicorn = True if gunicorn else env_gunicorn if os.getenv("EVD_GUNICORN") is not None else False
     effective_verbose = verbose or env_verbose
-    # Force single worker for correctness with in-memory state
-    effective_workers = 1
+
+    # Resolve workers: CLI (if explicitly provided) > env > safe default (1)
+    cli_workers_provided = False
+    try:
+        from click.core import ParameterSource  # Imported lazily to avoid top-level dependency
+
+        src = ctx.get_parameter_source("workers")
+        cli_workers_provided = src in (ParameterSource.COMMANDLINE,)
+    except Exception:
+        cli_workers_provided = False
+
+    if cli_workers_provided and workers is not None:
+        effective_workers = max(1, int(workers))
+    elif env_workers is not None:
+        effective_workers = max(1, int(env_workers))
+    else:
+        effective_workers = 1
 
     if effective_verbose and not verbose:
         _cli_set_logging(True)
 
-    # Log resolved parameters including effective run-mode flags
-    log.info(
+    # Log resolved parameters including effective run-mode flags (DEBUG unless --verbose)
+    log.debug(
         "Resolved server params: daemon=%s, host=%s, port=%s, download_dir=%s, gunicorn=%s, workers=%s, verbose=%s",
         daemon,
         resolved_host,
@@ -413,12 +458,16 @@ def _run_start_server(
     type=click.Path(),
     help="Directory to store downloads (default: from config)",
 )
-@click.option("--gunicorn", is_flag=True, help="Run using Gunicorn WSGI server (production)")
+@click.option(
+    "--gunicorn",
+    is_flag=True,
+    help="Run using Gunicorn WSGI server (production) [default from EVD_GUNICORN]",
+)
 @click.option(
     "--workers",
     type=int,
-    default=2,
-    help="Number of Gunicorn workers (default: 2)",
+    default=None,
+    help="Number of Gunicorn workers (default: from EVD_WORKERS or 1)",
 )
 @click.option(
     "--verbose",
@@ -1303,8 +1352,13 @@ def _run_restart_server_enhanced(
             pm_port = prior_meta.get("port")
             if isinstance(pm_port, int):
                 port = pm_port
-    if not _provided("gunicorn") and isinstance(prior_meta.get("gunicorn"), bool):
-        gunicorn = bool(prior_meta.get("gunicorn"))
+    if not _provided("gunicorn"):
+        # Environment variable takes precedence over prior metadata
+        env_val = os.getenv("EVD_GUNICORN")
+        if env_val is not None:
+            gunicorn = str(env_val).strip().lower() in {"1", "true", "yes", "on"}
+        elif isinstance(prior_meta.get("gunicorn"), bool):
+            gunicorn = bool(prior_meta.get("gunicorn"))
     if not _provided("workers"):
         pm_workers = prior_meta.get("workers")
         if isinstance(pm_workers, int):
@@ -1396,8 +1450,13 @@ def _preserve_server_state() -> dict[str, Any] | None:
     try:
         state: dict[str, Any] = {}
 
-        # Preserve download history
-        history_file = PROJECT_ROOT / "server" / "data" / "history.json"
+        # Preserve download history (use resolved path from server.history)
+        try:
+            from server.history import get_history_path
+
+            history_file = get_history_path()
+        except Exception:
+            history_file = PROJECT_ROOT / "server" / "data" / "history.json"
         if history_file.exists():
             with history_file.open() as f:
                 state["history"] = json.load(f)
@@ -1417,10 +1476,16 @@ def _restore_server_state(state: dict[str, Any]) -> None:
     try:
         # Restore download history
         if "history" in state:
-            history_file = PROJECT_ROOT / "server" / "data" / "history.json"
+            try:
+                from server.history import get_history_path
+
+                history_file = get_history_path()
+            except Exception:
+                history_file = PROJECT_ROOT / "server" / "data" / "history.json"
             history_file.parent.mkdir(parents=True, exist_ok=True)
-            with history_file.open("w") as f:
+            with history_file.open("w", encoding="utf-8") as f:
                 json.dump(state["history"], f, indent=2)
+                f.write("\n")
 
         # Restore other state as needed
         # This would require integration with the server's state management

@@ -648,9 +648,28 @@ def cancel_download(download_id: str) -> Any:
     if request.method == "OPTIONS":
         return "", 204
 
-    # Lookup process and early error
+    # Lookup process and early error; if not found, try to remove from queue
     proc, resp = _get_cancel_proc(download_id)
     if resp:
+        # If there's no active process, attempt to cancel a queued item instead of 404
+        try:
+            removed = queue_manager.remove(str(download_id))
+        except Exception:
+            removed = False
+        if removed:
+            # Also clear any temp registry entries for consistency
+            download_tempfile_registry.pop(download_id, None)
+            return (
+                jsonify(
+                    {
+                        "status": "success",
+                        "message": "Queued download removed.",
+                        "downloadId": download_id,
+                    }
+                ),
+                200,
+            )
+        # Fall back to the original 404 response when neither active nor queued
         return resp
 
     # Terminate process and handle errors

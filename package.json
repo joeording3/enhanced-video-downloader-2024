@@ -22,7 +22,7 @@
     "build:css": "npm run css:purge && npm run css:minify",
     "build:html": "node scripts/copy-html.js",
     "build:ts": "bash scripts/build-ts.sh",
-    "css:purge": "purgecss --css extension/ui/*.css --content extension/ui/*.html extension/src/**/*.ts extension/src/**/*.js --output extension/ui/optimized/",
+    "css:purge": "mkdir -p extension/ui/optimized && cp extension/ui/*.css extension/ui/optimized/",
     "css:minify": "node scripts/minify-css.js",
     "css:optimize": "npm run css:purge && npm run css:minify && npm run css:analyze",
     "css:analyze": "find extension/ui/minified -name '*.css' -exec wc -l {} + | sort -n",
@@ -96,8 +96,8 @@
     "stylelint": "^16.19.1",
     "stylelint-config-standard": "^38.0.0",
     "ts-jest": "^29.3.4",
-    "v8-to-istanbul": "^9.3.0",
-    "ts-prune": "^0.10.3"
+    "ts-prune": "^0.10.3",
+    "v8-to-istanbul": "^9.3.0"
   },
   "lint-staged": {
     "*.{js,mjs,cjs,ts,jsx,tsx}": [
@@ -129,5 +129,8 @@
       "npm run test:mutation:py:fast"
     ]
   },
-  "packageManager": "pnpm@10.11.0+sha512.6540583f41cc5f628eb3d9773ecee802f4f9ef9923cc45b69890fb47991d4b092964694ec3a4f738a420c918a333062c8b925d312f42e4f0c263eb603551f977"
+  "packageManager": "pnpm@10.11.0+sha512.6540583f41cc5f628eb3d9773ecee802f4f9ef9923cc45b69890fb47991d4b092964694ec3a4f738a420c918a333062c8b925d312f42e4f0c263eb603551f977",
+  "dependencies": {
+    "chrome-cookies-secure": "^3.0.0"
+  }
 }

@@ -56,8 +56,8 @@ app = _ServeApp()
 @click.option(
     "--workers",
     type=int,
-    default=2,
-    help="Number of Gunicorn workers (default: 2)",
+    default=None,
+    help="Number of Gunicorn workers (default: from EVD_WORKERS or 1)",
 )
 @click.option(
     "--verbose",

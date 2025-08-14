@@ -6,6 +6,597 @@
     "error_type": "YT_DLP_UNKNOWN_ERROR",
     "message": "A download error occurred: fail download. Contact support if this persists.",
     "original_error": "fail download",
+    "timestamp": "2025-08-14T21:15:55.656889+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-14T21:15:55.646908+00:00"
+  },
+  {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
+    "timestamp": "2025-08-14T21:08:16.094702+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-14T21:08:16.085699+00:00"
+  },
+  {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
+    "timestamp": "2025-08-14T21:04:54.380978+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-14T21:04:54.369995+00:00"
+  },
+  {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
+    "timestamp": "2025-08-14T20:58:38.047010+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-14T20:58:38.041841+00:00"
+  },
+  {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
+    "timestamp": "2025-08-14T20:56:39.926489+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-14T20:56:39.920497+00:00"
+  },
+  {
+    "download_id": "1755204625051",
+    "url": "https://media.hypnotube.com/videos/6/7/3/3/e/6733e433a219a.mp4?token=ceZnV6A2JfdD3Sah9ngXnt9O_-UeLEK2SGVChhX3SMM&expires=1755219018",
+    "status": "complete",
+    "filename": "Become the Porn - PMV Loop - Videos - Hypnotube_6733e433a219a.mp4.mp4",
+    "filepath": "/Users/josephording/Downloads/VideoDownloader/Become the Porn - PMV Loop - Videos - Hypnotube_6733e433a219a.mp4.mp4",
+    "timestamp": "2025-08-14T20:50:26.819680+00:00"
+  },
+  {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
+    "timestamp": "2025-08-14T20:13:24.882277+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-14T20:13:24.872685+00:00"
+  },
+  {
+    "download_id": "1755200932733",
+    "url": "https://www.youtube.com/shorts/5ORZ0jr_zY8",
+    "status": "complete",
+    "filename": "Anna Alekseevna Kazan championship #\u043b\u0451\u0433\u043a\u0430\u044f\u0430\u0442\u043b\u0435\u0442\u0438\u043a\u0430 #sports #trackandfield #runner #worldathletics - YouTube_5ORZ0jr_zY8.mp4",
+    "filepath": "/Users/josephording/Downloads/untitled folder/Anna Alekseevna Kazan championship #\u043b\u0451\u0433\u043a\u0430\u044f\u0430\u0442\u043b\u0435\u0442\u0438\u043a\u0430 #sports #trackandfield #runner #worldathletics - YouTube_5ORZ0jr_zY8.mp4",
+    "timestamp": "2025-08-14T19:49:12.661297+00:00"
+  },
+  {
+    "download_id": "1755200563596",
+    "url": "https://www.youtube.com/shorts/UpAjQIp-vyU",
+    "status": "complete",
+    "filename": "Victoria Trifonova Tymen 2025 #trackandfield #runnersrussia #victoriatrifonova #\u043b\u0435\u0433\u043a\u0430\u044f\u0430\u0442\u043b\u0435\u0442\u0438\u043a\u0430 - YouTube_UpAjQIp-vyU.mp4",
+    "filepath": "/Users/josephording/Downloads/untitled folder/Victoria Trifonova Tymen 2025 #trackandfield #runnersrussia #victoriatrifonova #\u043b\u0435\u0433\u043a\u0430\u044f\u0430\u0442\u043b\u0435\u0442\u0438\u043a\u0430 - YouTube_UpAjQIp-vyU.mp4",
+    "timestamp": "2025-08-14T19:43:10.424951+00:00"
+  },
+  {
+    "download_id": "1755200095383",
+    "url": "https://www.youtube.com/shorts/UpAjQIp-vyU",
+    "status": "complete",
+    "filename": "Victoria Trifonova Tymen 2025 #trackandfield #runnersrussia #victoriatrifonova #\u043b\u0435\u0433\u043a\u0430\u044f\u0430\u0442\u043b\u0435\u0442\u0438\u043a\u0430 - YouTube_UpAjQIp-vyU.mp4",
+    "filepath": "/Users/josephording/Downloads/Victoria Trifonova Tymen 2025 #trackandfield #runnersrussia #victoriatrifonova #\u043b\u0435\u0433\u043a\u0430\u044f\u0430\u0442\u043b\u0435\u0442\u0438\u043a\u0430 - YouTube_UpAjQIp-vyU.mp4",
+    "timestamp": "2025-08-14T19:35:14.201891+00:00"
+  },
+  {
+    "download_id": "1755199576350",
+    "url": "https://www.youtube.com/shorts/484bPKsLa1o",
+    "status": "complete",
+    "filename": "#ANNAKEKINA #RUNNERSRUSSIA - YouTube_484bPKsLa1o.f616.mp4",
+    "filepath": "/Users/josephording/Downloads/#ANNAKEKINA #RUNNERSRUSSIA - YouTube_484bPKsLa1o.f616.mp4",
+    "timestamp": "2025-08-14T19:27:08.883270+00:00"
+  },
+  {
+    "download_id": "1755199069135",
+    "url": "https://www.youtube.com/shorts/484bPKsLa1o",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: ERROR: \r[download] Got error: HTTPSConnectionPool(host='rr2---sn-uhvcpax0n5-nh4z.googlevideo.com', port=443): Read timed out.. Contact support if this persists.",
+    "original_error": "ERROR: \r[download] Got error: HTTPSConnectionPool(host='rr2---sn-uhvcpax0n5-nh4z.googlevideo.com', port=443): Read timed out.",
+    "timestamp": "2025-08-14T19:18:14.847147+00:00"
+  },
+  {
+    "download_id": "1755197441348",
+    "url": "https://www.youtube.com/shorts/HHImxCWi2rU",
+    "status": "complete",
+    "filename": "What\u2019s your favorite\uff1f #norissa - YouTube_HHImxCWi2rU.mp4",
+    "filepath": "/Users/josephording/Downloads/What\u2019s your favorite\uff1f #norissa - YouTube_HHImxCWi2rU.mp4",
+    "timestamp": "2025-08-14T18:51:06.518057+00:00"
+  },
+  {
+    "download_id": "1755197325854",
+    "url": "https://www.youtube.com/shorts/stna6kRi3aM",
+    "status": "complete",
+    "filename": "#fit #shorts - YouTube_stna6kRi3aM.mp4",
+    "filepath": "/Users/josephording/Downloads/#fit #shorts - YouTube_stna6kRi3aM.mp4",
+    "timestamp": "2025-08-14T18:48:52.223813+00:00"
+  },
+  {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
+    "timestamp": "2025-08-14T04:54:52.158855+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-14T04:54:52.144540+00:00"
+  },
+  {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
+    "timestamp": "2025-08-14T04:49:56.702148+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-14T04:49:56.694954+00:00"
+  },
+  {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
+    "timestamp": "2025-08-14T02:51:38.805412+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-14T02:51:38.799595+00:00"
+  },
+  {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
+    "timestamp": "2025-08-14T02:38:10.641902+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-14T02:38:10.636101+00:00"
+  },
+  {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
+    "timestamp": "2025-08-14T01:31:19.372134+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-14T01:31:19.367207+00:00"
+  },
+  {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
+    "timestamp": "2025-08-13T23:21:07.786137+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-13T23:21:07.779979+00:00"
+  },
+  {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
+    "timestamp": "2025-08-13T23:14:31.598778+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-13T23:14:31.593638+00:00"
+  },
+  {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
+    "timestamp": "2025-08-13T22:14:01.880777+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-13T22:14:01.870369+00:00"
+  },
+  {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
+    "timestamp": "2025-08-13T21:38:56.268425+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-13T21:38:56.263859+00:00"
+  },
+  {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
+    "timestamp": "2025-08-13T21:33:39.892555+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-13T21:33:39.883429+00:00"
+  },
+  {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
+    "timestamp": "2025-08-13T19:58:54.679166+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-13T19:58:54.672764+00:00"
+  },
+  {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
+    "timestamp": "2025-08-13T19:54:10.556424+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-13T19:54:10.549464+00:00"
+  },
+  {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
+    "timestamp": "2025-08-13T19:41:10.619295+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-13T19:41:10.614762+00:00"
+  },
+  {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
+    "timestamp": "2025-08-13T19:36:11.867290+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-13T19:36:11.859128+00:00"
+  },
+  {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
+    "timestamp": "2025-08-13T15:45:16.935292+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-13T15:45:16.930361+00:00"
+  },
+  {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
+    "timestamp": "2025-08-13T15:40:36.025866+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-13T15:40:36.021071+00:00"
+  },
+  {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
+    "timestamp": "2025-08-13T08:38:52.903170+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-13T08:38:52.899263+00:00"
+  },
+  {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
+    "timestamp": "2025-08-13T06:55:27.151776+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-13T06:55:27.144665+00:00"
+  },
+  {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
+    "timestamp": "2025-08-13T05:53:17.589845+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-13T05:53:17.584921+00:00"
+  },
+  {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
+    "timestamp": "2025-08-13T05:36:26.085037+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-13T05:36:26.079166+00:00"
+  },
+  {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
+    "timestamp": "2025-08-13T05:18:51.815158+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-13T05:18:51.806267+00:00"
+  },
+  {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
+    "timestamp": "2025-08-13T05:12:50.638887+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-13T05:12:50.633517+00:00"
+  },
+  {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
+    "timestamp": "2025-08-12T21:33:49.091419+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-12T21:33:49.085661+00:00"
+  },
+  {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
+    "timestamp": "2025-08-12T21:29:46.020701+00:00"
+  },
+  {
+    "download_id": "id1",
+    "url": "http://example.com/path/video1",
+    "status": "complete",
+    "filename": null,
+    "filepath": null,
+    "timestamp": "2025-08-12T21:29:46.016734+00:00"
+  },
+  {
+    "download_id": "1755033143007",
+    "url": "https://hclips.com/get_file/6/140b7012a1db131650f93a1ed6a5702c40ba58c732/4128000/4128736/4128736_hq.mp4/?d=383&br=91&ti=1755033135",
+    "status": "complete",
+    "filename": "Drywall And bottomless bucket cunt - Video Free Porn Videos - hclips.com_4128736_hq.mp4.mp4",
+    "filepath": "/Users/josephording/Downloads/Drywall And bottomless bucket cunt - Video Free Porn Videos - hclips.com_4128736_hq.mp4.mp4",
+    "timestamp": "2025-08-12T21:14:27.578908+00:00"
+  },
+  {
+    "download_id": "1755032754444",
+    "url": "https://cdn5-videos.motherlessmedia.com/videos/A2F2E02-720p.mp4?validfrom=1755029137&validto=1755036337&rate=230k&burst=1000k&hash=4yYm4ZNfJzSl9E7ugVWO8qX%2FzJQ%3D",
+    "status": "complete",
+    "filename": "Dorky Girl Riley (on off) \uff5c MOTHERLESS.COM \u2122_A2F2E02-720p.mp4.mp4",
+    "filepath": "/Users/josephording/Downloads/Dorky Girl Riley (on off) \uff5c MOTHERLESS.COM \u2122_A2F2E02-720p.mp4.mp4",
+    "timestamp": "2025-08-12T21:11:54.033144+00:00"
+  },
+  {
+    "download_id": "id2",
+    "url": "http://example.com/path/video2",
+    "status": "error",
+    "error_type": "YT_DLP_UNKNOWN_ERROR",
+    "message": "A download error occurred: fail download. Contact support if this persists.",
+    "original_error": "fail download",
     "timestamp": "2025-08-12T19:48:08.898268+00:00"
   },
   {
@@ -252,89 +843,5 @@
     "filename": null,
     "filepath": null,
     "timestamp": "2025-08-11T16:12:18.922498+00:00"
-  },
-  {
-    "download_id": "id2",
-    "url": "http://example.com/path/video2",
-    "status": "error",
-    "error_type": "YT_DLP_UNKNOWN_ERROR",
-    "message": "A download error occurred: fail download. Contact support if this persists.",
-    "original_error": "fail download",
-    "timestamp": "2025-08-11T15:15:57.392902+00:00"
-  },
-  {
-    "download_id": "id1",
-    "url": "http://example.com/path/video1",
-    "status": "complete",
-    "filename": null,
-    "filepath": null,
-    "timestamp": "2025-08-11T15:15:57.377283+00:00"
-  },
-  {
-    "download_id": "id2",
-    "url": "http://example.com/path/video2",
-    "status": "error",
-    "error_type": "YT_DLP_UNKNOWN_ERROR",
-    "message": "A download error occurred: fail download. Contact support if this persists.",
-    "original_error": "fail download",
-    "timestamp": "2025-08-11T15:06:58.458410+00:00"
-  },
-  {
-    "download_id": "id1",
-    "url": "http://example.com/path/video1",
-    "status": "complete",
-    "filename": null,
-    "filepath": null,
-    "timestamp": "2025-08-11T15:06:58.449357+00:00"
-  },
-  {
-    "download_id": "id2",
-    "url": "http://example.com/path/video2",
-    "status": "error",
-    "error_type": "YT_DLP_UNKNOWN_ERROR",
-    "message": "A download error occurred: fail download. Contact support if this persists.",
-    "original_error": "fail download",
-    "timestamp": "2025-08-11T15:00:14.092685+00:00"
-  },
-  {
-    "download_id": "id1",
-    "url": "http://example.com/path/video1",
-    "status": "complete",
-    "filename": null,
-    "filepath": null,
-    "timestamp": "2025-08-11T15:00:14.085409+00:00"
-  },
-  {
-    "download_id": "id2",
-    "url": "http://example.com/path/video2",
-    "status": "error",
-    "error_type": "YT_DLP_UNKNOWN_ERROR",
-    "message": "A download error occurred: fail download. Contact support if this persists.",
-    "original_error": "fail download",
-    "timestamp": "2025-08-11T14:56:46.399020+00:00"
-  },
-  {
-    "download_id": "id1",
-    "url": "http://example.com/path/video1",
-    "status": "complete",
-    "filename": null,
-    "filepath": null,
-    "timestamp": "2025-08-11T14:56:46.393109+00:00"
-  },
-  {
-    "id": "test-id",
-    "url": "https://example.com"
-  },
-  {
-    "id": "test-id",
-    "url": "https://example.com"
-  },
-  {
-    "id": "test-id",
-    "url": "https://example.com"
-  },
-  {
-    "id": "test-id",
-    "url": "https://example.com"
   }
 ]

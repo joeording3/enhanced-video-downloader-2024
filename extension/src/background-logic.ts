@@ -48,20 +48,49 @@ export async function handleSetConfig(
   apiService: ApiService,
   storageService: StorageService
 ): Promise<{ status: string; message?: string }> {
-  if (!port) {
-    return { status: "error", message: "Server port not found." };
-  }
-
   try {
-    // First, try to save to the server
-    const serverSuccess = await apiService.saveConfig(port, config);
+    // Prefer a posted server_port if provided so the extension can immediately
+    // switch to that port for subsequent requests.
+    const postedPort = typeof config.server_port === "number" ? config.server_port : null;
+    const preferredPort: number | null = postedPort ?? port;
+
+    // If a new port is provided, cache it right away so background will use it.
+    if (postedPort !== null && storageService.setPort) {
+      await storageService.setPort(postedPort);
+    }
+
+    if (!preferredPort) {
+      // Still persist the config locally so Options can reflect values
+      await storageService.setConfig(config);
+      return { status: "error", message: "Server port not found." };
+    }
+
+    // Try saving to the preferred port first. If that fails and we have an
+    // alternate (old) port, attempt a fallback save there.
+    let serverSuccess = false;
+    try {
+      serverSuccess = await apiService.saveConfig(preferredPort, config);
+    } catch {
+      serverSuccess = false;
+    }
+
+    if (!serverSuccess && postedPort !== null && port && postedPort !== port) {
+      try {
+        serverSuccess = await apiService.saveConfig(port, config);
+      } catch {
+        serverSuccess = false;
+      }
+    }
+
     if (!serverSuccess) {
+      // Persist locally even if the server save failed to allow UI to recover,
+      // but return error so the Options page can inform the user.
+      await storageService.setConfig(config);
       return { status: "error", message: "Failed to save config to server." };
     }
 
-    // Then, save to local storage
+    // Persist locally on success
     await storageService.setConfig(config);
-
     return { status: "success" };
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";

@@ -68,9 +68,11 @@ const CLICK_THRESHOLD = UI_CONSTANTS.CLICK_THRESHOLD;
 let checkIntervalId: number | null = null;
 let buttonObserver: MutationObserver | null = null; // MutationObserver to watch for button removal
 const injectedButtons = new Map<HTMLElement, HTMLElement>(); // Map to store buttons injected for specific videos
+let mediaObserver: MutationObserver | null = null; // Observes dynamic media attachment
 
 // State managed by centralized state manager
 let downloadButton: HTMLElement | null = null;
+let forcedGlobalInSmartMode = false;
 let activeDragButton: HTMLElement | null = null;
 // Suppress accidental clicks immediately after a drag
 let suppressClicksUntil = 0;
@@ -132,8 +134,24 @@ function removeAllButtons(): void {
 
 async function getSmartInjectionEnabled(): Promise<boolean> {
   try {
-    const res = await chrome.storage.local.get("smartInjectionEnabled");
-    return (res as any).smartInjectionEnabled === true;
+    // Support both Promise-based and callback-based chrome.storage mocks
+    const getFn = chrome?.storage?.local?.get as any;
+    if (typeof getFn !== "function") return false;
+    // If function expects a callback, use callback style
+    if (getFn.length >= 2) {
+      return await new Promise<boolean>(resolve => {
+        try {
+          getFn("smartInjectionEnabled", (res: any) => {
+            resolve(!!(res && res.smartInjectionEnabled === true));
+          });
+        } catch {
+          resolve(false);
+        }
+      });
+    }
+    // Otherwise, assume it returns a Promise
+    const res = await getFn("smartInjectionEnabled");
+    return !!(res && res.smartInjectionEnabled === true);
   } catch {
     return false;
   }
@@ -184,6 +202,88 @@ async function updateInjectionLoopBasedOnHidden(): Promise<void> {
     startInjectionLoop();
     // Kick an immediate tick for responsiveness
     await injectionTick();
+  }
+}
+
+// Debounced trigger to re-check media on user interactions or DOM changes
+const scheduleMediaCheck = debounce(() => {
+  try {
+    void injectionTick();
+  } catch {
+    /* ignore */
+  }
+}, UI_CONSTANTS.DEBOUNCE_DELAY);
+
+function nodeContainsMediaCandidate(node: Node): boolean {
+  try {
+    if (!(node instanceof HTMLElement)) return false;
+    if (node.matches?.(VIDEO_SELECTOR)) return true;
+    return !!node.querySelector?.(VIDEO_SELECTOR);
+  } catch {
+    return false;
+  }
+}
+
+function startMediaAttachmentObserver(): void {
+  // Avoid async observers during Jest runs
+  if (isJest) return;
+  try {
+    if (mediaObserver) mediaObserver.disconnect();
+  } catch {
+    /* ignore */
+  }
+  try {
+    mediaObserver = new MutationObserver(mutations => {
+      for (const m of mutations) {
+        // New nodes added
+        for (const n of Array.from(m.addedNodes)) {
+          if (nodeContainsMediaCandidate(n)) {
+            scheduleMediaCheck();
+            return;
+          }
+        }
+        // Attribute changes on media/iframes
+        if (
+          m.type === "attributes" &&
+          m.target instanceof HTMLElement &&
+          (m.attributeName === "src" || m.attributeName === "poster") &&
+          nodeContainsMediaCandidate(m.target)
+        ) {
+          scheduleMediaCheck();
+          return;
+        }
+      }
+    });
+    mediaObserver.observe(document.documentElement || document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["src", "poster"],
+    });
+  } catch {
+    // ignore observer setup errors
+  }
+}
+
+function startEventDrivenMediaChecks(): void {
+  // Avoid async noise in Jest
+  if (isJest) return;
+  try {
+    document.addEventListener("visibilitychange", scheduleMediaCheck, { passive: true } as any);
+  } catch {
+    /* ignore */
+  }
+  try {
+    window.addEventListener("scroll", scheduleMediaCheck as any, { passive: true } as any);
+  } catch {
+    /* ignore */
+  }
+  try {
+    document.addEventListener("click", scheduleMediaCheck, { capture: true } as any);
+    document.addEventListener("keydown", scheduleMediaCheck, { capture: true } as any);
+    document.addEventListener("pointerup", scheduleMediaCheck, { capture: true } as any);
+  } catch {
+    /* ignore */
   }
 }
 
@@ -461,7 +561,7 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
   // In smart-injection mode, do not create a global button when no media is present
   if (!videoElement) {
     const smartMode = await getSmartInjectionEnabled();
-    if (smartMode) {
+    if (smartMode && !forcedGlobalInSmartMode) {
       // Remove any stray main button if present
       try {
         const stray = document.getElementById("evd-download-button-main");
@@ -626,6 +726,12 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
   btn.addEventListener(
     "click",
     async e => {
+      // Block clicks when disabled in smart mode (forced-visible with no media)
+      if ((btn as any).dataset && (btn as any).dataset.disabled === "true") {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        return;
+      }
       // Only handle as click if not dragged significantly
       const currentState = stateManager.getUIState();
       const now = Date.now();
@@ -775,13 +881,27 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
     // Store in centralized state and assign to global button
     stateManager.updateUIState({ buttonPosition: { x: 10, y: 10 } });
     downloadButton = btn;
-    // Ensure this global button is hidden by default until media is detected
-    try {
-      btn.style.display = "none";
-      btn.classList.add("hidden");
-      btn.classList.remove("evd-visible");
-    } catch {
-      /* ignore */
+    // Default: hidden until media is detected; if this was a forced-global in smart mode,
+    // we will mark disabled but leave it visible.
+    if (!forcedGlobalInSmartMode) {
+      try {
+        btn.style.display = "none";
+        btn.classList.add("hidden");
+        btn.classList.remove("evd-visible");
+      } catch {
+        /* ignore */
+      }
+    } else {
+      try {
+        btn.dataset.forced = "true";
+        (btn as HTMLButtonElement).disabled = true;
+        btn.dataset.disabled = "true";
+        btn.style.opacity = "0.5";
+        btn.style.cursor = "not-allowed";
+        if (!btn.title) btn.title = "No media detected";
+      } catch {
+        /* ignore */
+      }
     }
   }
 
@@ -995,12 +1115,17 @@ async function setButtonHiddenState(hidden: boolean): Promise<void> {
 
   // If showing but no button exists, create one so user can see it
   if (!primary && !hidden) {
-    // Respect Smart Injection: do not create a global button proactively
-    // when smart mode is enabled. The media detection loop will inject
-    // when appropriate.
+    // In Smart Injection: allow a forced-global button that is disabled until media is detected
     try {
       const smart = await getSmartInjectionEnabled();
-      if (!smart) {
+      if (smart) {
+        forcedGlobalInSmartMode = true;
+        try {
+          primary = (await createOrUpdateButton()) as HTMLButtonElement;
+        } catch {
+          primary = null;
+        }
+      } else {
         try {
           primary = (await createOrUpdateButton()) as HTMLButtonElement;
         } catch {
@@ -1048,6 +1173,8 @@ async function setButtonHiddenState(hidden: boolean): Promise<void> {
           btn.style.top = "70px";
         }
         ensureDownloadButtonStyle(btn);
+        // In smart mode, if this is the forced-global button and no media is detected,
+        // keep it disabled; it will be enabled by detection.
       } catch {
         // ignore
       }
@@ -1184,6 +1311,21 @@ async function findVideosAndInjectButtons(): Promise<void> {
       await createOrUpdateButton(primary);
     }
 
+    // If we have a forced-global button in smart mode, enable it now
+    if (forcedGlobalInSmartMode && downloadButton) {
+      try {
+        (downloadButton as HTMLButtonElement).disabled = false;
+        if ((downloadButton as any).dataset) {
+          delete (downloadButton as any).dataset.disabled;
+        }
+        downloadButton.style.opacity = "";
+        downloadButton.style.cursor = "pointer";
+        if (downloadButton.title === "No media detected") downloadButton.title = "";
+      } catch {
+        /* ignore */
+      }
+    }
+
     // If a global button exists, remove it to avoid duplicates when a primary media is present
     if (!withinStabilizeWindow) {
       if (downloadButton && document.body.contains(downloadButton)) {
@@ -1239,7 +1381,7 @@ async function findVideosAndInjectButtons(): Promise<void> {
     if (smartMode) {
       if (!foundSignificantVideo) {
         // Remove tracked global button reference if present
-        if (downloadButton && document.body.contains(downloadButton)) {
+        if (downloadButton && document.body.contains(downloadButton) && !forcedGlobalInSmartMode) {
           try {
             suppressObserverUntil = Date.now() + 1000;
             downloadButton.remove();
@@ -1248,15 +1390,21 @@ async function findVideosAndInjectButtons(): Promise<void> {
           }
           downloadButton = null;
         }
-        // Also remove any stray main button element that may exist without our reference
-        try {
-          const strayMain = document.getElementById("evd-download-button-main");
-          if (strayMain && document.body.contains(strayMain)) {
-            suppressObserverUntil = Date.now() + 1000;
-            strayMain.remove();
+        // If forced-global, keep it visible but disabled
+        if (forcedGlobalInSmartMode && downloadButton) {
+          try {
+            (downloadButton as HTMLButtonElement).disabled = true;
+            (downloadButton as any).dataset = {
+              ...(downloadButton as any).dataset,
+              disabled: "true",
+              forced: "true",
+            };
+            downloadButton.style.opacity = "0.5";
+            downloadButton.style.cursor = "not-allowed";
+            if (!downloadButton.title) downloadButton.title = "No media detected";
+          } catch {
+            /* ignore */
           }
-        } catch {
-          /* ignore */
         }
       }
     }
@@ -1297,6 +1445,27 @@ async function init(): Promise<void> {
           /* ignore */
         }
       }, 100);
+      // Short-lived observer to aggressively prevent any global button from appearing
+      try {
+        const guardObserver = new MutationObserver(() => {
+          try {
+            const s = document.getElementById("evd-download-button-main");
+            if (s && document.body.contains(s)) s.remove();
+          } catch {
+            /* ignore */
+          }
+        });
+        guardObserver.observe(document.body, { childList: true, subtree: true });
+        setTimeout(() => {
+          try {
+            guardObserver.disconnect();
+          } catch {
+            /* ignore */
+          }
+        }, 3000);
+      } catch {
+        /* ignore */
+      }
     }
   } catch {
     /* ignore */
@@ -1337,11 +1506,21 @@ async function init(): Promise<void> {
       // Ignore message errors during context changes
       try {
         sendResponse({ success: false });
-      } catch {}
+      } catch {
+        /* ignore */
+      }
       return false;
     }
     return false;
   });
+
+  // Start dynamic media observers and event-driven checks
+  try {
+    startMediaAttachmentObserver();
+    startEventDrivenMediaChecks();
+  } catch {
+    /* ignore */
+  }
 }
 
 /**

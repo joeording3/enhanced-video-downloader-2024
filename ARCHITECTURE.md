@@ -353,6 +353,24 @@ Adoption status:
     headers. Text colors standardized via `--label-text`/`--text-secondary`. Non-standard CSS
     `composes:` has been removed in favor of explicit component classes.
 
+### Build and safety notes (CSS)
+
+- The CSS build previously used PurgeCSS to remove unused selectors. This can inadvertently strip
+  dynamic classes used by the popup's unified list (rendered at runtime from `popup.ts`). To avoid
+  breaking layouts, the current build step copies source CSS to `extension/ui/optimized/` and then
+  minifies to `extension/ui/minified/` and `extension/dist/` without purging.
+- If PurgeCSS is re-enabled in the future, you must keep `purgecss.config.cjs` in sync and include
+  a safelist for all runtime selectors used by the unified list:
+  - Classes: `.unified-list`, `.unified-item`, `.status-icon`, `.item-title`, `.item-percent`,
+    `.status-pill`, `.cancel-button`, `.retry-button`, `.pause-button`, `.resume-button`
+  - IDs: `#download-status`, `#download-history`
+  - Status variants: `status-*` (regex safelist recommended)
+- Layout dependencies for the popup unified list:
+  - `.unified-item` is the flex row; avoid styling `li` elements with `display:flex` directly, as it
+    can override component styles or interfere with descendant selectors.
+  - Progress bar widths are controlled in `extension/ui/popup.css` and are responsive: default 35px;
+    20px at the minimum sidebar width (250px) via a media query.
+
 ## Data Flow
 
 1. **User Action**: Click or drag the DOWNLOAD button in page context (`content.ts`).
@@ -363,11 +381,14 @@ Adoption status:
    JSON status or logs.
 5. **Response**: `background.ts` sends results back to UI (popup or content), updates storage and
    notifications.
-6. **History**: `server/history.py` persists entries to `server/data/history.json` and serves via
-   `/api/history`.
+6. **History**: `server/history.py` persists entries to a consolidated JSON file resolved at runtime
+   and serves via `/api/history`. By default this is `<download_dir>/history.json`. You can override
+   the location via the `history_file` setting (Options → Server → Runtime) or the `HISTORY_FILE`
+   environment variable. Existing contents are imported when appending; the file is never blindly
+   overwritten.
 7. **Advanced History**: After download completion (`_progress_finished`), the server reads yt-dlp's
-   `.info.json` file (enabled via `writeinfojson`) and appends rich metadata to
-   `server/data/history.json` for detailed history.
+   `.info.json` file (enabled via `writeinfojson`), appends rich metadata to the consolidated history,
+   and then deletes the sidecar `.info.json` to avoid clutter.
 8. **Extraction Rules**: `server/extraction_rules.py` loads rules from
    `server/config/extraction_rules.json`.
 9. **Lock File**: `server/lock.py` manages lock file at `server/data/server.lock`.

@@ -4,6 +4,7 @@ Provide blueprint for status API endpoint.
 This module defines the `/status` route for retrieving current download progress data as JSON via a Flask blueprint.
 """
 
+import os
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -15,6 +16,9 @@ from server.downloads.ytdlp import download_errors_from_hooks, map_error_message
 from server.queue import queue_manager
 
 status_bp = Blueprint("status", __name__, url_prefix="/api")
+
+# Auto-expire finished entries from the in-memory status after a grace period
+_FINISHED_TTL_SECONDS = int(os.getenv("STATUS_FINISHED_TTL", "120"))
 
 
 def _format_duration(seconds: float) -> str:
@@ -169,11 +173,26 @@ def get_all_status() -> Response:
     # Return both progress and any error details for all downloads
     with progress_lock:
         combined = {}
+        now = datetime.now(timezone.utc)
         # Include progress entries with enhanced data
-        for download_id, status in progress_data.items():
+        for download_id, status in list(progress_data.items()):
             # Ignore ephemeral queued placeholders to keep default response minimal/empty
             if status.get("status") == "queued":
                 continue
+            # Skip stale finished entries beyond TTL
+            try:
+                if (
+                    _FINISHED_TTL_SECONDS > 0
+                    and status.get("status") == "finished"
+                    and isinstance(status.get("last_update"), str)
+                ):
+                    lu = datetime.fromisoformat(status["last_update"])  # may raise
+                    if (now - lu).total_seconds() > _FINISHED_TTL_SECONDS:
+                        # Do not include in response; leave actual deletion to explicit DELETE or background cleanup
+                        continue
+            except Exception:
+                # If parsing fails, include entry; better to show than hide unexpectedly
+                ...
             combined[download_id] = _enhance_status_data(status)
 
         # Include errors and troubleshooting suggestions

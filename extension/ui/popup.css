@@ -181,14 +181,20 @@ h2 {
 
 /* Uniform progress bar sizing across entries */
 .unified-list progress {
-  width: 140px;
+  width: 35px;
   height: 4px;
   margin: 0 var(--space-sm);
   accent-color: var(--button-bg);
-  flex: 0 0 140px; /* lock width to avoid layout shift */
+  flex: 0 0 35px; /* lock width to avoid layout shift */
 }
 
-#download-status progress { width: 140px; height: 4px; margin: 0 var(--space-sm); accent-color: var(--button-bg); flex: 0 0 140px; }
+#download-status progress { width: 35px; height: 4px; margin: 0 var(--space-sm); accent-color: var(--button-bg); flex: 0 0 35px; }
+
+/* Reduce progress bar width at minimum sidebar width */
+@media (max-width: 250px) {
+  .unified-list progress { width: 20px; flex: 0 0 20px; }
+  #download-status progress { width: 20px; flex: 0 0 20px; }
+}
 
 .unified-list .item-percent {
   font-size: 0.75em;

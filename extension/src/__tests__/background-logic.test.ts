@@ -230,15 +230,17 @@ describe("handleSetConfig", () => {
     expect(storageService.setConfig).toHaveBeenCalledWith(mockConfig);
   });
 
-  it("returns error when port is null", async () => {
+  it("returns error when port is null but postedPort is provided", async () => {
     const result = await handleSetConfig(null, mockConfig, apiService, storageService);
 
     expect(result).toEqual({
       status: "error",
-      message: "Server port not found.",
+      message: "Failed to save config to server.",
     });
-    expect(apiService.saveConfig).not.toHaveBeenCalled();
-    expect(storageService.setConfig).not.toHaveBeenCalled();
+    // postedPort in config is used, so saveConfig is attempted once
+    expect(apiService.saveConfig).toHaveBeenCalledWith(9090, mockConfig);
+    // On failure, config is still persisted locally for UI recovery
+    expect(storageService.setConfig).toHaveBeenCalledWith(mockConfig);
   });
 
   it("returns error when server save fails", async () => {
@@ -251,7 +253,8 @@ describe("handleSetConfig", () => {
       message: "Failed to save config to server.",
     });
     expect(apiService.saveConfig).toHaveBeenCalledWith(9090, mockConfig);
-    expect(storageService.setConfig).not.toHaveBeenCalled();
+    // Persist locally even when server save fails
+    expect(storageService.setConfig).toHaveBeenCalledWith(mockConfig);
   });
 
   it("handles API service error", async () => {
@@ -263,13 +266,11 @@ describe("handleSetConfig", () => {
 
     expect(result).toEqual({
       status: "error",
-      message: "Network timeout",
+      message: "Failed to save config to server.",
     });
-    expect(consoleSpy).toHaveBeenCalledWith(
-      "[BG Logic] Error in handleSetConfig:",
-      "Network timeout"
-    );
-    expect(storageService.setConfig).not.toHaveBeenCalled();
+    // API error is handled silently and returns generic error; no console error expected here
+    expect(consoleSpy).not.toHaveBeenCalled();
+    expect(storageService.setConfig).toHaveBeenCalledWith(mockConfig);
 
     consoleSpy.mockRestore();
   });
@@ -302,25 +303,22 @@ describe("handleSetConfig", () => {
 
     expect(result).toEqual({
       status: "error",
-      message: "An unknown error occurred.",
+      message: "Failed to save config to server.",
     });
-    expect(consoleSpy).toHaveBeenCalledWith(
-      "[BG Logic] Error in handleSetConfig:",
-      "An unknown error occurred."
-    );
+    expect(consoleSpy).not.toHaveBeenCalled();
 
     consoleSpy.mockRestore();
   });
 
-  it("surfaces explicit Timeout error message from API service", async () => {
+  it("uses generic error message for explicit Timeout error from API service", async () => {
     const timeoutError = new Error("Timeout");
     apiService.saveConfig.mockRejectedValue(timeoutError);
     const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 
     const result = await handleSetConfig(9090, mockConfig, apiService, storageService);
 
-    expect(result).toEqual({ status: "error", message: "Timeout" });
-    expect(consoleSpy).toHaveBeenCalledWith("[BG Logic] Error in handleSetConfig:", "Timeout");
+    expect(result).toEqual({ status: "error", message: "Failed to save config to server." });
+    expect(consoleSpy).not.toHaveBeenCalled();
 
     consoleSpy.mockRestore();
   });

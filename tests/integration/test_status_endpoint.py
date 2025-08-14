@@ -4,7 +4,12 @@ import pytest
 from flask.testing import FlaskClient
 
 from server.downloads import progress_data, progress_lock
-from server.downloads.ytdlp import _progress_downloading, download_errors_from_hooks, map_error_message
+from server.downloads.ytdlp import (
+    _progress_downloading,
+    _progress_finished,
+    download_errors_from_hooks,
+    map_error_message,
+)
 
 pytestmark = pytest.mark.integration
 
@@ -176,10 +181,68 @@ def test_historical_rate_tracking(client: FlaskClient) -> None:
     with progress_lock:
         progress_data.clear()
 
+
+def test_status_active_then_finished(client: FlaskClient) -> None:
+    """Integration: status shows percent during active, then shows finished and history tail 100% after finish."""
+    from server.downloads import progress_data, progress_lock
+
+    # Seed an active update via hook
+    d_active = {
+        "status": "downloading",
+        "_percent_str": "37.5%",
+        "_downloaded_bytes_str": "3MiB",
+        "_total_bytes_estimate_str": "8MiB",
+        "_speed_str": "300KiB/s",
+        "_eta_str": "30s",
+    }
+    with progress_lock:
+        progress_data.clear()
+    _progress_downloading(d_active, "flow1")
+
+    # First GET should show percent present and status downloading
+    r1 = client.get("/api/status/flow1")
+    assert r1.status_code == 200
+    j1 = r1.get_json()
+    assert j1["status"] == "downloading"
+    assert str(j1.get("percent", "")).endswith("%")
+
+    # Simulate finished
+    d_finished = {"status": "finished", "filename": "video.mp4"}
+    _progress_finished(d_finished, "flow1")
+
+    # Second GET should show finished and history tail percent 100%
+    r2 = client.get("/api/status/flow1")
+    assert r2.status_code == 200
+    j2 = r2.get_json()
+    assert j2["status"] == "finished"
+    hist = j2.get("history") or []
+    assert isinstance(hist, list) and len(hist) >= 1
+    assert str(hist[-1].get("percent", "")) in ("100%", "100.0%", "100")
+
+    # Cleanup
+    with progress_lock:
+        progress_data.clear()
+
     # Test full progress history snapshots
     # Apply two updates
-    _progress_downloading(d1, "histH1")
-    _progress_downloading(d2, "histH1")
+    h1 = {
+        "status": "downloading",
+        "_percent_str": "10%",
+        "_downloaded_bytes_str": "1MiB",
+        "_total_bytes_estimate_str": "10MiB",
+        "_speed_str": "100KiB/s",
+        "_eta_str": "90s",
+    }
+    h2 = {
+        "status": "downloading",
+        "_percent_str": "20%",
+        "_downloaded_bytes_str": "2MiB",
+        "_total_bytes_estimate_str": "10MiB",
+        "_speed_str": "200KiB/s",
+        "_eta_str": "40s",
+    }
+    _progress_downloading(h1, "histH1")
+    _progress_downloading(h2, "histH1")
     resp = client.get("/api/status/histH1")
     assert resp.status_code == 200
     info = resp.get_json()
@@ -187,8 +250,8 @@ def test_historical_rate_tracking(client: FlaskClient) -> None:
     # Verify history is a list of two snapshots
     assert isinstance(history, list) and len(history) == 2
     # Check first and second entries
-    assert history[0]["percent"] == d1["_percent_str"]
-    assert history[1]["percent"] == d2["_percent_str"]
+    assert history[0]["percent"] == h1["_percent_str"]
+    assert history[1]["percent"] == h2["_percent_str"]
     # Each snapshot should have a timestamp
     assert all("timestamp" in entry for entry in history)
     with progress_lock:

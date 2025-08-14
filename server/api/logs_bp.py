@@ -41,8 +41,8 @@ def logs() -> Response:
     recent = request.args.get("recent", "false").lower() in ("1", "true", "yes")
 
     project_root = Path(__file__).parent.parent.parent
-    env_log = os.getenv("LOG_FILE")
-    # Centralized resolution preserves legacy behavior
+    env_log = os.getenv("LOG_PATH")
+    # Centralized resolution using LOG_PATH
     log_path = resolve_log_path(project_root, env_log, None, purpose="read")
 
     if not log_path.exists() or not log_path.is_file():

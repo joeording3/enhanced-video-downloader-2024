@@ -106,7 +106,11 @@ def analyze_eslint() -> dict[str, Any]:
         ignores = [s.strip().strip("'\"") for s in re.split(r",\s*", items) if s.strip()]
     file_ignores = []
     if ignore_file.exists():
-        file_ignores = [line.strip() for line in _read_text(ignore_file).splitlines() if line.strip() and not line.strip().startswith("#")]
+        file_ignores = [
+            line.strip()
+            for line in _read_text(ignore_file).splitlines()
+            if line.strip() and not line.strip().startswith("#")
+        ]
     # Detect any global rule disables: e.g., rules: { 'no-console': 'off' } (not always bad but noteworthy)
     globally_disabled_rules = re.findall(r"['\"]([\w-]+)['\"]\s*:\s*['\"]off['\"]", text)
     return {"ignorePatterns": ignores, "eslintignore": file_ignores, "rules_off": globally_disabled_rules}
@@ -117,11 +121,7 @@ def walk_sources() -> list[Path]:
     matched: list[Path] = []
     for dp, dns, fns in os_walk(ROOT):
         dns[:] = [d for d in dns if d not in ex_dirs]
-        matched.extend(
-            Path(dp) / fn
-            for fn in fns
-            if fn.endswith((".py", ".ts", ".tsx", ".js"))
-        )
+        matched.extend(Path(dp) / fn for fn in fns if fn.endswith((".py", ".ts", ".tsx", ".js")))
     return matched
 
 
@@ -166,7 +166,9 @@ def main() -> int:
     lines: list[str] = []
     lines.append("# Ignores/Excludes Audit\n")
     lines.append("\n## Ruff (Python)\n")
-    lines.append(f"- Global ignores: {len(ruff_info.get('global_ignores', []))} -> {ruff_info.get('global_ignores', [])}\n")
+    lines.append(
+        f"- Global ignores: {len(ruff_info.get('global_ignores', []))} -> {ruff_info.get('global_ignores', [])}\n"
+    )
     if any(code in ruff_info.get("global_ignores", []) for code in ("D100", "ANN401")):
         lines.append("  - Warning: Global ignore contains documentation or typing rules. Prefer targeted fixes.\n")
     if ruff_info.get("per_file_ignores"):
@@ -211,7 +213,9 @@ def main() -> int:
     lines.append("- Prefer targeted, line-level suppressions with a short rationale over global ignores.\n")
     lines.append("- Avoid skipping entire files/directories except generated or third-party code.\n")
     lines.append("- Review per-file ignores that use wide globs (e.g., tests/**/*.py) and narrow when possible.\n")
-    lines.append("- Consider removing global D* docstring or typing rules from Ruff ignore; enforce via dedicated workflows.\n")
+    lines.append(
+        "- Consider removing global D* docstring or typing rules from Ruff ignore; enforce via dedicated workflows.\n"
+    )
 
     (REPORTS_DIR / "ignores_audit.md").write_text("".join(lines), encoding="utf-8")
 
@@ -221,5 +225,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-
-

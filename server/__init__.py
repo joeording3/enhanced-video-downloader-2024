@@ -112,12 +112,8 @@ def create_app(config: Config) -> Flask:
     project_root = Path(__file__).resolve().parent.parent
     default_log_path = str(project_root / "server_output.log")
 
-    # Ensure environment reflects the active log file path so UI and APIs can report it
-    # Only set when not explicitly provided by the environment
-    os.environ.setdefault("LOG_FILE", default_log_path)
-
-    # Initialize logging with file output; honor LOG_FILE env when provided
-    active_log_path_for_setup = os.getenv("LOG_FILE", default_log_path)
+    # Use LOG_PATH exclusively going forward
+    active_log_path_for_setup = os.getenv("LOG_PATH", default_log_path)
     setup_logging(config.get_value("log_level", "INFO"), active_log_path_for_setup)
 
     # Ensure Werkzeug request logs flow into our file logger instead of stderr
@@ -147,7 +143,7 @@ def create_app(config: Config) -> Flask:
                     port_for_log = get_server_port()
                 except Exception:
                     port_for_log = "unknown"
-            active_log_path = os.getenv("LOG_FILE", default_log_path)
+            active_log_path = os.getenv("LOG_PATH", default_log_path)
             app_logger.info(
                 f"Server application initialized for {host_for_log}:{port_for_log} | log_file={active_log_path}"
             )

@@ -21,6 +21,7 @@ from flask import Flask
 from server import create_app
 from server.config import Config
 from server.downloads import progress_data, progress_lock
+from server.downloads.resume import resume_all_incomplete_downloads
 from server.lock import cleanup_lock_file, create_lock_file, get_lock_file_path
 
 # Import port-finding utility from legacy module
@@ -410,6 +411,20 @@ def _run_flask_server(cfg: Config, host: str, port: int, lock_handle: TextIO) ->
     cleanup_lock_file(lock_handle)
     atexit.register(cleanup_lock_file, lock_handle)
     app = create_app(cfg)
+
+    # Optional: resume incomplete downloads on startup
+    try:
+        if bool(getattr(cfg, "resume_on_start", False)):
+            with app.app_context():
+                try:
+                    logger.info("RESUME_ON_START enabled: scanning for incomplete downloads...")
+                    result = resume_all_incomplete_downloads()
+                    logger.info("Resume on start result: %s", result.get("message", result))
+                except Exception:
+                    logger.exception("Error during resume on start")
+    except Exception:
+        # Do not block server startup on resume errors
+        logger.debug("Failed to evaluate resume_on_start flag", exc_info=True)
     # Emit a clear startup line to the configured log file
     with contextlib.suppress(Exception):
         logger.info(f"Server starting on {host}:{port}")

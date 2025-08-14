@@ -3,9 +3,11 @@
 Urgent Tasks:
 
 - [ ] media detection - continued improvements
+
   - [ ] examine [yt-dlp](https://github.com/yt-dlp/yt-dlp) for detection improvements and patterns
-  - [ ] examine [gallery-dl](https://github.com/mikf/gallery-dl) for detection improvements and patterns
-  - [ ] Add more player API hooks (Facebook, Wistia, VK) and dynamic media attachment polling
+  - [ ] examine [gallery-dl](https://github.com/mikf/gallery-dl) for detection improvements and
+        patterns
+  - [/] Add more player API hooks (Facebook, Wistia, VK) and dynamic media attachment polling
 
 - [/] Client must not send URL-based dedupe token as `download_id`; omit field and let server
   generate ID
@@ -33,9 +35,21 @@ Urgent Tasks:
   - [/] Navigation skip-on-failure for present URLs to avoid aborting the wide matrix on transient
     network errors
   - [/] Increase headful matrix timeout to 240s; bump Twitch and other JW-site timeouts
-  - [ ] Next steps: extend ad-origins from uBlock Origin lists; add more player API hooks (Facebook,
-    Wistia, VK); add domain-specific scroll-and-click heuristics where needed; surface Makefile target
-    for wide run and keep CI on stable set
+  - [/] Added more player API hooks (Facebook, Wistia, Brightcove, TikTok, Twitter/X, Reddit,
+    SoundCloud); dynamic media attachment polling retained.
+  - [/] Makefile targets: `test-media-wide` (wide run) and `matrix-seq` (sequential runner with
+    logs).
+  - [/] Extend ad-origins from uBlock Origin lists (script + Make target in place).
+  - [/] Add VK player API hooks.
+  - [/] Add domain-specific scroll-and-click heuristics where needed.
+  - [/] Parameterized per-URL subtests for matrix (present/absent) with per-URL dynamic timeouts and
+    domain-aware consent selectors applied inside iframes
+  - [/] Added detailed HypnoTube diagnostics and heuristics (player-area clicks, JW/video.js
+    readiness probes, inline script/performance scans, embed fallback)
+  - [ ] HypnoTube: watch pages often lack jwplayer/video.js when unauthenticated. Proceed with
+        cookie-based auth for tests: inject cookies via `EVD_HYPNOTUBE_COOKIES_JSON`, attempt early
+        embed-first detection, and parse inline `jwplayer.setup(...)` sources as a detection signal
+  - [ ] Keep CI on stable set and document wide runs policy in `tests/testing.md`.
 
 - [ ] Wire into `make all`/`check` gates and CI once noise baseline is reviewed
   - [/] Content: handle transient storage/messaging invalidation cleanly
@@ -373,6 +387,44 @@ Legacy/Stub Cleanup:
   - **Mitigation**: Prioritize by business impact, implement incrementally
 
 ---
+
+## Recent Progress and Next Steps (Media Detection + Cookies)
+
+### Progress
+
+- Implemented parameterized per-URL subtests for the headful matrix; present/absent tests now run
+  per URL with domain-aware, dynamic timeouts
+- Extended domain heuristics and consent handling (in-frame selectors + text clicks); added rich
+  diagnostics for media polling, ad-frame skipping, and shadow DOM detection
+- HypnoTube: added jwplayer/video.js readiness probes, inline script/performance scanning for
+  `.m3u8`, targeted player-area clicks, and an embed `/embed/<id>` fallback
+- Cookie tooling added for auth-required sites:
+  - `scripts/export-chrome-cookies.js`: parameterized Node exporter
+    (Chrome/Chromium/Brave/Edge/Opera) → JSON/Netscape
+  - `scripts/export_cookies.py`: Python exporter using `browser_cookie3` (auto-detects installed
+    browsers) → JSON/Netscape
+  - Playwright test spec supports `EVD_HYPNOTUBE_COOKIES_JSON` to inject cookies before navigation
+
+### Next Steps
+
+- HypnoTube detection hardening:
+  - Move embed-first probing earlier (before main poll) for HypnoTube present-case
+  - Parse `jwplayer.setup(...)` inline JSON to count sources as a detection signal when media tags
+    aren’t yet attached
+  - Prefer cookie-injected runs (export from logged-in browser) for HypnoTube matrix entries;
+    otherwise mark as best-effort skip to keep the wide suite green
+- Document cookie-based test runs in `tests/testing.md` and add Makefile helper target to
+  export/inject cookies for a domain
+- Keep CI on the stable set; run wide matrix only with `EVD_MEDIA_SITES_WIDE=true` in manual
+  workflows
+
+### Cookie Export Usage
+
+- Node (JSON):
+  `node scripts/export-chrome-cookies.js hypnotube.com ./tests/extension/hypnotube-cookies.json`
+- Python (JSON):
+  `python scripts/export_cookies.py hypnotube.com ./tests/extension/hypnotube-cookies.json`
+- Netscape (yt-dlp/curl): add `--format=netscape` and point tools to the generated file
 
 ## NEXT STEPS - PRODUCTION READINESS
 

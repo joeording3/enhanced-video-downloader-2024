@@ -17,10 +17,9 @@ on video pages or through the extension popup.
   reordering controls, collapsible Active/Queued sections, expandable error details with contextual
   help links; clear or toggle history
 - Configurable download directory & server port (via CLI, popup or options page)
-- Rolling port discovery (default <PORT_RANGE_START>–<PORT_RANGE_END> (see server/constants.py))
-  with per-port timeouts, caching of the last successful port for faster reconnection, an orange
-  '...' badge indicator during port scanning, network connectivity monitoring with online/offline
-  notifications, and automatic server port rediscovery on network reconnects, and persistent
+- Rolling port discovery with per-port timeouts, caching of the last successful port for faster
+  reconnection, a small "SCN" badge indicator during port scanning, network connectivity monitoring
+  with online/offline notifications, automatic rediscovery on network reconnects, and a persistent
   download queue across sessions
 - Download history & live progress updates (including speed, ETA, and total size)
 - Debug & verbose log display in options page
@@ -173,6 +172,40 @@ Enhanced Video Downloader/
 Note: Test suite and Playwright E2E audit details now live in `tests/testing.md` (Test Audit &
 Coverage Metrics). The old standalone audit reports have been removed.
 
+#### E2E Media Detection Matrix
+
+Run the Playwright-based real-site checks headfully. By default a small, stable list is used.
+
+```bash
+# Stable set (default)
+make test-playwright
+
+# Wide run over the full list (more flaky; opt-in)
+make test-media-wide
+
+# Filter or single-URL incremental runs
+EVD_MEDIA_URL="https://vimeo.com/76979871" make test-playwright
+EVD_MEDIA_FILTER=vimeo make test-playwright
+
+# Sequential matrix runner with summarized results
+make matrix-seq
+```
+
+The runner emits detailed diagnostic logs:
+
+- [MATRIX][DBG] clicked selector=... when attempting domain-specific or generic play controls
+- [MATRIX][DBG] frame='...' media count=... playing=... media state summaries
+- [MATRIX][DBG] postMessage triggered ... when invoking iframe player APIs (YouTube, Vimeo,
+  Dailymotion, Twitch, JWPlayer, Streamable, Wistia, Brightcove, etc.)
+- [MATRIX][DBG] networkidle ... load-state waits and timeouts
+- [MATRIX][DBG] poll iter=... detection polling iterations
+
+Consent overlays and ad frames are handled via `tests/extension/media-domains.json` (for
+`consent_selectors`) and `tests/extension/ad-origins.json`.
+
+Additional player APIs triggered: Facebook embeds, Wistia, Brightcove, TikTok, Twitter/X, Reddit,
+SoundCloud (best-effort), alongside YouTube, Vimeo, Dailymotion, Twitch, JWPlayer, Streamable.
+
 ### CI/CD Documentation
 
 - **[ci/.github/copilot-instructions.md](ci/.github/copilot-instructions.md)** - GitHub Copilot
@@ -323,7 +356,7 @@ CLI logging/output hygiene
 
 - CLI logs are plain text and printed to stderr to keep stdout clean for command output.
 - Default CLI verbosity is WARNING; pass `--verbose` to see INFO/DEBUG.
-- Server and Gunicorn logs are written as NDJSON to the active `LOG_FILE` path; when starting via
+- Server and Gunicorn logs are written as NDJSON to the active `LOG_PATH`; when starting via
   the CLI in Gunicorn mode, `accesslog` and `errorlog` are routed to that same file by default.
 
 ### Using Docker
@@ -369,6 +402,20 @@ CLI logging/output hygiene
 3. Click "Load unpacked" and select the project directory
 4. Click the extension icon in Chrome's toolbar to access settings and controls
 
+### Switching server ports reliably
+
+- When you change the server port in the Options page and click Save, the extension now:
+  - Caches the new port immediately so the background service worker uses it for subsequent requests
+  - Attempts to save settings to the new port first, falling back once to the previous port if
+    needed
+  - Posts only non-empty fields to the server, avoiding overwriting server defaults with blanks
+  - If any Options fields are left empty locally (e.g., first run), it fetches `/api/config` after a
+    successful save and populates only the missing fields without overwriting what you entered
+
+If the server is running but the extension still cannot connect after changing ports, open the
+extension service worker console and check for a recent `[BG Logic] Error in handleSetConfig:`
+message for specifics (network error vs server response).
+
 ## Extension Features
 
 ### Popup Interface
@@ -391,9 +438,9 @@ CLI logging/output hygiene
 - **Theme Toggle**: Switch between light and dark themes
 - **Log Display**: View server logs with different verbosity levels
 - **Log File Path**: The log viewer reads from the server's current log file path exposed via
-  `/api/config` as `log_file`. If `LOG_FILE` is not set in the environment, the server sets it at
+  `/api/config` as `log_file`. If `LOG_PATH` is not set in the environment, the server uses a default at
   startup to a stable default path `server_output.log` in the project root. You can override this
-  path from the Options page (Log File field) or by setting `LOG_FILE` in your shell or `.env`. Logs
+  path from the Options page (Log File field) or by setting `LOG_PATH` in your shell or `.env`. Logs
   are emitted in structured NDJSON format (one JSON object per line) so you can parse and sort
   easily. Request logs include optional `start_ts` and `duration_ms` fields for latency analysis.
   When running under Gunicorn via the CLI helpers, Gunicorn's access and error logs are also wired
@@ -401,7 +448,7 @@ CLI logging/output hygiene
 
   Log path precedence:
 
-  - `LOG_FILE` environment variable (if set)
+  - `LOG_PATH` environment variable (if set)
   - Config value `log_path` (for management operations like clearing/archiving)
   - Default fallback: `<project_root>/server_output.log` for reading logs; an improbable placeholder
     name for management if neither env nor config is provided
@@ -427,9 +474,30 @@ CLI logging/output hygiene
 - **Smart Injection (optional)**: When enabled in Options, the global button isn’t injected unless a
   downloadable video is detected; individual per-video buttons are injected near detected media.
 
+#### yt-dlp Settings in Options
+
+These map directly to the server’s `yt_dlp_options` and apply to new downloads:
+
+- **Video format**: `yt_dlp_options.format` (e.g., `bestvideo+bestaudio/best`, `mp4`)
+- **Output container (merge format)**: `yt_dlp_options.merge_output_format` (`mp4`, `mkv`, `webm`)
+- **Use browser cookies**: `yt_dlp_options.cookiesfrombrowser` (first item of list; e.g.,
+  `["chrome"]`)
+- **Continue partial downloads**: `yt_dlp_options.continuedl` (boolean)
+- **Concurrent fragments**: `yt_dlp_options.concurrent_fragments` (1–16)
+- **Fragment retries**: `yt_dlp_options.fragment_retries` (0–50)
+
+Notes:
+
+- Browser cookies default to Chrome. Switch to Firefox/Edge/Brave/etc. if that’s your primary
+  browser.
+- The server writes a consolidated download history JSON. By default it lives at
+  `<download_dir>/history.json`; you can override the path in Options (History File) or via the
+  `HISTORY_FILE` environment variable. Per-video `.info.json` metadata is ingested and then removed.
+
 ### Background Features
 
-- **Automatic Server Discovery**: Finds server on ports 5001-5099 with intelligent caching
+- **Automatic Server Discovery**: Uses cached/configured port first; scans only if missing. Caches
+  the discovered port for future startups.
 - **Network Monitoring**: Detects network changes and reconnects automatically
 - **Persistent Queue**: Download queue survives browser restarts
 - **Notification System**: Desktop notifications for download completion and errors
@@ -465,10 +533,11 @@ the popup. Watch progress live in the popup; completed downloads move to history
 
 ### History & Resume
 
-View past downloads in History (filter by status, domain). History entries now include full metadata
-extracted from yt-dlp's .info.json for detailed insights. Use Resume partials in options to recover
-interrupted tasks. For galleries, the server invokes `gallery-dl` with continuation enabled and the
-configured download directory, attempting to resume previously started gallery downloads.
+View past downloads in History (filter by status, domain). History is stored in a single JSON file
+at `<download_dir>/history.json` by default (configurable via Options → History File or `HISTORY_FILE`).
+Entries include full metadata ingested from yt-dlp's `.info.json`. Use Resume partials in options to
+recover interrupted tasks. For galleries, the server invokes `gallery-dl` with continuation enabled
+and the configured download directory, attempting to resume previously started gallery downloads.
 
 ## Configuration
 
@@ -487,16 +556,16 @@ and includes:
 - `console_log_level`: String, controls console output verbosity. Can be `"debug"`, `"info"`,
   `"warning"`, `"error"`, or `"critical"`. Default: `"warning"` (shows only warnings and errors).
 - `log_file`: File path used by the server's log endpoints. If not provided, the server sets
-  `LOG_FILE` at startup to `<project_root>/server_output.log` so the Options page can display the
-  active path. You can update it via the Options page or by setting `LOG_FILE` in the environment
+  the server uses `<project_root>/server_output.log` by default so the Options page can display the
+  active path. You can update it via the Options page or by setting `LOG_PATH` in the environment
   (persisted to `.env` when changed via the API/CLI).
 
 Log path resolution details
 
-- Read operations (`GET /api/logs`): In a normal repo, `LOG_FILE` is honored if set; otherwise a
+- Read operations (`GET /api/logs`): In a normal repo, `LOG_PATH` is honored if set; otherwise a
   placeholder path triggers a 404 until configured. In tests (no `pyproject.toml`), reads default to
   `<project_root>/server_output.log`.
-- Manage operations (`POST /api/logs/clear`): `LOG_FILE` takes precedence; if not set, the config
+- Manage operations (`POST /api/logs/clear`): `LOG_PATH` takes precedence; if not set, the config
   `log_path` is used; if neither is available, an improbable placeholder path is used.
 - `YTDLP_CONCURRENT_FRAGMENTS`: Integer, controls yt-dlp's per-download fragment concurrency for
   HLS/DASH streams. Valid range: 1–16. Default: 4. Higher values can improve throughput on fast

@@ -183,7 +183,9 @@ describe("Popup Script Tests", () => {
   describe("Download Status Rendering", () => {
     it("should render download status", () => {
       const status = {
-        active: { "download-1": { status: "downloading", progress: 75 } },
+        active: {
+          "download-1": { status: "downloading", progress: 75, url: "http://example.com/v1" },
+        },
         queue: ["download-2", "download-3"],
       };
 

@@ -54,6 +54,8 @@ def save_extraction_rules(rules: list[dict[str, Any]]) -> bool:
     try:
         with tmp.open("w", encoding="utf-8") as f:
             json.dump(rules, f, indent=2)
+            # Ensure Prettier-compliant newline at EOF
+            f.write("\n")
             f.flush()
         tmp.replace(RULES_PATH)
     except Exception:

@@ -81,6 +81,14 @@ body.dark-theme .btn--secondary {
   --btn-hover: var(--error-hover);
 }
 
+/* Destructive emphasis */
+.btn--danger {
+  --btn-bg: var(--error);
+  --btn-color: var(--text-inverse);
+  --btn-hover: color-mix(in srgb, var(--error), black 10%);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--error), black 25%);
+}
+
 .btn--warning {
   --btn-bg: var(--warning);
   --btn-color: var(--text-inverse-dark);

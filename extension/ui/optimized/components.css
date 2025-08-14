@@ -69,10 +69,41 @@ body.dark-theme .btn--secondary {
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 1px 0 rgb(0 0 0 / 0.4);
 }
 
+.btn--success {
+  --btn-bg: var(--success);
+  --btn-color: var(--text-inverse);
+  --btn-hover: var(--success-hover);
+}
+
+.btn--error {
+  --btn-bg: var(--error);
+  --btn-color: var(--text-inverse);
+  --btn-hover: var(--error-hover);
+}
+
+/* Destructive emphasis */
+.btn--danger {
+  --btn-bg: var(--error);
+  --btn-color: var(--text-inverse);
+  --btn-hover: color-mix(in srgb, var(--error), black 10%);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--error), black 25%);
+}
+
+.btn--warning {
+  --btn-bg: var(--warning);
+  --btn-color: var(--text-inverse-dark);
+  --btn-hover: var(--warning-hover);
+}
+
 /* Button Sizes */
 .btn--small {
-  padding: calc(var(--button-padding-y) - 2px) calc(var(--button-padding-x) - 4px);
+  padding: calc(var(--button-padding-y) - 4px) calc(var(--button-padding-x) - 8px);
   font-size: var(--font-size-sm);
+}
+
+.btn--large {
+  padding: calc(var(--button-padding-y) + 4px) calc(var(--button-padding-x) + 4px);
+  font-size: var(--font-size-lg);
 }
 
 /* ===== INPUT COMPONENTS ===== */
@@ -120,21 +151,137 @@ body.dark-theme .btn--secondary {
   /* Number input specific styles */
 }
 
+.input--select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right var(--space-sm) center;
+  background-repeat: no-repeat;
+  background-size: 16px 12px;
+  padding-right: var(--space-xl);
+}
+
+.input--textarea {
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.5;
+}
+
 /* Input Sizes */
+.input--small {
+  padding: calc(var(--control-padding-y) - 2px) calc(var(--control-padding-x) - 4px);
+  font-size: var(--font-size-sm);
+}
+
+.input--large {
+  padding: calc(var(--control-padding-y) + 4px) calc(var(--control-padding-x) + 4px);
+  font-size: var(--font-size-lg);
+}
 
 /* ===== STATUS COMPONENTS ===== */
 
 /* Status Indicator */
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+}
+
+.status-indicator::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  /* GPU acceleration */
+  transform: translateZ(0);
+  will-change: transform;
+  box-shadow: 0 0 0 2px rgb(0 0 0 / 0.08);
+}
+
+.status-indicator.pending::before {
+  background-color: var(--status-pending);
+  animation: pulse-gpu 2s infinite;
+}
+
+.status-indicator.complete::before {
+  background-color: var(--status-complete);
+}
+
+.status-indicator.error::before {
+  background-color: var(--status-error);
+}
+
+.status-indicator.skipped::before {
+  background-color: var(--status-skipped);
+}
 
 /* Status Badge */
+.status-badge {
+  display: inline-block;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  border: 1px solid transparent;
+  /* GPU acceleration */
+  transform: translateZ(0);
+  will-change: transform;
+  line-height: var(--line-height-tight);
+}
+
+.status-badge.pending {
+  background-color: var(--status-pending);
+  color: var(--text-inverse-dark);
+  border-color: color-mix(in oklab, var(--status-pending), black 20%);
+}
+
+.status-badge.complete {
+  background-color: var(--status-complete);
+  color: var(--text-inverse);
+  border-color: color-mix(in oklab, var(--status-complete), black 20%);
+}
+
+.status-badge.error {
+  background-color: var(--status-error);
+  color: var(--text-inverse);
+  border-color: color-mix(in oklab, var(--status-error), black 20%);
+}
+
+.status-badge.skipped {
+  background-color: var(--status-skipped);
+  color: var(--text-inverse);
+  border-color: color-mix(in oklab, var(--status-skipped), black 20%);
+}
 
 /* ===== UTILITY CLASSES ===== */
 
 /* Button Icon */
+.btn-icon {
+  font-size: var(--font-size-lg);
+}
 
 /* Text Utilities */
+.text-primary {
+  color: var(--text-color);
+}
+
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.text-inverse {
+  color: var(--text-inverse);
+}
 
 /* Spacing Utilities */
+.spacing-xs {
+  margin: var(--space-xs);
+}
 
 .spacing-sm {
   margin: var(--space-sm);
@@ -142,6 +289,14 @@ body.dark-theme .btn--secondary {
 
 .spacing-md {
   margin: var(--space-md);
+}
+
+.spacing-lg {
+  margin: var(--space-lg);
+}
+
+.spacing-xl {
+  margin: var(--space-xl);
 }
 
 /* ===== GPU-ACCELERATED ANIMATIONS ===== */

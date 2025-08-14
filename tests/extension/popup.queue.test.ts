@@ -63,7 +63,7 @@ describe("Popup Queue Controls", () => {
   it("renderDownloadStatus resume button calls resumeDownload for paused items", () => {
     // Simulate paused active item
     popup.renderDownloadStatus({
-      active: { idResume: { status: "paused", progress: 0 } },
+      active: { idResume: { status: "paused", progress: 0, url: "http://example.com/video2" } },
       queue: [],
     });
     const resumeBtn = document.querySelector<HTMLButtonElement>("button.resume-button");

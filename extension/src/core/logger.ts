@@ -43,21 +43,37 @@ export class CentralizedLogger implements Logger {
     if (typeof chrome !== "undefined" && (chrome as any).runtime) {
       this.onLog(entry => {
         const prefix = `[${entry.context.component}]`;
-        const timestamp = entry.timestamp.toISOString();
         const message = `${prefix} ${entry.message}`;
 
+        const hasData = typeof entry.data !== "undefined";
         switch (entry.level) {
           case "debug":
-            console.debug(message, entry.data);
+            if (hasData) {
+              console.debug(message, entry.data);
+            } else {
+              console.debug(message);
+            }
             break;
           case "info":
-            console.info(message, entry.data);
+            if (hasData) {
+              console.info(message, entry.data);
+            } else {
+              console.info(message);
+            }
             break;
           case "warn":
-            console.warn(message, entry.data);
+            if (hasData) {
+              console.warn(message, entry.data);
+            } else {
+              console.warn(message);
+            }
             break;
           case "error":
-            console.error(message, entry.data);
+            if (hasData) {
+              console.error(message, entry.data);
+            } else {
+              console.error(message);
+            }
             break;
         }
       });

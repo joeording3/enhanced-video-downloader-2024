@@ -10,7 +10,7 @@ chrome.storage.local.get("serverConfig", res => {
   try {
     logger.setLevel(String(level).toLowerCase() as any);
   } catch {
-    // ignore
+    /* ignore */
   }
 });
 /**
@@ -18,8 +18,13 @@ chrome.storage.local.get("serverConfig", res => {
  * Handles popup UI interactions and server communication
  */
 
-import { Theme, ServerConfig, HistoryEntry } from "./types";
-import { fetchHistory, renderHistoryItems, removeHistoryItemAndNotify, removeHistoryItemByUrlAndNotify } from "./history";
+import { Theme, ServerConfig, HistoryEntry, ActiveDownloadMap, QueuedDetailsMap } from "./types";
+import {
+  fetchHistory,
+  renderHistoryItems,
+  removeHistoryItemAndNotify,
+  removeHistoryItemByUrlAndNotify,
+} from "./history";
 
 /**
  * Download status interface for the popup UI
@@ -38,9 +43,9 @@ export interface DownloadStatus {
 let statusTimeout: ReturnType<typeof setTimeout> | null = null;
 let dragSrcIndex: number | null = null;
 let lastDownloadStatusData: {
-  active: Record<string, any>;
+  active: ActiveDownloadMap;
   queue: string[];
-  queuedDetails?: Record<string, { url?: string; title?: string; filename?: string }>;
+  queuedDetails?: QueuedDetailsMap;
 } | null = null;
 
 /**
@@ -238,19 +243,24 @@ export function loadAndRenderHistory(
 }
 
 // Load configuration from server or fallback to local storage
-export async function loadConfig(): Promise<any> {
+export async function loadConfig(): Promise<ServerConfig | Record<string, unknown> | undefined> {
   return new Promise(resolve => {
-    chrome.runtime.sendMessage({ type: "getConfig" }, (response: any) => {
-      if (!chrome.runtime.lastError && response && (response.data || response.serverConfig)) {
-        // Normalize to .data (background returns { status, data })
-        const cfg = response.data || response.serverConfig;
-        resolve(cfg);
-      } else {
-        chrome.storage.local.get("extensionConfig", (result: any) => {
-          resolve(result.extensionConfig);
-        });
+    chrome.runtime.sendMessage(
+      { type: "getConfig" },
+      (response: { data?: ServerConfig; serverConfig?: ServerConfig } | undefined) => {
+        if (!chrome.runtime.lastError && response && (response.data || response.serverConfig)) {
+          const cfg = response.data || response.serverConfig;
+          resolve(cfg);
+        } else {
+          chrome.storage.local.get(
+            "extensionConfig",
+            (result: { extensionConfig?: ServerConfig } | undefined) => {
+              resolve(result?.extensionConfig);
+            }
+          );
+        }
       }
-    });
+    );
   });
 }
 
@@ -259,19 +269,25 @@ export async function updateDownloadDirDisplay(): Promise<void> {
   const el = document.getElementById("download-dir-display");
   if (!el) return;
   return new Promise(resolve => {
-    chrome.runtime.sendMessage({ type: "getConfig" }, (response: any) => {
-      if (!chrome.runtime.lastError && response && (response.data || response.serverConfig)) {
-        const cfg = response.data || response.serverConfig;
-        el.textContent = "Saving to: " + (cfg?.download_dir || "");
-        resolve();
-      } else {
-        chrome.storage.local.get("extensionConfig", (result: any) => {
-          const cfg = result.extensionConfig || {};
-          el.textContent = "Saving to: " + (cfg.download_dir || "");
+    chrome.runtime.sendMessage(
+      { type: "getConfig" },
+      (response: { data?: ServerConfig; serverConfig?: ServerConfig } | undefined) => {
+        if (!chrome.runtime.lastError && response && (response.data || response.serverConfig)) {
+          const cfg = response.data || response.serverConfig;
+          (el as HTMLElement).textContent = "Saving to: " + (cfg?.download_dir || "");
           resolve();
-        });
+        } else {
+          chrome.storage.local.get(
+            "extensionConfig",
+            (result: { extensionConfig?: ServerConfig } | undefined) => {
+              const cfg = result?.extensionConfig || ({} as ServerConfig);
+              (el as HTMLElement).textContent = "Saving to: " + (cfg.download_dir || "");
+              resolve();
+            }
+          );
+        }
       }
-    });
+    );
   });
 }
 
@@ -280,13 +296,16 @@ export async function updatePortDisplay(): Promise<void> {
   const el = document.getElementById("server-port-display");
   if (!el) return;
   return new Promise(resolve => {
-    chrome.runtime.sendMessage({ type: "getConfig" }, (response: any) => {
-      if (!chrome.runtime.lastError && response && (response.data || response.serverConfig)) {
-        const cfg = response.data || response.serverConfig;
-        el.textContent = "Server Port: " + (cfg?.server_port ?? "");
+    chrome.runtime.sendMessage(
+      { type: "getConfig" },
+      (response: { data?: ServerConfig; serverConfig?: ServerConfig } | undefined) => {
+        if (!chrome.runtime.lastError && response && (response.data || response.serverConfig)) {
+          const cfg = response.data || response.serverConfig;
+          (el as HTMLElement).textContent = "Server Port: " + (cfg?.server_port ?? "");
+        }
+        resolve();
       }
-      resolve();
-    });
+    );
   });
 }
 
@@ -294,9 +313,9 @@ export async function updatePortDisplay(): Promise<void> {
 export function showConfigErrorIfPresent(): void {
   const el = document.getElementById("config-error-display");
   if (!el) return;
-  chrome.storage.local.get("configError", (result: any) => {
-    if (result.configError) {
-      el.textContent = "Configuration Error: " + result.configError;
+  chrome.storage.local.get("configError", (result: { configError?: string } | undefined) => {
+    if (result?.configError) {
+      (el as HTMLElement).textContent = "Configuration Error: " + result.configError;
       el.classList.remove("hidden");
       el.classList.add("evd-visible");
     }
@@ -497,9 +516,9 @@ export function handleDragEnd(e: DragEvent): void {
 
 // Render current downloads and queued items
 export async function renderDownloadStatus(data: {
-  active: Record<string, any>;
+  active: ActiveDownloadMap;
   queue: string[];
-  queuedDetails?: Record<string, { url?: string; title?: string; filename?: string }>;
+  queuedDetails?: QueuedDetailsMap;
 }): Promise<void> {
   lastDownloadStatusData = data;
   const container = document.getElementById("download-status");
@@ -526,21 +545,21 @@ export async function renderDownloadStatus(data: {
       const normalized = String(item.status || "").toLowerCase();
       const icon = document.createElement("span");
       icon.className = "status-icon";
-      // Choose icon per status
+      // Choose status icon (use whitelisted symbols; see config/emoji_whitelist.json)
       if (normalized === "queued" || normalized === "pending" || normalized === "waiting") {
-        icon.textContent = "🔄"; // refresh icon for queued/pending
+        icon.textContent = "⬇"; // allowed
       } else if (normalized === "downloading") {
-        icon.textContent = "⬇"; // thick down arrow for downloading
+        icon.textContent = "⬇️"; // allowed with variation selector
       } else if (normalized === "paused") {
-        icon.textContent = "🔄"; // reuse refresh for paused
+        icon.textContent = "P"; // ASCII for paused (whitelist does not include a specific paused symbol)
       } else if (["success", "complete", "completed", "done"].includes(normalized)) {
-        icon.textContent = "✔"; // check for completed
+        icon.textContent = "✔"; // allowed
       } else if (["canceled", "cancelled"].includes(normalized)) {
-        icon.textContent = "✖"; // thick X for canceled
+        icon.textContent = "✖"; // allowed
       } else if (["error", "failed", "fail"].includes(normalized)) {
-        icon.textContent = "⚠"; // warning triangle for error
+        icon.textContent = "⚠"; // allowed
       } else {
-        icon.textContent = "🔄"; // default
+        icon.textContent = ".";
       }
       icon.setAttribute("aria-hidden", "true");
       li.appendChild(icon);
@@ -582,7 +601,7 @@ export async function renderDownloadStatus(data: {
       // Add a cancel button per entry; enable only for queued/active/paused
       const cancelBtn = document.createElement("button");
       cancelBtn.className = "btn btn--secondary btn--small cancel-button";
-      cancelBtn.textContent = "✖"; // thick X
+      cancelBtn.textContent = "X";
       cancelBtn.title = "Cancel";
       cancelBtn.setAttribute("aria-label", "Cancel");
       if (normalized === "queued") {
@@ -622,7 +641,7 @@ export async function renderDownloadStatus(data: {
       if (normalized === "downloading") {
         const pauseBtn = document.createElement("button");
         pauseBtn.className = "btn btn--secondary btn--small pause-button";
-        pauseBtn.textContent = "⏸";
+        pauseBtn.textContent = "Pause";
         pauseBtn.title = "Pause";
         pauseBtn.setAttribute("aria-label", "Pause");
         pauseBtn.addEventListener("click", e => {
@@ -650,7 +669,7 @@ export async function renderDownloadStatus(data: {
       if (["error", "failed", "fail", "canceled", "cancelled"].includes(normalized)) {
         const retryBtn = document.createElement("button");
         retryBtn.className = "btn btn--secondary btn--small retry-button";
-        retryBtn.textContent = "🔄"; // Refresh icon for retry
+        retryBtn.textContent = "Retry";
         retryBtn.title = "Retry";
         retryBtn.setAttribute("aria-label", "Retry");
         retryBtn.addEventListener("click", e => {
@@ -943,13 +962,12 @@ export async function initPopup(): Promise<void> {
   }
 
   // Helper to send a message to the active tab's content script
-  const sendToActiveTab = (message: any, callback?: (response: any) => void): void => {
+  const sendToActiveTab = (message: unknown, callback?: (response: unknown) => void): void => {
     try {
       chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
         const tabId = tabs && tabs[0] && tabs[0].id;
         if (tabId !== undefined) {
-          chrome.tabs.sendMessage(tabId, message, resp => {
-            // Swallow lastError; content script may not be injected on internal pages
+          chrome.tabs.sendMessage(tabId, message as any, resp => {
             const hasError = Boolean(chrome.runtime && (chrome.runtime as any).lastError);
             if (callback) callback(resp);
           });
@@ -970,8 +988,10 @@ export async function initPopup(): Promise<void> {
     // Initialize label based on active tab's per-domain state
     try {
       sendToActiveTab({ type: "getButtonVisibility" }, resp => {
-        if (resp && resp.success) {
-          toggleBtn.textContent = resp.hidden ? "SHOW" : "HIDE";
+        type VisibilityResp = { success?: boolean; hidden?: boolean };
+        const r = (resp || {}) as VisibilityResp;
+        if (r && r.success) {
+          toggleBtn.textContent = r.hidden ? "SHOW" : "HIDE";
         }
       });
     } catch {
@@ -998,9 +1018,16 @@ export async function initPopup(): Promise<void> {
   }
 
   // Initialize download status
-  chrome.runtime.sendMessage({ type: "getQueue" }, (response: any) => {
-    renderDownloadStatus(response || { active: {}, queue: [] });
-  });
+  chrome.runtime.sendMessage(
+    { type: "getQueue" },
+    (
+      response:
+        | { active: ActiveDownloadMap; queue: string[]; queuedDetails?: QueuedDetailsMap }
+        | undefined
+    ) => {
+      renderDownloadStatus(response || { active: {}, queue: [] });
+    }
+  );
 
   // --- History wiring (pagination + live updates) ---
   const historyListEl = document.getElementById("download-history") as HTMLElement | null;
@@ -1064,18 +1091,27 @@ export async function initPopup(): Promise<void> {
   // Initial unified render will call fetchHistory via renderDownloadStatus when data arrives
 
   // Set up message listeners
-  chrome.runtime.onMessage.addListener((msg: any) => {
-    if (msg.type === "downloadStatusUpdate") {
-      void renderDownloadStatus(msg.data);
-    } else if (msg.type === "queueUpdated") {
-      void renderDownloadStatus({ active: msg.active, queue: msg.queue });
-    } else if (msg.type === "historyUpdated") {
-      // Re-render unified list using latest queue/active state
-      if (lastDownloadStatusData) void renderDownloadStatus(lastDownloadStatusData);
-    } else if (msg.type === "serverStatusUpdate") {
-      updatePopupServerStatus(msg.status);
+  chrome.runtime.onMessage.addListener(
+    (msg: {
+      type: string;
+      data?: { active: ActiveDownloadMap; queue: string[]; queuedDetails?: QueuedDetailsMap };
+      status?: "connected" | "disconnected";
+    }) => {
+      if (msg.type === "downloadStatusUpdate" && msg.data) {
+        void renderDownloadStatus(msg.data);
+      } else if (msg.type === "queueUpdated" && msg.data) {
+        void renderDownloadStatus({
+          active: msg.data.active,
+          queue: msg.data.queue,
+          queuedDetails: msg.data.queuedDetails,
+        });
+      } else if (msg.type === "historyUpdated") {
+        if (lastDownloadStatusData) void renderDownloadStatus(lastDownloadStatusData);
+      } else if (msg.type === "serverStatusUpdate" && msg.status) {
+        updatePopupServerStatus(msg.status);
+      }
     }
-  });
+  );
 }
 
 // Initialize popup when DOM is ready

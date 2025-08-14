@@ -56,13 +56,12 @@
                           >
                             Resume Partial Downloads
                           </button>
-                          <button
-                            type="button"
-                            id="settings-clear-history"
-                            class="btn btn--secondary"
-                          >
-                            Clear History
-                          </button>
+                          <div class="btn-group-row">
+                            <button type="button" id="settings-clear-completed" class="btn btn--secondary">Clear Completed</button>
+                            <button type="button" id="settings-clear-failed" class="btn btn--secondary">Clear Failed</button>
+                            <button type="button" id="settings-clear-all" class="btn btn--danger">Clear All</button>
+                            <button type="button" id="settings-clear-queue" class="btn btn--secondary">Clear Queue</button>
+                          </div>
                           <button
                             type="button"
                             id="settings-clear-positions"
@@ -138,6 +137,23 @@
                     />
                     <div class="settings-hint">
                       Path used by the server /logs endpoint when set
+                    </div>
+                  </div>
+                </div>
+
+                <div class="settings-section">
+                  <label for="settings-history-file">History File (consolidated)</label>
+                  <div class="input-group">
+                    <input
+                      type="text"
+                      id="settings-history-file"
+                      name="history-file"
+                      class="input input--text"
+                      placeholder="Defaults to /path/to/downloads/history.json"
+                    />
+                    <div class="settings-hint">
+                      Optional path to a single JSON file where all download history is stored. If left blank, it
+                      defaults to a file named history.json in your download folder. Existing file contents are imported (not overwritten).
                     </div>
                   </div>
                 </div>
@@ -252,9 +268,50 @@
                 </div>
 
                 <div class="settings-section">
+                  <label for="settings-ytdlp-cookies-browser">Use browser cookies (yt-dlp)</label>
+                  <div class="input-group">
+                    <select id="settings-ytdlp-cookies-browser" name="ytdlp-cookies-browser">
+                      <option value="chrome">Chrome (default)</option>
+                      <option value="firefox">Firefox</option>
+                      <option value="edge">Edge</option>
+                      <option value="brave">Brave</option>
+                      <option value="chromium">Chromium</option>
+                      <option value="opera">Opera</option>
+                      <option value="vivaldi">Vivaldi</option>
+                      <option value="safari">Safari</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="settings-section">
+                  <label for="settings-ytdlp-merge-format">Output container (merge format)</label>
+                  <div class="input-group">
+                    <select id="settings-ytdlp-merge-format" name="ytdlp-merge-format">
+                      <option value="mp4">MP4 (default)</option>
+                      <option value="mkv">MKV</option>
+                      <option value="webm">WEBM</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="settings-section">
+                  <label for="settings-ytdlp-continue">Continue partial downloads</label>
+                  <div class="input-group">
+                    <input type="checkbox" id="settings-ytdlp-continue" name="ytdlp-continue" checked />
+                  </div>
+                </div>
+
+                <div class="settings-section">
                   <label for="settings-ytdlp-concurrent-fragments">yt-dlp concurrent fragments</label>
                   <div class="input-group">
                     <input type="number" id="settings-ytdlp-concurrent-fragments" name="ytdlp-concurrent-fragments" class="input input--number" min="1" max="16" value="4" />
+                  </div>
+                </div>
+
+                <div class="settings-section">
+                  <label for="settings-ytdlp-fragment-retries">Fragment retries</label>
+                  <div class="input-group">
+                    <input type="number" id="settings-ytdlp-fragment-retries" name="ytdlp-fragment-retries" class="input input--number" min="0" max="50" value="10" />
                   </div>
                 </div>
 

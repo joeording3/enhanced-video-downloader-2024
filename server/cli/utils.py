@@ -546,8 +546,9 @@ def _create_config_backup(config_data: Config) -> None:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         backup_file = backup_dir / f"config_backup_{timestamp}.json"
 
-        with backup_file.open("w") as f:
+        with backup_file.open("w", encoding="utf-8") as f:
             json.dump(config_data.as_dict(), f, indent=2)
+            f.write("\n")
 
         click.echo(f" Configuration backup created: {backup_file}")
 

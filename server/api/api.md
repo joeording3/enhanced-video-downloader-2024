@@ -87,8 +87,16 @@ Downloads a video from a URL using yt-dlp.
 }
 ```
 
+Common error types include:
+
+- `YT_DLP_UNSUPPORTED_URL`: The provided URL is not supported or is invalid.
+- `YT_DLP_NO_FORMATS`: No downloadable media was found on the page (e.g., you clicked Download on a non-video page). Open the actual video URL and try again.
+- `YT_DLP_VIDEO_UNAVAILABLE`, `YT_DLP_PRIVATE_VIDEO`, `YT_DLP_GEO_RESTRICTED`, `YT_DLP_DRM_PROTECTED`.
+
 Note: The server now writes yt-dlp's info JSON using `writeinfojson`, storing metadata in
-`server/data/history.json` upon download completion. Use `GET /api/history` to retrieve enriched
+the consolidated history file upon download completion. By default the history file is
+`<download_dir>/history.json`, overrideable via the `history_file` config or `HISTORY_FILE` env var.
+Use `GET /api/history` to retrieve enriched
 entries.
 
 ### POST /gallery-dl
@@ -635,8 +643,11 @@ Retrieves server configuration, including yt-dlp options.
   "scan_interval_ms": 1000,
   "allow_playlists": false,
   "yt_dlp_options": {
-    "format": "best",
+    "format": "bestvideo+bestaudio/best",
     "merge_output_format": "mp4",
+    "concurrent_fragments": 4,
+    "fragment_retries": 10,
+    "continuedl": true,
     "writeinfojson": true,
     "cookiesfrombrowser": ["chrome"]
   }
@@ -652,13 +663,17 @@ Updates server configuration. Available keys:
 - `download_history_limit`, `allowed_domains`, `ffmpeg_path`,
 - `scan_interval_ms`, `allow_playlists`, `yt_dlp_options` (dictionary).
 
-**Example with yt-dlp options:**
+**Examples with yt-dlp options:**
 
 ```json
 {
   "yt_dlp_options": {
     "format": "mp4",
-    "concurrent_fragments": 6
+    "merge_output_format": "mp4",
+    "concurrent_fragments": 6,
+    "fragment_retries": 8,
+    "continuedl": true,
+    "cookiesfrombrowser": ["firefox"]
   }
 }
 ```

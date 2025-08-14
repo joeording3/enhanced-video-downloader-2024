@@ -27,7 +27,7 @@
   --surface-padding: var(--space-xl);
   --card-padding: var(--space-lg);
   --button-padding-y: var(--space-sm);
-  --button-padding-x: var(--space-lg);
+  --button-padding-x: var(--space-md);
   --control-padding-y: var(--space-sm);
   --control-padding-x: var(--space-md);
 
@@ -255,3 +255,16 @@
 }
 
 /* ===== COMPACT DENSITY MODE ===== */
+body.compact {
+  --surface-padding: var(--space-lg);
+  --card-padding: var(--space-md);
+  --button-padding-y: calc(var(--space-sm) - 4px);
+  --button-padding-x: calc(var(--space-sm) - 2px);
+  --control-padding-y: calc(var(--space-sm) - 2px);
+  --control-padding-x: var(--space-sm);
+  --section-gap: var(--space-lg);
+  --form-row-gap: var(--space-sm);
+  --heading-margin-bottom: var(--space-lg);
+  --list-row-padding-y: var(--space-sm);
+  --list-row-padding-x: var(--space-md);
+}

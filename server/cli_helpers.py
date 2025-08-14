@@ -39,7 +39,7 @@ from server.config import Config
 from server.constants import DEFAULT_SERVER_PORT
 from server.disable_launchagents import disable_agents as _disable_agents
 from server.disable_launchagents import find_video_downloader_agents
-from server.history import HISTORY_PATH, load_history  # assumes this returns List[Dict]
+from server.history import HISTORY_PATH, load_history  # Backward-compat import; HISTORY_PATH still available
 from server.lock import create_lock_file as _create_lock_file
 from server.lock import get_lock_file_path
 from server.lock import get_lock_pid as _get_lock_pid
@@ -78,7 +78,7 @@ _derive_resume_url = derive_resume_url
 # Determine server lock file path, respect LOCK_FILE env var
 _lock_file_env = os.getenv("LOCK_FILE")
 LOCK_FILE = Path(_lock_file_env) if _lock_file_env else get_lock_file_path()
-LOG_FILE = Path(os.getenv("LOG_FILE", Path(__file__).parent.parent / "server.log"))
+SERVER_LOG_PATH = Path(os.getenv("LOG_PATH", Path(__file__).parent.parent / "server_output.log"))
 
 # Default logger for helpers, can be overridden by CLI's logger
 helper_log = logging.getLogger(__name__)
@@ -820,12 +820,12 @@ def tail_server_logs() -> None:
     None
         This function does not return a value.
     """
-    if not LOG_FILE.exists():
+    if not SERVER_LOG_PATH.exists():
         return
     try:
-        subprocess.run(["tail", "-f", str(LOG_FILE)], check=True)
+        subprocess.run(["tail", "-f", str(SERVER_LOG_PATH)], check=True)
     except FileNotFoundError:
-        with LOG_FILE.open() as f:
+        with SERVER_LOG_PATH.open() as f:
             f.seek(0, os.SEEK_END)
             try:
                 while True:
@@ -918,7 +918,7 @@ def ensure_caddy_proxy_running(
         # Resolve Caddyfile path
         caddyfile = caddyfile_path or (project_root / "Caddyfile")
         # Determine server log file path to mirror Caddy logs
-        log_file = Path(os.getenv("LOG_FILE") or (project_root / "server_output.log"))
+        log_file = Path(os.getenv("LOG_PATH") or (project_root / "server_output.log"))
 
         # Prepare desired reverse_proxy line
         desired_upstream = f"{upstream_host}:{upstream_port}"
@@ -1275,7 +1275,7 @@ def run_gunicorn_server(port: int, workers: int, daemon: bool) -> None:
         from .logging_setup import resolve_log_path
 
         project_root = Path(__file__).parent.parent
-        env_log = os.getenv("LOG_FILE")
+        env_log = os.getenv("LOG_PATH")
         cfg_log = config.get_value("log_path")
         log_path = resolve_log_path(project_root, env_log, cfg_log, purpose="manage")
 

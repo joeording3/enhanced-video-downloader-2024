@@ -32,19 +32,24 @@ logger = logging.getLogger(__name__)
 
 
 # Helper functions to simplify route logic
-def _handle_preflight() -> tuple[Response, int]:
-    """Handle CORS preflight requests."""
-    response = jsonify(success=True)
+def _with_cors(response: Response, status: int = 200) -> tuple[Response, int]:
+    """Attach permissive CORS headers to a Flask response and return (response, status)."""
     response.headers.add("Access-Control-Allow-Origin", "*")
     response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
     response.headers.add("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
-    return response, 200
+    return response, status
+
+
+def _handle_preflight() -> tuple[Response, int]:
+    """Handle CORS preflight requests."""
+    response = jsonify(success=True)
+    return _with_cors(response, 200)
 
 
 def _handle_load_error(e: Exception) -> tuple[Response, int]:
     """Handle configuration loading errors."""
     logger.error(f"Failed to load configuration: {e}")
-    return jsonify({"success": False, "error": "Failed to load server configuration."}), 500
+    return _with_cors(jsonify({"success": False, "error": "Failed to load server configuration."}), 500)
 
 
 def _handle_get_config(cfg: Config) -> tuple[Response, int]:
@@ -52,7 +57,7 @@ def _handle_get_config(cfg: Config) -> tuple[Response, int]:
     try:
         data = cfg.as_dict()
         # Overlay env-only runtime settings for UI visibility
-        env_log = os.getenv("LOG_FILE")
+        env_log = os.getenv("LOG_PATH")
         env_gunicorn = os.getenv("EVD_GUNICORN")
         env_workers = os.getenv("EVD_WORKERS")
         env_verbose = os.getenv("EVD_VERBOSE")
@@ -72,33 +77,35 @@ def _handle_get_config(cfg: Config) -> tuple[Response, int]:
         data.update(
             {
                 "log_file": env_log,
+                # Expose env-level override for consolidated history path for UI visibility
+                "history_file": os.getenv("HISTORY_FILE"),
                 "evd_gunicorn": _truthy(env_gunicorn),
                 "evd_workers": _int_or_none(env_workers),
                 "evd_verbose": _truthy(env_verbose),
                 "ytdlp_concurrent_fragments": _int_or_none(env_ytdlp_conc),
             }
         )
-        return jsonify(data), 200
+        return _with_cors(jsonify(data), 200)
     except Exception as e:
         logger.error(f"Error retrieving config for GET request: {e}", exc_info=True)
-        return jsonify({"success": False, "error": "Error retrieving configuration."}), 500
+        return _with_cors(jsonify({"success": False, "error": "Error retrieving configuration."}), 500)
 
 
 def _validate_post_data() -> tuple[dict[str, Any], tuple[Response, int] | None]:
     """Validate POST request data and return (data, error_response) or (data, None)."""
     if not request.is_json:
-        return {}, (jsonify({"success": False, "error": "Content-Type must be application/json"}), 415)
+        return {}, _with_cors(jsonify({"success": False, "error": "Content-Type must be application/json"}), 415)
 
     try:
         data: Any = request.get_json()
     except Exception:
-        return {}, (jsonify({"success": False, "error": "Invalid JSON"}), 400)
+        return {}, _with_cors(jsonify({"success": False, "error": "Invalid JSON"}), 400)
 
     if not data:
-        return {}, (jsonify({"success": False, "error": "No data provided"}), 400)
+        return {}, _with_cors(jsonify({"success": False, "error": "No data provided"}), 400)
 
     if not isinstance(data, dict):
-        return {}, (jsonify({"success": False, "error": "expected an object"}), 400)
+        return {}, _with_cors(jsonify({"success": False, "error": "expected an object"}), 400)
 
     typed_data: dict[str, Any] = cast(dict[str, Any], data)
     return typed_data, None
@@ -116,7 +123,7 @@ def _handle_post_config(cfg: Config) -> tuple[Response, int]:
         if "log_file" in data:
             v = data.pop("log_file")
             if v is not None:
-                env_updates["LOG_FILE"] = str(v)
+                env_updates["LOG_PATH"] = str(v)
         if "evd_gunicorn" in data:
             v = data.pop("evd_gunicorn")
             if v is not None:
@@ -133,6 +140,11 @@ def _handle_post_config(cfg: Config) -> tuple[Response, int]:
             v = data.pop("ytdlp_concurrent_fragments")
             if v is not None:
                 env_updates["YTDLP_CONCURRENT_FRAGMENTS"] = str(int(v))
+        # Allow setting consolidated history file via env (optional)
+        if "history_file" in data:
+            v = data["history_file"]
+            if v is not None and str(v).strip() != "":
+                env_updates["HISTORY_FILE"] = str(v)
 
         # Apply standard config updates
         if data:
@@ -154,21 +166,28 @@ def _handle_post_config(cfg: Config) -> tuple[Response, int]:
         merged = cfg.as_dict()
         merged.update(
             {
-                "log_file": os.getenv("LOG_FILE"),
+                "log_file": os.getenv("LOG_PATH"),
+                "history_file": os.getenv("HISTORY_FILE"),
                 "evd_gunicorn": os.getenv("EVD_GUNICORN"),
                 "evd_workers": os.getenv("EVD_WORKERS"),
                 "evd_verbose": os.getenv("EVD_VERBOSE"),
                 "ytdlp_concurrent_fragments": os.getenv("YTDLP_CONCURRENT_FRAGMENTS"),
             }
         )
-        return (
-            jsonify({"success": True, "message": "Configuration updated successfully", "new_config": merged}),
+        return _with_cors(
+            jsonify(
+                {
+                    "success": True,
+                    "message": "Configuration updated successfully",
+                    "new_config": merged,
+                }
+            ),
             200,
         )
     except (ValueError, AttributeError) as e:
-        return jsonify({"success": False, "error": str(e)}), 400
+        return _with_cors(jsonify({"success": False, "error": str(e)}), 400)
     except Exception as e:
-        return jsonify({"success": False, "error": f"Failed to update configuration: {e}"}), 500
+        return _with_cors(jsonify({"success": False, "error": f"Failed to update configuration: {e}"}), 500)
 
 
 @config_bp.route("/config", methods=["GET", "POST", "OPTIONS"])
@@ -197,4 +216,4 @@ def manage_config_route() -> Any:
     if request.method == "POST":
         return _handle_post_config(cfg)
 
-    return jsonify({"success": False, "error": "Method not allowed."}), 405
+    return _with_cors(jsonify({"success": False, "error": "Method not allowed."}), 405)

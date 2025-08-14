@@ -7,6 +7,7 @@ saving server configuration with type validation and default handling.
 
 import os  # Added os for the __main__ example
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 from pydantic import ValidationError
@@ -17,7 +18,20 @@ from .schemas import ServerConfig  # Removed YTDLPOptions as it's part of Server
 try:
     from dotenv import find_dotenv, load_dotenv, set_key
 
-    load_dotenv()
+    # Load .env from project root explicitly so env vars are available
+    try:
+        project_root = Path(__file__).resolve().parent.parent
+        env_path = project_root / ".env"
+        if env_path.exists():
+            load_dotenv(dotenv_path=str(env_path), override=False)
+        else:
+            # Fallback to discovery if not present
+            discovered = find_dotenv(usecwd=True)
+            if discovered:
+                load_dotenv(dotenv_path=discovered, override=False)
+    except Exception:
+        # Silent fallback; config will use process env as-is
+        pass
 except ImportError:
     # Type stubs for when dotenv is not available
     def find_dotenv() -> str | None:
@@ -181,14 +195,16 @@ _ENV_VAR_MAPPINGS: list[tuple[str, str, Callable[[str], Any]]] = [
     ("MAX_CONCURRENT_DOWNLOADS", "max_concurrent_downloads", lambda v: int(v)),
     ("DOWNLOAD_HISTORY_LIMIT", "download_history_limit", lambda v: int(v)),
     ("ALLOWED_DOMAINS", "allowed_domains", lambda v: [d.strip() for d in v.split(",") if d.strip()]),
-    ("FFMPEG_PATH", "ffmpeg_path", lambda v: v),
     ("LOG_LEVEL", "log_level", lambda v: v),
     ("CONSOLE_LOG_LEVEL", "console_log_level", lambda v: v),
     ("LOG_PATH", "log_path", lambda v: v),
+    ("HISTORY_FILE", "history_file", lambda v: v),
     ("SCAN_INTERVAL_MS", "scan_interval_ms", lambda v: int(v)),
     ("SHOW_DOWNLOAD_BUTTON", "show_download_button", lambda v: v.lower() in ("1", "true", "yes")),
     ("ENABLE_HISTORY", "enable_history", lambda v: v.lower() in ("1", "true", "yes")),
     ("ALLOW_PLAYLISTS", "allow_playlists", lambda v: v.lower() in ("1", "true", "yes")),
+    # New: opt-in auto resume on start
+    ("RESUME_ON_START", "resume_on_start", lambda v: v.lower() in ("1", "true", "yes")),
 ]
 
 

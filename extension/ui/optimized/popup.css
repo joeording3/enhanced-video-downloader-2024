@@ -9,6 +9,23 @@
 /* Popup-specific styles - using variables from styles.css */
 
 /* History item specific styles */
+.history-item-timestamp {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.history-item-detail {
+  color: var(--text-secondary);
+}
+
+.history-item-error {
+  color: var(--error);
+}
+
+.history-item-url {
+  font-size: var(--font-size-xs);
+  word-break: break-all;
+}
 
 /* Dark theme overrides for history items - Now using shared dark theme styles from styles.css */
 
@@ -111,25 +128,204 @@ h2 {
 }
 
 /* Unified list rows (queued/active/history together) */
+.unified-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.unified-list .unified-item {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-sm);
+  padding: calc(var(--list-row-padding-y) - 4px) calc(var(--list-row-padding-x) - 6px);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.85em;
+  line-height: 1.2;
+  color: var(--text-color);
+  background-color: var(--bg-elevated);
+  white-space: nowrap; /* keep elements on one row */
+}
 
 /* Ensure unified layout even if parent markup changes */
+#download-status .unified-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
 
-#download-status progress { width: 120px; height: 4px; margin: 0 var(--space-sm); accent-color: var(--button-bg); }
+.unified-list .unified-item:last-child {
+  border-bottom: none;
+}
+
+.unified-list .status-icon {
+  width: 1.25em;
+  min-width: 1.25em;
+  display: inline-block;
+  text-align: center;
+  opacity: 0.9;
+}
+
+#download-status .status-icon { width: 1.25em; min-width: 1.25em; display: inline-block; text-align: center; }
+
+.unified-list .item-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#download-status .item-title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Uniform progress bar sizing across entries */
+.unified-list progress {
+  width: 35px;
+  height: 4px;
+  margin: 0 var(--space-sm);
+  accent-color: var(--button-bg);
+  flex: 0 0 35px; /* lock width to avoid layout shift */
+}
+
+#download-status progress { width: 35px; height: 4px; margin: 0 var(--space-sm); accent-color: var(--button-bg); flex: 0 0 35px; }
+
+/* Reduce progress bar width at minimum sidebar width */
+@media (max-width: 250px) {
+  .unified-list progress { width: 20px; flex: 0 0 20px; }
+  #download-status progress { width: 20px; flex: 0 0 20px; }
+}
+
+.unified-list .item-percent {
+  font-size: 0.75em;
+  color: var(--text-secondary);
+  min-width: 2.5em;
+  text-align: right;
+}
+
+#download-status .item-percent { font-size: 0.75em; color: var(--text-secondary); min-width: 2.5em; text-align: right; }
+
+.unified-list .status-pill {
+  margin-left: var(--space-sm);
+}
+
+#download-status .status-pill { margin-left: var(--space-sm); }
+
+/* Make inline action buttons in the unified list more compact */
+.unified-list .cancel-button,
+.unified-list .retry-button,
+.unified-list .pause-button,
+.unified-list .resume-button {
+  margin-left: var(--space-sm);
+  min-width: 28px;
+  padding: 2px 6px;
+  font-size: 0.85em;
+}
+
+#download-status .cancel-button,
+#download-status .retry-button { margin-left: var(--space-sm); }
 
 /* Compact list rows */
+#download-status li,
+#download-history li {
+  padding: calc(var(--list-row-padding-y) - 4px) calc(var(--list-row-padding-x) - 6px);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.85em;
+  line-height: 1.2;
+  color: var(--text-color);
+  background-color: var(--bg-elevated);
+}
 
 /* Empty state styling for lists */
+#download-status li:only-child {
+  background-color: var(--list-empty-bg);
+  color: var(--list-empty-text);
+  border: none;
+  backdrop-filter: none;
+}
+
+#download-status li:nth-child(even),
+#download-history li:nth-child(even) {
+  background-color: var(--row-alt-bg);
+}
+
+#download-status li:last-child,
+#download-history li:last-child {
+  border-bottom: none;
+}
 
 /* Status text styling for list items - Now using shared styles from styles.css */
+.hist-status-pending {
+  color: var(--warning-color);
+}
+
+.hist-status-complete {
+  color: var(--success-color);
+}
+
+.hist-status-error {
+  color: var(--error-color);
+}
+
+.hist-status-skipped {
+  color: var(--disabled-color);
+}
+
+.hist-status-default {
+  color: var(--text-color);
+}
 
 /* Progress bar (if used in popup) */
 /* Progress bar compact styling with overlay percent */
+.active-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto auto;
+  grid-column-gap: var(--space-sm);
+  grid-row-gap: var(--space-xs);
+}
+
+.active-item > div:first-child {
+  grid-column: 1 / -1;
+  font-weight: var(--font-weight-bold);
+  font-size: 0.9em;
+}
+
+.active-item progress {
+  grid-column: 1 / -1;
+  width: 100%;
+  height: 4px;
+  margin-top: var(--space-xs);
+  accent-color: var(--button-bg);
+}
+
+.item-percent {
+  margin: 0;
+  justify-self: end;
+  font-size: 0.75em;
+  color: var(--text-secondary);
+}
+
+.item-status {
+  margin-right: var(--space-sm);
+  font-size: 0.8em;
+}
+
+.priority-controls {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  align-items: center;
+}
 
 /* Responsive tweaks for narrow side panels */
 @media (max-width: 380px) {
   body { padding: var(--space-sm); }
   .header h1 { font-size: 0.95em; }
   .main-controls.toolbar { grid-template-columns: repeat(3, 1fr); }
+  .priority-controls .priority-select,
+  .priority-controls .priority-set-button { flex: 1 1 100%; }
 }
 
 @media (max-width: 300px) {
@@ -137,6 +333,42 @@ h2 {
 }
 
 /* History Controls */
+.history-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-sm) 0;
+  margin-bottom: var(--space-md);
+}
+
+.history-controls-middle-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.history-controls label {
+  margin-bottom: 0;
+  margin-right: var(--space-sm);
+  font-weight: var(--font-weight-normal);
+  font-size: 0.9em;
+  color: var(--label-text);
+}
+
+.history-controls select {
+  width: auto;
+  padding: var(--space-sm);
+  font-size: 0.9em;
+  background-color: var(--select-bg);
+  color: var(--select-text);
+  border: 1px solid var(--select-border);
+  border-radius: var(--radius-md);
+}
+
+.history-controls button {
+  padding: var(--space-sm) var(--space-md);
+  font-size: 0.9em;
+}
 
 #page-info {
   font-size: 0.9em;
@@ -146,8 +378,21 @@ h2 {
 }
 
 /* History Action Buttons */
+.history-actions {
+  margin-top: var(--space-sm);
+  display: flex;
+  gap: var(--space-sm);
+}
 
 /* History action buttons now use .btn component classes */
+
+.delete-btn {
+  background-color: var(--error-color); /* Example: make delete button red */
+}
+
+.delete-btn:hover {
+  background-color: var(--error-color-hover);
+}
 
 /* Status message at the bottom */
 #status {
@@ -203,8 +448,21 @@ label {
 }
 
 /* Queue and Active item styling */
+.queued-item {
+  font-style: italic;
+  opacity: 0.8;
+}
+
+.active-item {
+  font-weight: var(--font-weight-bold);
+}
 
 /* Paused status indicator */
+.status-paused {
+  color: var(--warning-color);
+  opacity: 0.9;
+  font-style: italic;
+}
 
 /* Error display styling */
 .error-display {
@@ -217,17 +475,79 @@ label {
 }
 
 /* Visible helper used by scripts to show blocks without inline styles */
+.evd-visible {
+  display: block !important;
+}
 
 /* Status message severity classes - Now using standardized selectors from styles.css */
 
 /* Error message summary in list items */
+.error-message-summary {
+  color: var(--error-color);
+  font-weight: var(--font-weight-bold);
+}
 
 /* Status label for list items */
+.item-status {
+  display: inline-block;
+  margin-right: var(--space-sm);
+  font-size: 0.9em;
+  color: var(--text-color);
+}
 
 /* Percentage label next to progress bar */
+.item-percent {
+  margin-left: var(--space-sm);
+  font-size: 0.8em;
+  color: var(--text-color);
+}
 
 /* Semantic error details using <details> */
+.error-details summary {
+  cursor: pointer;
+  font-weight: var(--font-weight-bold);
+  color: var(--error-color);
+  margin-bottom: var(--space-sm);
+}
+
+.error-details-content {
+  display: none;
+  color: var(--error-color);
+  background-color: var(--error-bg-tint-light);
+  padding: var(--space-sm);
+  border-radius: var(--radius-md);
+  margin-top: var(--space-sm);
+}
+
+.error-details[open] .error-details-content {
+  display: block;
+}
 
 /* Visual treatments by severity for popup list items */
+#download-status li.severity-error {
+  border-left: 4px solid var(--error-color);
+  padding-left: var(--space-sm);
+}
+
+#download-status li.severity-warning {
+  border-left: 4px solid var(--warning-color);
+  padding-left: var(--space-sm);
+}
+
+#download-status li.severity-info {
+  border-left: 4px solid var(--link-color);
+  padding-left: var(--space-sm);
+}
 
 /* Contextual help link styling */
+.error-help-link {
+  display: inline-block;
+  margin-top: var(--space-sm);
+  color: var(--link-color);
+  background: none;
+  border: none;
+  text-decoration: underline;
+  padding: 0;
+  font-size: 0.9em;
+  cursor: pointer;
+}

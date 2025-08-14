@@ -5,6 +5,7 @@ This module defines data validation models for configuration, download requests,
 history queries, logging queries, and command-line options using Pydantic.
 """
 
+import contextlib
 import os
 from pathlib import Path  # Corrected: Ensure this is the Path being used
 from typing import Any  # Removed Literal import
@@ -127,6 +128,7 @@ class ServerConfig(BaseModel):
         default_factory=list,
         description="List of domains from which downloads are permitted. Empty list means all allowed.",
     )
+    # ffmpeg path is resolved by the runtime environment; no .env override in production
     ffmpeg_path: str = Field(default="ffmpeg", description="Path to the ffmpeg executable.")
     log_level: str = Field(default="info", description="Logging level for the server.")
     console_log_level: str = Field(
@@ -141,6 +143,14 @@ class ServerConfig(BaseModel):
         description="Path to the server log file. If None, defaults to server_output.log in project root.",
     )
 
+    # Optional explicit history file path. If None, defaults to <download_dir>/history.json
+    history_file: Path | None = Field(
+        default=None,
+        description=(
+            "Path to consolidated download history JSON. If not set, the server writes to <download_dir>/history.json."
+        ),
+    )
+
     scan_interval_ms: int = Field(
         default=get_server_port(),
         ge=1000,
@@ -153,6 +163,13 @@ class ServerConfig(BaseModel):
     )
     enable_history: bool = Field(default=True, description="Enable or disable download history tracking.")
     allow_playlists: bool = Field(default=False, description="Whether to allow downloading entire playlists.")
+    # New: optionally resume incomplete downloads on server startup
+    resume_on_start: bool = Field(
+        default=False,
+        description=(
+            "If true, the server will scan for and resume incomplete/partial downloads on startup."
+        ),
+    )
 
     # Changed from Field(default_factory=YTDLPOptions) to a direct default instance
     yt_dlp_options: YTDLPOptions = YTDLPOptions()
@@ -222,6 +239,28 @@ class ServerConfig(BaseModel):
         if not os.access(v, os.W_OK):
             raise ValueError("Invalid")
         return v
+
+    @field_validator("history_file", mode="before")
+    @classmethod
+    def normalize_history_file_path(cls, v: Any) -> Path | None:
+        """
+        Normalize optional history file path to an absolute Path if provided.
+
+        Accepts strings with '~' and absolute/relative paths; relative paths are resolved
+        to the user's home directory for safety.
+        """
+        if v is None or v == "":
+            return None
+        p = v if isinstance(v, Path) else Path(str(v))
+        # Expand ~ and resolve; if still not absolute, resolve relative to home
+        if str(p).startswith("~"):
+            p = p.expanduser()
+        if not p.is_absolute():
+            p = (Path.home() / p).resolve()
+        # Ensure parent exists (best effort)
+        with contextlib.suppress(Exception):
+            p.parent.mkdir(parents=True, exist_ok=True)
+        return p
 
 
 class DownloadRequest(BaseModel):
@@ -364,6 +403,13 @@ class ConfigUpdate(BaseModel):
         alias="ytdlp_options",
         description=("Specific options for yt-dlp. Values provided will be merged with existing yt-dlp options."),
     )
+    history_file: str | None = Field(
+        default=None,
+        description=(
+            "Path to consolidated download history JSON. When set, the server writes to this path; "
+            "otherwise it defaults to <download_dir>/history.json."
+        ),
+    )
 
     @field_validator("download_dir")  # This is for ConfigUpdate, not ServerConfig
     @classmethod
@@ -393,6 +439,19 @@ class ConfigUpdate(BaseModel):
                 raise DownloadDirValidationError(DownloadDirValidationError.INVALID_PATH)
             return str(path)
         return v
+
+    @field_validator("history_file")
+    @classmethod
+    def validate_history_file_format(cls, v: str | None) -> str | None:
+        """Validate history_file when provided: must be absolute or '~'-relative."""
+        if v is None:
+            return v
+        path = Path(v)
+        if str(path).startswith("~"):
+            return str(path.expanduser())
+        if not path.is_absolute():
+            raise DownloadDirValidationError(DownloadDirValidationError.INVALID_PATH)
+        return str(path)
 
     model_config = ConfigDict(
         extra="forbid",

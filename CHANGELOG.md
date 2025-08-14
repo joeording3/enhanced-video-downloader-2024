@@ -9,6 +9,34 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Extension/server config flow hardening:
+ - **Consolidated download history**: server now writes to a single history JSON file resolved at runtime.
+   - **default path**: `<download_dir>/history.json` (override via `HISTORY_FILE` env or Options → History File)
+   - **wiring**: all history endpoints and CLI clear operations honor the resolved path
+   - **cleanup**: yt-dlp sidecar `.info.json` files are ingested into history and then removed
+  - Background now retries config GET/POST across http/https and 127.0.0.1/localhost/[::1] with
+    timeouts
+  - When saving settings with a new `server_port`, background immediately caches the new port and
+    tries the new port first, then falls back once to the previous port if needed
+  - Options save now posts only non-empty fields to avoid overwriting server defaults; after a
+    successful save, if any fields are blank locally, it fetches `/api/config` and populates only
+    the missing fields
+  - Centralized logger no longer prints a trailing `undefined` when no data payload is supplied
+
+### E2E and Detection
+
+- Added event-driven media detection in content script (MutationObserver + debounced user events) to
+  re-scan when videos/iframes attach or attributes change, without removing interval polling.
+- Expanded E2E player API hooks (Facebook, Wistia, Brightcove, TikTok, Twitter/X, Reddit,
+  SoundCloud, VK) and added scroll/click heuristics for lazy-loaded media; richer `[MATRIX][DBG]`
+  diagnostics.
+- Extended domain config (`tests/extension/media-domains.json`) with consent/play
+  selectors/timeouts.
+- Introduced `test-media-wide` and `matrix-seq` Make targets; wide runs gated, sequential runner
+  summarizes results.
+- Added `scripts/update_ad_origins.py` and `make update-ad-origins` to refresh ad-origin hints from
+  uBO lists.
+
 - Extension background UX:
   - Prefer cached/configured port; scan only if missing (reduced noisy discovery)
   - Popup/Options initialize server status immediately via message to background
@@ -18,12 +46,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 
 - Smart Injection option for the inline Download button
+ - **Options**
+   - Server → Runtime: History File (consolidated) path field
+   - Download Settings: yt-dlp controls for cookies-from-browser, merge container, continue partials,
+     fragment retries
   - New toggle in Options → Behavior → General Options
   - When enabled, the content script only shows the button when a downloadable video is detected;
     otherwise it stays hidden
   - Popup SHOW/HIDE per-domain toggle still applies on top of smart mode
 
 ### Fixed
+
+- Server `/api/config` responses consistently include permissive CORS headers for OPTIONS/GET/POST
+  to allow the extension to call from chrome-extension:// contexts
 
 - Popup: Prevent "The provided double value is non-finite" error by sanitizing and clamping active
   download progress values in `createActiveListItem` to the [0, 100] range and rounding the
@@ -175,7 +210,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - `/api/gallery-dl` and `/api/resume`: treat malformed JSON as 500 SERVER_ERROR (not 400),
     aligning integration tests; return standardized JSON bodies.
 
-- Backend: Ensure `LOG_FILE` env is set at startup to the active default `server_output.log` path
+- Backend: Use `LOG_PATH` for log file configuration; default to `server_output.log` in project root
   when not provided, so `/api/config` returns `log_file` and the Options UI field
   `settings-log-file` populates with the current log location.
 
@@ -205,7 +240,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     `--verbose` for INFO/DEBUG). This prevents structured JSON logs from polluting stdout.
   - Introduced `setup_cli_logging(verbose)` and updated `server/cli_main.py` to keep stdout reserved
     for command output; all logs go to stderr.
-  - Wired Gunicorn `accesslog`/`errorlog` to the active `LOG_FILE` by default when starting via CLI.
+  - Wired Gunicorn `accesslog`/`errorlog` to the active `LOG_PATH` by default when starting via CLI.
   - Suppress child server process stdout/stderr in foreground mode to avoid leaking JSON logs to the
     terminal. Structured NDJSON logs continue to be written to the log file.
 - Frontend: Standardized API usage to current endpoints (`/api/health`, `/api/logs`,
@@ -218,7 +253,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
   - Centralized log-path resolution in `server/logging_setup.resolve_log_path` used by `/api/logs`
     and `/api/logs/clear` to eliminate duplication while preserving test behavior.
-  - Documented log path precedence in README: `LOG_FILE` env → config `log_path` → defaults.
+  - Documented log path precedence in README: `LOG_PATH` env → config `log_path` → defaults.
   - Improved internal validation message for `lines` parameter in logs endpoint without changing
     client-facing error text.
   - Switched server logging to structured NDJSON format for both console and file outputs. Each log
@@ -230,9 +265,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     are wired by default to the same file (`accesslog`/`errorlog`), ensuring a single source of
     logs.
   - Tests now run with `ENVIRONMENT=testing`, redirect server logs to a per-test temporary file via
-    `LOG_FILE`, and default `SERVER_PORT` to the testing port (5006) to avoid conflicts with a
+    `LOG_PATH`, and default `SERVER_PORT` to the testing port (5006) to avoid conflicts with a
     locally running production server and to prevent test noise in the main `server_output.log`.
-  - Session-level logging isolation: added a session-scoped autouse fixture that sets `LOG_FILE` to
+  - Session-level logging isolation: added a session-scoped autouse fixture that sets `LOG_PATH` to
     a repo-local `tmp/server_output_test.session.log` before any tests run. This ensures even tests
     that create ad-hoc Flask apps (without the app factory) write to a test log file and never to
     the production `server_output.log`.

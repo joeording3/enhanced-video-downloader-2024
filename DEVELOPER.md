@@ -1766,6 +1766,18 @@ _Last updated: 2025-01-27_
 - `scripts/optimize_tree_shaking.js` - Identify unused exports and generate barrels
 - `scripts/profile_performance.js` - Static performance hints and utilities scaffold
 
+#### CSS Build Pipeline Notes
+
+- The CSS pipeline intentionally avoids PurgeCSS to prevent removal of runtime selectors used by the
+  popup unified list. Source CSS is copied to `extension/ui/optimized/` and minified to
+  `extension/ui/minified/` and `extension/dist/`.
+- If you reintroduce PurgeCSS, update `purgecss.config.cjs` with a regex safelist covering:
+  `.unified-list`, `.unified-item`, `.status-icon`, `.item-title`, `.item-percent`, `.status-pill`,
+  `.cancel-button`, `.retry-button`, `.pause-button`, `.resume-button`, `#download-status`,
+  `#download-history`, and `status-*` variants.
+- Avoid applying `display:flex` to `li` globally; `.unified-item` is the row container. See
+  `extension/ui/popup.css` for responsive progress bar widths (35px default; 20px at 250px width).
+
 ### Configuration Management
 
 - `scripts/generate-ignore-files.py` - Generate ignore files from central configuration

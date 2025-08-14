@@ -38,6 +38,31 @@ export interface HistoryEntry {
   downloaded_at?: string;
 }
 
+// Details for queued items in the background/popup UI
+export interface QueuedItemDetails {
+  url?: string;
+  title?: string;
+  filename?: string;
+  page_title?: string;
+}
+
+export type QueuedDetailsMap = Record<string, QueuedItemDetails>;
+
+// Active download entry as used by popup/background
+export interface ActiveDownloadEntry {
+  status: string;
+  progress: number;
+  filename?: string;
+  title?: string;
+  page_title?: string;
+  id?: string;
+  url: string;
+  error?: string;
+  message?: string;
+}
+
+export type ActiveDownloadMap = Record<string, ActiveDownloadEntry>;
+
 // Server configuration
 export interface ServerConfig {
   server_port: number;
@@ -48,9 +73,14 @@ export interface ServerConfig {
   console_log_level: "debug" | "info" | "warning" | "error" | "critical";
   max_concurrent_downloads?: number;
   allow_playlists?: boolean;
+  history_file?: string;
   yt_dlp_options?: {
     format?: string;
+    merge_output_format?: string;
     concurrent_fragments?: number;
+    cookiesfrombrowser?: string[];
+    continuedl?: boolean;
+    fragment_retries?: number;
     [key: string]: any;
   };
 }
@@ -112,4 +142,26 @@ export interface QueueMessage {
 export interface ReorderQueueMessage extends Message {
   type: "reorderQueue";
   queue: string[];
+}
+
+// Raw server history item and response (used for mapping in `history.ts`)
+export interface ServerHistoryItem {
+  id?: string;
+  download_id?: string;
+  url?: string;
+  webpage_url?: string;
+  original_url?: string;
+  status?: string;
+  filename?: string;
+  filepath?: string;
+  page_title?: string;
+  title?: string;
+  error?: string;
+  message?: string;
+  timestamp?: number | string;
+}
+
+export interface ServerHistoryResponse {
+  history?: ServerHistoryItem[];
+  total_items?: number;
 }

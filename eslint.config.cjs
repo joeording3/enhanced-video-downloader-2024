@@ -164,6 +164,13 @@ module.exports = defineConfig([
       "@typescript-eslint/no-var-requires": "off",
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-non-null-assertion": "off",
+      // Allow empty blocks in tests (common for scaffolding or try/catch expectations)
+      "no-empty": "off",
+      // Permit ts-ignore in tests where we intentionally bypass type checking
+      "@typescript-eslint/ban-ts-comment": [
+        "warn",
+        { "ts-expect-error": "allow-with-description", "ts-ignore": true }
+      ],
     },
   },
 

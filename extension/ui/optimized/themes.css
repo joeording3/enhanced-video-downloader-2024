@@ -96,6 +96,18 @@ body.dark-theme .input:valid {
 
 /* ===== TEXT UTILITY OVERRIDES ===== */
 
+body.dark-theme .text-secondary {
+  color: var(--text-secondary-dark);
+}
+
+body.dark-theme .text-muted {
+  color: var(--text-muted-dark);
+}
+
+body.dark-theme .text-inverse {
+  color: var(--text-inverse-dark);
+}
+
 /* ===== SCROLLBAR OVERRIDES ===== */
 
 body.dark-theme ::-webkit-scrollbar-track {
@@ -111,3 +123,39 @@ body.dark-theme ::-webkit-scrollbar-thumb:hover {
 }
 
 /* ===== STATUS COMPONENT OVERRIDES ===== */
+
+body.dark-theme .status-indicator.pending::before {
+  background-color: var(--status-pending);
+}
+
+body.dark-theme .status-indicator.complete::before {
+  background-color: var(--status-complete);
+}
+
+body.dark-theme .status-indicator.error::before {
+  background-color: var(--status-error);
+}
+
+body.dark-theme .status-indicator.skipped::before {
+  background-color: var(--status-skipped);
+}
+
+body.dark-theme .status-badge.pending {
+  background-color: var(--status-pending);
+  color: var(--text-inverse-dark);
+}
+
+body.dark-theme .status-badge.complete {
+  background-color: var(--status-complete);
+  color: var(--text-inverse);
+}
+
+body.dark-theme .status-badge.error {
+  background-color: var(--status-error);
+  color: var(--text-inverse);
+}
+
+body.dark-theme .status-badge.skipped {
+  background-color: var(--status-skipped);
+  color: var(--text-inverse);
+}

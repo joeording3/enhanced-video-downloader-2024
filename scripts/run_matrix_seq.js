@@ -7,15 +7,15 @@
  * Parses [MATRIX] logs to determine detection outcomes.
  */
 
-const { spawn } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+const { spawn } = require("child_process");
+const fs = require("fs");
+const path = require("path");
 
-const mediaSitesPath = path.resolve(__dirname, '../tests/extension/media-sites.json');
+const mediaSitesPath = path.resolve(__dirname, "../tests/extension/media-sites.json");
 
 /** @returns {{present: string[], absent: string[]}} */
 function loadMatrix() {
-  const raw = fs.readFileSync(mediaSitesPath, 'utf8');
+  const raw = fs.readFileSync(mediaSitesPath, "utf8");
   const data = JSON.parse(raw);
   return {
     present: Array.isArray(data.media_present) ? data.media_present.slice() : [],
@@ -31,18 +31,18 @@ function loadMatrix() {
  */
 function runOne(url, isPresent) {
   return new Promise(resolve => {
-    const env = { ...process.env, EVD_MEDIA_SITES_WIDE: 'true', EVD_MEDIA_URL: url };
+    const env = { ...process.env, EVD_MEDIA_SITES_WIDE: "true", EVD_MEDIA_URL: url };
     // Serialize to reduce flake; headed as requested; keep --silent for clean output
-    const proc = spawn('npm', ['run', 'test:playwright:headed', '--silent'], {
+    const proc = spawn("npm", ["run", "test:playwright:headed", "--silent"], {
       env,
-      cwd: path.resolve(__dirname, '..'),
+      cwd: path.resolve(__dirname, ".."),
       shell: false,
     });
-    let stdout = '';
-    let stderr = '';
-    proc.stdout.on('data', d => (stdout += d.toString()));
-    proc.stderr.on('data', d => (stderr += d.toString()));
-    proc.on('close', code => {
+    let stdout = "";
+    let stderr = "";
+    proc.stdout.on("data", d => (stdout += d.toString()));
+    proc.stderr.on("data", d => (stderr += d.toString()));
+    proc.on("close", code => {
       // Parse [MATRIX] log lines
       const lines = stdout.split(/\r?\n/);
       let detected = null;
@@ -50,12 +50,12 @@ function runOne(url, isPresent) {
         const m1 = line.match(/\[MATRIX\] present URL=(.+?) detected=(true|false)/);
         if (m1) {
           const u = m1[1];
-          if (u === url) detected = m1[2] === 'true';
+          if (u === url) detected = m1[2] === "true";
         }
         const m2 = line.match(/\[MATRIX\] absent URL=(.+?) detected=(true|false)/);
         if (m2) {
           const u = m2[1];
-          if (u === url) detected = m2[2] === 'true';
+          if (u === url) detected = m2[2] === "true";
         }
       }
       let passed;
@@ -67,7 +67,13 @@ function runOne(url, isPresent) {
       } else {
         passed = detected === false; // absent should not detect
       }
-      resolve({ url, detected, passed, stderr: stderr.trim() || undefined, error: code === 0 ? undefined : `exit ${code}` });
+      resolve({
+        url,
+        detected,
+        passed,
+        stderr: stderr.trim() || undefined,
+        error: code === 0 ? undefined : `exit ${code}`,
+      });
     });
   });
 }
@@ -81,12 +87,12 @@ function runOne(url, isPresent) {
   for (const url of targets) {
     // Normalize relative URLs (served locally in matrix server) are not useful for real-site checks
     if (!/^https?:\/\//i.test(url)) continue;
-    // eslint-disable-next-line no-console
+
     console.log(`\n[RUN] ${url}`);
     const r = await runOne(url, true);
     results.push(r);
-    const status = r.passed ? 'PASS' : 'FAIL';
-    // eslint-disable-next-line no-console
+    const status = r.passed ? "PASS" : "FAIL";
+
     console.log(`[RESULT] ${status} url=${r.url} detected=${r.detected}`);
     if (!r.passed) {
       if (r.error) console.log(`[ERROR] ${r.error}`);
@@ -97,7 +103,7 @@ function runOne(url, isPresent) {
   // Summary
   const passCount = results.filter(r => r.passed).length;
   const fail = results.filter(r => !r.passed);
-  // eslint-disable-next-line no-console
+
   console.log(`\n=== Summary ===`);
   console.log(`Total: ${results.length}, Passed: ${passCount}, Failed: ${fail.length}`);
   if (fail.length) {
@@ -105,5 +111,3 @@ function runOne(url, isPresent) {
     fail.forEach(r => console.log(`- ${r.url} (detected=${r.detected})`));
   }
 })();
-
-

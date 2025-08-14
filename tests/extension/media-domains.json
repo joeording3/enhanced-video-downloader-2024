@@ -23,8 +23,16 @@
       "button:has-text('Play')"
     ]
   },
-  "dailymotion.com": {
+  "player.vimeo.com": {
     "timeout_ms": 15000,
+    "play_selectors": [
+      "button[aria-label*='Play' i]",
+      "button[class*='play' i]",
+      "button:has-text('Play')"
+    ]
+  },
+  "dailymotion.com": {
+    "timeout_ms": 45000,
     "play_selectors": [".dmp_PlayButton", "button[aria-label*='Play' i]", "button:has-text('Play')"]
   },
   "twitch.tv": {
@@ -55,6 +63,84 @@
       "button:has-text('Play')"
     ]
   },
+  "fast.wistia.net": {
+    "timeout_ms": 20000,
+    "play_selectors": [
+      ".w-big-play-button",
+      "button[aria-label*='Play' i]",
+      "button:has-text('Play')"
+    ]
+  },
+  "wistia.com": {
+    "timeout_ms": 20000,
+    "play_selectors": [
+      ".w-big-play-button",
+      "button[aria-label*='Play' i]",
+      "button:has-text('Play')"
+    ]
+  },
+  "players.brightcove.net": {
+    "timeout_ms": 25000,
+    "play_selectors": [
+      ".vjs-big-play-button",
+      "button[title*='Play' i]",
+      "button[aria-label*='Play' i]"
+    ]
+  },
+  "facebook.com": {
+    "timeout_ms": 25000,
+    "consent_selectors": ["button:has-text('Accept All')", "button:has-text('Allow all')"],
+    "play_selectors": ["button[aria-label*='Play' i]", "div[role='button'][aria-label*='Play' i]"]
+  },
+  "fb.watch": {
+    "timeout_ms": 25000,
+    "play_selectors": ["button[aria-label*='Play' i]", "div[role='button'][aria-label*='Play' i]"]
+  },
+  "twitter.com": {
+    "timeout_ms": 20000,
+    "play_selectors": ["div[data-testid='playButton']", "button[aria-label*='Play' i]"]
+  },
+  "x.com": {
+    "timeout_ms": 20000,
+    "play_selectors": ["div[data-testid='playButton']", "button[aria-label*='Play' i]"]
+  },
+  "reddit.com": {
+    "timeout_ms": 20000,
+    "play_selectors": [
+      "button[aria-label*='Play' i]",
+      "button[aria-label*='Unmute' i]",
+      "div[class*='play' i]"
+    ]
+  },
+  "redditmedia.com": {
+    "timeout_ms": 20000,
+    "play_selectors": [
+      "button[aria-label*='Play' i]",
+      "button[aria-label*='Unmute' i]",
+      "div[class*='play' i]"
+    ]
+  },
+  "tiktok.com": {
+    "timeout_ms": 25000,
+    "play_selectors": [
+      "button[aria-label*='Play' i]",
+      "button[aria-label*='Unmute' i]",
+      "div[role='button']"
+    ]
+  },
+  "w.soundcloud.com": {
+    "timeout_ms": 20000,
+    "play_selectors": ["button[title*='Play' i]", "button[aria-label*='Play' i]"]
+  },
+  "vk.com": {
+    "timeout_ms": 25000,
+    "play_selectors": [
+      ".videoplayer .vs_button_play",
+      "button[aria-label*='Play' i]",
+      ".videoplayer .flat_button",
+      "button:has-text('Play')"
+    ]
+  },
   "tube8.com": {
     "timeout_ms": 20000,
     "consent_selectors": [
@@ -70,7 +156,7 @@
     ]
   },
   "hypnotube.com": {
-    "timeout_ms": 30000,
+    "timeout_ms": 60000,
     "consent_selectors": [
       "button:has-text('I am over 18')",
       "button:has-text('Enter')",
@@ -78,14 +164,20 @@
     ],
     "play_selectors": [
       ".vjs-big-play-button",
+      ".vjs-play-control",
       ".jw-display-icon-container",
       "button.jw-icon-display",
+      "#player .play",
+      "#player video",
+      ".player,.video-player,.video-container,.player__overlay",
       "button[aria-label*='Play' i]",
-      "button:has-text('Play')"
+      "button:has-text('Play')",
+      "a:has-text('Play')",
+      "img[alt*='Play' i]"
     ]
   },
   "youjizz.com": {
-    "timeout_ms": 30000,
+    "timeout_ms": 60000,
     "consent_selectors": [
       "button:has-text('I Agree')",
       "button:has-text('Accept All')",
@@ -98,6 +190,72 @@
       "button.jw-icon-display",
       "button[aria-label*='Play' i]",
       "button:has-text('Play')"
+    ]
+  },
+  "spankbang.com": {
+    "timeout_ms": 90000,
+    "consent_selectors": [
+      "button:has-text('I Agree')",
+      "button:has-text('Accept')",
+      "button:has-text('Enter')",
+      "#ageDisclaimerWrapper button, #ageDisclaimerWrapper a:has-text('Enter')",
+      ".consent, .cookie, .gdpr :is(button,a):has-text('Accept')",
+      "button:has-text('Yes, I am over 18')",
+      ".age-gate :is(button,a):has-text('Enter')",
+      "button:has-text('I Accept')"
+    ],
+    "play_selectors": [
+      ".plyr__control--overlaid",
+      ".vjs-big-play-button",
+      "#player .play",
+      "#player video",
+      "button[aria-label*='Play' i]",
+      "button:has-text('Play')",
+      ".html5-video-player .ytp-large-play-button",
+      "video + .overlay:has(button) button",
+      ".vjs-control-bar .vjs-play-control",
+      ".plyr__controls [data-plyr='play']",
+      "#player button, #player .jw-display-icon-container, #player button.jw-icon-display",
+      "div[class*='play' i], [id*='play' i]",
+      "svg[aria-label*='Play' i]",
+      "[data-action='play'], [data-act*='play']",
+      "a.play, a#play, .play a",
+      "#vplayer button, #vplayer .jw-display-icon-container, #vplayer button.jw-icon-display",
+      "div#videoContainer .play",
+      "#player .plyr__control--overlaid"
+    ]
+  },
+  "thisvid.com": {
+    "timeout_ms": 105000,
+    "consent_selectors": [
+      "button:has-text('I Agree')",
+      "button:has-text('Accept All')",
+      "button:has-text('Enter')",
+      ".consent, .cookie, .gdpr :is(button,a):has-text('Accept')",
+      "button:has-text('Yes I am 18 or older')",
+      ".age-gate :is(button,a):has-text('Enter')",
+      "button:has-text('Continue')"
+    ],
+    "play_selectors": [
+      ".plyr__control--overlaid",
+      ".vjs-big-play-button",
+      "#player .play, #player button",
+      "#player video",
+      "button[aria-label*='Play' i]",
+      "button:has-text('Play')",
+      "#player .jw-display-icon-container, #player button.jw-icon-display",
+      "div[class*='play' i], .overlay:has(.play)",
+      "#video-js .vjs-big-play-button",
+      ".plyr__controls [data-plyr='play']",
+      ".fp-ui .fp-play, .fp-playbtn",
+      ".player__overlay, .video-overlay:has(button) button",
+      "button:has-text('Play video')",
+      "a.play, a#play, .play a",
+      "#vplayer button, #vplayer .jw-display-icon-container, #vplayer button.jw-icon-display",
+      "div#videoContainer .play",
+      "button.btn-play, .btn-play, #player-play",
+      "div[class*='play-button' i], .controls .play",
+      ".ph-icon-play"
     ]
   },
   "eporner.com": {
@@ -115,7 +273,7 @@
     ]
   },
   "hclips.com": {
-    "timeout_ms": 20000,
+    "timeout_ms": 75000,
     "consent_selectors": [
       "button:has-text('I Agree')",
       "button:has-text('Accept All')",
@@ -123,6 +281,10 @@
     ],
     "play_selectors": [
       ".vjs-big-play-button",
+      ".plyr__control--overlaid",
+      ".jw-display-icon-container",
+      "button.jw-icon-display",
+      "#player .play",
       "button[aria-label*='Play' i]",
       "button:has-text('Play')"
     ]

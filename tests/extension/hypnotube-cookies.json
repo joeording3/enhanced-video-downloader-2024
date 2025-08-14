@@ -1,0 +1,11 @@
+[
+  {
+    "name": "PHPSESSID",
+    "value": "t1951uu7c5oefanpmtqfucl4oj",
+    "domain": "hypnotube.com",
+    "path": "/",
+    "httpOnly": false,
+    "secure": false,
+    "sameSite": "Lax"
+  }
+]

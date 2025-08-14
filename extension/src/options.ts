@@ -118,6 +118,8 @@ export function initOptionsPage(): void {
   setupHistoryUI();
   loadErrorHistory();
   logger.debug("Options page initialized", { component: "options" });
+  // helper actions wired after UI init
+  // no-op: helpers declared below
 
   // Queue Admin wiring
   const queueRefreshBtn = document.getElementById("queue-refresh") as HTMLButtonElement | null;
@@ -317,7 +319,7 @@ export function loadSettings(): void {
         if (!hadLocalConfig) {
           populateFormFields(response.data);
         } else {
-          // When local config exists, still populate env-only fields from server (e.g., LOG_FILE)
+          // When local config exists, still populate env-only fields from server (e.g., LOG_PATH)
           try {
             const serverData: any = response.data;
             const logFileInput = document.getElementById(
@@ -379,8 +381,17 @@ export function populateFormFields(config: ServerConfig): void {
     ytdlpFormat: document.getElementById("settings-ytdlp-format") as HTMLSelectElement,
     allowPlaylists: document.getElementById("settings-allow-playlists") as HTMLInputElement,
     logFile: document.getElementById("settings-log-file") as HTMLInputElement,
+    historyFile: document.getElementById("settings-history-file") as HTMLInputElement,
     ytdlpConcurrent: document.getElementById(
       "settings-ytdlp-concurrent-fragments"
+    ) as HTMLInputElement,
+    ytdlpCookiesBrowser: document.getElementById(
+      "settings-ytdlp-cookies-browser"
+    ) as HTMLSelectElement,
+    ytdlpMergeFormat: document.getElementById("settings-ytdlp-merge-format") as HTMLSelectElement,
+    ytdlpContinue: document.getElementById("settings-ytdlp-continue") as HTMLInputElement,
+    ytdlpFragmentRetries: document.getElementById(
+      "settings-ytdlp-fragment-retries"
     ) as HTMLInputElement,
   };
 
@@ -402,11 +413,25 @@ export function populateFormFields(config: ServerConfig): void {
   if (elements.ytdlpFormat && config.yt_dlp_options?.format) {
     elements.ytdlpFormat.value = config.yt_dlp_options.format;
   }
+  if (elements.ytdlpCookiesBrowser && Array.isArray(config.yt_dlp_options?.cookiesfrombrowser)) {
+    const arr = config.yt_dlp_options!.cookiesfrombrowser as unknown as any[];
+    const first = arr && arr.length ? String(arr[0]) : "";
+    if (first) elements.ytdlpCookiesBrowser.value = first;
+  }
+  if (elements.ytdlpMergeFormat && config.yt_dlp_options?.merge_output_format) {
+    elements.ytdlpMergeFormat.value = String(config.yt_dlp_options.merge_output_format);
+  }
+  if (elements.ytdlpContinue && typeof (config as any)?.yt_dlp_options?.continuedl === "boolean") {
+    elements.ytdlpContinue.checked = !!(config as any).yt_dlp_options.continuedl;
+  }
   if (elements.allowPlaylists) {
     elements.allowPlaylists.checked = config.allow_playlists ?? false;
   }
   if (elements.logFile && (config as any).log_file) {
     elements.logFile.value = (config as any).log_file as string;
+  }
+  if (elements.historyFile && (config as any).history_file) {
+    elements.historyFile.value = (config as any).history_file as string;
   }
   // Populate yt-dlp concurrent fragments from config or env overlay
   const conc =
@@ -414,6 +439,10 @@ export function populateFormFields(config: ServerConfig): void {
     (config as any)?.ytdlp_concurrent_fragments;
   if (elements.ytdlpConcurrent && conc !== undefined && conc !== null) {
     elements.ytdlpConcurrent.value = String(conc);
+  }
+  const fragRetries = (config as any)?.yt_dlp_options?.fragment_retries;
+  if (elements.ytdlpFragmentRetries && fragRetries !== undefined && fragRetries !== null) {
+    elements.ytdlpFragmentRetries.value = String(fragRetries);
   }
 
   // Populate console log level select if present
@@ -433,6 +462,12 @@ export function populateFormFields(config: ServerConfig): void {
     "settings-console-log-level"
   ) as HTMLSelectElement;
   const formatSelect = document.getElementById("settings-ytdlp-format") as HTMLSelectElement;
+  const cookiesBrowserSelect = document.getElementById(
+    "settings-ytdlp-cookies-browser"
+  ) as HTMLSelectElement | null;
+  const mergeFormatSelect = document.getElementById(
+    "settings-ytdlp-merge-format"
+  ) as HTMLSelectElement | null;
 
   if (logLevelSelect) {
     updateLogLevelInfo(logLevelSelect);
@@ -442,6 +477,12 @@ export function populateFormFields(config: ServerConfig): void {
   }
   if (formatSelect) {
     updateFormatInfo(formatSelect);
+  }
+  if (cookiesBrowserSelect && !cookiesBrowserSelect.value) {
+    cookiesBrowserSelect.value = "chrome";
+  }
+  if (mergeFormatSelect && !mergeFormatSelect.value) {
+    mergeFormatSelect.value = "mp4";
   }
 }
 
@@ -467,17 +508,50 @@ export function setupEventListeners(): void {
     themeToggle.addEventListener("click", handleThemeToggle);
   }
 
-  const clearHistoryButton = document.getElementById("settings-clear-history");
-  if (clearHistoryButton) {
-    clearHistoryButton.addEventListener("click", () => {
-      if (confirm("Are you sure you want to permanently delete all download history?")) {
-        clearHistoryAndNotify().catch(error => {
-          console.error("Failed to clear history:", error);
-          setStatus("settings-status", "Failed to clear history", true);
-        });
-      }
-    });
-  }
+  const clearCompletedBtn = document.getElementById("settings-clear-completed");
+  clearCompletedBtn?.addEventListener("click", async () => {
+    try {
+      await clearByStatus("completed");
+      setStatus("settings-status", "Cleared completed items");
+    } catch (e) {
+      setStatus("settings-status", "Failed to clear completed", true);
+    }
+  });
+
+  const clearFailedBtn = document.getElementById("settings-clear-failed");
+  clearFailedBtn?.addEventListener("click", async () => {
+    try {
+      await clearByStatus("error");
+      setStatus("settings-status", "Cleared failed items");
+    } catch (e) {
+      setStatus("settings-status", "Failed to clear failed", true);
+    }
+  });
+
+  const clearAllBtn = document.getElementById("settings-clear-all");
+  clearAllBtn?.addEventListener("click", async () => {
+    if (!confirm("This will stop active downloads, clear queue, and remove all history. Continue?")) return;
+    try {
+      await clearStatuses(["downloading", "paused", "queued", "finished", "error"]);
+      await clearQueueServer();
+      await clearHistoryRemote();
+      // Also clear local cached history
+      await clearHistoryAndNotify();
+      setStatus("settings-status", "Cleared all and stopped active downloads");
+    } catch (e) {
+      setStatus("settings-status", "Failed to clear all", true);
+    }
+  });
+
+  const clearQueueBtn = document.getElementById("settings-clear-queue");
+  clearQueueBtn?.addEventListener("click", async () => {
+    try {
+      await clearQueueServer();
+      setStatus("settings-status", "Cleared queue");
+    } catch (e) {
+      setStatus("settings-status", "Failed to clear queue", true);
+    }
+  });
 
   const resumeDownloadsButton = document.getElementById("settings-resume-downloads");
   if (resumeDownloadsButton) {
@@ -622,12 +696,62 @@ function setupLiveSave(): void {
     onEnterCommit(downloadDirInput, commit);
   }
 
+  // History file path (live save)
+  const historyFileInput = document.getElementById(
+    "settings-history-file"
+  ) as HTMLInputElement | null;
+  if (historyFileInput) {
+    const commit = () => {
+      const raw = historyFileInput.value;
+      const v = typeof raw === "string" ? raw.trim() : "";
+      const partial: Record<string, unknown> = {};
+      if (v) partial.history_file = v;
+      else partial.history_file = undefined;
+      void sendPartialUpdate(partial as any);
+    };
+    historyFileInput.addEventListener("blur", commit);
+    onEnterCommit(historyFileInput, commit);
+  }
+
   const ytdlpFormat = document.getElementById("settings-ytdlp-format") as HTMLSelectElement | null;
   if (ytdlpFormat) {
     ytdlpFormat.addEventListener("change", () => {
       if (validateFormat(ytdlpFormat)) {
         void sendPartialUpdate({ yt_dlp_options: { format: ytdlpFormat.value } });
       }
+    });
+  }
+
+  const ytdlpCookiesBrowser = document.getElementById(
+    "settings-ytdlp-cookies-browser"
+  ) as HTMLSelectElement | null;
+  if (ytdlpCookiesBrowser) {
+    const commitCookies = () => {
+      const val = (ytdlpCookiesBrowser.value || "chrome").trim();
+      if (val) void sendPartialUpdate({ yt_dlp_options: { cookiesfrombrowser: [val] } });
+    };
+    ytdlpCookiesBrowser.addEventListener("change", commitCookies);
+    ytdlpCookiesBrowser.addEventListener("blur", commitCookies);
+  }
+
+  const ytdlpMergeFormat = document.getElementById(
+    "settings-ytdlp-merge-format"
+  ) as HTMLSelectElement | null;
+  if (ytdlpMergeFormat) {
+    const commitMerge = () => {
+      const val = (ytdlpMergeFormat.value || "mp4").trim();
+      if (val) void sendPartialUpdate({ yt_dlp_options: { merge_output_format: val } });
+    };
+    ytdlpMergeFormat.addEventListener("change", commitMerge);
+    ytdlpMergeFormat.addEventListener("blur", commitMerge);
+  }
+
+  const ytdlpContinue = document.getElementById(
+    "settings-ytdlp-continue"
+  ) as HTMLInputElement | null;
+  if (ytdlpContinue) {
+    ytdlpContinue.addEventListener("change", () => {
+      void sendPartialUpdate({ yt_dlp_options: { continuedl: !!ytdlpContinue.checked } });
     });
   }
 
@@ -647,6 +771,24 @@ function setupLiveSave(): void {
     ytdlpConc.addEventListener("change", commitConc);
     ytdlpConc.addEventListener("blur", commitConc);
     onEnterCommit(ytdlpConc, commitConc);
+  }
+
+  const ytdlpFragRetries = document.getElementById(
+    "settings-ytdlp-fragment-retries"
+  ) as HTMLInputElement | null;
+  if (ytdlpFragRetries) {
+    const commitFragRetries = () => {
+      const raw = ytdlpFragRetries.value.trim();
+      const n = parseInt(raw, 10);
+      if (Number.isFinite(n) && n >= 0 && n <= 50) {
+        void sendPartialUpdate({ yt_dlp_options: { fragment_retries: n } });
+      } else {
+        setStatus("settings-status", "Fragment retries must be 0-50", true, 2500);
+      }
+    };
+    ytdlpFragRetries.addEventListener("change", commitFragRetries);
+    ytdlpFragRetries.addEventListener("blur", commitFragRetries);
+    onEnterCommit(ytdlpFragRetries, commitFragRetries);
   }
 
   const allowPlaylists = document.getElementById(
@@ -1242,9 +1384,12 @@ export function setupLogsUI(): void {
   }
 
   let autoTimer: number | null = null;
+  // If the saved prefs have auto-refresh enabled, defer starting until after
+  // fetchAndRender is defined to avoid temporal dead zone issues
+  let shouldStartAuto = false;
 
-  // Load persisted log viewer preferences
-  (async () => {
+  // Load persisted log viewer preferences (awaited before first render)
+  const loadPrefs = async (): Promise<void> => {
     try {
       const res = await chrome.storage.local.get("logViewerPrefs");
       const prefs = (res as any).logViewerPrefs || {};
@@ -1259,14 +1404,19 @@ export function setupLogsUI(): void {
       }
       if (autoCheckbox && typeof prefs.auto === "boolean") {
         autoCheckbox.checked = prefs.auto;
+        shouldStartAuto = !!prefs.auto;
+      } else if (autoCheckbox) {
+        // Fall back to current checkbox state if no pref saved
+        shouldStartAuto = !!autoCheckbox.checked;
       }
       if (filterWerkzeugCheckbox && typeof prefs.filterWerkzeug === "boolean") {
         filterWerkzeugCheckbox.checked = prefs.filterWerkzeug;
       }
     } catch {
-      // ignore
+      // ignore; fall back to DOM defaults
+      shouldStartAuto = !!autoCheckbox?.checked;
     }
-  })();
+  };
 
   const persistPrefs = (): void => {
     const prefs = {
@@ -1422,11 +1572,30 @@ export function setupLogsUI(): void {
     return count;
   };
 
-  const renderLogs = (text: string): void => {
+  const renderLogs = (text: string, scrollMode: "preserve" | "top" = "preserve"): void => {
     const filtered = applyFilters(text);
     if (displayDiv) {
+      // Preserve scroll position to avoid snapping during refresh
+      const container = displayDiv;
+      const prevTop = container.scrollTop;
+      const atBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 4;
       displayDiv.textContent = "";
       const pre = document.createElement("pre");
+      // If this is a synthetic error (e.g., "Error: Server not available"), render plainly without badges
+      const trimmed = (text || "").trim();
+      if (/^error:/i.test(trimmed)) {
+        pre.textContent = trimmed;
+        displayDiv.appendChild(pre);
+        // Restore scroll position or enforce top depending on scroll mode
+        if (scrollMode === "top") {
+          container.scrollTop = 0;
+        } else if (atBottom) {
+          container.scrollTop = container.scrollHeight;
+        } else {
+          container.scrollTop = prevTop;
+        }
+        return;
+      }
       // If nothing remains after filtering, show a simple placeholder without a misleading level badge
       if (filtered.trim().length === 0) {
         pre.textContent = "(no logs)";
@@ -1517,20 +1686,7 @@ export function setupLogsUI(): void {
             // ignore JSON parsing error on this line
           }
         }
-        // If we have NDJSON entries, optionally sort by start_ts according to UI toggle
-        if (entries.length > 0) {
-          const recentFirst = !!(
-            document.getElementById("log-recent-first") as HTMLInputElement | null
-          )?.checked;
-          const withStart = entries.filter(e => typeof e._startTs === "number");
-          if (withStart.length > 0) {
-            entries.sort((a, b) =>
-              recentFirst
-                ? (b._startTs ?? 0) - (a._startTs ?? 0)
-                : (a._startTs ?? 0) - (b._startTs ?? 0)
-            );
-          }
-        }
+        // Do not sort here; we apply a unified sort after all parsing
       } catch {
         // Ignore NDJSON block failures entirely; we'll fall back to legacy parsing
         entries = [];
@@ -1657,7 +1813,37 @@ export function setupLogsUI(): void {
         if (current) entries.push(current);
       }
 
-      // After building entries, apply UI limit AFTER filtering
+      // Apply unified ordering based on the Recent First toggle
+      try {
+        const recentFirst = !!(
+          document.getElementById("log-recent-first") as HTMLInputElement | null
+        )?.checked;
+        const entriesWithTs = entries.map(e => ({
+          ...e,
+          __ts:
+            typeof (e as any)._startTs === "number"
+              ? (e as any)._startTs
+              : typeof e.timestamp === "string"
+              ? Date.parse(e.timestamp)
+              : undefined,
+        }));
+        const anyTs = entriesWithTs.some(e => Number.isFinite(e.__ts));
+        if (anyTs) {
+          entriesWithTs.sort((a, b) => {
+            const ta = Number.isFinite(a.__ts) ? (a.__ts as number) : -Infinity;
+            const tb = Number.isFinite(b.__ts) ? (b.__ts as number) : -Infinity;
+            return recentFirst ? tb - ta : ta - tb;
+          });
+          entries = entriesWithTs.map(({ __ts, ...rest }) => rest);
+        } else if (recentFirst) {
+          // Fall back to reversing the arrival order
+          entries.reverse();
+        }
+      } catch {
+        // ignore ordering issues; render in arrival order
+      }
+
+      // After ordering, apply UI limit AFTER filtering
       const limitCount = limitSelect ? parseInt(limitSelect.value, 10) : 500;
       if (Number.isFinite(limitCount) && limitCount > 0 && entries.length > limitCount) {
         entries = entries.slice(0, limitCount);
@@ -1706,10 +1892,18 @@ export function setupLogsUI(): void {
         }
       }
       displayDiv.appendChild(pre);
+      // Restore previous scroll position or enforce top based on scroll mode
+      if (scrollMode === "top") {
+        container.scrollTop = 0;
+      } else if (atBottom) {
+        container.scrollTop = container.scrollHeight;
+      } else {
+        container.scrollTop = prevTop;
+      }
     }
   };
 
-  const fetchAndRender = (): void => {
+  const fetchAndRender = (scrollMode: "preserve" | "top" = "preserve"): void => {
     const uiLimit = limitSelect ? parseInt(limitSelect.value, 10) : 500;
     const recent = recentFirstCheckbox ? !!recentFirstCheckbox.checked : true;
     const wantsAll = !Number.isFinite(uiLimit) || uiLimit <= 0;
@@ -1724,22 +1918,22 @@ export function setupLogsUI(): void {
     const attempt = (): void => {
       chrome.runtime.sendMessage({ type: "getLogs", lines: requested, recent }, (response: any) => {
         if (chrome.runtime.lastError) {
-          renderLogs("Error: " + chrome.runtime.lastError.message);
+          renderLogs("Error: " + chrome.runtime.lastError.message, scrollMode);
           return;
         }
         if (!response || response.status !== "success") {
-          renderLogs("Error: " + (response?.message || "Failed to fetch logs"));
+          renderLogs("Error: " + (response?.message || "Failed to fetch logs"), scrollMode);
           return;
         }
         const text = response.data || "";
         if (wantsAll) {
-          renderLogs(text);
+          renderLogs(text, scrollMode);
           return;
         }
         const filtered = applyFilters(text);
         const count = countEntriesFromFiltered(filtered);
         if (count >= uiLimit || requested >= hardCap) {
-          renderLogs(text);
+          renderLogs(text, scrollMode);
           return;
         }
         requested = Math.min(hardCap, requested * 2);
@@ -1751,19 +1945,19 @@ export function setupLogsUI(): void {
 
   refreshBtn?.addEventListener("click", () => {
     persistPrefs();
-    fetchAndRender();
+    fetchAndRender("top");
   });
   limitSelect?.addEventListener("change", () => {
     persistPrefs();
-    fetchAndRender();
+    fetchAndRender("top");
   });
   recentFirstCheckbox?.addEventListener("change", () => {
     persistPrefs();
-    fetchAndRender();
+    fetchAndRender("top");
   });
   filterWerkzeugCheckbox?.addEventListener("change", () => {
     persistPrefs();
-    fetchAndRender();
+    fetchAndRender("top");
   });
 
   clearBtn?.addEventListener("click", () => {
@@ -1773,7 +1967,7 @@ export function setupLogsUI(): void {
         return;
       }
       if (response && response.status === "success") {
-        fetchAndRender();
+        fetchAndRender("top");
       } else {
         renderLogs("Error: " + (response?.message || "Failed to clear logs"));
       }
@@ -1786,13 +1980,27 @@ export function setupLogsUI(): void {
       autoTimer = null;
     }
     if (autoCheckbox.checked) {
-      autoTimer = window.setInterval(fetchAndRender, 3000);
+      autoTimer = window.setInterval(() => fetchAndRender("preserve"), 3000);
     }
     persistPrefs();
   });
 
-  // Initial load
-  fetchAndRender();
+  // Clean up timer when the page is being unloaded to prevent background polling
+  window.addEventListener("beforeunload", () => {
+    if (autoTimer) {
+      window.clearInterval(autoTimer);
+      autoTimer = null;
+    }
+  });
+
+  // Initial load: wait for stored prefs, then render and start auto-refresh if enabled
+  (async () => {
+    await loadPrefs();
+    fetchAndRender("top");
+    if (shouldStartAuto && !autoTimer) {
+      autoTimer = window.setInterval(() => fetchAndRender("preserve"), 3000);
+    }
+  })();
 }
 
 /**
@@ -1816,49 +2024,87 @@ export async function saveSettings(event: Event): Promise<void> {
   setStatus("settings-status", "Saving settings...", false);
 
   try {
-    // Collect form data
-    const formData = new FormData(event.target as HTMLFormElement);
+    // Collect form data (but only send non-empty fields to avoid overwriting server defaults)
+    const form = event.target as HTMLFormElement;
+    const formData = new FormData(form);
 
-    const config: ServerConfig & Record<string, any> = {
-      server_port: parseInt(formData.get("server-port") as string, 10),
-      download_dir: formData.get("download-dir") as string,
-      debug_mode: formData.get("enable-debug") === "on",
-      enable_history: formData.get("enable-history") === "on",
-      log_level: formData.get("log-level") as string,
-      // Persist console log level from dedicated field if present; else mirror log_level
-      console_log_level: ((formData.get("console-log-level") as string) ||
-        (formData.get("log-level") as string) ||
-        "info") as any,
-      yt_dlp_options: {
-        format: formData.get("ytdlp-format") as string,
-        concurrent_fragments: (() => {
-          const raw = formData.get("ytdlp-concurrent-fragments") as string | null;
-          const n = raw ? parseInt(raw, 10) : undefined;
-          return Number.isFinite(n as any) ? n : undefined;
-        })(),
-      },
-      allow_playlists: formData.get("allow-playlists") === "on",
-    };
+    const portRaw = (formData.get("server-port") as string | null) || "";
+    const portVal = portRaw.trim() ? parseInt(portRaw, 10) : undefined;
 
-    // Include env-backed runtime settings
-    const logFile = formData.get("log-file") as string | null;
-    if (logFile) (config as any).log_file = logFile;
+    const cfgToPost: Partial<ServerConfig & Record<string, unknown>> = {};
+    if (Number.isFinite(portVal as number)) cfgToPost.server_port = portVal as number;
+
+    const downloadDir = (formData.get("download-dir") as string | null) || "";
+    if (downloadDir.trim()) cfgToPost.download_dir = downloadDir.trim();
+
+    const logLevel = (formData.get("log-level") as string | null) || "";
+    if (logLevel.trim()) cfgToPost.log_level = logLevel as string;
+
+    const consoleLogLevel = (formData.get("console-log-level") as string | null) || "";
+    if (consoleLogLevel.trim()) (cfgToPost as any).console_log_level = consoleLogLevel;
+
+    const enableDebug = (form.elements.namedItem("enable-debug") as HTMLInputElement | null)
+      ?.checked;
+    if (enableDebug === true) cfgToPost.debug_mode = true;
+
+    const enableHistory = (form.elements.namedItem("enable-history") as HTMLInputElement | null)
+      ?.checked;
+    if (enableHistory === true) cfgToPost.enable_history = true;
+
+    const allowPlaylists = (form.elements.namedItem("allow-playlists") as HTMLInputElement | null)
+      ?.checked;
+    if (allowPlaylists === true) cfgToPost.allow_playlists = true;
+
+    const ytdlpFormat = (formData.get("ytdlp-format") as string | null) || "";
+    const ytdlpConcRaw = (formData.get("ytdlp-concurrent-fragments") as string | null) || "";
+    const ytdlpConc = ytdlpConcRaw.trim() ? parseInt(ytdlpConcRaw, 10) : undefined;
+    const ytdlpCookiesBrowser = (formData.get("ytdlp-cookies-browser") as string | null) || "";
+    const ytdlpMergeFormat = (formData.get("ytdlp-merge-format") as string | null) || "";
+    const ytdlpContinue = (form.elements.namedItem("ytdlp-continue") as HTMLInputElement | null)
+      ?.checked;
+    const ytdlpFragRetriesRaw = (formData.get("ytdlp-fragment-retries") as string | null) || "";
+    const ytdlpFragRetries = ytdlpFragRetriesRaw.trim()
+      ? parseInt(ytdlpFragRetriesRaw, 10)
+      : undefined;
+    const ytDlpOptions: Record<string, unknown> = {};
+    if (ytdlpFormat.trim()) ytDlpOptions.format = ytdlpFormat.trim();
+    if (ytdlpMergeFormat.trim()) ytDlpOptions.merge_output_format = ytdlpMergeFormat.trim();
+    if (Number.isFinite(ytdlpConc as number))
+      ytDlpOptions.concurrent_fragments = ytdlpConc as number;
+    if (ytdlpCookiesBrowser.trim()) ytDlpOptions.cookiesfrombrowser = [ytdlpCookiesBrowser.trim()];
+    if (ytdlpContinue === true || ytdlpContinue === false)
+      ytDlpOptions.continuedl = !!ytdlpContinue;
+    if (Number.isFinite(ytdlpFragRetries as number))
+      ytDlpOptions.fragment_retries = ytdlpFragRetries as number;
+    if (Object.keys(ytDlpOptions).length) (cfgToPost as any)["yt_dlp_options"] = ytDlpOptions;
+
+    const logFile = (formData.get("log-file") as string | null) || "";
+    if (logFile.trim()) (cfgToPost as any).log_file = logFile.trim();
+    const historyFile = (formData.get("history-file") as string | null) || "";
+    if (historyFile.trim()) (cfgToPost as any).history_file = historyFile.trim();
+
+    // If user provided a server port, cache it immediately so background can talk to server
+    if (Number.isFinite(portVal as number)) {
+      try {
+        const existing = await new Promise<any>(resolve =>
+          chrome.storage.local.get(["serverConfig"], resolve)
+        );
+        const nextCfg = { ...(existing?.serverConfig || {}), server_port: portVal };
+        await new Promise<void>((resolve, reject) =>
+          chrome.storage.local.set({ serverConfig: nextCfg }, () => {
+            if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+            else resolve();
+          })
+        );
+      } catch {
+        // best-effort cache
+      }
+    }
     // Gunicorn UI removed; workers forced to 1 in backend
-
-    // Save to local storage first
-    await new Promise<void>((resolve, reject) => {
-      chrome.storage.local.set({ serverConfig: config }, () => {
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
-        } else {
-          resolve();
-        }
-      });
-    });
 
     // Send to server
     const response = await new Promise<any>((resolve, reject) => {
-      chrome.runtime.sendMessage({ type: "setConfig", config }, response => {
+      chrome.runtime.sendMessage({ type: "setConfig", config: cfgToPost }, response => {
         if (chrome.runtime.lastError) {
           reject(new Error(chrome.runtime.lastError.message));
         } else {
@@ -1902,19 +2148,48 @@ export async function saveSettings(event: Event): Promise<void> {
       logger.info(
         "Settings saved successfully",
         { component: "options", operation: "configSave" },
-        { config }
+        { posted: cfgToPost }
       );
 
-      // Persist a normalized copy of config to storage so Options always reloads exact values
+      // Persist a normalized copy of current form values to storage
       try {
         await new Promise<void>((resolve, reject) => {
-          chrome.storage.local.set({ serverConfig: config }, () => {
+          // Only persist the fields we posted; avoid writing empties over server config
+          chrome.storage.local.set({ serverConfig: { ...(cfgToPost as any) } }, () => {
             if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
             else resolve();
           });
         });
       } catch {
         // swallow
+      }
+
+      // If some fields were left blank locally, fetch server config and populate missing
+      try {
+        const hadEmpties = (() => {
+          const neededIds = [
+            "settings-download-dir",
+            "settings-log-level",
+            "settings-ytdlp-format",
+            "settings-ytdlp-concurrent-fragments",
+            "settings-log-file",
+            "settings-history-file",
+          ];
+          return neededIds.some(id => {
+            const el = document.getElementById(id) as HTMLInputElement | HTMLSelectElement | null;
+            if (!el) return false;
+            return "value" in el ? String((el as any).value || "").trim() === "" : false;
+          });
+        })();
+        if (hadEmpties) {
+          chrome.runtime.sendMessage({ type: "getConfig" }, resp => {
+            if (resp && resp.status === "success" && resp.data) {
+              populateMissingFieldsFromConfig(resp.data as any);
+            }
+          });
+        }
+      } catch {
+        // ignore
       }
     } else {
       throw new Error(response?.message || "Failed to save settings to server");
@@ -1938,6 +2213,88 @@ export async function saveSettings(event: Event): Promise<void> {
     saveButton.disabled = false;
     saveButton.innerHTML = originalText;
   }
+}
+
+/**
+ * Populate only empty/unchecked fields from a server config payload, leaving
+ * any user-entered values intact.
+ */
+function populateMissingFieldsFromConfig(config: ServerConfig & Record<string, any>): void {
+  const portEl = document.getElementById("settings-server-port") as HTMLInputElement | null;
+  if (portEl && (!portEl.value || !portEl.value.trim()) && config.server_port != null) {
+    portEl.value = String(config.server_port);
+  }
+
+  const dirEl = document.getElementById("settings-download-dir") as HTMLInputElement | null;
+  if (dirEl && (!dirEl.value || !dirEl.value.trim()) && config.download_dir) {
+    dirEl.value = config.download_dir;
+  }
+
+  const logLevelEl = document.getElementById("settings-log-level") as HTMLSelectElement | null;
+  if (logLevelEl && (!logLevelEl.value || !logLevelEl.value.trim()) && config.log_level) {
+    logLevelEl.value = config.log_level;
+  }
+
+  const fmtEl = document.getElementById("settings-ytdlp-format") as HTMLSelectElement | null;
+  if (fmtEl && (!fmtEl.value || !fmtEl.value.trim()) && config.yt_dlp_options?.format) {
+    fmtEl.value = String(config.yt_dlp_options.format);
+  }
+
+  const concEl = document.getElementById(
+    "settings-ytdlp-concurrent-fragments"
+  ) as HTMLInputElement | null;
+  const concVal =
+    (config as any)?.yt_dlp_options?.concurrent_fragments ??
+    (config as any)?.ytdlp_concurrent_fragments;
+  if (concEl && (!concEl.value || !concEl.value.trim()) && concVal != null) {
+    concEl.value = String(concVal);
+  }
+
+  const logFileEl = document.getElementById("settings-log-file") as HTMLInputElement | null;
+  if (logFileEl && (!logFileEl.value || !logFileEl.value.trim()) && (config as any).log_file) {
+    logFileEl.value = String((config as any).log_file);
+  }
+  const histFileEl = document.getElementById("settings-history-file") as HTMLInputElement | null;
+  if (
+    histFileEl &&
+    (!histFileEl.value || !histFileEl.value.trim()) &&
+    (config as any).history_file
+  ) {
+    histFileEl.value = String((config as any).history_file);
+  }
+
+  const consoleLogLevelEl = document.getElementById(
+    "settings-console-log-level"
+  ) as HTMLSelectElement | null;
+  if (
+    consoleLogLevelEl &&
+    (!consoleLogLevelEl.value || !consoleLogLevelEl.value.trim()) &&
+    (config as any).console_log_level
+  ) {
+    consoleLogLevelEl.value = String((config as any).console_log_level);
+  }
+
+  // Checkboxes: only set if currently unchecked and server says true
+  const debugEl = document.getElementById("settings-enable-debug") as HTMLInputElement | null;
+  if (debugEl && !debugEl.checked && config.debug_mode === true) debugEl.checked = true;
+
+  const histEl = document.getElementById("settings-enable-history") as HTMLInputElement | null;
+  if (histEl && !histEl.checked && config.enable_history === true) histEl.checked = true;
+
+  const playlistsEl = document.getElementById(
+    "settings-allow-playlists"
+  ) as HTMLInputElement | null;
+  if (playlistsEl && !playlistsEl.checked && config.allow_playlists === true)
+    playlistsEl.checked = true;
+
+  // Re-run validation/info updates after filling
+  validateAllFields();
+  const logSel = document.getElementById("settings-log-level") as HTMLSelectElement | null;
+  if (logSel) updateLogLevelInfo(logSel);
+  const consSel = document.getElementById("settings-console-log-level") as HTMLSelectElement | null;
+  if (consSel) updateConsoleLogLevelInfo(consSel);
+  const fmtSel = document.getElementById("settings-ytdlp-format") as HTMLSelectElement | null;
+  if (fmtSel) updateFormatInfo(fmtSel);
 }
 
 /**
@@ -2200,6 +2557,101 @@ export async function handleThemeToggle(): Promise<void> {
   } catch (error) {
     console.error("Error toggling theme:", error);
   }
+}
+
+// --- Admin clear helpers ---
+async function getServerPortCached(): Promise<number | null> {
+  try {
+    const res = await chrome.storage.local.get("serverPort");
+    const port = (res as any)?.serverPort;
+    return typeof port === "number" && Number.isFinite(port) ? port : null;
+  } catch {
+    return null;
+  }
+}
+
+async function clearByStatus(status: "completed" | "error"): Promise<void> {
+  // Clear in-memory status first
+  try {
+    const port = await getServerPortCached();
+    if (port) {
+      const param = status === "completed" ? "finished" : "error";
+      await fetch(`http://127.0.0.1:${port}/api/status?status=${encodeURIComponent(param)}`, {
+        method: "DELETE",
+      });
+    }
+  } catch {}
+  // Filter server history file
+  try {
+    const port = await getServerPortCached();
+    if (port) {
+      const resp = await fetch(`http://127.0.0.1:${port}/api/history`);
+      if (resp.ok) {
+        const data = await resp.json();
+        const items: any[] = Array.isArray(data?.history) ? data.history : [];
+        const filtered = items.filter(it => {
+          const s = String(it?.status || "").toLowerCase();
+          if (status === "completed") return !(s === "finished" || s === "complete" || s === "completed" || s === "success");
+          return !(s === "error" || s === "failed" || s === "fail");
+        });
+        await fetch(`http://127.0.0.1:${port}/api/history`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(filtered),
+        });
+      }
+    }
+  } catch {}
+  // Update UI
+  try {
+    chrome.runtime.sendMessage({ type: "historyUpdated" });
+  } catch {}
+}
+
+async function clearStatuses(states: string[]): Promise<void> {
+  const port = await getServerPortCached();
+  if (!port) return;
+  await Promise.all(
+    states.map(async s => {
+      try {
+        await fetch(`http://127.0.0.1:${port}/api/status?status=${encodeURIComponent(s)}`, { method: "DELETE" });
+      } catch {}
+    })
+  );
+}
+
+async function clearQueueServer(): Promise<void> {
+  const port = await getServerPortCached();
+  if (!port) return;
+  try {
+    // Get queue, then remove each by id
+    const r = await fetch(`http://127.0.0.1:${port}/api/queue`);
+    if (r.ok) {
+      const data = await r.json();
+      const arr: any[] = Array.isArray(data?.queue) ? data.queue : [];
+      await Promise.all(
+        arr.map(async it => {
+          const id = String(it?.downloadId || it?.download_id || "");
+          if (!id) return;
+          try {
+            await fetch(`http://127.0.0.1:${port}/api/queue/${encodeURIComponent(id)}/remove`, { method: "POST" });
+          } catch {}
+        })
+      );
+    }
+  } catch {}
+}
+
+async function clearHistoryRemote(): Promise<void> {
+  const port = await getServerPortCached();
+  if (!port) return;
+  try {
+    await fetch(`http://127.0.0.1:${port}/api/history`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "clear" }),
+    });
+  } catch {}
 }
 
 /**

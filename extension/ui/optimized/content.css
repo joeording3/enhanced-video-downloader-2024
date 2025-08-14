@@ -7,6 +7,28 @@
 @import url("./themes.css");
 
 /* Draggable Enhanced Video Downloader button */
+#evd-button {
+  /* Apply component classes explicitly since 'composes' is not standard CSS */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--primary);
+  color: var(--text-inverse);
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+  cursor: move !important;
+  transition: var(--transition-normal);
+  text-decoration: none;
+  user-select: none !important;
+  position: absolute !important;
+  top: var(--space-sm) !important;
+  right: var(--space-sm) !important;
+  z-index: var(--z-max) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
 
 /* New unified styles for injected floating download button */
 .download-button {
@@ -32,7 +54,8 @@
 
 /* Strong scoping to resist site overrides and other extensions */
 button.evd-drag-handle.download-button,
-button[id^="evd-download-button-"] {
+button[id^="evd-download-button-"],
+#evd-download-button-main {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -60,8 +83,14 @@ button[id^="evd-download-button-"] {
 }
 
 /* Cursor feedback during drag */
+.download-button.dragging {
+  cursor: grabbing !important;
+}
 
 /* JS-toggled micro-bounce on click */
+.download-button.clicked {
+  animation: evd-click-bounce var(--transition-bounce);
+}
 
 @keyframes evd-click-bounce {
   0% { transform: scale(1); }
@@ -70,8 +99,23 @@ button[id^="evd-download-button-"] {
 }
 
 /* Visibility helpers for the floating button */
+.evd-visible {
+  display: block !important;
+  opacity: 1 !important;
+}
 
 /* Contrast-aware variants applied dynamically based on page background */
+.evd-on-dark {
+  background-color: #fff !important;
+  color: #000 !important;
+  border-color: #000 !important;
+}
+
+.evd-on-light {
+  background-color: #000 !important;
+  color: #fff !important;
+  border-color: #fff !important;
+}
 
 /* Download feedback states */
 .download-sending {
@@ -91,7 +135,8 @@ button[id^="evd-download-button-"] {
 
 /* Hidden state should fully remove the button from layout and interactions */
 button.evd-drag-handle.download-button.hidden,
-button[id^="evd-download-button-"].hidden {
+button[id^="evd-download-button-"].hidden,
+#evd-download-button-main.hidden {
   display: none !important;
   opacity: 0 !important;
   pointer-events: none !important;

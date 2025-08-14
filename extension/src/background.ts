@@ -17,21 +17,10 @@ import {
 } from "./background-logic";
 import { getServerPort, getPortRange } from "./core/constants";
 import { stateManager } from "./core/state-manager";
-import { validationService } from "./core/validation-service";
+// validationService import removed (unused)
 import { errorHandler, CentralizedErrorHandler } from "./core/error-handler";
-import { logger, CentralizedLogger } from "./core/logger";
-import {
-  STORAGE_KEYS,
-  NETWORK_CONSTANTS,
-  CONFIG_CONSTANTS,
-  MESSAGE_TYPES,
-  STATUS_CONSTANTS,
-  THEME_CONSTANTS,
-  ERROR_MESSAGES,
-  SUCCESS_MESSAGES,
-  NOTIFICATION_MESSAGES,
-  getNotificationMessage,
-} from "./core/constants";
+import { logger } from "./core/logger";
+import { STORAGE_KEYS, NETWORK_CONSTANTS, CONFIG_CONSTANTS } from "./core/constants";
 
 // --- START CONSTANTS AND STORAGE KEYS ---
 // Use centralized constants instead of local duplicates
@@ -46,7 +35,7 @@ const _queueStorageKey = STORAGE_KEYS.DOWNLOAD_QUEUE;
 const _defaultServerPort = getServerPort();
 const _maxPortScan = getPortRange()[1]; // Use the end of the port range
 const _serverCheckInterval = NETWORK_CONSTANTS.SERVER_CHECK_INTERVAL;
-const _statusPollIntervalMs = 3000;
+const _statusPollIntervalMs = 1000;
 
 // Prevent duplicate download requests: track in-flight and recent requests
 const _inFlightDownloads = new Set<string>();
@@ -97,18 +86,68 @@ const error = (...args: any[]): void => {
 
 const apiService: ApiService = {
   async fetchConfig(port: number): Promise<Partial<ServerConfig>> {
-    const response = await fetch("http://127.0.0.1:" + port + "/api/config");
+    const protocolsToTry = ["http", "https"] as const;
+    const hostsToTry = ["127.0.0.1", "localhost", "[::1]"] as const;
+    const timeoutMs = NETWORK_CONSTANTS.SERVER_CHECK_TIMEOUT;
+
+    let response: Response | null = null;
+    let lastNetworkError: unknown = null;
+    outer: for (const protocol of protocolsToTry) {
+      for (const host of hostsToTry) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+          response = await fetch(`${protocol}://${host}:${port}/api/config`, {
+            method: "GET",
+            signal: controller.signal,
+          });
+          clearTimeout(timeout);
+          break outer;
+        } catch (e) {
+          clearTimeout(timeout);
+          lastNetworkError = e;
+        }
+      }
+    }
+
+    if (!response) {
+      throw lastNetworkError instanceof Error ? lastNetworkError : new Error("Network error");
+    }
     if (!response.ok) {
       throw new Error("Failed to fetch config from server: " + response.statusText);
     }
     return response.json();
   },
   async saveConfig(port: number, config: Partial<ServerConfig>): Promise<boolean> {
-    const response = await fetch("http://127.0.0.1:" + port + "/api/config", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(config),
-    });
+    const protocolsToTry = ["http", "https"] as const;
+    const hostsToTry = ["127.0.0.1", "localhost", "[::1]"] as const;
+    const timeoutMs = NETWORK_CONSTANTS.SERVER_CHECK_TIMEOUT;
+
+    let response: Response | null = null;
+    let lastNetworkError: unknown = null;
+    outer: for (const protocol of protocolsToTry) {
+      for (const host of hostsToTry) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+          response = await fetch(`${protocol}://${host}:${port}/api/config`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(config),
+            signal: controller.signal,
+          });
+          clearTimeout(timeout);
+          break outer;
+        } catch (e) {
+          clearTimeout(timeout);
+          lastNetworkError = e;
+        }
+      }
+    }
+
+    if (!response) {
+      throw lastNetworkError instanceof Error ? lastNetworkError : new Error("Network error");
+    }
     return response.ok;
   },
 };
@@ -594,24 +633,15 @@ const checkServerStatus = async (port: number): Promise<boolean> =>
         stateManager.updateServerState({ status: "connected" });
         // If server just came online, refresh config
         if (!oldAvailable) {
-          logger.info(
-            "Server now available on port " + port + ", refreshing config",
-            CentralizedLogger.contexts.background.serverCheck(port)
-          );
+          logger.info("Server now available on port " + port + ", refreshing config");
           await fetchServerConfig(port);
         }
       } else {
-        logger.warn(
-          "Wrong server on port " + port + ": " + data.app_name,
-          CentralizedLogger.contexts.background.serverCheck(port)
-        );
+        logger.warn("Wrong server on port " + port + ": " + data.app_name);
         stateManager.updateServerState({ status: "disconnected" });
       }
     } else if (response) {
-      logger.warn(
-        "Server check failed on port " + port + ": " + response.status,
-        CentralizedLogger.contexts.background.serverCheck(port)
-      );
+      logger.warn("Server check failed on port " + port + ": " + response.status);
       stateManager.updateServerState({ status: "disconnected" });
     } else {
       // No response (network/timeout). Treat as disconnected quietly.
@@ -1135,21 +1165,31 @@ const initializeExtension = async (): Promise<void> => {
       }
     }
 
-    // Set up periodic server status checks (disabled in tests to avoid infinite timers)
+    // Set up periodic server status checks via the main status poll (single poller)
     if (!isTestEnvironment) {
-      setInterval(broadcastServerStatus, _serverCheckInterval);
-      // Initial server status check (in tests we already called it once above)
+      // Initial server status check
       await broadcastServerStatus();
     }
 
     // Start status polling to feed popup UI
     if (!isTestEnvironment) {
+      let _lastServerStatus: "connected" | "disconnected" | undefined;
       setInterval(async () => {
         try {
           const port = await storageService.getPort();
           if (!port) return;
           const res = await fetch(`http://127.0.0.1:${port}/api/status`);
-          if (!res.ok) return;
+          if (!res.ok) {
+            if (_lastServerStatus !== "disconnected") {
+              stateManager.updateServerState({ status: "disconnected" });
+              try {
+                chrome.runtime.sendMessage({ type: "serverStatusUpdate", status: "disconnected" });
+              } catch {}
+              updateIcon();
+              _lastServerStatus = "disconnected";
+            }
+            return;
+          }
           const data = await res.json();
           const active: Record<string, any> = {};
           const serverQueued: string[] = [];
@@ -1158,13 +1198,14 @@ const initializeExtension = async (): Promise<void> => {
             { url?: string; title?: string; filename?: string }
           > = {};
           Object.entries(data || {}).forEach(([id, obj]) => {
-            if ((obj as any)?.status === "queued") {
+            const rawStatus = String((obj as any)?.status || "").toLowerCase();
+            if (rawStatus === "queued") {
               serverQueued.push(id);
               const url = (obj as any)?.url as string | undefined;
               const title = (obj as any)?.title as string | undefined;
               const filename = (obj as any)?.filename as string | undefined;
               newQueuedDetails[id] = { url, title, filename };
-            } else {
+            } else if (rawStatus !== "finished") {
               active[id] = obj;
             }
           });
@@ -1225,8 +1266,26 @@ const initializeExtension = async (): Promise<void> => {
             .catch(() => {
               // Ignore when no receivers (e.g., popup/options not open)
             });
+
+          // Mark server as connected and broadcast only on change
+          if (_lastServerStatus !== "connected") {
+            stateManager.updateServerState({ status: "connected" });
+            try {
+              chrome.runtime.sendMessage({ type: "serverStatusUpdate", status: "connected" });
+            } catch {}
+            updateIcon();
+            _lastServerStatus = "connected";
+          }
         } catch {
-          // ignore
+          // Treat as disconnected on network errors
+          if (_lastServerStatus !== "disconnected") {
+            stateManager.updateServerState({ status: "disconnected" });
+            try {
+              chrome.runtime.sendMessage({ type: "serverStatusUpdate", status: "disconnected" });
+            } catch {}
+            updateIcon();
+            _lastServerStatus = "disconnected";
+          }
         }
       }, _statusPollIntervalMs);
     } else {
@@ -1258,7 +1317,7 @@ const initializeExtension = async (): Promise<void> => {
               const title = ((obj as any)?.title || (obj as any)?.page_title) as string | undefined;
               const filename = (obj as any)?.filename as string | undefined;
               newQueuedDetails[id] = { url, title, filename };
-            } else {
+            } else if (status !== "finished") {
               let progressNum = 0;
               try {
                 const o: any = obj ?? {};
@@ -1366,15 +1425,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 " for URL " +
                 message.url
             );
-
-            console.log("[EVD] BG → POST /api/download", {
-              port: effectivePort,
-              url: message.url,
-              pageTitle: message.pageTitle,
-            });
-          } catch {
-            /* ignore */
-          }
+            logger.info(
+              "[EVD] BG → POST /api/download",
+              { component: "background", operation: "downloadRequest" },
+              { port: effectivePort, url: message.url, pageTitle: message.pageTitle }
+            );
+          } catch {}
 
           const response = await sendDownloadRequest(
             message.url,
@@ -1391,11 +1447,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
           try {
             log("EVD background: Server response for download", JSON.stringify(response));
-
-            console.log("[EVD] BG response from server", response);
-          } catch {
-            /* ignore */
-          }
+            logger.info("[EVD] BG response from server", { component: "background" }, response);
+          } catch {}
           sendResponse(response);
           break;
         }
@@ -1652,11 +1705,28 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
 
         case "getLogs": {
-          // Immediate fast-path: if no port, return error right away (especially important in tests)
-          {
-            const p = await storageService.getPort();
-            if (!p) {
-              logger.info("[bg] getLogs: no port → immediate error");
+          // Ensure we have a port; if missing, try discovery and fall back to default
+          let ensuredPort: number | null = await storageService.getPort();
+          if (!ensuredPort) {
+            try {
+              ensuredPort = await findServerPort(true);
+            } catch {
+              /* ignore */
+            }
+            if (!ensuredPort) {
+              try {
+                const defaultPort = getServerPort();
+                const ok = await checkServerStatus(defaultPort);
+                ensuredPort = ok ? defaultPort : null;
+                if (ensuredPort) {
+                  try {
+                    await storageService.setPort?.(ensuredPort);
+                  } catch {}
+                }
+              } catch {}
+            }
+            if (!ensuredPort) {
+              logger.info("[bg] getLogs: could not ensure port → error");
               sendResponse({ status: "error", message: "Server not available" });
               break;
             }
@@ -1676,12 +1746,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               new Promise<any>(resolve => setTimeout(() => resolve({}), 0)),
             ]);
             if (typeof single?.[_portStorageKey] !== "number") {
-              sendResponse({ status: "error", message: "Server not available" });
-              break;
+              // If we already ensured a port, seed storage for subsequent quick paths
+              try {
+                await chrome.storage.local.set({ [_portStorageKey]: ensuredPort });
+              } catch {}
             }
           } catch {
-            sendResponse({ status: "error", message: "Server not available" });
-            break;
+            // Continue; we already ensured a port
           }
           // Proceed with robust path when a port exists
           let port: number | null = null;
@@ -1700,6 +1771,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           if (typeof port !== "number" || !Number.isFinite(port)) {
             port = await storageService.getPort();
           }
+          if (!port) port = ensuredPort;
           if (!port) {
             sendResponse({ status: "error", message: "Server not available" });
             break;

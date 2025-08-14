@@ -127,7 +127,7 @@ lint-unused-py:
 
 lint-md:
 	@echo "=== Checking Markdown Files ==="
-	@python scripts/check_emojis.py . --file-types .md || (echo "Markdown emoji check failed" && exit 1)
+	@python scripts/check_emojis.py . --file-types .md --whitelist config/emoji_whitelist.json || (echo "Markdown emoji check failed" && exit 1)
 	@echo "Markdown linting passed"
 
 # Check for emoji usage in code and documentation

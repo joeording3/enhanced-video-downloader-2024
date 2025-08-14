@@ -179,6 +179,7 @@ def should_skip_directory(path: Path) -> bool:
         "cache",
         ".cache",
         "playwright-report",
+        "test-results",
     }
 
     return any(part in skip_dirs for part in path.parts)

@@ -217,7 +217,7 @@ def resolve_log_path(
     project_root : Path
         Root directory of the project (used for defaults and test heuristics).
     env_value : str | None
-        Value of LOG_FILE from the environment, if any.
+        Value of LOG_PATH from the environment, if any.
     cfg_value : str | None
         Value of log path from config, if any (used by manage operations).
     purpose : {"read", "manage"}

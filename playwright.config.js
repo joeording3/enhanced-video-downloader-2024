@@ -35,7 +35,44 @@ module.exports = defineConfig({
     /** @type {import('@playwright/test').Project[]} */
     const projects = [];
     if (enabled.includes("chromium")) {
-      projects.push({ name: "chromium", use: { ...devices["Desktop Chrome"] } });
+      // Default: headless
+      projects.push({
+        name: "chromium-headless",
+        grepInvert: /@headful/,
+        use: {
+          ...devices["Desktop Chrome"],
+          launchOptions: {
+            headless: true,
+            args: [
+              "--autoplay-policy=no-user-gesture-required",
+              "--mute-audio",
+              "--disable-gpu",
+              "--no-sandbox",
+              "--disable-dev-shm-usage",
+            ],
+          },
+        },
+      });
+      // Headful only for tests tagged with @headful (e.g., user-gesture simulation)
+      projects.push({
+        name: "chromium-headful",
+        grep: /@headful/,
+        use: {
+          ...devices["Desktop Chrome"],
+          viewport: { width: 10, height: 10 },
+          launchOptions: {
+            headless: false,
+            args: [
+              "--autoplay-policy=no-user-gesture-required",
+              "--start-minimized",
+              "--window-position=-2000,-2000",
+              "--window-size=10,10",
+              "--no-sandbox",
+              "--disable-dev-shm-usage",
+            ],
+          },
+        },
+      });
     }
     if (enabled.includes("firefox")) {
       projects.push({ name: "firefox", use: { ...devices["Desktop Firefox"] } });

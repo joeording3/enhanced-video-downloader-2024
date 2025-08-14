@@ -3,7 +3,7 @@
  * Handles download history storage, retrieval, and display.
  */
 
-import { HistoryEntry } from "./types";
+import { HistoryEntry, ServerHistoryItem, ServerHistoryResponse } from "./types";
 
 // --- History utility functions ---
 export const historyStorageKey = "downloadHistory";
@@ -70,11 +70,11 @@ export async function fetchHistory(
 
     const res = await fetch(url.toString());
     if (!res.ok) return { history: [], totalItems: 0 };
-    const data = (await res.json()) as { history?: any[]; total_items?: number };
+    const data = (await res.json()) as ServerHistoryResponse;
 
-    const serverItemsRaw: HistoryEntry[] = (data.history as any[]) || [];
+    const serverItemsRaw: ServerHistoryItem[] = data.history || [];
     // Map server fields to our HistoryEntry shape
-    const mapped: HistoryEntry[] = serverItemsRaw.map((it: any) => ({
+    const mapped: HistoryEntry[] = serverItemsRaw.map((it: ServerHistoryItem) => ({
       id: it.id || it.download_id || crypto.randomUUID(),
       // Prefer url; fall back to webpage_url if provided by info JSON
       url: it.url || it.webpage_url || it.original_url,
@@ -84,7 +84,7 @@ export async function fetchHistory(
       page_title: it.page_title || it.title,
       title: it.title,
       error: it.error || it.message,
-      timestamp: it.timestamp ? Date.parse(String(it.timestamp)) || Date.now() : Date.now(),
+      timestamp: it.timestamp ? Date.parse(String(it.timestamp as any)) || Date.now() : Date.now(),
     }));
 
     const normalized = normalizeEntries(mapped);
@@ -178,6 +178,26 @@ export function renderHistoryItems(
   }
 
   // Collapse duplicates by URL (prefer most recent and completed/error over others)
+  // Use a canonical URL key so visually identical items (e.g., http/https, www, YouTube variants)
+  // render only once.
+  const canonicalizeUrl = (u?: string): string => {
+    if (!u) return "";
+    try {
+      const p = new URL(u);
+      const host = p.hostname.replace(/^www\./i, "").toLowerCase();
+      const parts = p.pathname.split("/").filter(Boolean);
+      // Prefer stable identifiers for YouTube content
+      if (host.includes("youtube.com")) {
+        const vid = p.searchParams.get("v");
+        if (vid) return `youtube:${vid}`;
+        if (parts[0] === "shorts" && parts[1]) return `youtube:${parts[1]}`;
+      }
+      const path = p.pathname.replace(/\/$/, "").toLowerCase();
+      return host + path;
+    } catch {
+      return String(u).trim();
+    }
+  };
   const normalizeStatus = (raw?: string): string => {
     const s = String(raw || "").toLowerCase();
     if (["success", "complete", "completed", "done", "finished"].includes(s)) return "completed";
@@ -186,10 +206,17 @@ export function renderHistoryItems(
     if (["waiting"].includes(s)) return "queued";
     return s;
   };
-  const priority: Record<string, number> = { completed: 3, error: 2, canceled: 2, queued: 1, downloading: 1, paused: 1 };
+  const priority: Record<string, number> = {
+    completed: 3,
+    error: 2,
+    canceled: 2,
+    queued: 1,
+    downloading: 1,
+    paused: 1,
+  };
   const byUrl = new Map<string, HistoryEntry>();
   for (const item of historyItems) {
-    const key = (item.url || "") + "";
+    const key = canonicalizeUrl(item.url);
     if (!key) {
       // fall back to id-only when URL missing
       const idKey = (item.id || "") + "";
@@ -202,7 +229,8 @@ export function renderHistoryItems(
       } else {
         const a = priority[normalizeStatus(existing.status)] || 0;
         const b = priority[normalizeStatus(item.status)] || 0;
-        if (b > a || (b === a && (item.timestamp || 0) > (existing.timestamp || 0))) byUrl.set("id:" + idKey, item);
+        if (b > a || (b === a && (item.timestamp || 0) > (existing.timestamp || 0)))
+          byUrl.set("id:" + idKey, item);
       }
       continue;
     }
@@ -211,7 +239,8 @@ export function renderHistoryItems(
     else {
       const a = priority[normalizeStatus(existing.status)] || 0;
       const b = priority[normalizeStatus(item.status)] || 0;
-      if (b > a || (b === a && (item.timestamp || 0) > (existing.timestamp || 0))) byUrl.set(key, item);
+      if (b > a || (b === a && (item.timestamp || 0) > (existing.timestamp || 0)))
+        byUrl.set(key, item);
     }
   }
 
@@ -219,7 +248,7 @@ export function renderHistoryItems(
   const seen = new Set<string>();
   const deduped: HistoryEntry[] = [];
   for (const item of historyItems) {
-    const keyUrl = (item.url || "") + "";
+    const keyUrl = canonicalizeUrl(item.url);
     const key = keyUrl || (item.id ? "id:" + item.id : "");
     if (!key) continue;
     const best = byUrl.get(keyUrl || key);
@@ -470,6 +499,14 @@ export async function clearHistory(): Promise<void> {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ action: "clear" }),
               });
+              // Also clear any lingering 'finished' entries from the server status list
+              try {
+                await fetch(`http://127.0.0.1:${port}/api/status?status=finished`, {
+                  method: "DELETE",
+                });
+              } catch {
+                // ignore status clear errors
+              }
             } catch {
               // ignore errors
             }
@@ -547,7 +584,9 @@ export async function removeHistoryItemAndNotify(itemId?: string | number): Prom
         body: JSON.stringify({ action: "delete_one", id: itemId }),
       }).catch(() => {});
     }
-  } catch {}
+  } catch {
+    /* ignore */
+  }
   chrome.runtime.sendMessage({ type: "historyUpdated" });
 }
 
@@ -588,7 +627,9 @@ export async function removeHistoryItemByUrlAndNotify(url?: string): Promise<voi
         body: JSON.stringify({ action: "delete_one", url }),
       }).catch(() => {});
     }
-  } catch {}
+  } catch {
+    /* ignore */
+  }
   chrome.runtime.sendMessage({ type: "historyUpdated" });
 }
 

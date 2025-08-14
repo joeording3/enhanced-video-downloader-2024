@@ -38,20 +38,20 @@ def _session_logging_isolation() -> Generator[None, None, None]:
 
     This prevents accidental writes to the project-level ``server_output.log``
     if any test (or import side-effect) initializes logging before our
-    function-scoped environment fixture can override ``LOG_FILE``.
+    function-scoped environment fixture can override ``LOG_PATH``.
     """
-    prev_log = os.environ.get("LOG_FILE")
+    prev_log = os.environ.get("LOG_PATH")
     # Use repo-local tmp directory which is ignored by junk folder checks
     session_log = Path(__file__).resolve().parent.parent / "tmp" / "server_output_test.session.log"
     session_log.parent.mkdir(parents=True, exist_ok=True)
-    os.environ["LOG_FILE"] = str(session_log)
+    os.environ["LOG_PATH"] = str(session_log)
     try:
         yield
     finally:
         if prev_log is None:
-            os.environ.pop("LOG_FILE", None)
+            os.environ.pop("LOG_PATH", None)
         else:
-            os.environ["LOG_FILE"] = prev_log
+            os.environ["LOG_PATH"] = prev_log
 
 
 @pytest.fixture
@@ -149,17 +149,17 @@ def _test_env_isolation(tmp_path: Path, test_server_port: int) -> Generator[None
     """Force test environment settings and redirect logs to a temp file.
 
     - ENVIRONMENT=testing selects testing port config in helpers
-    - LOG_FILE points to a temp log file under pytest tmp_path
+    - LOG_PATH points to a temp log file under pytest tmp_path
     - SERVER_PORT set to an available test port for the duration of each test
     """
     prev_env = os.environ.get("ENVIRONMENT")
-    prev_log = os.environ.get("LOG_FILE")
+    prev_log = os.environ.get("LOG_PATH")
     prev_port = os.environ.get("SERVER_PORT")
 
     # Temp log file
     test_log = tmp_path / "server_output_test.log"
     os.environ["ENVIRONMENT"] = "testing"
-    os.environ["LOG_FILE"] = str(test_log)
+    os.environ["LOG_PATH"] = str(test_log)
     os.environ["SERVER_PORT"] = str(test_server_port)
 
     try:
@@ -171,9 +171,9 @@ def _test_env_isolation(tmp_path: Path, test_server_port: int) -> Generator[None
         else:
             os.environ["ENVIRONMENT"] = prev_env
         if prev_log is None:
-            os.environ.pop("LOG_FILE", None)
+            os.environ.pop("LOG_PATH", None)
         else:
-            os.environ["LOG_FILE"] = prev_log
+            os.environ["LOG_PATH"] = prev_log
         if prev_port is None:
             os.environ.pop("SERVER_PORT", None)
         else:

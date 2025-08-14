@@ -51,7 +51,7 @@ def clear_logs() -> Response:
         # Configuration is now environment-only
         cfg = Config.load()
         # Resolve path centrally: env > config > improbable default
-        env_log = os.getenv("LOG_FILE")
+        env_log = os.getenv("LOG_PATH")
         cfg_log = cfg.get_value("log_path")
         project_root = Path(__file__).parent.parent.parent
         log_path = resolve_log_path(project_root, env_log, cfg_log, purpose="manage")
