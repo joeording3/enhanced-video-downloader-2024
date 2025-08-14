@@ -684,6 +684,37 @@ export async function renderDownloadStatus(data: {
   };
   const unified: Unified[] = [];
 
+  // Derive a human-friendly label from available fields
+  const computeLabel = (
+    providedLabel: string | undefined,
+    filename?: string,
+    url?: string,
+    id?: string
+  ): string => {
+    const raw = String((providedLabel || "").trim());
+    if (raw && raw.toLowerCase() !== "video") return raw;
+    if (filename && String(filename).trim()) return String(filename).trim();
+    if (url) {
+      try {
+        const u = new URL(url);
+        // Prefer last non-empty path segment
+        const segs = u.pathname.split("/").filter(Boolean);
+        if (u.hostname.includes("youtube.com")) {
+          const vid = u.searchParams.get("v");
+          if (vid) return `youtube:${vid}`;
+          if (segs[0] === "shorts" && segs[1]) return `yt shorts:${segs[1]}`;
+        }
+        if (segs.length > 0) return `${u.hostname}/${segs[segs.length - 1]}`;
+        return u.hostname;
+      } catch {
+        // ignore URL parse errors
+      }
+    }
+    // Last resort: show shortened id if present
+    if (id) return `id:${String(id).slice(0, 6)}…`;
+    return "Unknown";
+  };
+
   // Status normalizer to enforce a single final state for completed downloads
   const normalizeStatus = (raw: string): string => {
     const s = String(raw || "").toLowerCase();
@@ -697,7 +728,7 @@ export async function renderDownloadStatus(data: {
   // Active downloads
   Object.entries(data.active || {}).forEach(([id, st]) => {
     const statusObj = st as any;
-    const label = statusObj.filename || statusObj.title || statusObj.url || id;
+    const label = computeLabel(statusObj.title, statusObj.filename, statusObj.url, id);
     const prog = Number(statusObj.progress);
     const norm = normalizeStatus(String(statusObj.status || "downloading"));
     unified.push({
@@ -714,7 +745,12 @@ export async function renderDownloadStatus(data: {
   (data.queue || []).forEach(id => {
     const info = qDetails[id] || {};
     // prefer original page title if provided from server, otherwise fallback
-    const label = info.title || (info as any).page_title || info.filename || info.url || id;
+    const label = computeLabel(
+      (info as any).title || (info as any).page_title,
+      (info as any).filename,
+      (info as any).url,
+      id
+    );
     unified.push({ id, status: "queued", label, timestamp: Date.now() - 1 });
   });
 
@@ -730,7 +766,12 @@ export async function renderDownloadStatus(data: {
     const historyUnified: Unified[] = [];
     for (const h of histList) {
       const id = String((h as any).id || (h as any).download_id || Math.random());
-      const label = (h.page_title || (h as any).title || h.filename || h.url || id) as string;
+      const label = computeLabel(
+        (h as any).page_title || (h as any).title,
+        (h as any).filename,
+        (h as any).url,
+        id
+      );
       historyUnified.push({
         id,
         status: normalizeStatus(String(h.status || "completed")),
