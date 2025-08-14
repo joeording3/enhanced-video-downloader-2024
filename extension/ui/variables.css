@@ -258,8 +258,8 @@
 body.compact {
   --surface-padding: var(--space-lg);
   --card-padding: var(--space-md);
-  --button-padding-y: calc(var(--space-sm) - 2px);
-  --button-padding-x: var(--space-sm);
+  --button-padding-y: calc(var(--space-sm) - 4px);
+  --button-padding-x: calc(var(--space-sm) - 2px);
   --control-padding-y: calc(var(--space-sm) - 2px);
   --control-padding-x: var(--space-sm);
   --section-gap: var(--space-lg);

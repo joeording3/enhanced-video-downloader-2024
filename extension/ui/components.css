@@ -89,7 +89,7 @@ body.dark-theme .btn--secondary {
 
 /* Button Sizes */
 .btn--small {
-  padding: calc(var(--button-padding-y) - 2px) calc(var(--button-padding-x) - 4px);
+  padding: calc(var(--button-padding-y) - 4px) calc(var(--button-padding-x) - 8px);
   font-size: var(--font-size-sm);
 }
 
