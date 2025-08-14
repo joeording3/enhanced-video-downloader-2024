@@ -504,6 +504,8 @@ export async function renderDownloadStatus(data: {
   lastDownloadStatusData = data;
   const container = document.getElementById("download-status");
   if (!container) return;
+  // Preserve scroll to avoid snapping to top during refresh
+  const prevScrollTopInitial = (container as HTMLElement).scrollTop;
   container.innerHTML = "";
 
   // Helper to render a list of unified entries into the container
@@ -605,6 +607,12 @@ export async function renderDownloadStatus(data: {
             await removeHistoryItemAndNotify(item.id);
           } else if (item.url) {
             await removeHistoryItemByUrlAndNotify(item.url);
+          }
+          // Optimistically update UI to remove the row immediately
+          try {
+            li.remove();
+          } catch {
+            /* ignore */
           }
         });
       }
@@ -758,6 +766,8 @@ export async function renderDownloadStatus(data: {
 
   // Render immediate items (active + queued)
   renderUnified(unified);
+  // Restore scroll position after initial render
+  (container as HTMLElement).scrollTop = prevScrollTopInitial;
 
   // Fetch all history (no pagination; scroll instead) and append when available
   try {
@@ -822,8 +832,11 @@ export async function renderDownloadStatus(data: {
     [...unified, ...historyUnified].forEach(take);
 
     // Re-render final merged list
+    const prevScrollTopMerged = (container as HTMLElement).scrollTop;
     container.innerHTML = "";
     renderUnified(Array.from(byId.values()));
+    // Restore scroll position after merge render
+    (container as HTMLElement).scrollTop = prevScrollTopMerged;
   } catch {
     // ignore history rendering errors
   }
