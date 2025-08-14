@@ -615,6 +615,20 @@ export async function renderDownloadStatus(data: {
       }
       li.appendChild(cancelBtn);
 
+      // Add a pause button for actively downloading entries
+      if (normalized === "downloading") {
+        const pauseBtn = document.createElement("button");
+        pauseBtn.className = "btn btn--secondary btn--small pause-button";
+        pauseBtn.textContent = "⏸";
+        pauseBtn.title = "Pause";
+        pauseBtn.setAttribute("aria-label", "Pause");
+        pauseBtn.addEventListener("click", e => {
+          e.stopPropagation();
+          chrome.runtime.sendMessage({ type: "pauseDownload", downloadId: item.id }, () => {});
+        });
+        li.appendChild(pauseBtn);
+      }
+
       // Add a resume button for paused entries
       if (normalized === "paused") {
         const resumeBtn = document.createElement("button");
@@ -636,10 +650,12 @@ export async function renderDownloadStatus(data: {
         retryBtn.textContent = "🔄"; // Refresh icon for retry
         retryBtn.title = "Retry";
         retryBtn.setAttribute("aria-label", "Retry");
-        retryBtn.disabled = !item.url;
         retryBtn.addEventListener("click", e => {
           e.stopPropagation();
-          if (!item.url) return;
+          if (!item.url) {
+            setStatus("Original URL unavailable for retry", true, 3000);
+            return;
+          }
           chrome.runtime.sendMessage(
             {
               type: "downloadVideo",
