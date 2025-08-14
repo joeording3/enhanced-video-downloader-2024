@@ -177,8 +177,60 @@ export function renderHistoryItems(
     return;
   }
 
+  // Collapse duplicates by URL (prefer most recent and completed/error over others)
+  const normalizeStatus = (raw?: string): string => {
+    const s = String(raw || "").toLowerCase();
+    if (["success", "complete", "completed", "done", "finished"].includes(s)) return "completed";
+    if (["fail", "failed"].includes(s)) return "error";
+    if (["cancelled"].includes(s)) return "canceled";
+    if (["waiting"].includes(s)) return "queued";
+    return s;
+  };
+  const priority: Record<string, number> = { completed: 3, error: 2, canceled: 2, queued: 1, downloading: 1, paused: 1 };
+  const byUrl = new Map<string, HistoryEntry>();
+  for (const item of historyItems) {
+    const key = (item.url || "") + "";
+    if (!key) {
+      // fall back to id-only when URL missing
+      const idKey = (item.id || "") + "";
+      if (!idKey) {
+        continue;
+      }
+      const existing = byUrl.get("id:" + idKey);
+      if (!existing) {
+        byUrl.set("id:" + idKey, item);
+      } else {
+        const a = priority[normalizeStatus(existing.status)] || 0;
+        const b = priority[normalizeStatus(item.status)] || 0;
+        if (b > a || (b === a && (item.timestamp || 0) > (existing.timestamp || 0))) byUrl.set("id:" + idKey, item);
+      }
+      continue;
+    }
+    const existing = byUrl.get(key);
+    if (!existing) byUrl.set(key, item);
+    else {
+      const a = priority[normalizeStatus(existing.status)] || 0;
+      const b = priority[normalizeStatus(item.status)] || 0;
+      if (b > a || (b === a && (item.timestamp || 0) > (existing.timestamp || 0))) byUrl.set(key, item);
+    }
+  }
+
+  // Preserve original ordering but filter out inferior duplicates
+  const seen = new Set<string>();
+  const deduped: HistoryEntry[] = [];
+  for (const item of historyItems) {
+    const keyUrl = (item.url || "") + "";
+    const key = keyUrl || (item.id ? "id:" + item.id : "");
+    if (!key) continue;
+    const best = byUrl.get(keyUrl || key);
+    if (best && best === item && !seen.has(key)) {
+      seen.add(key);
+      deduped.push(item);
+    }
+  }
+
   // Render history items
-  historyItems.forEach(item => {
+  deduped.forEach(item => {
     const li = document.createElement("li");
     li.className = "history-item";
     if (item.id) {
@@ -484,6 +536,36 @@ export async function removeHistoryItem(itemId?: string | number): Promise<void>
  */
 export async function removeHistoryItemAndNotify(itemId?: string | number): Promise<void> {
   await removeHistoryItem(itemId);
+  chrome.runtime.sendMessage({ type: "historyUpdated" });
+}
+
+/**
+ * Remove the first history entry matching a URL.
+ * Useful when an entry lacks a stable id in the unified list.
+ */
+export async function removeHistoryItemByUrl(url?: string): Promise<void> {
+  if (!url) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get({ [historyStorageKey]: [] }, result => {
+      if (chrome.runtime.lastError) {
+        return reject(new Error(chrome.runtime.lastError.message));
+      }
+      const history: HistoryEntry[] = result[historyStorageKey] || [];
+      const index = history.findIndex((item: HistoryEntry) => item && item.url === url);
+      if (index < 0) return resolve();
+      history.splice(index, 1);
+      chrome.storage.local.set({ [historyStorageKey]: history }, () => {
+        if (chrome.runtime.lastError) {
+          return reject(new Error(chrome.runtime.lastError.message));
+        }
+        resolve();
+      });
+    });
+  });
+}
+
+export async function removeHistoryItemByUrlAndNotify(url?: string): Promise<void> {
+  await removeHistoryItemByUrl(url);
   chrome.runtime.sendMessage({ type: "historyUpdated" });
 }
 

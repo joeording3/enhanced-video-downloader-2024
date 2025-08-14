@@ -19,7 +19,7 @@ chrome.storage.local.get("serverConfig", res => {
  */
 
 import { Theme, ServerConfig, HistoryEntry } from "./types";
-import { fetchHistory, renderHistoryItems } from "./history";
+import { fetchHistory, renderHistoryItems, removeHistoryItemAndNotify, removeHistoryItemByUrlAndNotify } from "./history";
 
 /**
  * Download status interface for the popup UI
@@ -596,8 +596,17 @@ export async function renderDownloadStatus(data: {
           chrome.runtime.sendMessage({ type: "cancelDownload", downloadId: item.id }, () => {});
         });
       } else {
-        cancelBtn.disabled = true;
-        cancelBtn.title = "Cannot cancel (not active or queued)";
+        // Inactive entry: use cancel as delete
+        cancelBtn.disabled = false;
+        cancelBtn.title = "Delete";
+        cancelBtn.addEventListener("click", async e => {
+          e.stopPropagation();
+          if (item.id) {
+            await removeHistoryItemAndNotify(item.id);
+          } else if (item.url) {
+            await removeHistoryItemByUrlAndNotify(item.url);
+          }
+        });
       }
       li.appendChild(cancelBtn);
 
