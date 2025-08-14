@@ -12,7 +12,74 @@ import sys
 from pathlib import Path
 
 
-def find_emojis_in_text(text: str) -> "list[tuple[int, str, str]]":
+def _compile_allowed_pattern(allowed_sequences: "list[str] | None") -> "re.Pattern[str] | None":
+    """
+    Build a compiled regex pattern that matches any allowed (whitelisted) emoji sequences.
+
+    Using a pattern lets us strip allowed sequences from the text before scanning so
+    that combining marks like variation selectors do not get flagged independently.
+
+    Args:
+        allowed_sequences: List of exact sequences to allow (characters or multi-char sequences)
+
+    Returns:
+        Compiled regex pattern that matches allowed sequences, or None if no sequences provided
+    """
+    if not allowed_sequences:
+        return None
+
+    # Escape each sequence to ensure literal matching
+    escaped_parts = [re.escape(seq) for seq in allowed_sequences if seq]
+    if not escaped_parts:
+        return None
+
+    joined = "|".join(escaped_parts)
+    return re.compile(joined)
+
+
+def _load_whitelist(path: "str | None") -> "list[str] | None":
+    """
+    Load a whitelist (allowed sequences) from JSON or newline-delimited text.
+
+    Supported formats:
+      - JSON: {"allowed": ["✅", "❌", "⏳"]}
+      - Text: one sequence per line
+
+    Args:
+        path: Path to the whitelist file
+
+    Returns:
+        List of allowed sequences, or None if path is None or file missing/unreadable
+    """
+    if not path:
+        return None
+    try:
+        p = Path(path)
+        if not p.exists():
+            return None
+        text = p.read_text(encoding="utf-8")
+    except Exception:
+        return None
+
+    # Try JSON first
+    try:
+        import json
+
+        data = json.loads(text)
+        if isinstance(data, dict) and isinstance(data.get("allowed"), list):
+            return [str(x) for x in data["allowed"]]
+        # If it's a JSON list directly
+        if isinstance(data, list):
+            return [str(x) for x in data]
+    except Exception:
+        # Fallback to newline-delimited text
+        pass
+
+    # Treat as plain text, one sequence per line
+    return [line.strip() for line in text.splitlines() if line.strip()]
+
+
+def find_emojis_in_text(text: str, allowed_pattern: "re.Pattern[str] | None" = None) -> "list[tuple[int, str, str]]":
     """
     Find emoji usage in text.
 
@@ -47,6 +114,12 @@ def find_emojis_in_text(text: str) -> "list[tuple[int, str, str]]":
     )
 
     emojis_found: list[tuple[int, str, str]] = []
+
+    # Strip allowed sequences first so their components (e.g., variation selectors)
+    # are not detected as violations.
+    if allowed_pattern is not None:
+        text = allowed_pattern.sub("", text)
+
     lines = text.split("\n")
 
     for line_num, line in enumerate(lines, 1):
@@ -131,7 +204,9 @@ def read_file_safely(file_path: Path) -> "str | None":
 
 
 def scan_files(
-    directory: str = ".", file_types: "list[str] | None" = None
+    directory: str = ".",
+    file_types: "list[str] | None" = None,
+    allowed_pattern: "re.Pattern[str] | None" = None,
 ) -> "list[tuple[Path, list[tuple[int, str, str]]]]":
     """
     Scan files in the directory for emoji usage.
@@ -161,7 +236,7 @@ def scan_files(
     for file_path in files_to_scan:
         content = read_file_safely(file_path)
         if content is not None:
-            emojis = find_emojis_in_text(content)
+            emojis = find_emojis_in_text(content, allowed_pattern=allowed_pattern)
             if emojis:
                 files_with_emojis.append((file_path, emojis))
 
@@ -211,13 +286,27 @@ def main() -> None:
         help="File types to scan",
     )
     parser.add_argument("--quiet", action="store_true", help="Suppress output, only return exit code")
+    parser.add_argument(
+        "--whitelist",
+        dest="whitelist",
+        default=None,
+        help=(
+            "Path to whitelist file (JSON with 'allowed' array or newline-delimited). "
+            "If not provided, will look for config/emoji_whitelist.json if present."
+        ),
+    )
 
     args = parser.parse_args()
 
     if not Path(args.directory).exists():
         sys.exit(1)
 
-    files_with_emojis = scan_files(args.directory, args.file_types)
+    default_whitelist = Path("config/emoji_whitelist.json")
+    whitelist_path = args.whitelist or (str(default_whitelist) if default_whitelist.exists() else None)
+    allowed_sequences = _load_whitelist(whitelist_path)
+    allowed_pattern = _compile_allowed_pattern(allowed_sequences)
+
+    files_with_emojis = scan_files(args.directory, args.file_types, allowed_pattern=allowed_pattern)
 
     if not args.quiet:
         print_results(files_with_emojis)

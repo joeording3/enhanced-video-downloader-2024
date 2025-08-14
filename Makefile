@@ -1,6 +1,6 @@
 # Makefile for Enhanced Video Downloader
 
-.PHONY: all all-continue check install-dev build-js test test-py test-js lint lint-py lint-js lint-md format format-py format-js format-md format-check format-check-py format-check-js format-check-md coverage coverage-py coverage-js clean test-fast test-js-fast test-integration test-js-slow test-slow generate-ignores test-audit audit-coverage audit-mutation audit-performance audit-docs mutation mutation-py mutation-js emoji-check markdown-check check-junk-folders cleanup-junk-folders monitor-junk-folders lint-unused lint-unused-ts lint-unused-py clean-temp clean-temp-reports clean-reserved-names coverage-update inventory-report audit-tests-redundancy setup-uv docstrings-audit docstrings-fix docstrings-report
+.PHONY: all all-continue check install-dev build-js test test-py test-js lint lint-py lint-js lint-md format format-py format-js format-md format-check format-check-py format-check-js format-check-md coverage coverage-py coverage-js clean test-fast test-js-fast test-integration test-js-slow test-slow generate-ignores test-audit audit-coverage audit-mutation audit-performance audit-docs mutation mutation-py mutation-js emoji-check markdown-check check-junk-folders cleanup-junk-folders monitor-junk-folders lint-unused lint-unused-ts lint-unused-py clean-temp clean-temp-reports clean-reserved-names coverage-update inventory-report audit-tests-redundancy setup-uv docstrings-audit docstrings-fix docstrings-report test-media-wide matrix-seq update-ad-origins
 
 all:
 	@echo "=== Running All Quality Checks ==="
@@ -72,21 +72,36 @@ build-js:
 test: test-py test-js test-playwright
 	@$(MAKE) clean-temp
 
+# Load .env automatically for all test invocations using python-dotenv's CLI
+DOTENV_RUN=python -m dotenv -f .env run --
+
 test-py:
 	# Ensure no stale server lock interferes with tests
 	rm -f server/data/server.lock
-	pytest tests/unit tests/integration --maxfail=1 --disable-warnings -q --cov=server --cov-report=term-missing --cov-report=xml --cov-report=html
+	$(DOTENV_RUN) pytest tests/unit tests/integration --maxfail=1 --disable-warnings -q --cov=server --cov-report=term-missing --cov-report=xml --cov-report=html
 
 test-js:
-	npm test
+	$(DOTENV_RUN) npm test
 
 test-playwright:
-	npm run test:playwright:install || true
-	npm run test:playwright
+	$(DOTENV_RUN) npm run test:playwright:install || true
+	$(DOTENV_RUN) npm run test:playwright
 
 # Opt-in: Real-site Playwright tests
 test-real-sites:
 	EVD_REAL_SITES=true $(MAKE) test-playwright
+
+# Wide Playwright media matrix (stable list disabled); use env EVD_MEDIA_FILTER or EVD_MEDIA_URL to narrow
+test-media-wide:
+	EVD_MEDIA_SITES_WIDE=true $(MAKE) test-playwright
+
+# Sequential real-site runner with detailed [MATRIX] logs
+matrix-seq:
+	@node scripts/run_matrix_seq.js
+
+# Refresh tests/extension/ad-origins.json from public uBO lists
+update-ad-origins:
+	@. ./.venv/bin/activate >/dev/null 2>&1 || true; python scripts/update_ad_origins.py
 
 lint: lint-py lint-js lint-md emoji-check lint-unused
 
@@ -118,13 +133,13 @@ lint-md:
 # Check for emoji usage in code and documentation
 emoji-check:
 	@echo "=== Checking for Emoji Usage ==="
-	@python scripts/check_emojis.py . || (echo "Emoji usage detected. Please remove all emojis from code and documentation." && exit 1)
+	@python scripts/check_emojis.py . --whitelist config/emoji_whitelist.json || (echo "Emoji usage detected. Please remove all emojis from code and documentation (whitelist in config/emoji_whitelist.json)." && exit 1)
 	@echo "No emoji usage found"
 
 # Check for emoji usage in markdown files specifically
 markdown-check:
 	@echo "=== Checking Markdown Files for Emojis ==="
-	@python scripts/check_emojis.py . --file-types .md || (echo "Markdown emoji usage detected. Please remove all emojis from markdown files." && exit 1)
+	@python scripts/check_emojis.py . --file-types .md --whitelist config/emoji_whitelist.json || (echo "Markdown emoji usage detected. Please remove emojis from markdown (whitelist in config/emoji_whitelist.json)." && exit 1)
 	@echo "No emoji usage found in markdown files"
 
 format: format-py format-js format-md
@@ -223,16 +238,16 @@ setup-uv:
 
 # Fast JS unit tests (extension)
 test-js-fast:
-	npm test
+	$(DOTENV_RUN) npm test
 
 # Slow JS tests with coverage (extension E2E)
 test-js-slow:
-	npm run test:coverage
+	$(DOTENV_RUN) npm run test:coverage
 
 # Python integration tests (API smoke tests)
 test-integration:
-	pytest -m integration --maxfail=1 --disable-warnings -q
-	pytest tests/integration --maxfail=1 --disable-warnings -q
+	$(DOTENV_RUN) pytest -m integration --maxfail=1 --disable-warnings -q
+	$(DOTENV_RUN) pytest tests/integration --maxfail=1 --disable-warnings -q
 
 # Fast test suite: Python unit + JS unit
 test-fast: test-py test-js-fast
@@ -243,10 +258,11 @@ test-slow: test-integration test-js-slow
 # Test Audit Targets
 test-audit: audit-coverage audit-mutation audit-performance audit-docs
 
+
 audit-coverage:
 	@echo "=== Coverage Analysis ==="
-	pytest --cov=server --cov-report=term-missing --cov-report=html
-	npm run test:extension:coverage
+	$(DOTENV_RUN) pytest --cov=server --cov-report=term-missing --cov-report=html
+	$(DOTENV_RUN) npm run test:extension:coverage
 	@echo "Coverage reports generated in coverage/ and extension/coverage/"
 
 audit-mutation:
