@@ -42,7 +42,7 @@ def _load_whitelist(path: "str | None") -> "list[str] | None":
     Load a whitelist (allowed sequences) from JSON or newline-delimited text.
 
     Supported formats:
-      - JSON: {"allowed": ["✅", "❌", "⏳"]}
+      - JSON: {"allowed": ["check", "cross", "clock"]}
       - Text: one sequence per line
 
     Args:
@@ -207,6 +207,7 @@ def scan_files(
     directory: str = ".",
     file_types: "list[str] | None" = None,
     allowed_pattern: "re.Pattern[str] | None" = None,
+    whitelist_path: "str | None" = None,
 ) -> "list[tuple[Path, list[tuple[int, str, str]]]]":
     """
     Scan files in the directory for emoji usage.
@@ -234,6 +235,9 @@ def scan_files(
     files_with_emojis: list[tuple[Path, list[tuple[int, str, str]]]] = []
 
     for file_path in files_to_scan:
+        # Skip scanning the whitelist file itself if provided
+        if whitelist_path and str(file_path) == str(whitelist_path):
+            continue
         content = read_file_safely(file_path)
         if content is not None:
             emojis = find_emojis_in_text(content, allowed_pattern=allowed_pattern)
@@ -306,7 +310,12 @@ def main() -> None:
     allowed_sequences = _load_whitelist(whitelist_path)
     allowed_pattern = _compile_allowed_pattern(allowed_sequences)
 
-    files_with_emojis = scan_files(args.directory, args.file_types, allowed_pattern=allowed_pattern)
+    files_with_emojis = scan_files(
+        args.directory,
+        args.file_types,
+        allowed_pattern=allowed_pattern,
+        whitelist_path=whitelist_path,
+    )
 
     if not args.quiet:
         print_results(files_with_emojis)

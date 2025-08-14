@@ -1,12 +1,17 @@
 {
-  "description": "Whitelisted unicode symbols allowed in repository (bypasses emoji scan). Add any UI status icons here.",
+  "description": "Whitelisted unicode symbols allowed in repository (bypasses emoji scan). Status icons for the download list.",
   "allowed": [
-    "⏳",  
-    "✅",  
-    "❌",  
-    "⏸️", 
-    "▶️", 
-    "⏹️"
+    "✖",
+    "✖️",
+    "✘",
+    "✘️",
+    "⬇",
+    "⬇️",
+    "✔",
+    "✔️",
+    "🔄",
+    "⚠",
+    "⚠️"
   ]
 }
 

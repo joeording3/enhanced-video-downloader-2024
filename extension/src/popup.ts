@@ -526,15 +526,19 @@ export async function renderDownloadStatus(data: {
       icon.className = "status-icon";
       // Choose icon per status
       if (normalized === "queued" || normalized === "pending" || normalized === "waiting") {
-        icon.textContent = "[queued]";
-      } else if (normalized === "downloading" || normalized === "paused") {
-        icon.textContent = "[active]";
+        icon.textContent = "🔄"; // refresh icon for queued/pending
+      } else if (normalized === "downloading") {
+        icon.textContent = "⬇"; // thick down arrow for downloading
+      } else if (normalized === "paused") {
+        icon.textContent = "🔄"; // reuse refresh for paused
       } else if (["success", "complete", "completed", "done"].includes(normalized)) {
-        icon.textContent = "[done]";
-      } else if (["error", "failed", "fail", "canceled", "cancelled"].includes(normalized)) {
-        icon.textContent = "[error]";
+        icon.textContent = "✔"; // check for completed
+      } else if (["canceled", "cancelled"].includes(normalized)) {
+        icon.textContent = "✖"; // thick X for canceled
+      } else if (["error", "failed", "fail"].includes(normalized)) {
+        icon.textContent = "⚠"; // warning triangle for error
       } else {
-        icon.textContent = "\u23F1"; // default to queued icon
+        icon.textContent = "🔄"; // default
       }
       icon.setAttribute("aria-hidden", "true");
       li.appendChild(icon);
@@ -558,6 +562,22 @@ export async function renderDownloadStatus(data: {
         li.appendChild(percentLabel);
       }
 
+      // If status is finished/complete and progress field exists, render 100%
+      if (
+        ["finished", "complete", "completed", "success", "done"].includes(
+          String(item.status).toLowerCase()
+        )
+      ) {
+        const progress = document.createElement("progress");
+        progress.max = 100;
+        progress.value = 100;
+        li.appendChild(progress);
+        const percentLabel = document.createElement("span");
+        percentLabel.className = "item-percent";
+        percentLabel.textContent = "100%";
+        li.appendChild(percentLabel);
+      }
+
       const statusPill = document.createElement("span");
       statusPill.className = "status-pill";
       statusPill.textContent = item.status;
@@ -574,7 +594,7 @@ export async function renderDownloadStatus(data: {
       // Add a cancel button per entry; enable only for queued/active/paused
       const cancelBtn = document.createElement("button");
       cancelBtn.className = "btn btn--secondary btn--small cancel-button";
-      cancelBtn.textContent = "Cancel";
+      cancelBtn.textContent = "✖"; // thick X
       cancelBtn.title = "Cancel";
       cancelBtn.setAttribute("aria-label", "Cancel");
       if (normalized === "queued") {
@@ -613,7 +633,7 @@ export async function renderDownloadStatus(data: {
       if (["error", "failed", "fail", "canceled", "cancelled"].includes(normalized)) {
         const retryBtn = document.createElement("button");
         retryBtn.className = "btn btn--secondary btn--small retry-button";
-        retryBtn.textContent = "\u27F3"; // ⟳
+        retryBtn.textContent = "🔄"; // Refresh icon for retry
         retryBtn.title = "Retry";
         retryBtn.setAttribute("aria-label", "Retry");
         retryBtn.disabled = !item.url;
@@ -666,7 +686,8 @@ export async function renderDownloadStatus(data: {
   const qDetails = data.queuedDetails || {};
   (data.queue || []).forEach(id => {
     const info = qDetails[id] || {};
-    const label = info.title || info.filename || info.url || id;
+    // prefer original page title if provided from server, otherwise fallback
+    const label = info.title || (info as any).page_title || info.filename || info.url || id;
     unified.push({ id, status: "queued", label, timestamp: Date.now() - 1 });
   });
 
