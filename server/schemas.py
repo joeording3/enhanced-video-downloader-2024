@@ -166,9 +166,13 @@ class ServerConfig(BaseModel):
     # New: optionally resume incomplete downloads on server startup
     resume_on_start: bool = Field(
         default=False,
-        description=(
-            "If true, the server will scan for and resume incomplete/partial downloads on startup."
-        ),
+        description=("If true, the server will scan for and resume incomplete/partial downloads on startup."),
+    )
+
+    # New: optionally clear any queued (not yet started) items on server stop
+    clear_queue_on_stop: bool = Field(
+        default=False,
+        description=("If true, queued items will be cleared on server shutdown/restart."),
     )
 
     # Changed from Field(default_factory=YTDLPOptions) to a direct default instance

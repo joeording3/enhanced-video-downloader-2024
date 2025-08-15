@@ -164,6 +164,7 @@ ignore = [
     "E501",  # Line too long (handled by black)
     "B008",  # Do not perform function calls in argument defaults
     "C901",  # Function is too complex
+    "PLR0911", # Too many return statements
     "PLR0913", # Too many arguments to function call
     "PLR0912", # Too many branches
     "PLR0915", # Too many statements
@@ -175,6 +176,10 @@ ignore = [
     "FA100",  # Add from __future__ import annotations
     "ARG005", # Unused lambda argument
     "PLC0415", # Import should be at the top-level of a file (temporarily disabled)
+    "TRY003", # Avoid specifying long messages outside the exception class
+    "PERF203", # try-except within a loop incurs performance overhead
+    "TRY300", # Consider moving this statement to an else block
+    "ERA001", # Found commented-out code (false positives in tests)
 ]
 
 # File-specific ignores for Ruff (tests and special cases)

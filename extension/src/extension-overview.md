@@ -235,6 +235,33 @@ autocompletion.
 
 ## TypeScript Examples
 
+### Server Port Resolution (Single Source of Truth)
+
+The background uses a single helper to get the server port everywhere:
+
+```typescript
+// background.ts
+const getEffectiveServerPort = async (): Promise<number | null> => {
+  try {
+    const cached = await storageService.getPort();
+    if (typeof cached === "number" && Number.isFinite(cached)) return cached;
+  } catch {}
+  try {
+    const fallback = getServerPort();
+    if (typeof fallback === "number" && Number.isFinite(fallback)) {
+      try {
+        await storageService.setPort?.(fallback);
+      } catch {}
+      return fallback;
+    }
+  } catch {}
+  return null;
+};
+```
+
+Use `getEffectiveServerPort()` instead of reading `getServerPort()` or `storageService.getPort()`
+directly. This avoids dual sources.
+
 ### Using Core Constants
 
 ```typescript
@@ -287,6 +314,30 @@ const videos = domManager.findVideoElements();
 
 // Create download button for video
 const button = domManager.createDownloadButton(videoElement);
+```
+
+#### Recent DOM Migration Progress ✅
+
+The extension has successfully migrated from direct DOM string literals to centralized constants:
+
+- **Constants System**: Extended `core/constants.ts` with comprehensive `DOM_SELECTORS` and
+  `CSS_CLASSES`
+- **Standardized Access**: Both `popup.ts` and `options.ts` now use `domManager` wrapper and
+  constants
+- **Test Updates**: All test files updated to use constants instead of string literals
+- **Performance**: Cached selector queries and consistent error handling via `domManager`
+
+**Example Usage**:
+
+```typescript
+import { DOM_SELECTORS, CSS_CLASSES } from "./core/constants";
+import { domManager } from "./core/dom-manager";
+
+// Use constants for selectors
+const statusEl = domManager.querySelector(DOM_SELECTORS.STATUS_MESSAGE);
+
+// Use constants for CSS classes
+statusEl.className = CSS_CLASSES.STATUS_SUCCESS;
 ```
 
 ### Validation

@@ -1,11 +1,12 @@
 /* eslint-env jest */
 
 import * as popup from "extension/src/popup";
+import { CSS_CLASSES, DOM_SELECTORS } from "../../extension/src/core/constants";
 
 describe("Popup Queue Controls", () => {
   beforeEach(() => {
     // Prepare minimal DOM container
-    document.body.innerHTML = '<ul id="download-status"></ul>';
+    document.body.innerHTML = `<ul id="${DOM_SELECTORS.DOWNLOAD_STATUS.replace("#", "")}"></ul>`;
     // Stub chrome runtime
     //  - Mocking Chrome API for testing
     global.chrome = {
@@ -51,7 +52,7 @@ describe("Popup Queue Controls", () => {
       progress: 75,
       filename: "test.mp4",
     });
-    const btn = li.querySelector<HTMLButtonElement>("button.pause-button");
+    const btn = li.querySelector<HTMLButtonElement>(`button.${CSS_CLASSES.PAUSE_BUTTON}`);
     expect(btn).not.toBeNull();
     btn!.click();
     expect(global.chrome.runtime.sendMessage).toHaveBeenCalledWith(
@@ -66,7 +67,7 @@ describe("Popup Queue Controls", () => {
       active: { idResume: { status: "paused", progress: 0, url: "http://example.com/video2" } },
       queue: [],
     });
-    const resumeBtn = document.querySelector<HTMLButtonElement>("button.resume-button");
+    const resumeBtn = document.querySelector<HTMLButtonElement>(`button.${CSS_CLASSES.RESUME_BUTTON}`);
     expect(resumeBtn).not.toBeNull();
     resumeBtn!.click();
     expect(global.chrome.runtime.sendMessage).toHaveBeenCalledWith(

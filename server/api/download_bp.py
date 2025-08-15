@@ -28,6 +28,7 @@ from server.downloads.ytdlp import (
     download_tempfile_registry,
     handle_ytdlp_download,
 )
+from server.history import append_history_entry
 from server.queue import queue_manager
 from server.schemas import DownloadRequest, GalleryDLRequest, PriorityRequest, ResumeRequest
 from server.utils import cleanup_expired_cache
@@ -134,11 +135,15 @@ def rate_limit_response() -> tuple[Response, int]:
 def _cleanup_temp_files(temp_file: str) -> None:
     """Clean up a temporary file safely."""
     try:
-        if Path(temp_file).exists():
-            Path(temp_file).unlink()
+        p = Path(temp_file)
+        # Guard against accidental attempts to unlink current dir or empty path
+        if not str(p) or str(p) in {".", "./", "/"}:
+            return
+        if p.exists() and p.is_file():
+            p.unlink()
             logger.debug(f"Cleaned up temp file: {temp_file}")
     except Exception as e:
-        logger.warning(f"Failed to clean up temp file {temp_file}: {e}")
+        logger.debug(f"Failed to clean up temp file {temp_file}: {e}")
 
 
 def cleanup_failed_download(download_id: str) -> None:
@@ -454,6 +459,15 @@ def download() -> Any:
             except Exception:
                 logger.debug("Failed to log safe download request fields", exc_info=True)
 
+            # Normalize id field: prefer camelCase 'downloadId'
+            try:
+                if isinstance(raw_data, dict) and "download_id" in raw_data and "downloadId" not in raw_data:
+                    raw_data["downloadId"] = str(raw_data.get("download_id"))
+                    with suppress(Exception):
+                        del raw_data["download_id"]
+            except Exception:
+                ...
+
             # If server is at capacity, enqueue and return queued status immediately
             try:
                 cfg = Config.load()
@@ -464,7 +478,8 @@ def download() -> Any:
                 # Ensure a downloadId exists for queue tracking
                 if not raw_data.get("downloadId") and not raw_data.get("download_id"):
                     raw_data["downloadId"] = str(int(time.time() * 1000))
-                queue_manager.enqueue(dict(raw_data))
+                # Ensure enqueued item carries only 'downloadId'
+                queue_manager.enqueue({**dict(raw_data), "downloadId": str(raw_data.get("downloadId"))})
                 queue_manager.start()
                 unified_response = jsonify(
                     {
@@ -659,6 +674,8 @@ def cancel_download(download_id: str) -> Any:
         if removed:
             # Also clear any temp registry entries for consistency
             download_tempfile_registry.pop(download_id, None)
+            with suppress(Exception):
+                logger.info(f"Queued download removed via cancel endpoint: {download_id}")
             return (
                 jsonify(
                     {
@@ -684,6 +701,40 @@ def cancel_download(download_id: str) -> Any:
     # Remove from registries
     download_process_registry.pop(download_id, None)
     download_tempfile_registry.pop(download_id, None)
+
+    # Reflect a canceled status immediately for clients polling /api/status
+    # Capture any known URL before we overwrite the status for history purposes
+    old_url: str | None = None
+    try:
+        with progress_lock:
+            old = progress_data.get(download_id) or {}
+            try:
+                old_url = str(old.get("url")) if isinstance(old.get("url"), str) else None
+            except Exception:
+                old_url = None
+            progress_data[download_id] = {
+                **old,
+                "status": "canceled",
+                "last_update": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+            }
+    except Exception:
+        # Best-effort; do not fail cancellation on status reflection errors
+        ...
+
+    # Append a minimal history entry marking the cancellation
+    with suppress(Exception):
+        append_history_entry(
+            {
+                "download_id": download_id,
+                "url": old_url,
+                "status": "canceled",
+                "message": "Cancelled by user",
+                "timestamp": time.strftime("%Y-%m:%dT%H:%M:%S%z"),
+            }
+        )
+
+    with suppress(Exception):
+        logger.info(f"Active download canceled: {download_id}")
     return (
         jsonify(
             {

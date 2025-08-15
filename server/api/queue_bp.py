@@ -39,12 +39,14 @@ def get_queue() -> Any:
     """
     try:
         items = cast(list[_QueueItem], queue_manager.list())
-        # Ensure each item has a downloadId string for clients
+        # Ensure each item uses camelCase key
         for it in items:
-            if "downloadId" not in it and "download_id" in it:
-                did = it.get("download_id")
-                if isinstance(did, str):
-                    it["downloadId"] = did
+            if "download_id" in it:
+                try:
+                    it["downloadId"] = str(it.get("download_id"))
+                    del it["download_id"]
+                except Exception:
+                    ...
         return jsonify({"queue": items})
     except Exception as e:
         return jsonify({"status": "error", "message": f"Failed to fetch queue: {e}"}), 500
@@ -106,6 +108,39 @@ def remove_from_queue(download_id: str) -> Any:
                 {
                     "status": "error",
                     "message": f"Failed to remove from queue: {e}",
+                    "downloadId": download_id,
+                }
+            ),
+            500,
+        )
+
+
+@queue_bp.route("/queue/<download_id>/force-start", methods=["POST", "OPTIONS"])
+def force_start(download_id: str) -> Any:
+    """Force start a queued item immediately, ignoring capacity constraints."""
+    if request.method == "OPTIONS":
+        return "", 204
+
+    try:
+        ok = queue_manager.force_start(download_id, override_capacity=True)
+        if not ok:
+            return (
+                jsonify(
+                    {
+                        "status": "error",
+                        "message": "Queued item not found",
+                        "downloadId": download_id,
+                    }
+                ),
+                404,
+            )
+        return jsonify({"status": "success", "downloadId": download_id})
+    except Exception as e:
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": f"Failed to force start: {e}",
                     "downloadId": download_id,
                 }
             ),

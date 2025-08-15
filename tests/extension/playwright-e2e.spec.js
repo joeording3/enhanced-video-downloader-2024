@@ -999,7 +999,7 @@ test.describe("Chrome Extension E2E Tests", () => {
                 });
               } catch {}
             }
-            // Scan inline scripts for m3u8/sources hints (fallback availability signal)
+            // Scan inline scripts for m3u8/sources hints and jwplayer.setup (fallback availability signal)
             try {
               if (typeof w.__EVD_has_m3u8 !== "boolean") {
                 const scripts = Array.from(document.querySelectorAll("script"));
@@ -1016,6 +1016,34 @@ test.describe("Chrome Extension E2E Tests", () => {
                       break;
                     }
                   } catch {}
+                }
+              }
+
+              // Enhanced jwplayer.setup parsing for HypnoTube detection
+              if (typeof w.__EVD_jw_setup_sources !== "number") {
+                const scripts = Array.from(document.querySelectorAll("script"));
+                let sourceCount = 0;
+                for (const s of scripts) {
+                  try {
+                    const content = (s && (s.textContent || s.innerText)) || "";
+                    if (content.includes("jwplayer.setup")) {
+                      // Look for jwplayer.setup calls with source configurations
+                      const setupMatches = content.match(/jwplayer\.setup\s*\(\s*\{[^}]*"sources"\s*:\s*\[[^\]]*\]/gi);
+                      if (setupMatches) {
+                        for (const match of setupMatches) {
+                          const sourceMatches = match.match(/"sources"\s*:\s*\[([^\]]*)\]/i);
+                          if (sourceMatches && sourceMatches[1]) {
+                            const sources = sourceMatches[1].split(",").filter(src => src.trim());
+                            sourceCount = Math.max(sourceCount, sources.length);
+                          }
+                        }
+                      }
+                    }
+                  } catch {}
+                }
+                w.__EVD_jw_setup_sources = sourceCount;
+                if (sourceCount > 0) {
+                  console.log(`[MATRIX][DBG] jwplayer.setup sources detected: ${sourceCount}`);
                 }
               }
             } catch {}
@@ -1562,6 +1590,29 @@ test.describe("Chrome Extension E2E Tests", () => {
         const baseTimeout = Math.max(70000, domainBudgetMs + 60000);
         const extraForHypno = url.includes("hypnotube.com") ? 30000 : 0;
         test.setTimeout(baseTimeout + extraForHypno);
+
+        // HypnoTube embed-first detection: try embed page before main page for better media detection
+        if (url.includes("hypnotube.com")) {
+          const embedFirst = process.env.EVD_HYPNOTUBE_EMBED_FIRST === "true";
+          if (embedFirst) {
+            try {
+              const m = url.match(/hypnotube\.com\/video\/[a-z0-9-]*?(\d+)\.html/);
+              const vid = m && m[1] ? m[1] : null;
+              if (vid) {
+                const embedUrl = `https://hypnotube.com/embed/${vid}`;
+                console.log(`[MATRIX][DBG] hypnotube embed-first -> ${embedUrl}`);
+                try {
+                  await page.goto(embedUrl, { waitUntil: "domcontentloaded" });
+                  await page.waitForLoadState("networkidle", { timeout: 8000 });
+                  const embedDetected = await detectMedia(page, 10000);
+                  if (embedDetected) {
+                    console.log(`[MATRIX][DBG] hypnotube embed-first success, proceeding to main page`);
+                  }
+                } catch {}
+              }
+            } catch {}
+          }
+        }
 
         // HypnoTube optional cookie injection (env-driven) before navigation
         if (url.includes("hypnotube.com")) {

@@ -205,6 +205,8 @@ _ENV_VAR_MAPPINGS: list[tuple[str, str, Callable[[str], Any]]] = [
     ("ALLOW_PLAYLISTS", "allow_playlists", lambda v: v.lower() in ("1", "true", "yes")),
     # New: opt-in auto resume on start
     ("RESUME_ON_START", "resume_on_start", lambda v: v.lower() in ("1", "true", "yes")),
+    # New: clear queued items on server shutdown
+    ("CLEAR_QUEUE_ON_STOP", "clear_queue_on_stop", lambda v: v.lower() in ("1", "true", "yes")),
 ]
 
 

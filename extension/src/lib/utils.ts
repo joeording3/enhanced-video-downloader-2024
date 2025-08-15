@@ -19,7 +19,7 @@ export function debounce<T extends (...args: any[]) => any>(
 
   return function (this: ThisParameterType<T>, ...args: Parameters<T>) {
     clearTimeout(timeout);
-    timeout = window.setTimeout(() => func.apply(this, args), delay);
+    timeout = self.setTimeout(() => func.apply(this, args), delay);
   };
 }
 
@@ -95,7 +95,23 @@ export const logger = {
  * @returns {string} The hostname
  */
 export function getHostname(hostname?: string): string {
-  return (hostname !== undefined ? hostname : window.location.hostname) || "";
+  if (hostname !== undefined) {
+    return hostname;
+  }
+
+  // Try to get hostname from available location objects
+  try {
+    if (typeof self !== "undefined" && self.location && self.location.hostname) {
+      return self.location.hostname;
+    }
+    if (typeof window !== "undefined" && window.location && window.location.hostname) {
+      return window.location.hostname;
+    }
+  } catch {
+    // ignore errors
+  }
+
+  return "";
 }
 
 /**

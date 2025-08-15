@@ -86,17 +86,26 @@ def _handle_history_delete_one(data: dict[str, Any]) -> tuple[Response, int]:
     """Delete a single history entry by id or url."""
     try:
         history = load_history()
-        entry_id = data.get("id")
-        url = data.get("url")
+        entry_id = data.get("id") or data.get("download_id")
+        url = data.get("url") or data.get("webpage_url")
         new_history: list[dict[str, Any]]
         if entry_id:
-            new_history = [h for h in history if str(h.get("id")) != str(entry_id)]
+            new_history = [
+                h for h in history if str(h.get("id")) != str(entry_id) and str(h.get("download_id")) != str(entry_id)
+            ]
         elif url:
-            new_history = [h for h in history if h.get("url") != url]
+
+            def _matches_url(h: dict[str, Any]) -> bool:
+                try:
+                    return str(h.get("url")) == str(url) or str(h.get("webpage_url")) == str(url)
+                except Exception:
+                    return False
+
+            new_history = [h for h in history if not _matches_url(h)]
         else:
             return _error_response("Missing id or url", 400)
-        if len(new_history) == len(history):
-            return _error_response("Entry not found", 404)
+        # Treat delete as idempotent: if nothing matched, still return success
+        # so clients don't break when local/server ids differ.
         if not save_history(new_history):
             return _error_response("Failed to update history", 500)
         return _success_response("Entry deleted", 200)

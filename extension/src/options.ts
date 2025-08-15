@@ -8,7 +8,17 @@ import { safeParse } from "./lib/utils";
 import { logger } from "./core/logger";
 import { Theme, ServerConfig } from "./types";
 import { clearHistoryAndNotify, fetchHistory, renderHistoryItems } from "./history";
-import { getServerPort, getPortRange } from "./core/constants";
+import {
+  getServerPort,
+  getPortRange,
+  MESSAGE_TYPES,
+  STORAGE_KEYS,
+  CSS_CLASSES,
+  STATUS_CONSTANTS,
+  DOM_SELECTORS,
+} from "./core/constants";
+import { domManager } from "./core/dom-manager";
+import { validationService } from "./core/validation-service";
 
 // Add type definitions for newer APIs
 declare global {
@@ -26,13 +36,13 @@ const setStatus = (elementId: string, message: string, isError = false, timeout 
   if (!statusElement) return;
 
   statusElement.textContent = message;
-  statusElement.classList.toggle("success", !isError);
-  statusElement.classList.toggle("error", isError);
+  statusElement.classList.toggle(CSS_CLASSES.STATUS_SUCCESS, !isError);
+  statusElement.classList.toggle(CSS_CLASSES.STATUS_ERROR, isError);
 
   if (timeout > 0) {
     setTimeout(() => {
       statusElement.textContent = "";
-      statusElement.classList.remove("success", "error");
+      statusElement.classList.remove(CSS_CLASSES.STATUS_SUCCESS, CSS_CLASSES.STATUS_ERROR);
     }, timeout);
   }
 };
@@ -42,29 +52,29 @@ const setStatus = (elementId: string, message: string, isError = false, timeout 
  * @param status - The server status ('connected', 'disconnected', or 'checking')
  */
 export function updateOptionsServerStatus(status: "connected" | "disconnected" | "checking"): void {
-  const indicator = document.getElementById("server-status-indicator");
-  const text = document.getElementById("server-status-text");
+  const indicator = domManager.querySelector(DOM_SELECTORS.STATUS_INDICATOR);
+  const text = domManager.querySelector(DOM_SELECTORS.STATUS_TEXT);
 
   if (indicator && text) {
     // Remove all status classes
-    indicator.classList.remove("connected", "disconnected");
-    text.classList.remove("status-connected", "status-disconnected");
+    indicator.classList.remove(CSS_CLASSES.CONNECTED, CSS_CLASSES.DISCONNECTED);
+    text.classList.remove(CSS_CLASSES.STATUS_CONNECTED, CSS_CLASSES.STATUS_DISCONNECTED);
 
     switch (status) {
-      case "connected":
-        indicator.classList.add("connected");
-        text.classList.add("status-connected");
-        chrome.storage.local.get("serverPort", res => {
+      case STATUS_CONSTANTS.CONNECTED:
+        indicator.classList.add(CSS_CLASSES.CONNECTED);
+        text.classList.add(CSS_CLASSES.STATUS_CONNECTED);
+        chrome.storage.local.get(STORAGE_KEYS.SERVER_PORT, res => {
           const port = res.serverPort || "?";
           (text as HTMLElement).textContent = `Server: Connected @ ${port}`;
         });
         break;
-      case "disconnected":
-        indicator.classList.add("disconnected");
-        text.classList.add("status-disconnected");
+      case STATUS_CONSTANTS.DISCONNECTED:
+        indicator.classList.add(CSS_CLASSES.DISCONNECTED);
+        text.classList.add(CSS_CLASSES.STATUS_DISCONNECTED);
         (text as HTMLElement).textContent = "Server: Disconnected";
         break;
-      case "checking":
+      case STATUS_CONSTANTS.CHECKING:
         text.textContent = "Checking...";
         break;
     }
@@ -77,7 +87,7 @@ export function updateOptionsServerStatus(status: "connected" | "disconnected" |
  */
 export function initOptionsPage(): void {
   // Apply console log level from stored config to reflect user selection
-  chrome.storage.local.get("serverConfig", res => {
+  chrome.storage.local.get(STORAGE_KEYS.SERVER_CONFIG, res => {
     const cfg = res.serverConfig || {};
     let level = (cfg.console_log_level || cfg.log_level || "info") as string;
     // Map server-style levels to extension logger levels
@@ -92,12 +102,16 @@ export function initOptionsPage(): void {
   });
   // Initialize theme first
   initializeOptionsTheme().catch(error => {
-    console.error("Error initializing theme:", error);
+    logger.error("Error initializing theme:", {
+      component: "options",
+      operation: "initializeTheme",
+      data: String(error),
+    });
   });
 
   // Initialize server status immediately
   try {
-    chrome.runtime.sendMessage({ type: "getServerStatus" }, (resp: any) => {
+    chrome.runtime.sendMessage({ type: MESSAGE_TYPES.GET_SERVER_STATUS }, (resp: any) => {
       if (!chrome.runtime.lastError && resp && resp.status) {
         updateOptionsServerStatus(resp.status);
       }
@@ -143,23 +157,26 @@ export function initOptionsPage(): void {
       li.setAttribute("draggable", "true");
       li.addEventListener("dragstart", e => {
         (e.dataTransfer as DataTransfer).setData("text/plain", id);
-        li.classList.add("dragging");
+        li.classList.add(CSS_CLASSES.DRAGGING);
       });
       li.addEventListener("dragover", e => {
         e.preventDefault();
-        li.classList.add("drag-over");
+        li.classList.add(CSS_CLASSES.DRAG_OVER);
       });
-      li.addEventListener("dragleave", () => li.classList.remove("drag-over"));
+      li.addEventListener("dragleave", () => li.classList.remove(CSS_CLASSES.DRAG_OVER));
       li.addEventListener("drop", () => {
-        li.classList.remove("drag-over");
+        li.classList.remove(CSS_CLASSES.DRAG_OVER);
         const all = Array.from(queueList.querySelectorAll("li"));
         const newOrder = all.map(el => el.dataset.downloadId!).filter(Boolean);
         // Optimistic reorder locally
         renderQueue(newOrder);
         // Notify background and server
-        chrome.runtime.sendMessage({ type: "reorderQueue", queue: newOrder }, () => {});
+        chrome.runtime.sendMessage(
+          { type: MESSAGE_TYPES.REORDER_QUEUE, queue: newOrder },
+          () => {}
+        );
         // Best-effort server reorder
-        chrome.storage.local.get("serverPort", res => {
+        chrome.storage.local.get(STORAGE_KEYS.SERVER_PORT, res => {
           const port = (res as any).serverPort;
           if (!port) return;
           fetch(`http://127.0.0.1:${port}/api/queue/reorder`, {
@@ -169,24 +186,57 @@ export function initOptionsPage(): void {
           }).catch(() => {});
         });
       });
-      li.addEventListener("dragend", () => li.classList.remove("dragging"));
+      li.addEventListener("dragend", () => li.classList.remove(CSS_CLASSES.DRAGGING));
       // Remove button per item
       const rm = document.createElement("button");
       rm.textContent = "Remove";
-      rm.className = "btn btn--secondary";
+      rm.className = CSS_CLASSES.BTN_SECONDARY;
       rm.addEventListener("click", () => {
-        chrome.runtime.sendMessage({ type: "removeFromQueue", downloadId: id }, () => {
-          li.remove();
-        });
+        chrome.runtime.sendMessage(
+          { type: MESSAGE_TYPES.REMOVE_FROM_QUEUE, downloadId: id },
+          () => {
+            li.remove();
+          }
+        );
+      });
+      // Force start button per item
+      const fs = document.createElement("button");
+      fs.textContent = "Force start";
+      fs.className = CSS_CLASSES.BTN_PRIMARY;
+      fs.style.marginLeft = "6px";
+      fs.addEventListener("click", async () => {
+        try {
+          const port = await getServerPortCached();
+          if (!port) return;
+          const resp = await fetch(
+            `http://127.0.0.1:${port}/api/queue/${encodeURIComponent(id)}/force-start`,
+            {
+              method: "POST",
+            }
+          );
+          if (resp.status === 404) {
+            // Best-effort refresh of queue UI if the item is gone
+            try {
+              setStatus("settings-status", "Item no longer in queue", true, 2500);
+            } catch {}
+            chrome.runtime.sendMessage({ type: MESSAGE_TYPES.GET_QUEUE }, (resp2: any) => {
+              if (resp2 && Array.isArray(resp2.queue)) {
+                renderQueue(resp2.queue);
+              }
+            });
+          }
+        } catch {}
       });
       li.appendChild(document.createTextNode(" "));
       li.appendChild(rm);
+      li.appendChild(document.createTextNode(" "));
+      li.appendChild(fs);
       queueList.appendChild(li);
     });
   };
 
   const refreshQueue = () => {
-    chrome.runtime.sendMessage({ type: "getQueue" }, (resp: any) => {
+    chrome.runtime.sendMessage({ type: MESSAGE_TYPES.GET_QUEUE }, (resp: any) => {
       if (resp && Array.isArray(resp.queue)) {
         renderQueue(resp.queue);
       } else {
@@ -201,8 +251,8 @@ export function initOptionsPage(): void {
   if (queueClearBtn) {
     queueClearBtn.addEventListener("click", () => {
       renderQueue([]);
-      chrome.runtime.sendMessage({ type: "reorderQueue", queue: [] }, () => {});
-      chrome.storage.local.get("serverPort", res => {
+      chrome.runtime.sendMessage({ type: MESSAGE_TYPES.REORDER_QUEUE, queue: [] }, () => {});
+      chrome.storage.local.get(STORAGE_KEYS.SERVER_PORT, res => {
         const port = (res as any).serverPort;
         if (!port) return;
         fetch(`http://127.0.0.1:${port}/api/queue/reorder`, {
@@ -296,14 +346,14 @@ export function setupAccordion(): void {
  */
 export function loadSettings(): void {
   // First try to load from storage
-  chrome.storage.local.get(["serverConfig"], result => {
+  chrome.storage.local.get([STORAGE_KEYS.SERVER_CONFIG], result => {
     const hadLocalConfig = Boolean(result.serverConfig);
     if (hadLocalConfig) {
       populateFormFields(result.serverConfig);
     }
 
     // Then try to get latest from server
-    chrome.runtime.sendMessage({ type: "getConfig" }, response => {
+    chrome.runtime.sendMessage({ type: MESSAGE_TYPES.GET_CONFIG }, response => {
       if (chrome.runtime.lastError) {
         logger.error(
           "Error getting config:",
@@ -406,6 +456,17 @@ export function populateFormFields(config: ServerConfig): void {
   }
   if (elements.enableHistory) {
     elements.enableHistory.checked = config.enable_history ?? true;
+  }
+  // New: queue clear on stop
+  const clearQueueOnStop = document.getElementById(
+    "settings-clear-queue-on-stop"
+  ) as HTMLInputElement | null;
+  if (clearQueueOnStop) {
+    const val = (config as any).clear_queue_on_stop;
+    if (typeof val === "boolean") clearQueueOnStop.checked = val;
+    else if (typeof (config as any).clear_queue_on_stop === "string")
+      clearQueueOnStop.checked =
+        String((config as any).clear_queue_on_stop).toLowerCase() === "true";
   }
   if (elements.logLevel && config.log_level) {
     elements.logLevel.value = config.log_level;
@@ -530,7 +591,8 @@ export function setupEventListeners(): void {
 
   const clearAllBtn = document.getElementById("settings-clear-all");
   clearAllBtn?.addEventListener("click", async () => {
-    if (!confirm("This will stop active downloads, clear queue, and remove all history. Continue?")) return;
+    if (!confirm("This will stop active downloads, clear queue, and remove all history. Continue?"))
+      return;
     try {
       await clearStatuses(["downloading", "paused", "queued", "finished", "error"]);
       await clearQueueServer();
@@ -556,7 +618,7 @@ export function setupEventListeners(): void {
   const resumeDownloadsButton = document.getElementById("settings-resume-downloads");
   if (resumeDownloadsButton) {
     resumeDownloadsButton.addEventListener("click", () => {
-      chrome.runtime.sendMessage({ type: "resumeDownloads" }, response => {
+      chrome.runtime.sendMessage({ type: MESSAGE_TYPES.RESUME_DOWNLOADS }, response => {
         if (response && response.status === "success") {
           setStatus("settings-status", "Resume operation completed successfully!");
         } else {
@@ -580,7 +642,7 @@ export function setupEventListeners(): void {
         setStatus("settings-status", "Please enter a gallery URL", true);
         return;
       }
-      chrome.runtime.sendMessage({ type: "galleryDownload", url }, (response: any) => {
+      chrome.runtime.sendMessage({ type: MESSAGE_TYPES.GALLERY_DOWNLOAD, url }, (response: any) => {
         if (response && response.status === "success") {
           setStatus("settings-status", "Gallery download started");
         } else {
@@ -643,7 +705,7 @@ function setupLiveSave(): void {
     try {
       setStatus("settings-status", "Saving...", false, 1500);
       const response = await new Promise<any>((resolve, reject) => {
-        chrome.runtime.sendMessage({ type: "setConfig", config: partial }, res => {
+        chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SET_CONFIG, config: partial }, res => {
           if (chrome.runtime.lastError) {
             reject(new Error(chrome.runtime.lastError.message));
           } else {
@@ -810,6 +872,16 @@ function setupLiveSave(): void {
     });
   }
 
+  const clearQueueOnStopEl = document.getElementById(
+    "settings-clear-queue-on-stop"
+  ) as HTMLInputElement | null;
+  if (clearQueueOnStopEl) {
+    clearQueueOnStopEl.addEventListener("change", () => {
+      // This flag is env-backed; send as top-level key for backend to persist to .env
+      void sendPartialUpdate({ clear_queue_on_stop: !!clearQueueOnStopEl.checked } as any);
+    });
+  }
+
   const enableDebug = document.getElementById("settings-enable-debug") as HTMLInputElement | null;
   if (enableDebug) {
     enableDebug.addEventListener("change", () => {
@@ -824,7 +896,7 @@ function setupLiveSave(): void {
   if (smartInjection) {
     // Initialize from storage
     try {
-      chrome.storage.local.get("smartInjectionEnabled", res => {
+      chrome.storage.local.get(STORAGE_KEYS.SMART_INJECTION, res => {
         const enabled = (res as any).smartInjectionEnabled;
         smartInjection.checked = enabled === true; // default false
       });
@@ -900,16 +972,16 @@ export function validatePort(input: HTMLInputElement): boolean {
 
   if (!value) {
     showValidationMessage(validationElement, "Port number is required", "error");
-    input.classList.add("invalid");
-    input.classList.remove("valid");
+    input.classList.add(CSS_CLASSES.INVALID);
+    input.classList.remove(CSS_CLASSES.VALID);
     return false;
   }
 
   const port = parseInt(value, 10);
   if (isNaN(port)) {
     showValidationMessage(validationElement, "Port must be a valid number", "error");
-    input.classList.add("invalid");
-    input.classList.remove("valid");
+    input.classList.add(CSS_CLASSES.INVALID);
+    input.classList.remove(CSS_CLASSES.VALID);
     return false;
   }
 
@@ -920,8 +992,8 @@ export function validatePort(input: HTMLInputElement): boolean {
       "Port 9090 is the default server port for this application",
       "success"
     );
-    input.classList.add("valid");
-    input.classList.remove("invalid");
+    input.classList.add(CSS_CLASSES.VALID);
+    input.classList.remove(CSS_CLASSES.INVALID);
     return true;
   }
 
@@ -932,8 +1004,8 @@ export function validatePort(input: HTMLInputElement): boolean {
       `Port must be between ${minPort} and ${maxPort}`,
       "error"
     );
-    input.classList.add("invalid");
-    input.classList.remove("valid");
+    input.classList.add(CSS_CLASSES.INVALID);
+    input.classList.remove(CSS_CLASSES.VALID);
     return false;
   }
 
@@ -945,14 +1017,14 @@ export function validatePort(input: HTMLInputElement): boolean {
       "Port " + port + " is commonly used by other services",
       "warning"
     );
-    input.classList.add("valid");
-    input.classList.remove("invalid");
+    input.classList.add(CSS_CLASSES.VALID);
+    input.classList.remove(CSS_CLASSES.INVALID);
     return true;
   }
 
   showValidationMessage(validationElement, "Port number is valid", "success");
-  input.classList.add("valid");
-  input.classList.remove("invalid");
+  input.classList.add(CSS_CLASSES.VALID);
+  input.classList.remove(CSS_CLASSES.INVALID);
   return true;
 }
 
@@ -965,16 +1037,16 @@ export function validateFolder(input: HTMLInputElement): boolean {
 
   if (!value) {
     showValidationMessage(validationElement, "Download folder path is required", "error");
-    input.classList.add("invalid");
-    input.classList.remove("valid");
+    input.classList.add(CSS_CLASSES.INVALID);
+    input.classList.remove(CSS_CLASSES.VALID);
     return false;
   }
 
   // Basic path validation
   if (value.includes("..") || value.includes("//")) {
     showValidationMessage(validationElement, "Invalid path format detected", "error");
-    input.classList.add("invalid");
-    input.classList.remove("valid");
+    input.classList.add(CSS_CLASSES.INVALID);
+    input.classList.remove(CSS_CLASSES.VALID);
     return false;
   }
 
@@ -990,14 +1062,14 @@ export function validateFolder(input: HTMLInputElement): boolean {
       "Please provide an absolute path for best compatibility",
       "warning"
     );
-    input.classList.add("valid");
-    input.classList.remove("invalid");
+    input.classList.add(CSS_CLASSES.VALID);
+    input.classList.remove(CSS_CLASSES.INVALID);
     return true;
   }
 
   showValidationMessage(validationElement, "Folder path looks valid", "success");
-  input.classList.add("valid");
-  input.classList.remove("invalid");
+  input.classList.add(CSS_CLASSES.VALID);
+  input.classList.remove(CSS_CLASSES.INVALID);
   return true;
 }
 
@@ -1010,22 +1082,22 @@ export function validateLogLevel(select: HTMLSelectElement): boolean {
 
   if (!value) {
     showValidationMessage(validationElement, "Please select a log level", "error");
-    select.classList.add("invalid");
-    select.classList.remove("valid");
+    select.classList.add(CSS_CLASSES.INVALID);
+    select.classList.remove(CSS_CLASSES.VALID);
     return false;
   }
 
   const validLevels = ["error", "info", "debug", "ERROR", "INFO", "DEBUG"];
   if (!validLevels.includes(value)) {
     showValidationMessage(validationElement, "Invalid log level selected", "error");
-    select.classList.add("invalid");
-    select.classList.remove("valid");
+    select.classList.add(CSS_CLASSES.INVALID);
+    select.classList.remove(CSS_CLASSES.VALID);
     return false;
   }
 
   showValidationMessage(validationElement, "Log level is valid", "success");
-  select.classList.add("valid");
-  select.classList.remove("invalid");
+  select.classList.add(CSS_CLASSES.VALID);
+  select.classList.remove(CSS_CLASSES.INVALID);
   return true;
 }
 
@@ -1038,16 +1110,16 @@ export function validateConsoleLogLevel(select: HTMLSelectElement): boolean {
 
   if (!value) {
     showValidationMessage(validationElement, "Please select a console log level", "error");
-    select.classList.add("invalid");
-    select.classList.remove("valid");
+    select.classList.add(CSS_CLASSES.INVALID);
+    select.classList.remove(CSS_CLASSES.VALID);
     return false;
   }
 
   const validLevels = ["debug", "info", "warning", "error", "critical"]; // per UI
   if (!validLevels.includes(value)) {
     showValidationMessage(validationElement, "Invalid console log level selected", "error");
-    select.classList.add("invalid");
-    select.classList.remove("valid");
+    select.classList.add(CSS_CLASSES.INVALID);
+    select.classList.remove(CSS_CLASSES.VALID);
     return false;
   }
 
@@ -1064,8 +1136,8 @@ export function validateConsoleLogLevel(select: HTMLSelectElement): boolean {
     `Console log level set: ${value}. ${levelInfo[value] ?? ""}`.trim(),
     "success"
   );
-  select.classList.add("valid");
-  select.classList.remove("invalid");
+  select.classList.add(CSS_CLASSES.VALID);
+  select.classList.remove(CSS_CLASSES.INVALID);
   return true;
 }
 
@@ -1078,8 +1150,8 @@ export function validateFormat(select: HTMLSelectElement): boolean {
 
   if (!value) {
     showValidationMessage(validationElement, "Please select a video format", "error");
-    select.classList.add("invalid");
-    select.classList.remove("valid");
+    select.classList.add(CSS_CLASSES.INVALID);
+    select.classList.remove(CSS_CLASSES.VALID);
     return false;
   }
 
@@ -1094,14 +1166,14 @@ export function validateFormat(select: HTMLSelectElement): boolean {
 
   if (!validFormats.includes(value)) {
     showValidationMessage(validationElement, "Invalid format selected", "error");
-    select.classList.add("invalid");
-    select.classList.remove("valid");
+    select.classList.add(CSS_CLASSES.INVALID);
+    select.classList.remove(CSS_CLASSES.VALID);
     return false;
   }
 
   showValidationMessage(validationElement, "Format is valid", "success");
-  select.classList.add("valid");
-  select.classList.remove("invalid");
+  select.classList.add(CSS_CLASSES.VALID);
+  select.classList.remove(CSS_CLASSES.INVALID);
   return true;
 }
 
@@ -1157,11 +1229,11 @@ function showFieldValidation(
     showValidationMessage(validationElement, message, type);
   }
 
-  field.classList.remove("valid", "invalid");
+  field.classList.remove(CSS_CLASSES.VALID, CSS_CLASSES.INVALID);
   if (type === "success") {
-    field.classList.add("valid");
+    field.classList.add(CSS_CLASSES.VALID);
   } else if (type === "error") {
-    field.classList.add("invalid");
+    field.classList.add(CSS_CLASSES.INVALID);
   }
 }
 
@@ -1176,13 +1248,13 @@ export function showValidationMessage(
   if (!element) return;
 
   element.textContent = message;
-  element.className = "validation-message " + type;
+  element.className = CSS_CLASSES.VALIDATION_MESSAGE + " " + type;
 
   // Auto-hide success messages after 3 seconds
   if (type === "success") {
     setTimeout(() => {
       element.textContent = "";
-      element.className = "validation-message";
+      element.className = CSS_CLASSES.VALIDATION_MESSAGE;
     }, 3000);
   }
 }
@@ -1327,17 +1399,17 @@ export function setupTabNavigation(): void {
   tabs.forEach(tab => {
     tab.addEventListener("click", () => {
       // Remove active class from all tabs
-      tabs.forEach(t => t.classList.remove("active"));
-      tabContents.forEach(content => content.classList.remove("active"));
+      tabs.forEach(t => t.classList.remove(CSS_CLASSES.ACTIVE));
+      tabContents.forEach(content => content.classList.remove(CSS_CLASSES.ACTIVE));
 
       // Add active class to current tab
-      tab.classList.add("active");
+      tab.classList.add(CSS_CLASSES.ACTIVE);
 
       // Show corresponding content
       const target = tab.getAttribute("data-tab");
       if (target) {
         const content = document.getElementById(target);
-        if (content) content.classList.add("active");
+        if (content) content.classList.add(CSS_CLASSES.ACTIVE);
       }
     });
   });
@@ -1348,13 +1420,13 @@ export function setupTabNavigation(): void {
  */
 export function setupMessageListener(): void {
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.type === "serverDiscovered") {
+    if (message.type === MESSAGE_TYPES.SERVER_DISCOVERED) {
       logger.debug("Server discovered notification received, refreshing settings");
       // Refresh settings when server is discovered
       loadSettings();
-    } else if (message.type === "serverStatusUpdate") {
+    } else if (message.type === MESSAGE_TYPES.SERVER_STATUS_UPDATE) {
       updateOptionsServerStatus(message.status);
-    } else if (message.type === "historyUpdated") {
+    } else if (message.type === MESSAGE_TYPES.HISTORY_UPDATED) {
       // Refresh both error and full history views on updates
       void loadErrorHistory(currentHistoryPage, currentHistoryPerPage);
       void loadDownloadHistory(currentHistoryPage, currentHistoryPerPage);
@@ -1916,29 +1988,32 @@ export function setupLogsUI(): void {
     const hardCap = 100000;
 
     const attempt = (): void => {
-      chrome.runtime.sendMessage({ type: "getLogs", lines: requested, recent }, (response: any) => {
-        if (chrome.runtime.lastError) {
-          renderLogs("Error: " + chrome.runtime.lastError.message, scrollMode);
-          return;
+      chrome.runtime.sendMessage(
+        { type: MESSAGE_TYPES.GET_LOGS, lines: requested, recent },
+        (response: any) => {
+          if (chrome.runtime.lastError) {
+            renderLogs("Error: " + chrome.runtime.lastError.message, scrollMode);
+            return;
+          }
+          if (!response || response.status !== "success") {
+            renderLogs("Error: " + (response?.message || "Failed to fetch logs"), scrollMode);
+            return;
+          }
+          const text = response.data || "";
+          if (wantsAll) {
+            renderLogs(text, scrollMode);
+            return;
+          }
+          const filtered = applyFilters(text);
+          const count = countEntriesFromFiltered(filtered);
+          if (count >= uiLimit || requested >= hardCap) {
+            renderLogs(text, scrollMode);
+            return;
+          }
+          requested = Math.min(hardCap, requested * 2);
+          attempt();
         }
-        if (!response || response.status !== "success") {
-          renderLogs("Error: " + (response?.message || "Failed to fetch logs"), scrollMode);
-          return;
-        }
-        const text = response.data || "";
-        if (wantsAll) {
-          renderLogs(text, scrollMode);
-          return;
-        }
-        const filtered = applyFilters(text);
-        const count = countEntriesFromFiltered(filtered);
-        if (count >= uiLimit || requested >= hardCap) {
-          renderLogs(text, scrollMode);
-          return;
-        }
-        requested = Math.min(hardCap, requested * 2);
-        attempt();
-      });
+      );
     };
     attempt();
   };
@@ -1961,7 +2036,7 @@ export function setupLogsUI(): void {
   });
 
   clearBtn?.addEventListener("click", () => {
-    chrome.runtime.sendMessage({ type: "clearLogs" }, (response: any) => {
+    chrome.runtime.sendMessage({ type: MESSAGE_TYPES.CLEAR_LOGS }, (response: any) => {
       if (chrome.runtime.lastError) {
         renderLogs("Error: " + chrome.runtime.lastError.message);
         return;
@@ -2083,11 +2158,22 @@ export async function saveSettings(event: Event): Promise<void> {
     const historyFile = (formData.get("history-file") as string | null) || "";
     if (historyFile.trim()) (cfgToPost as any).history_file = historyFile.trim();
 
+    // Max concurrent downloads (top-level numeric setting)
+    const mcdRaw = (formData.get("max-concurrent-downloads") as string | null) || "";
+    const mcd = mcdRaw.trim() ? parseInt(mcdRaw, 10) : undefined;
+    if (Number.isFinite(mcd as number)) (cfgToPost as any).max_concurrent_downloads = mcd as number;
+
+    // Env-backed: clear queued items on stop/restart (always send explicit boolean)
+    const clearQueueOnStopEl = document.getElementById(
+      "settings-clear-queue-on-stop"
+    ) as HTMLInputElement | null;
+    if (clearQueueOnStopEl) (cfgToPost as any).clear_queue_on_stop = !!clearQueueOnStopEl.checked;
+
     // If user provided a server port, cache it immediately so background can talk to server
     if (Number.isFinite(portVal as number)) {
       try {
         const existing = await new Promise<any>(resolve =>
-          chrome.storage.local.get(["serverConfig"], resolve)
+          chrome.storage.local.get([STORAGE_KEYS.SERVER_CONFIG], resolve)
         );
         const nextCfg = { ...(existing?.serverConfig || {}), server_port: portVal };
         await new Promise<void>((resolve, reject) =>
@@ -2104,13 +2190,16 @@ export async function saveSettings(event: Event): Promise<void> {
 
     // Send to server
     const response = await new Promise<any>((resolve, reject) => {
-      chrome.runtime.sendMessage({ type: "setConfig", config: cfgToPost }, response => {
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
-        } else {
-          resolve(response);
+      chrome.runtime.sendMessage(
+        { type: MESSAGE_TYPES.SET_CONFIG, config: cfgToPost },
+        response => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+          } else {
+            resolve(response);
+          }
         }
-      });
+      );
     });
 
     if (response && response.status === "success") {
@@ -2182,7 +2271,7 @@ export async function saveSettings(event: Event): Promise<void> {
           });
         })();
         if (hadEmpties) {
-          chrome.runtime.sendMessage({ type: "getConfig" }, resp => {
+          chrome.runtime.sendMessage({ type: MESSAGE_TYPES.GET_CONFIG }, resp => {
             if (resp && resp.status === "success" && resp.data) {
               populateMissingFieldsFromConfig(resp.data as any);
             }
@@ -2394,7 +2483,7 @@ export function restartServer(): void {
     restartButton.innerHTML = "Restarting...";
   }
 
-  chrome.runtime.sendMessage({ type: "restartServer" }, response => {
+  chrome.runtime.sendMessage({ type: MESSAGE_TYPES.RESTART_SERVER }, response => {
     if (restartButton) {
       restartButton.disabled = false;
       restartButton.innerHTML = "Restart Server";
@@ -2499,7 +2588,7 @@ export function applyOptionsTheme(forceTheme?: Theme): void {
 
   // Applying theme
 
-  document.body.classList.toggle("dark-theme", isDark);
+  document.body.classList.toggle(CSS_CLASSES.DARK_THEME, isDark);
 
   // Update header icon based on theme
   const headerIcon = document.getElementById("options-header-icon") as HTMLImageElement;
@@ -2528,7 +2617,7 @@ export async function handleThemeToggle(): Promise<void> {
 
   try {
     // Get current theme from storage
-    const result = await chrome.storage.local.get("theme");
+    const result = await chrome.storage.local.get(STORAGE_KEYS.THEME);
     const currentTheme = result.theme as Theme | undefined;
     // Current theme from storage
 
@@ -2555,14 +2644,18 @@ export async function handleThemeToggle(): Promise<void> {
     // Log the theme change
     // Theme changed
   } catch (error) {
-    console.error("Error toggling theme:", error);
+    logger.error("Error toggling theme:", {
+      component: "options",
+      operation: "toggleTheme",
+      data: String(error),
+    });
   }
 }
 
 // --- Admin clear helpers ---
 async function getServerPortCached(): Promise<number | null> {
   try {
-    const res = await chrome.storage.local.get("serverPort");
+    const res = await chrome.storage.local.get(STORAGE_KEYS.SERVER_PORT);
     const port = (res as any)?.serverPort;
     return typeof port === "number" && Number.isFinite(port) ? port : null;
   } catch {
@@ -2591,7 +2684,8 @@ async function clearByStatus(status: "completed" | "error"): Promise<void> {
         const items: any[] = Array.isArray(data?.history) ? data.history : [];
         const filtered = items.filter(it => {
           const s = String(it?.status || "").toLowerCase();
-          if (status === "completed") return !(s === "finished" || s === "complete" || s === "completed" || s === "success");
+          if (status === "completed")
+            return !(s === "finished" || s === "complete" || s === "completed" || s === "success");
           return !(s === "error" || s === "failed" || s === "fail");
         });
         await fetch(`http://127.0.0.1:${port}/api/history`, {
@@ -2604,7 +2698,7 @@ async function clearByStatus(status: "completed" | "error"): Promise<void> {
   } catch {}
   // Update UI
   try {
-    chrome.runtime.sendMessage({ type: "historyUpdated" });
+    chrome.runtime.sendMessage({ type: MESSAGE_TYPES.HISTORY_UPDATED });
   } catch {}
 }
 
@@ -2614,7 +2708,9 @@ async function clearStatuses(states: string[]): Promise<void> {
   await Promise.all(
     states.map(async s => {
       try {
-        await fetch(`http://127.0.0.1:${port}/api/status?status=${encodeURIComponent(s)}`, { method: "DELETE" });
+        await fetch(`http://127.0.0.1:${port}/api/status?status=${encodeURIComponent(s)}`, {
+          method: "DELETE",
+        });
       } catch {}
     })
   );
@@ -2634,7 +2730,9 @@ async function clearQueueServer(): Promise<void> {
           const id = String(it?.downloadId || it?.download_id || "");
           if (!id) return;
           try {
-            await fetch(`http://127.0.0.1:${port}/api/queue/${encodeURIComponent(id)}/remove`, { method: "POST" });
+            await fetch(`http://127.0.0.1:${port}/api/queue/${encodeURIComponent(id)}/remove`, {
+              method: "POST",
+            });
           } catch {}
         })
       );
@@ -2661,7 +2759,7 @@ async function clearHistoryRemote(): Promise<void> {
 export async function initializeOptionsTheme(): Promise<void> {
   try {
     // Get stored theme preference
-    const result = await chrome.storage.local.get("theme");
+    const result = await chrome.storage.local.get(STORAGE_KEYS.THEME);
     const storedTheme = result.theme as Theme | undefined;
 
     if (storedTheme) {
@@ -2672,7 +2770,11 @@ export async function initializeOptionsTheme(): Promise<void> {
       applyOptionsTheme();
     }
   } catch (error) {
-    console.error("Error initializing theme:", error);
+    logger.error("Error initializing theme:", {
+      component: "options",
+      operation: "initializeTheme",
+      data: String(error),
+    });
     // Fallback to system preference
     applyOptionsTheme();
   }

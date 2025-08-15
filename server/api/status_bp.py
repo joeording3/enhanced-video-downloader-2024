@@ -177,7 +177,7 @@ def get_all_status() -> Response:
         # Include progress entries with enhanced data
         for download_id, status in list(progress_data.items()):
             # Ignore ephemeral queued placeholders to keep default response minimal/empty
-            if status.get("status") == "queued":
+            if status.get("status") in {"queued", "canceled"}:
                 continue
             # Skip stale finished entries beyond TTL
             try:
@@ -229,9 +229,9 @@ def get_all_status() -> Response:
         if include_queue:
             try:
                 queued = queue_manager.list()
-                # Represent queued items minimally under their id
+                # Represent queued items minimally under their id (camelCase only)
                 for item in queued:
-                    did = str(item.get("downloadId") or item.get("download_id") or "unknown")
+                    did = str(item.get("downloadId") or "unknown")
                     if did and did not in combined:
                         combined[did] = {"status": "queued", "url": item.get("url", "")}
             except Exception:

@@ -90,14 +90,22 @@ Downloads a video from a URL using yt-dlp.
 Common error types include:
 
 - `YT_DLP_UNSUPPORTED_URL`: The provided URL is not supported or is invalid.
-- `YT_DLP_NO_FORMATS`: No downloadable media was found on the page (e.g., you clicked Download on a non-video page). Open the actual video URL and try again.
-- `YT_DLP_VIDEO_UNAVAILABLE`, `YT_DLP_PRIVATE_VIDEO`, `YT_DLP_GEO_RESTRICTED`, `YT_DLP_DRM_PROTECTED`.
+- `YT_DLP_NO_FORMATS`: No downloadable media was found on the page (e.g., you clicked Download on a
+  non-video page). Open the actual video URL and try again.
+- `YT_DLP_VIDEO_UNAVAILABLE`, `YT_DLP_PRIVATE_VIDEO`, `YT_DLP_GEO_RESTRICTED`,
+  `YT_DLP_DRM_PROTECTED`.
 
-Note: The server now writes yt-dlp's info JSON using `writeinfojson`, storing metadata in
-the consolidated history file upon download completion. By default the history file is
-`<download_dir>/history.json`, overrideable via the `history_file` config or `HISTORY_FILE` env var.
-Use `GET /api/history` to retrieve enriched
+Note: The server writes yt-dlp's info JSON using `writeinfojson`, and on successful completion the
+metadata is appended to the consolidated history file and the per-video `*.info.json` sidecar is
+deleted. The history file defaults to `<download_dir>/history.json` and can be overridden via the
+`history_file` config or `HISTORY_FILE` env var. Use `GET /api/history` to retrieve enriched
 entries.
+
+Automatic metadata consolidation:
+
+- On startup (best-effort) and via the cleanup utility, any lingering `*.info.json` files in the
+  configured `download_dir` are imported into history (duplicates by `id`/`url` are skipped) and the
+  sidecar files are removed to keep the folder clean.
 
 ### POST /gallery-dl
 
@@ -620,6 +628,25 @@ Append entry:
 }
 ```
 
+Delete one (idempotent):
+
+```json
+{ "action": "delete_one", "id": "download-id-123" }
+```
+
+Keys accepted for deletion matching:
+
+- `id` or `download_id`
+- `url` or `webpage_url`
+
+Behavior:
+
+- The operation is idempotent. If no matching entry exists, it still returns success so clients
+  don’t fail on already-removed items.
+- The extension’s popup Delete action prefers `id` when available and falls back to `url`; locally
+  it also removes entries matching either `id` or `download_id` to keep the UI consistent with
+  server history.
+
 ## Configuration API
 
 ### GET /config
@@ -662,6 +689,13 @@ Updates server configuration. Available keys:
 - `log_level`, `console_log_level`, `max_concurrent_downloads`,
 - `download_history_limit`, `allowed_domains`, `ffmpeg_path`,
 - `scan_interval_ms`, `allow_playlists`, `yt_dlp_options` (dictionary).
+
+Env-backed flags persisted to `.env` when provided:
+
+- `history_file` → `HISTORY_FILE`
+- `log_file` → `LOG_PATH`
+- `ytdlp_concurrent_fragments` → `YTDLP_CONCURRENT_FRAGMENTS`
+- `clear_queue_on_stop` → `CLEAR_QUEUE_ON_STOP`
 
 **Examples with yt-dlp options:**
 

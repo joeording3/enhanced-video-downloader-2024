@@ -48,7 +48,6 @@
                         >
                           Light | Dark
                         </div>
-
                           <button
                             type="button"
                             id="settings-resume-downloads"
@@ -56,12 +55,6 @@
                           >
                             Resume Partial Downloads
                           </button>
-                          <div class="btn-group-row">
-                            <button type="button" id="settings-clear-completed" class="btn btn--secondary">Clear Completed</button>
-                            <button type="button" id="settings-clear-failed" class="btn btn--secondary">Clear Failed</button>
-                            <button type="button" id="settings-clear-all" class="btn btn--danger">Clear All</button>
-                            <button type="button" id="settings-clear-queue" class="btn btn--secondary">Clear Queue</button>
-                          </div>
                           <button
                             type="button"
                             id="settings-clear-positions"
@@ -70,8 +63,12 @@
                           >
                             Clear Button Positions
                           </button>
-                          <button type="button" id="queue-refresh" class="btn btn--secondary">Refresh Queue</button>
-                          <button type="button" id="queue-clear" class="btn btn--secondary">Clear Queue</button>
+                        </div>
+                        <br><div class="settings-actions">
+                          <button type="button" id="settings-clear-completed" class="btn btn--secondary">Clear Completed</button>
+                          <button type="button" id="settings-clear-failed" class="btn btn--secondary">Clear Failed</button>
+                          <button type="button" id="settings-clear-all" class="btn btn--danger">Clear All</button>
+                          <button type="button" id="settings-clear-queue" class="btn btn--secondary">Clear Queue</button>
                         </div>
                       </div>
                     </section>
@@ -123,6 +120,13 @@
                       <span class="info-text">Normal level provides essential information</span>
                     </div>
                   </div>
+                </div>
+
+                <div class="settings-section">
+                  <label class="checkbox">
+                    <input id="settings-clear-queue-on-stop" type="checkbox" />
+                    Clear queued items on server stop/restart
+                  </label>
                 </div>
 
                 <div class="settings-section">

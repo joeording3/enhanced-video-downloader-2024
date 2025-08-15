@@ -20,7 +20,7 @@ from .api.history_bp import history_bp, history_route
 from .api.logs_bp import logs_bp
 from .api.logs_manage_bp import logs_manage_bp
 from .api.queue_bp import queue_bp
-from .api.restart_bp import restart_bp
+from .api.restart_bp import managed_restart_route, restart_bp, restart_server_route
 from .api.status_bp import status_bp
 from .config import Config
 from .logging_setup import setup_logging
@@ -160,6 +160,16 @@ def create_app(config: Config) -> Flask:
     # Configure request size limits
     app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB max request size
 
+    # Expose DOWNLOAD_DIR in Flask app config for components that read from current_app.config
+    # This ensures resume logic and similar utilities can access the configured download directory
+    try:
+        configured_download_dir = config.get_value("download_dir")
+        if configured_download_dir:
+            app.config["DOWNLOAD_DIR"] = str(configured_download_dir)
+    except Exception:
+        # Do not block app creation if config lookup fails; dependent code will handle absence
+        pass
+
     # Configure CORS (local server usage); allow any origin for localhost usage scenarios
     CORS(
         app,
@@ -248,9 +258,20 @@ def create_app(config: Config) -> Flask:
     app.add_url_rule("/logs", view_func=logs_route, methods=["GET", "OPTIONS"])  # alias
     app.add_url_rule("/logs/", view_func=logs_route, methods=["GET", "OPTIONS"])  # alias with slash
     app.add_url_rule("/logs/clear", view_func=clear_logs_route, methods=["POST"])  # alias
+    # Provide API aliases for restart endpoints so clients can use /api paths
+    app.add_url_rule("/api/restart", view_func=restart_server_route, methods=["POST", "OPTIONS"])  # alias
+    app.add_url_rule("/api/restart/managed", view_func=managed_restart_route, methods=["POST", "OPTIONS"])  # alias
     app.register_blueprint(debug_bp)
 
     # Explicitly support integration path for history endpoint
     app.add_url_rule("/api/history", "history_api", history_route, methods=["GET", "POST"])
+    # Start the queue worker so any persisted queued items are loaded and scheduled
+    try:
+        from .queue import queue_manager
+
+        queue_manager.start()
+    except Exception:
+        # Never block app creation due to queue worker startup issues
+        pass
 
     return app

@@ -73,6 +73,7 @@ let mediaObserver: MutationObserver | null = null; // Observes dynamic media att
 // State managed by centralized state manager
 let downloadButton: HTMLElement | null = null;
 let forcedGlobalInSmartMode = false;
+let runtimeContextInvalidated = false;
 let activeDragButton: HTMLElement | null = null;
 // Suppress accidental clicks immediately after a drag
 let suppressClicksUntil = 0;
@@ -126,6 +127,33 @@ function removeAllButtons(): void {
     if (buttonObserver) {
       buttonObserver.disconnect();
       buttonObserver = null;
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+// Helper: disable all download buttons when extension context is invalidated
+function disableAllDownloadButtonsForContextInvalidation(): void {
+  try {
+    const btns = Array.from(
+      document.querySelectorAll<HTMLButtonElement>("button.evd-drag-handle.download-button")
+    );
+    const targets: HTMLButtonElement[] = [];
+    if (btns && btns.length > 0) targets.push(...btns);
+    if (downloadButton && (downloadButton as HTMLButtonElement).classList) {
+      targets.push(downloadButton as HTMLButtonElement);
+    }
+    for (const btn of targets) {
+      try {
+        btn.disabled = true;
+        if ((btn as any).dataset) (btn as any).dataset.disabled = "true";
+        btn.style.opacity = "0.5";
+        btn.style.cursor = "not-allowed";
+        if (!btn.title) btn.title = "Extension context invalidated";
+      } catch {
+        /* ignore per-button errors */
+      }
     }
   } catch {
     /* ignore */
@@ -366,6 +394,8 @@ async function getButtonState(): Promise<ButtonState> {
           const msg = typeof raw === "string" && raw.length > 0 ? raw : "Unknown storage error";
           if (/Extension context invalidated/i.test(msg)) {
             _warn("Storage access unavailable (context invalidated). Using defaults.");
+            runtimeContextInvalidated = true;
+            disableAllDownloadButtonsForContextInvalidation();
           } else {
             // Log explicit error message expected by tests and fall back to defaults
             _warn("Error getting button state from storage:", msg);
@@ -379,6 +409,10 @@ async function getButtonState(): Promise<ButtonState> {
       // Explicit error log expected by tests; then fall back to defaults
       const msg = (e as Error)?.message || "Unknown storage error";
       _warn("Error getting button state from storage:", msg);
+      if (/Extension context invalidated/i.test(String(msg))) {
+        runtimeContextInvalidated = true;
+        disableAllDownloadButtonsForContextInvalidation();
+      }
       resolve({ x: 10, y: 10, hidden: false });
     }
   });
@@ -456,18 +490,18 @@ function ensureDownloadButtonStyle(buttonElement: HTMLElement): void {
 
   // Phase 1: Ensure visibility via class toggles (no inline fallbacks)
   // Respect explicit hidden state: do not force-show if user hid the button.
-  if (buttonElement.classList.contains("hidden")) {
+  if (buttonElement.classList.contains(CSS_CLASSES.HIDDEN)) {
     // Ensure we don't mark as visible when explicitly hidden
-    if (buttonElement.classList.contains("evd-visible")) {
-      buttonElement.classList.remove("evd-visible");
+    if (buttonElement.classList.contains(CSS_CLASSES.EVD_VISIBLE)) {
+      buttonElement.classList.remove(CSS_CLASSES.EVD_VISIBLE);
       _styleAdjusted = true;
     }
   } else if (computedStyle.display === "none") {
-    buttonElement.classList.add("evd-visible");
+    buttonElement.classList.add(CSS_CLASSES.EVD_VISIBLE);
     _styleAdjusted = true;
     log("EVD button was hidden by page styles; made visible via class.");
-  } else if (!buttonElement.classList.contains("evd-visible")) {
-    buttonElement.classList.add("evd-visible");
+  } else if (!buttonElement.classList.contains(CSS_CLASSES.EVD_VISIBLE)) {
+    buttonElement.classList.add(CSS_CLASSES.EVD_VISIBLE);
   }
 
   // Force stacking and hit-testing dominance
@@ -512,8 +546,8 @@ function ensureDownloadButtonStyle(buttonElement: HTMLElement): void {
       const pageBg = window.getComputedStyle(document.body).backgroundColor || "rgb(0,0,0)";
       const rgb = parseColor(pageBg) || [0, 0, 0];
       const isDarkBg = luminance(rgb) < 128; // rough threshold
-      buttonElement.classList.remove("evd-on-dark", "evd-on-light");
-      buttonElement.classList.add(isDarkBg ? "evd-on-dark" : "evd-on-light");
+      buttonElement.classList.remove(CSS_CLASSES.EVD_ON_DARK, CSS_CLASSES.EVD_ON_LIGHT);
+      buttonElement.classList.add(isDarkBg ? CSS_CLASSES.EVD_ON_DARK : CSS_CLASSES.EVD_ON_LIGHT);
       _styleAdjusted = true;
     }
   } catch {
@@ -564,7 +598,7 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
     if (smartMode && !forcedGlobalInSmartMode) {
       // Remove any stray main button if present
       try {
-        const stray = document.getElementById("evd-download-button-main");
+        const stray = document.getElementById(BUTTON_ID_PREFIX + "main");
         if (stray && document.body.contains(stray)) {
           stray.remove();
         }
@@ -599,8 +633,8 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
   btn.className = DRAG_HANDLE_CLASS;
 
   // Set initial position and style
-  btn.classList.add("download-button");
-  btn.classList.add("evd-visible");
+  btn.classList.add(CSS_CLASSES.DOWNLOAD_BUTTON);
+  btn.classList.add(CSS_CLASSES.EVD_VISIBLE);
 
   // Get stored state or default
   const state = await getButtonState();
@@ -663,7 +697,7 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
 
     // Visual drag cursor
     try {
-      btn.classList.add("dragging");
+      btn.classList.add(CSS_CLASSES.DRAGGING);
     } catch {
       /* no-op */
     }
@@ -698,7 +732,7 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
         });
 
         try {
-          btn.classList.add("dragging");
+          btn.classList.add(CSS_CLASSES.DRAGGING);
         } catch {
           /* no-op */
         }
@@ -765,12 +799,12 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
         e.stopImmediatePropagation();
 
         // Add visual feedback without hiding the button
-        btn.classList.add("clicked");
-        btn.classList.add("evd-visible");
-        btn.classList.remove("hidden");
-        btn.classList.add("download-sending");
+        btn.classList.add(CSS_CLASSES.CLICKED);
+        btn.classList.add(CSS_CLASSES.EVD_VISIBLE);
+        btn.classList.remove(CSS_CLASSES.HIDDEN);
+        btn.classList.add(CSS_CLASSES.DOWNLOAD_SENDING);
         // Remove the transient clicked class after the animation
-        setTimeout(() => btn.classList.remove("clicked"), 150);
+        setTimeout(() => btn.classList.remove(CSS_CLASSES.CLICKED), 150);
 
         try {
           // Determine download URL. Prefer currentSrc, then src; avoid blob URLs by falling back to page URL
@@ -799,24 +833,24 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
           // surface a clean error without throwing.
           if (!chrome || !chrome.runtime || typeof chrome.runtime.sendMessage !== "function") {
             error("Error initiating download: runtime messaging unavailable (context invalidated)");
-            btn.classList.remove("download-sending");
-            btn.classList.add("download-error");
+            btn.classList.remove(CSS_CLASSES.DOWNLOAD_SENDING);
+            btn.classList.add(CSS_CLASSES.DOWNLOAD_ERROR);
             setTimeout(() => {
-              btn.classList.remove("download-error");
+              btn.classList.remove(CSS_CLASSES.DOWNLOAD_ERROR);
             }, 2000);
             return;
           }
 
           chrome.runtime.sendMessage(
-            { type: "downloadVideo", url: url, pageTitle: document.title },
+            { type: MESSAGE_TYPES.DOWNLOAD_VIDEO, url: url, pageTitle: document.title },
             response => {
               if (chrome.runtime.lastError) {
                 const msg = chrome.runtime.lastError.message || "Unknown error";
                 error("Error sending download request:", msg);
-                btn.classList.remove("download-sending");
-                btn.classList.add("download-error");
+                btn.classList.remove(CSS_CLASSES.DOWNLOAD_SENDING);
+                btn.classList.add(CSS_CLASSES.DOWNLOAD_ERROR);
                 setTimeout(() => {
-                  btn.classList.remove("download-error");
+                  btn.classList.remove(CSS_CLASSES.DOWNLOAD_ERROR);
                 }, 2000);
                 return;
               }
@@ -830,10 +864,10 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
                   /* ignore */
                 }
                 // Success feedback
-                btn.classList.remove("download-sending");
-                btn.classList.add("download-success");
+                btn.classList.remove(CSS_CLASSES.DOWNLOAD_SENDING);
+                btn.classList.add(CSS_CLASSES.DOWNLOAD_SUCCESS);
                 setTimeout(() => {
-                  btn.classList.remove("download-success");
+                  btn.classList.remove(CSS_CLASSES.DOWNLOAD_SUCCESS);
                 }, 1200);
               } else {
                 try {
@@ -844,10 +878,10 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
                   /* ignore */
                 }
                 // Error feedback
-                btn.classList.remove("download-sending");
-                btn.classList.add("download-error");
+                btn.classList.remove(CSS_CLASSES.DOWNLOAD_SENDING);
+                btn.classList.add(CSS_CLASSES.DOWNLOAD_ERROR);
                 setTimeout(() => {
-                  btn.classList.remove("download-error");
+                  btn.classList.remove(CSS_CLASSES.DOWNLOAD_ERROR);
                 }, 1200);
               }
             }
@@ -860,10 +894,10 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
             /* ignore */
           }
           try {
-            btn.classList.remove("download-sending");
-            btn.classList.add("download-error");
+            btn.classList.remove(CSS_CLASSES.DOWNLOAD_SENDING);
+            btn.classList.add(CSS_CLASSES.DOWNLOAD_ERROR);
             setTimeout(() => {
-              btn.classList.remove("download-error");
+              btn.classList.remove(CSS_CLASSES.DOWNLOAD_ERROR);
             }, 1200);
           } catch {
             // no-op: visual feedback cleanup best-effort
@@ -886,8 +920,8 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
     if (!forcedGlobalInSmartMode) {
       try {
         btn.style.display = "none";
-        btn.classList.add("hidden");
-        btn.classList.remove("evd-visible");
+        btn.classList.add(CSS_CLASSES.HIDDEN);
+        btn.classList.remove(CSS_CLASSES.EVD_VISIBLE);
       } catch {
         /* ignore */
       }
@@ -907,8 +941,8 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
 
   // Apply hidden state if needed
   if (state.hidden) {
-    btn.classList.add("hidden");
-    btn.classList.remove("evd-visible");
+    btn.classList.add(CSS_CLASSES.HIDDEN);
+    btn.classList.remove(CSS_CLASSES.EVD_VISIBLE);
   }
 
   // Set up observer to detect button removal
@@ -951,8 +985,8 @@ async function createOrUpdateButton(videoElement: HTMLElement | null = null): Pr
   // Ensure visibility on create/update only when not hidden
   try {
     if (!state.hidden) {
-      btn.classList.add("evd-visible");
-      btn.classList.remove("hidden");
+      btn.classList.add(CSS_CLASSES.EVD_VISIBLE);
+      btn.classList.remove(CSS_CLASSES.HIDDEN);
     }
   } catch {
     /* no-op */
@@ -971,7 +1005,7 @@ function onDrag(event: MouseEvent): void {
   if (!uiState.isDragging || !target) {
     // Ensure no stale drag visual
     try {
-      (activeDragButton || downloadButton)?.classList.remove("dragging");
+      (activeDragButton || downloadButton)?.classList.remove(CSS_CLASSES.DRAGGING);
     } catch {
       /* no-op */
     }
@@ -1001,8 +1035,8 @@ function onDrag(event: MouseEvent): void {
     suppressClicksUntil = Date.now() + CLICK_THRESHOLD;
     // Keep the button visible while dragging
     try {
-      (activeDragButton || downloadButton)?.classList.add("evd-visible");
-      (activeDragButton || downloadButton)?.classList.remove("hidden");
+      (activeDragButton || downloadButton)?.classList.add(CSS_CLASSES.EVD_VISIBLE);
+      (activeDragButton || downloadButton)?.classList.remove(CSS_CLASSES.HIDDEN);
     } catch {
       /* no-op */
     }
@@ -1035,10 +1069,10 @@ async function onDragEnd(): Promise<void> {
 
   // Remove drag visual
   try {
-    target.classList.remove("dragging");
+    target.classList.remove(CSS_CLASSES.DRAGGING);
     // Ensure visibility after drag ends
-    target.classList.add("evd-visible");
-    target.classList.remove("hidden");
+    target.classList.add(CSS_CLASSES.EVD_VISIBLE);
+    target.classList.remove(CSS_CLASSES.HIDDEN);
   } catch {
     /* no-op */
   }
@@ -1153,11 +1187,11 @@ async function setButtonHiddenState(hidden: boolean): Promise<void> {
   // Toggle visibility classes for all buttons
   for (const btn of targets) {
     if (hidden) {
-      btn.classList.add("hidden");
-      btn.classList.remove("evd-visible");
+      btn.classList.add(CSS_CLASSES.HIDDEN);
+      btn.classList.remove(CSS_CLASSES.EVD_VISIBLE);
     } else {
-      btn.classList.remove("hidden");
-      btn.classList.add("evd-visible");
+      btn.classList.remove(CSS_CLASSES.HIDDEN);
+      btn.classList.add(CSS_CLASSES.EVD_VISIBLE);
       // Ensure safe position and styling when showing
       try {
         const rect = btn.getBoundingClientRect();
@@ -1184,11 +1218,11 @@ async function setButtonHiddenState(hidden: boolean): Promise<void> {
   // Defensive: also toggle the module-level reference if present
   if (downloadButton && (downloadButton as HTMLButtonElement).classList) {
     if (hidden) {
-      (downloadButton as HTMLButtonElement).classList.add("hidden");
-      (downloadButton as HTMLButtonElement).classList.remove("evd-visible");
+      (downloadButton as HTMLButtonElement).classList.add(CSS_CLASSES.HIDDEN);
+      (downloadButton as HTMLButtonElement).classList.remove(CSS_CLASSES.EVD_VISIBLE);
     } else {
-      (downloadButton as HTMLButtonElement).classList.remove("hidden");
-      (downloadButton as HTMLButtonElement).classList.add("evd-visible");
+      (downloadButton as HTMLButtonElement).classList.remove(CSS_CLASSES.HIDDEN);
+      (downloadButton as HTMLButtonElement).classList.add(CSS_CLASSES.EVD_VISIBLE);
     }
   }
 
@@ -1427,7 +1461,7 @@ async function init(): Promise<void> {
   // If smart injection is enabled, proactively ensure no global button is present
   try {
     if (await getSmartInjectionEnabled()) {
-      const stray = document.getElementById("evd-download-button-main");
+      const stray = document.getElementById(BUTTON_ID_PREFIX + "main");
       if (stray && document.body.contains(stray)) {
         try {
           stray.remove();
@@ -1439,7 +1473,7 @@ async function init(): Promise<void> {
       // Best-effort delayed purge in case other observers re-add briefly
       setTimeout(() => {
         try {
-          const s = document.getElementById("evd-download-button-main");
+          const s = document.getElementById(BUTTON_ID_PREFIX + "main");
           if (s && document.body.contains(s)) s.remove();
         } catch {
           /* ignore */
@@ -1449,7 +1483,7 @@ async function init(): Promise<void> {
       try {
         const guardObserver = new MutationObserver(() => {
           try {
-            const s = document.getElementById("evd-download-button-main");
+            const s = document.getElementById(BUTTON_ID_PREFIX + "main");
             if (s && document.body.contains(s)) s.remove();
           } catch {
             /* ignore */
@@ -1484,17 +1518,37 @@ async function init(): Promise<void> {
   // Listen for messages from background script or popup
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     try {
-      if (message.type === "resetButtonPosition") {
-        resetButtonPosition().then(() => sendResponse({ success: true }));
+      if (message && message.type === MESSAGE_TYPES.EVD_EXTENSION_RELOADED) {
+        try {
+          // If our script is running but the BG reloaded, reload this tab to re-inject fresh content
+          // Avoid loops by reloading only once per signal
+          const already = (window as any).__EVD_RELOADED_ONCE__;
+          if (!already) {
+            (window as any).__EVD_RELOADED_ONCE__ = true;
+            // Use a small delay to let the service worker stabilize
+            setTimeout(() => {
+              try {
+                window.location.reload();
+              } catch {}
+            }, 150);
+          }
+        } catch {}
+        // No response expected
+        return false;
+      }
+      if (message.type === MESSAGE_TYPES.RESET_BUTTON_POSITION) {
+        resetButtonPosition()
+          .then(() => sendResponse({ success: true }))
+          .catch(() => sendResponse({ success: false }));
         return true; // Keep channel open for async response
-      } else if (message.type === "toggleButtonVisibility") {
+      } else if (message.type === MESSAGE_TYPES.TOGGLE_BUTTON_VISIBILITY) {
         const hidden = message.hidden;
         setButtonHiddenState(hidden)
           .then(() => sendResponse({ success: true }))
           .catch(() => sendResponse({ success: false }))
           .finally(() => undefined);
         return true; // Keep channel open for async response
-      } else if (message.type === "getButtonVisibility") {
+      } else if (message.type === MESSAGE_TYPES.GET_BUTTON_VISIBILITY) {
         // Respond with current per-domain hidden state
         getButtonState()
           .then(state => sendResponse({ success: true, hidden: !!state.hidden }))

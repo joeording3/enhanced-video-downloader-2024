@@ -124,7 +124,7 @@ def kill_processes_cli(processes: list[psutil.Process]) -> None:
         try:
             helper_log.info(f"Sending SIGTERM to process {proc.pid}")
             proc.terminate()
-        except Exception as e:  # noqa: PERF203
+        except Exception as e:
             helper_log.warning(f"Failed to terminate process {proc.pid}: {e}")
     time.sleep(2)
     for proc in processes:
@@ -284,7 +284,8 @@ def find_server_processes_cli() -> list[dict[str, int | str | None]]:
         try:
             proc = psutil.Process(pid)
             uptime = int(time.time() - proc.create_time())
-        except Exception:
+        except Exception as e:
+            helper_log.debug(f"Could not get uptime for process {pid}: {e}")
             uptime = None
         entities.append({"pid": pid, "port": port, "uptime": uptime})
     except Exception:
@@ -892,7 +893,7 @@ def wait_for_server_start_cli(port: int, host: str = "127.0.0.1", timeout: int =
         try:
             with socket.create_connection((host, port), timeout=1):
                 return True
-        except OSError:  # noqa: PERF203
+        except OSError:
             time.sleep(0.5)
     return False
 
@@ -1050,7 +1051,7 @@ def cli_build_opts(url: str, output_template: str, extra_params: dict[str, Any] 
             """Get download options from config."""
 
             def _raise_invalid_config():
-                raise AttributeError("Invalid configuration format")  # noqa: TRY003, TRY301
+                raise AttributeError("Invalid configuration format")  # noqa: TRY301
 
             if hasattr(cfg, "get_download_options"):
                 raw = cfg.get_download_options()
@@ -1178,7 +1179,7 @@ def _scan_server_processes() -> list[psutil.Process]:
         try:
             if _match_server_process(proc):
                 procs.append(proc)
-        except (psutil.NoSuchProcess, psutil.AccessDenied):  # noqa: PERF203
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue
     return procs
 
@@ -1577,13 +1578,13 @@ def _maintenance_clear_cache(download_dir: Path | None, log: logging.Logger) -> 
             try:
                 part_file.unlink()
                 count_part += 1
-            except Exception:  # noqa: PERF203
+            except Exception:
                 log.debug(f"Failed to remove part file: {part_file}", exc_info=True)
         for ytdl_file in download_dir.rglob("*.ytdl"):
             try:
                 ytdl_file.unlink()
                 count_ytdl += 1
-            except Exception:  # noqa: PERF203
+            except Exception:
                 log.debug(f"Failed to remove ytdlp temp file: {ytdl_file}", exc_info=True)
     log.info(f"Cleared {count_part} .part files and {count_ytdl} .ytdl files from {download_dir}.")
 

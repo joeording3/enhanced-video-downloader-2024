@@ -8,8 +8,10 @@ worker that starts queued downloads when capacity is available, respecting the
 from __future__ import annotations
 
 import contextlib
+import json
 import threading
 from collections import deque
+from pathlib import Path
 from typing import Any
 
 from flask import current_app
@@ -35,11 +37,14 @@ class DownloadQueueManager:
             if self._worker_thread and self._worker_thread.is_alive():
                 return
             self._stop_event.clear()
+            # Reload any persisted queued items from disk on startup
+            with contextlib.suppress(Exception):
+                self._load_queue_from_disk_unlocked()
             self._worker_thread = threading.Thread(target=self._worker_loop, name="evd-queue-worker", daemon=True)
             self._worker_thread.start()
 
     def stop(self) -> None:
-        """Signal the worker to stop (used on server shutdown)."""
+        """Stop the background worker."""
         self._stop_event.set()
         with self._notifier:
             self._notifier.notify_all()
@@ -49,14 +54,23 @@ class DownloadQueueManager:
         """Add a request to the queue and notify the worker."""
         with self._notifier:
             self._queue.append(item)
+            # Persist updated queue to disk
+            self._persist_queue_unlocked()
             self._notifier.notify_all()
 
     def remove(self, download_id: str) -> bool:
         """Remove the first queued item matching the given download ID."""
         with self._notifier:
             for i, it in enumerate(self._queue):
-                if str(it.get("downloadId")) == str(download_id):
+                # Normalize legacy key once on access
+                if "download_id" in it and "downloadId" not in it:
+                    it["downloadId"] = str(it.get("download_id"))
+                    with contextlib.suppress(Exception):
+                        del it["download_id"]
+                it_id = str(it.get("downloadId"))
+                if it_id == str(download_id):
                     del self._queue[i]
+                    self._persist_queue_unlocked()
                     self._notifier.notify_all()
                     return True
             return False
@@ -64,7 +78,13 @@ class DownloadQueueManager:
     def reorder(self, new_order: list[str]) -> None:
         """Reorder queue to match the given list of IDs; unknown IDs are ignored."""
         with self._notifier:
-            id_to_item = {str(it.get("downloadId")): it for it in self._queue}
+            id_to_item = {}
+            for it in self._queue:
+                if "download_id" in it and "downloadId" not in it:
+                    it["downloadId"] = str(it.get("download_id"))
+                    with contextlib.suppress(Exception):
+                        del it["download_id"]
+                id_to_item[str(it.get("downloadId"))] = it
             reordered: deque[dict[str, Any]] = deque()
             for did in new_order:
                 it = id_to_item.pop(str(did), None)
@@ -77,12 +97,80 @@ class DownloadQueueManager:
                     reordered.append(it)
                     id_to_item.pop(did, None)
             self._queue = reordered
+            self._persist_queue_unlocked()
             self._notifier.notify_all()
 
     def list(self) -> list[dict[str, Any]]:
         """Return a shallow copy of queued items for status reporting."""
         with self._lock:
-            return [dict(it) for it in self._queue]
+            # Ensure camelCase in responses
+            normalized: list[dict[str, Any]] = []
+            for it in self._queue:
+                if "download_id" in it and "downloadId" not in it:
+                    it["downloadId"] = str(it.get("download_id"))
+                    with contextlib.suppress(Exception):
+                        del it["download_id"]
+                normalized.append(dict(it))
+            return normalized
+
+    def clear(self) -> None:
+        """Clear all queued items and persist an empty queue.
+
+        This does not affect any already active downloads.
+        """
+        with self._notifier:
+            self._queue.clear()
+            self._persist_queue_unlocked()
+            self._notifier.notify_all()
+
+    def force_start(self, download_id: str, override_capacity: bool = True) -> bool:
+        """Force start a specific queued item by ID.
+
+        If ``override_capacity`` is True, the item starts immediately in its own thread
+        regardless of current capacity. Otherwise, it will only start if a slot is free.
+
+        Returns True if the item was found and action was taken; False if not found.
+        """
+        with self._notifier:
+            # Find the item in the queue
+            idx = None
+            for i, it in enumerate(self._queue):
+                it_id = str(it.get("downloadId") or it.get("download_id"))
+                if it_id == str(download_id):
+                    idx = i
+                    break
+            if idx is None:
+                return False
+            # Remove from queue and persist
+            task = self._queue[idx]
+            del self._queue[idx]
+            self._persist_queue_unlocked()
+
+            # Capacity check unless overriding
+            if not override_capacity:
+                try:
+                    cfg = Config.load()
+                    max_concurrent = int(cfg.get_value("max_concurrent_downloads", 3))
+                except Exception:
+                    max_concurrent = 3
+                if len(download_process_registry) >= max_concurrent:
+                    # Put task to front and notify; cannot start now
+                    self._queue.appendleft(task)
+                    self._notifier.notify_all()
+                    self._persist_queue_unlocked()
+                    return True
+
+            # Start immediately in its own thread
+            t = threading.Thread(
+                target=self._run_download_task,
+                args=(task,),
+                name=("evd-task-" + str(task.get("downloadId") or "unknown")),
+                daemon=True,
+            )
+            t.start()
+            # Notify any waiters
+            self._notifier.notify_all()
+            return True
 
     # Internal worker
     def _worker_loop(self) -> None:
@@ -107,6 +195,9 @@ class DownloadQueueManager:
                         and len(download_process_registry) < max_concurrent
                     ):
                         task = self._queue.popleft()
+                        # Persist removal so disk state reflects items that are now launching
+                        with contextlib.suppress(Exception):
+                            self._persist_queue_unlocked()
                         # Run the download in its own thread so we can continue scheduling
                         t = threading.Thread(
                             target=self._run_download_task,
@@ -141,6 +232,58 @@ class DownloadQueueManager:
 
             with contextlib.suppress(Exception):
                 handle_ytdlp_download(task)
+
+    # -----------------------------
+    # Persistence helpers (private)
+    # -----------------------------
+    def _get_queue_file_path(self) -> Path:
+        """Return the path to the queue persistence JSON file under server/data."""
+        # server/queue.py -> server/data/queue.json
+        base_dir = Path(__file__).resolve().parent
+        data_dir = base_dir / "data"
+        return data_dir / "queue.json"
+
+    def _persist_queue_unlocked(self) -> None:
+        """Persist the current queue to disk as JSON.
+
+        Must be called with the manager lock held.
+        """
+        path = self._get_queue_file_path()
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            # Write atomically: temp file then replace
+            tmp_path = Path(str(path) + ".tmp")
+            serialized = [dict(it) for it in self._queue]
+            with tmp_path.open("w", encoding="utf-8") as f:
+                json.dump(serialized, f, ensure_ascii=False, indent=2)
+            tmp_path.replace(path)
+        except Exception:
+            # Best-effort only; do not raise
+            pass
+
+    def _load_queue_from_disk_unlocked(self) -> None:
+        """Load queued items from disk if the JSON file exists.
+
+        Must be called with the manager lock held.
+        """
+        path = self._get_queue_file_path()
+        try:
+            if not path.exists():
+                return
+            with path.open("r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, list):
+                restored: deque[dict[str, Any]] = deque()
+                for it in data:
+                    if isinstance(it, dict) and it.get("url"):
+                        # Normalize key names for safety (support legacy 'download_id')
+                        if "download_id" in it and "downloadId" not in it:
+                            it["downloadId"] = it.get("download_id")
+                        restored.append(dict(it))
+                self._queue = restored
+        except Exception:
+            # Ignore corrupt files silently; leave queue as-is
+            pass
 
 
 # Global singleton manager

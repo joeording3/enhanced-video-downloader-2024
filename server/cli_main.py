@@ -872,7 +872,7 @@ def disable_launchagents_cmd(_ctx: click.Context, verify: bool, enable: bool, ba
                     click.echo(f"    Backed up: {agent_path}")
                 else:
                     click.echo(f"     Agent file not found: {agent_path}")
-            except Exception as e:  # noqa: PERF203
+            except Exception as e:
                 click.echo(f"    Failed to backup {agent_path}: {e}", err=True)
 
     # Confirm action
@@ -913,7 +913,7 @@ def disable_launchagents_cmd(_ctx: click.Context, verify: bool, enable: bool, ba
                     )
                     if result.returncode == 0:
                         still_active.append(agent_path)
-            except Exception:  # noqa: PERF203
+            except Exception:
                 still_active.append(agent_path)
 
         if still_active:
@@ -1235,7 +1235,7 @@ def _graceful_terminate_processes(procs: list[psutil.Process], timeout: int) -> 
     for proc in procs:
         try:
             proc.terminate()
-        except psutil.NoSuchProcess:  # noqa: PERF203
+        except psutil.NoSuchProcess:
             continue
 
     # Wait for processes to terminate

@@ -5,6 +5,7 @@
 
 import { Theme, ServerConfig } from "../types";
 import type { HistoryEntry } from "../types";
+import { logger } from "./logger";
 
 // State interfaces
 export interface ServerState {
@@ -213,7 +214,11 @@ export class ExtensionStateManager {
         try {
           callback(data);
         } catch (error) {
-          console.error(`Error in state change listener for ${event}:`, error);
+          logger.error(`Error in state change listener for ${event}:`, {
+            component: "state-manager",
+            operation: "stateChangeListener",
+            data: error,
+          });
         }
       });
     }
@@ -258,7 +263,11 @@ export class ExtensionStateManager {
         this.updateDownloadState({ history: result.downloadHistory });
       }
     } catch (error) {
-      console.error("Error loading state from storage:", error);
+      logger.error("Error loading state from storage:", {
+        component: "state-manager",
+        operation: "loadFromStorage",
+        data: error,
+      });
     }
   }
 
@@ -278,7 +287,11 @@ export class ExtensionStateManager {
         downloadHistory: this.state.downloads.history,
       });
     } catch (error) {
-      console.error("Error saving state to storage:", error);
+      logger.error("Error saving state to storage:", {
+        component: "state-manager",
+        operation: "saveToStorage",
+        data: error,
+      });
     }
   }
 

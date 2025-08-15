@@ -3,6 +3,8 @@
  * Handles DOM manipulation, element queries, and UI interactions.
  */
 
+import { logger } from "./logger";
+
 export interface DOMElement {
   id: string;
   selector: string;
@@ -134,6 +136,16 @@ export class DOMManager {
    * Get an element by key (cached)
    */
   getElement(key: string): HTMLElement | null {
+    // Validate key parameter
+    if (!key || typeof key !== "string") {
+      logger.warn(`Invalid key provided to getElement: ${key} (type: ${typeof key})`, {
+        component: "dom-manager",
+        operation: "getElement",
+        data: { key, type: typeof key },
+      });
+      return null;
+    }
+
     // Check cache first
     if (this.cache[key] !== undefined) {
       return this.cache[key];
@@ -142,7 +154,11 @@ export class DOMManager {
     // Get selector
     const selector = this.selectors.get(key);
     if (!selector) {
-      console.warn(`No selector registered for key: ${key}`);
+      logger.warn(`No selector registered for key: ${key}`, {
+        component: "dom-manager",
+        operation: "getElement",
+        data: { key },
+      });
       return null;
     }
 
@@ -159,9 +175,23 @@ export class DOMManager {
    * Get multiple elements by key
    */
   getElements(key: string): HTMLElement[] {
+    // Validate key parameter
+    if (!key || typeof key !== "string") {
+      logger.warn(`Invalid key provided to getElements: ${key} (type: ${typeof key})`, {
+        component: "dom-manager",
+        operation: "getElements",
+        data: { key, type: typeof key },
+      });
+      return [];
+    }
+
     const selector = this.selectors.get(key);
     if (!selector) {
-      console.warn(`No selector registered for key: ${key}`);
+      logger.warn(`No selector registered for key: ${key}`, {
+        component: "dom-manager",
+        operation: "getElements",
+        data: { key },
+      });
       return [];
     }
 
@@ -209,9 +239,23 @@ export class DOMManager {
    * Add event listener to an element
    */
   addEventListener(key: string, event: string, handler: EventListener): boolean {
+    // Validate key parameter
+    if (!key || typeof key !== "string") {
+      logger.warn(`Invalid key provided to addEventListener: ${key} (type: ${typeof key})`, {
+        component: "dom-manager",
+        operation: "addEventListener",
+        data: { key, type: typeof key },
+      });
+      return false;
+    }
+
     const element = this.getElement(key);
     if (!element) {
-      console.warn(`Element not found for key: ${key}`);
+      logger.warn(`Element not found for key: ${key}`, {
+        component: "dom-manager",
+        operation: "addEventListener",
+        data: { key },
+      });
       return false;
     }
 
@@ -236,6 +280,16 @@ export class DOMManager {
    * Set text content of an element
    */
   setTextContent(key: string, text: string): boolean {
+    // Validate key parameter
+    if (!key || typeof key !== "string") {
+      logger.warn(`Invalid key provided to setTextContent: ${key} (type: ${typeof key})`, {
+        component: "dom-manager",
+        operation: "setTextContent",
+        data: { key, type: typeof key },
+      });
+      return false;
+    }
+
     const element = this.getElement(key);
     if (!element) {
       return false;
@@ -249,6 +303,16 @@ export class DOMManager {
    * Set inner HTML of an element
    */
   setInnerHTML(key: string, html: string): boolean {
+    // Validate key parameter
+    if (!key || typeof key !== "string") {
+      logger.warn(`Invalid key provided to setInnerHTML: ${key} (type: ${typeof key})`, {
+        component: "dom-manager",
+        operation: "setInnerHTML",
+        data: { key, type: typeof key },
+      });
+      return false;
+    }
+
     const element = this.getElement(key);
     if (!element) {
       return false;
@@ -262,6 +326,16 @@ export class DOMManager {
    * Add CSS class to an element
    */
   addClass(key: string, className: string): boolean {
+    // Validate key parameter
+    if (!key || typeof key !== "string") {
+      logger.warn(`Invalid key provided to addClass: ${key} (type: ${typeof key})`, {
+        component: "dom-manager",
+        operation: "addClass",
+        data: { key, type: typeof key },
+      });
+      return false;
+    }
+
     const element = this.getElement(key);
     if (!element) {
       return false;
@@ -275,6 +349,16 @@ export class DOMManager {
    * Remove CSS class from an element
    */
   removeClass(key: string, className: string): boolean {
+    // Validate key parameter
+    if (!key || typeof key !== "string") {
+      logger.warn(`Invalid key provided to removeClass: ${key} (type: ${typeof key})`, {
+        component: "dom-manager",
+        operation: "removeClass",
+        data: { key, type: typeof key },
+      });
+      return false;
+    }
+
     const element = this.getElement(key);
     if (!element) {
       return false;
@@ -288,6 +372,16 @@ export class DOMManager {
    * Toggle CSS class on an element
    */
   toggleClass(key: string, className: string): boolean {
+    // Validate key parameter
+    if (!key || typeof key !== "string") {
+      logger.warn(`Invalid key provided to toggleClass: ${key} (type: ${typeof key})`, {
+        component: "dom-manager",
+        operation: "toggleClass",
+        data: { key, type: typeof key },
+      });
+      return false;
+    }
+
     const element = this.getElement(key);
     if (!element) {
       return false;
@@ -301,6 +395,16 @@ export class DOMManager {
    * Check if element has CSS class
    */
   hasClass(key: string, className: string): boolean {
+    // Validate key parameter
+    if (!key || typeof key !== "string") {
+      logger.warn(`Invalid key provided to hasClass: ${key} (type: ${typeof key})`, {
+        component: "dom-manager",
+        operation: "hasClass",
+        data: { key, type: typeof key },
+      });
+      return false;
+    }
+
     const element = this.getElement(key);
     if (!element) {
       return false;
@@ -312,13 +416,23 @@ export class DOMManager {
   /**
    * Set attribute on an element
    */
-  setAttribute(key: string, attribute: string, value: string): boolean {
+  setAttribute(key: string, attributeName: string, value: string): boolean {
+    // Validate key parameter
+    if (!key || typeof key !== "string") {
+      logger.warn(`Invalid key provided to setAttribute: ${key} (type: ${typeof key})`, {
+        component: "dom-manager",
+        operation: "setAttribute",
+        data: { key, type: typeof key },
+      });
+      return false;
+    }
+
     const element = this.getElement(key);
     if (!element) {
       return false;
     }
 
-    element.setAttribute(attribute, value);
+    element.setAttribute(attributeName, value);
     return true;
   }
 

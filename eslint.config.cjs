@@ -91,7 +91,7 @@ module.exports = defineConfig([
           varsIgnorePattern: "^_",
         },
       ],
-      // Custom rule: No emojis allowed
+      // Custom rule: No emojis allowed (but allow whitelisted icons)
       "no-restricted-syntax": [
         "error",
         {

@@ -1,3 +1,6 @@
+/* eslint-disable no-restricted-syntax */
+// This file contains whitelisted unicode icons for status display
+// See config/emoji_whitelist.json for allowed icons
 import { logger } from "./core/logger";
 
 // Align popup console logging level once from stored config
@@ -19,6 +22,14 @@ chrome.storage.local.get("serverConfig", res => {
  */
 
 import { Theme, ServerConfig, HistoryEntry, ActiveDownloadMap, QueuedDetailsMap } from "./types";
+import {
+  MESSAGE_TYPES,
+  STORAGE_KEYS,
+  CSS_CLASSES,
+  STATUS_CONSTANTS,
+  DOM_SELECTORS,
+} from "./core/constants";
+import { domManager } from "./core/dom-manager";
 import {
   fetchHistory,
   renderHistoryItems,
@@ -64,14 +75,14 @@ export function setStatus(
     clearTimeout(statusTimeout);
   }
 
-  const statusEl = document.getElementById("status");
+  const statusEl = domManager.querySelector(DOM_SELECTORS.STATUS_MESSAGE);
   if (statusEl) {
     statusEl.textContent = message;
-    statusEl.className = isError ? "status-error" : "status-success";
+    statusEl.className = isError ? CSS_CLASSES.STATUS_ERROR : CSS_CLASSES.STATUS_SUCCESS;
 
     if (isError) {
       const tip = document.createElement("div");
-      tip.className = "error-tip";
+      tip.className = CSS_CLASSES.ERROR_TIP;
       tip.textContent = "Tip: check your network connection and try again";
       statusEl.appendChild(tip);
     }
@@ -99,7 +110,7 @@ export async function applyPopupTheme(forceTheme?: "light" | "dark"): Promise<vo
     isDark = forceTheme === "dark";
   } else {
     // Get stored theme preference
-    const result = await chrome.storage.local.get("theme");
+    const result = await chrome.storage.local.get(STORAGE_KEYS.THEME);
     const storedTheme = result.theme as "light" | "dark" | undefined;
 
     if (storedTheme) {
@@ -110,9 +121,9 @@ export async function applyPopupTheme(forceTheme?: "light" | "dark"): Promise<vo
     }
   }
 
-  document.body.classList.toggle("dark-theme", isDark);
+  document.body.classList.toggle(CSS_CLASSES.DARK_THEME, isDark);
   // Always use compact density for popup to maximize information density
-  document.body.classList.add("compact");
+  document.body.classList.add(CSS_CLASSES.COMPACT);
 
   // Update logo src based on theme
   const logo = document.querySelector("img[src*='icon']") as HTMLImageElement;
@@ -148,7 +159,7 @@ export function updateToggleButtonState(
   if (typeof buttonIdOrState === "boolean") {
     // First parameter is the state
     isActive = buttonIdOrState;
-    buttonId = (isActiveOrButtonId as string) || "toggle-enhanced-download-button";
+    buttonId = (isActiveOrButtonId as string) || DOM_SELECTORS.TOGGLE_BUTTON.replace("#", "");
   } else if (typeof buttonIdOrState === "string" && typeof isActiveOrButtonId === "string") {
     // First parameter is the button text, second is also a string (button ID)
     buttonText = buttonIdOrState;
@@ -168,7 +179,7 @@ export function updateToggleButtonState(
   }
 
   // Update button state
-  button.classList.toggle("active", isActive);
+  button.classList.toggle(CSS_CLASSES.ACTIVE, isActive);
   button.setAttribute("aria-pressed", isActive.toString());
 
   // Update button text based on state
@@ -206,14 +217,14 @@ export function loadAndRenderHistory(
   container.innerHTML = "";
 
   // Fetch history entries from storage
-  chrome.storage.local.get(["downloadHistory"], result => {
+  chrome.storage.local.get([STORAGE_KEYS.DOWNLOAD_HISTORY], result => {
     const history: HistoryEntry[] = result.downloadHistory || [];
     const recentEntries = history.slice(0, limit);
 
     if (recentEntries.length === 0) {
       // Display message when no history exists
       const emptyMessage = document.createElement("div");
-      emptyMessage.className = "history-empty";
+      emptyMessage.className = CSS_CLASSES.HISTORY_EMPTY;
       emptyMessage.textContent = "No download history yet";
       container.appendChild(emptyMessage);
       return;
@@ -222,7 +233,7 @@ export function loadAndRenderHistory(
     // Create history items
     recentEntries.forEach(entry => {
       const item = document.createElement("div");
-      item.className = "history-item status-" + entry.status;
+      item.className = CSS_CLASSES.HISTORY_ITEM + " " + CSS_CLASSES.STATUS_PREFIX + entry.status;
 
       const title = document.createElement("div");
       title.className = "history-title";
@@ -266,7 +277,7 @@ export async function loadConfig(): Promise<ServerConfig | Record<string, unknow
 
 // Update download directory display element
 export async function updateDownloadDirDisplay(): Promise<void> {
-  const el = document.getElementById("download-dir-display");
+  const el = document.querySelector(DOM_SELECTORS.DOWNLOAD_DIR_DISPLAY);
   if (!el) return;
   return new Promise(resolve => {
     chrome.runtime.sendMessage(
@@ -293,7 +304,7 @@ export async function updateDownloadDirDisplay(): Promise<void> {
 
 // Update server port display element
 export async function updatePortDisplay(): Promise<void> {
-  const el = document.getElementById("server-port-display");
+  const el = document.querySelector(DOM_SELECTORS.SERVER_PORT_DISPLAY);
   if (!el) return;
   return new Promise(resolve => {
     chrome.runtime.sendMessage(
@@ -311,15 +322,18 @@ export async function updatePortDisplay(): Promise<void> {
 
 // Show configuration error if present in local storage
 export function showConfigErrorIfPresent(): void {
-  const el = document.getElementById("config-error-display");
+  const el = document.querySelector(DOM_SELECTORS.CONFIG_ERROR_DISPLAY);
   if (!el) return;
-  chrome.storage.local.get("configError", (result: { configError?: string } | undefined) => {
-    if (result?.configError) {
-      (el as HTMLElement).textContent = "Configuration Error: " + result.configError;
-      el.classList.remove("hidden");
-      el.classList.add("evd-visible");
+  chrome.storage.local.get(
+    STORAGE_KEYS.CONFIG_ERROR,
+    (result: { configError?: string } | undefined) => {
+      if (result?.configError) {
+        (el as HTMLElement).textContent = "Configuration Error: " + result.configError;
+        el.classList.remove(CSS_CLASSES.HIDDEN);
+        el.classList.add(CSS_CLASSES.EVD_VISIBLE);
+      }
     }
-  });
+  );
 }
 
 // Create a list item for errors with a toggle for details
@@ -333,8 +347,8 @@ export function createErrorListItem(
   const li = document.createElement("li");
   // Add CSS classes for severity-based styling
   const severity = info.errorInfo.type.toLowerCase();
-  li.classList.add("status-" + severity);
-  li.classList.add("severity-" + severity);
+  li.classList.add(CSS_CLASSES.STATUS_PREFIX + severity);
+  li.classList.add(CSS_CLASSES.SEVERITY_PREFIX + severity);
   li.dataset.downloadId = downloadId;
   const title = document.createElement("div");
   title.className = "item-title";
@@ -342,18 +356,18 @@ export function createErrorListItem(
   li.appendChild(title);
   // Use semantic <details> for error details
   const detailsEl = document.createElement("details");
-  detailsEl.className = "error-details";
+  detailsEl.className = CSS_CLASSES.ERROR_DETAILS;
   const summary = document.createElement("summary");
   summary.textContent = "Details";
   detailsEl.appendChild(summary);
   const content = document.createElement("div");
-  content.className = "error-details-content";
+  content.className = CSS_CLASSES.ERROR_DETAILS_CONTENT;
   content.textContent =
     info.errorInfo.type + ": " + info.errorInfo.message + " (" + info.errorInfo.original + ")";
   detailsEl.appendChild(content);
   // Add contextual help/troubleshooting link
   const helpBtn = document.createElement("button");
-  helpBtn.className = "error-help-link";
+  helpBtn.className = CSS_CLASSES.ERROR_HELP_LINK;
   helpBtn.textContent = "Help";
   helpBtn.addEventListener("click", (): void => {
     // Open extension options page for troubleshooting
@@ -367,14 +381,14 @@ export function createErrorListItem(
 // Create a generic list item with a resume button
 export function createGenericListItem(downloadId: string, item: { status: string }): HTMLLIElement {
   const li = document.createElement("li");
-  li.classList.add("status-" + item.status);
+  li.classList.add(CSS_CLASSES.STATUS_PREFIX + item.status);
   const statusText = document.createElement("div");
-  statusText.className = "item-status";
+  statusText.className = CSS_CLASSES.ITEM_STATUS;
   statusText.textContent = item.status;
   li.appendChild(statusText);
   li.dataset.downloadId = downloadId;
   const btn = document.createElement("button");
-  btn.className = "resume-button";
+  btn.className = CSS_CLASSES.RESUME_BUTTON;
   btn.textContent = "Resume";
   li.appendChild(btn);
   return li;
@@ -383,18 +397,21 @@ export function createGenericListItem(downloadId: string, item: { status: string
 // Create a queued list item with a cancel button
 export function createQueuedListItem(item: { id: string }): HTMLLIElement {
   const li = document.createElement("li");
-  li.classList.add("queued-item");
+  li.classList.add(CSS_CLASSES.QUEUED_ITEM);
   li.dataset.downloadId = item.id;
   const queuedText = document.createElement("div");
-  queuedText.className = "item-status";
+  queuedText.className = CSS_CLASSES.ITEM_STATUS;
   queuedText.textContent = "Queued: " + item.id;
   li.appendChild(queuedText);
   const removeBtn = document.createElement("button");
-  removeBtn.className = "cancel-button";
+  removeBtn.className = CSS_CLASSES.CANCEL_BUTTON;
   removeBtn.textContent = "Cancel";
   removeBtn.title = "Cancel download";
   removeBtn.addEventListener("click", () => {
-    chrome.runtime.sendMessage({ type: "cancelDownload", downloadId: item.id }, () => {});
+    chrome.runtime.sendMessage(
+      { type: MESSAGE_TYPES.CANCEL_DOWNLOAD, downloadId: item.id },
+      () => {}
+    );
   });
   li.appendChild(removeBtn);
   return li;
@@ -412,8 +429,8 @@ export function createActiveListItem(
   }
 ): HTMLLIElement {
   const li = document.createElement("li");
-  li.classList.add("active-item");
-  li.classList.add("status-" + statusObj.status);
+  li.classList.add(CSS_CLASSES.ACTIVE_ITEM);
+  li.classList.add(CSS_CLASSES.STATUS_PREFIX + statusObj.status);
   li.dataset.downloadId = downloadId;
   const title = document.createElement("div");
   title.textContent = statusObj.filename || downloadId;
@@ -427,25 +444,25 @@ export function createActiveListItem(
   progress.value = clamped;
   li.appendChild(progress);
   const percentLabel = document.createElement("span");
-  percentLabel.className = "item-percent";
+  percentLabel.className = CSS_CLASSES.ITEM_PERCENT;
   percentLabel.textContent = String(Math.round(clamped)) + "%";
   li.appendChild(percentLabel);
   const statusText = document.createElement("div");
-  statusText.className = "item-status";
+  statusText.className = CSS_CLASSES.ITEM_STATUS;
   statusText.textContent = statusObj.status;
   li.appendChild(statusText);
   const btn = document.createElement("button");
-  btn.className = "btn btn--secondary btn--small pause-button";
+  btn.className = `${CSS_CLASSES.BTN_SECONDARY} ${CSS_CLASSES.BTN_SMALL} ${CSS_CLASSES.PAUSE_BUTTON}`;
   btn.textContent = "Pause";
   btn.addEventListener("click", () => {
-    chrome.runtime.sendMessage({ type: "pauseDownload", downloadId }, () => {});
+    chrome.runtime.sendMessage({ type: MESSAGE_TYPES.PAUSE_DOWNLOAD, downloadId }, () => {});
   });
   li.appendChild(btn);
   // Priority control (optional)
   const priorityWrapper = document.createElement("div");
-  priorityWrapper.className = "priority-controls";
+  priorityWrapper.className = CSS_CLASSES.PRIORITY_CONTROLS;
   const select = document.createElement("select");
-  select.className = "input input--select input--small priority-select";
+  select.className = `input input--select input--small ${CSS_CLASSES.PRIORITY_SELECT}`;
   const priorityOptions = [
     { label: "Low (+10)", value: 10 },
     { label: "Below normal (+5)", value: 5 },
@@ -459,7 +476,7 @@ export function createActiveListItem(
     select.appendChild(o);
   });
   const setBtn = document.createElement("button");
-  setBtn.className = "btn btn--secondary btn--small priority-set-button";
+  setBtn.className = `${CSS_CLASSES.BTN_SECONDARY} ${CSS_CLASSES.BTN_SMALL} ${CSS_CLASSES.PRIORITY_SET_BUTTON}`;
   setBtn.textContent = "Set Priority";
   setBtn.addEventListener("click", () => {
     const val = parseInt(select.value, 10);
@@ -478,25 +495,25 @@ export function handleDragStart(e: DragEvent): void {
   dragSrcIndex = Array.from(li.parentElement!.children).indexOf(li);
   e.dataTransfer!.effectAllowed = "move";
   e.dataTransfer!.setData("text/plain", li.dataset.downloadId!);
-  li.classList.add("dragging");
+  li.classList.add(CSS_CLASSES.DRAGGING);
 }
 
 export function handleDragOver(e: DragEvent): void {
   e.preventDefault();
   const li = e.currentTarget as HTMLLIElement;
-  li.classList.add("drag-over");
+  li.classList.add(CSS_CLASSES.DRAG_OVER);
   e.dataTransfer!.dropEffect = "move";
 }
 
 export function handleDragLeave(e: DragEvent): void {
   const li = e.currentTarget as HTMLLIElement;
-  li.classList.remove("drag-over");
+  li.classList.remove(CSS_CLASSES.DRAG_OVER);
 }
 
 export function handleDrop(e: DragEvent): void {
   e.preventDefault();
   const li = e.currentTarget as HTMLLIElement;
-  li.classList.remove("drag-over");
+  li.classList.remove(CSS_CLASSES.DRAG_OVER);
   if (dragSrcIndex === null) return;
   const dropIndex = Array.from(li.parentElement!.children).indexOf(li);
   // Collect current ids
@@ -507,11 +524,11 @@ export function handleDrop(e: DragEvent): void {
   const [moved] = reordered.splice(dragSrcIndex, 1);
   reordered.splice(dropIndex, 0, moved);
   // Notify background of new queue order
-  chrome.runtime.sendMessage({ type: "reorderQueue", queue: reordered });
+  chrome.runtime.sendMessage({ type: MESSAGE_TYPES.REORDER_QUEUE, queue: reordered });
 }
 
 export function handleDragEnd(e: DragEvent): void {
-  (e.currentTarget as HTMLLIElement).classList.remove("dragging");
+  (e.currentTarget as HTMLLIElement).classList.remove(CSS_CLASSES.DRAGGING);
 }
 
 // Render current downloads and queued items
@@ -521,7 +538,7 @@ export async function renderDownloadStatus(data: {
   queuedDetails?: QueuedDetailsMap;
 }): Promise<void> {
   lastDownloadStatusData = data;
-  const container = document.getElementById("download-status");
+  const container = domManager.querySelector(DOM_SELECTORS.DOWNLOAD_STATUS);
   if (!container) return;
   // Preserve scroll to avoid snapping to top during refresh
   const prevScrollTopInitial = (container as HTMLElement).scrollTop;
@@ -529,37 +546,53 @@ export async function renderDownloadStatus(data: {
 
   // Helper to render a list of unified entries into the container
   const renderUnified = (unified: Unified[]): void => {
+    // Handle empty case - show "no downloads" message
+    if (!unified || unified.length === 0) {
+      const noDownloadsMsg = document.createElement("li");
+      noDownloadsMsg.className = "no-downloads-message";
+      noDownloadsMsg.textContent = "No active or queued downloads.";
+      container.appendChild(noDownloadsMsg);
+      return;
+    }
+
     // Sort unified list: newest first by timestamp; ensure active/queued bubble to top via recent timestamps
     unified.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
     // Render unified list into the existing container (#download-status)
     const ul = container as HTMLUListElement;
-    ul.classList.add("unified-list");
+    ul.classList.add(CSS_CLASSES.UNIFIED_LIST);
     (ul.style as any).listStyleType = "none";
     unified.forEach(item => {
       const li = document.createElement("li");
-      li.className = "unified-item status-" + String(item.status).toLowerCase();
+      li.className =
+        CSS_CLASSES.UNIFIED_ITEM +
+        " " +
+        CSS_CLASSES.STATUS_PREFIX +
+        String(item.status).toLowerCase();
       li.dataset.downloadId = item.id;
 
       // Status icon replacing bullet
       const normalized = String(item.status || "").toLowerCase();
       const icon = document.createElement("span");
-      icon.className = "status-icon";
+      icon.className = CSS_CLASSES.STATUS_ICON;
       // Choose status icon (use whitelisted symbols; see config/emoji_whitelist.json)
       if (normalized === "queued" || normalized === "pending" || normalized === "waiting") {
-        icon.textContent = "⬇"; // allowed
+        icon.textContent = "⏰"; // clock icon (whitelisted)
       } else if (normalized === "downloading") {
-        icon.textContent = "⬇️"; // allowed with variation selector
+        icon.style.color = "var(--success-color)";
+        icon.innerHTML =
+          '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 3v12.17l3.59-3.58L17 13l-5 5-5-5 1.41-1.41L11 15.17V3h1z"/></svg>';
       } else if (normalized === "paused") {
-        icon.textContent = "P"; // ASCII for paused (whitelist does not include a specific paused symbol)
+        icon.textContent = "⏸"; // pause icon (whitelisted)
       } else if (["success", "complete", "completed", "done"].includes(normalized)) {
-        icon.textContent = "✔"; // allowed
+        icon.textContent = "✓"; // check mark icon (whitelisted)
+        icon.style.color = "var(--success-color)"; // Make it green
       } else if (["canceled", "cancelled"].includes(normalized)) {
-        icon.textContent = "✖"; // allowed
+        icon.textContent = "✘"; // cancel icon (whitelisted)
       } else if (["error", "failed", "fail"].includes(normalized)) {
-        icon.textContent = "⚠"; // allowed
+        icon.textContent = "⚠"; // warning icon (whitelisted)
       } else {
-        icon.textContent = ".";
+        icon.textContent = "?"; // question mark for unknown statuses
       }
       icon.setAttribute("aria-hidden", "true");
       li.appendChild(icon);
@@ -576,57 +609,127 @@ export async function renderDownloadStatus(data: {
         const clamped = Math.min(100, Math.max(0, finite));
         progress.max = 100;
         progress.value = clamped;
+        if (normalized === "downloading")
+          (progress.style as any).accentColor = "var(--success-color)";
         li.appendChild(progress);
         const percentLabel = document.createElement("span");
-        percentLabel.className = "item-percent";
+        percentLabel.className = CSS_CLASSES.ITEM_PERCENT;
         percentLabel.textContent = String(Math.round(clamped)) + "%";
         li.appendChild(percentLabel);
       }
 
       // Do not render progress or percent for completed entries
 
-      const statusPill = document.createElement("span");
-      statusPill.className = "status-pill";
-      statusPill.textContent = item.status;
       const normalized2 = String(item.status || "").toLowerCase();
-      if (["success", "complete", "completed", "done"].includes(normalized2)) {
-        statusPill.classList.add("is-success");
-      } else if (["error", "failed", "fail", "canceled", "cancelled"].includes(normalized2)) {
-        statusPill.classList.add("is-error");
-      } else if (["queued", "pending", "waiting", "paused"].includes(normalized2)) {
-        statusPill.classList.add("is-warning");
+      // For queued-like statuses, 'downloading', and 'completed', omit the status pill (we already show an icon/progress)
+      if (!["queued", "pending", "waiting", "downloading", "completed"].includes(normalized2)) {
+        const statusPill = document.createElement("span");
+        statusPill.className = CSS_CLASSES.STATUS_PILL;
+        statusPill.textContent = item.status;
+        if (["success", "complete", "completed", "done"].includes(normalized2)) {
+          statusPill.classList.add(CSS_CLASSES.IS_SUCCESS);
+        } else if (["error", "failed", "fail", "canceled", "cancelled"].includes(normalized2)) {
+          statusPill.classList.add(CSS_CLASSES.IS_ERROR);
+        } else if (["paused"].includes(normalized2)) {
+          statusPill.classList.add(CSS_CLASSES.IS_WARNING);
+        }
+        li.appendChild(statusPill);
       }
-      li.appendChild(statusPill);
 
       // Add a cancel button per entry; enable only for queued/active/paused
       const cancelBtn = document.createElement("button");
-      cancelBtn.className = "btn btn--secondary btn--small cancel-button";
+      cancelBtn.className = `${CSS_CLASSES.BTN_SECONDARY} ${CSS_CLASSES.BTN_SMALL} ${CSS_CLASSES.CANCEL_BUTTON}`;
       cancelBtn.textContent = "X";
       cancelBtn.title = "Cancel";
       cancelBtn.setAttribute("aria-label", "Cancel");
+
       if (normalized === "queued") {
         cancelBtn.disabled = false;
         cancelBtn.addEventListener("click", e => {
           e.stopPropagation();
-          chrome.runtime.sendMessage({ type: "removeFromQueue", downloadId: item.id }, () => {});
+          // Optimistically remove the item from UI immediately
+          try {
+            li.remove();
+          } catch {
+            /* ignore */
+          }
+          // Send message to background script
+          chrome.runtime.sendMessage(
+            { type: MESSAGE_TYPES.REMOVE_FROM_QUEUE, downloadId: item.id },
+            response => {
+              // Response received - no action needed
+            }
+          );
         });
+
+        // Add a Force start button for queued entries
+        const forceBtn = document.createElement("button");
+        // Match shape/size with other inline buttons; color the icon green without bespoke classes
+        forceBtn.className = `${CSS_CLASSES.BTN_SECONDARY} ${CSS_CLASSES.BTN_SMALL}`;
+        forceBtn.setAttribute("aria-label", "Start");
+        // Inline SVG so we can color via currentColor (no emoji whitelist dependency)
+        forceBtn.style.color = "var(--success)";
+        forceBtn.innerHTML =
+          '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>';
+        forceBtn.title = "Force start now";
+        forceBtn.setAttribute("aria-label", "Force start");
+        forceBtn.addEventListener("click", async e => {
+          e.stopPropagation();
+          try {
+            const res = await chrome.storage.local.get(STORAGE_KEYS.SERVER_PORT);
+            const port = (res as any)?.serverPort;
+            if (typeof port === "number" && Number.isFinite(port)) {
+              const resp = await fetch(
+                `http://127.0.0.1:${port}/api/queue/${encodeURIComponent(item.id)}/force-start`,
+                {
+                  method: "POST",
+                }
+              );
+              if (resp.ok) {
+                // Disable button to indicate action taken
+                (forceBtn as HTMLButtonElement).disabled = true;
+              } else if (resp.status === 404) {
+                // Item no longer in queue; refresh UI and inform user
+                try {
+                  setStatus("Item no longer in queue", true, 2000);
+                } catch {}
+                chrome.runtime.sendMessage({ type: "getQueue" }, (response: any) => {
+                  void renderDownloadStatus(response || { active: {}, queue: [] });
+                });
+              }
+            }
+          } catch {
+            // ignore network errors; UI will refresh via polling
+          }
+        });
+        li.appendChild(forceBtn);
       } else if (normalized === "downloading" || normalized === "paused") {
         cancelBtn.disabled = false;
         cancelBtn.addEventListener("click", e => {
           e.stopPropagation();
-          chrome.runtime.sendMessage({ type: "cancelDownload", downloadId: item.id }, () => {});
+          // Optimistically remove the item from UI immediately
+          try {
+            li.remove();
+          } catch {
+            /* ignore */
+          }
+          // Send message to background script
+          chrome.runtime.sendMessage(
+            { type: MESSAGE_TYPES.CANCEL_DOWNLOAD, downloadId: item.id },
+            () => {}
+          );
         });
       } else {
         // Inactive entry: use cancel as delete
         cancelBtn.disabled = false;
         cancelBtn.title = "Delete";
         cancelBtn.addEventListener("click", async e => {
+          e.preventDefault();
+          e.stopImmediatePropagation();
           e.stopPropagation();
-          if (item.id) {
-            await removeHistoryItemAndNotify(item.id);
-          } else if (item.url) {
-            await removeHistoryItemByUrlAndNotify(item.url);
-          }
+          // Prefer deletion by stable id; fall back to URL
+          if (item.id) await removeHistoryItemAndNotify(item.id);
+          else if (item.url) await removeHistoryItemByUrlAndNotify(item.url);
           // Optimistically update UI to remove the row immediately
           try {
             li.remove();
@@ -635,18 +738,22 @@ export async function renderDownloadStatus(data: {
           }
         });
       }
-      li.appendChild(cancelBtn);
+      // Defer appending cancel/delete button so it always renders at the far right
 
       // Add a pause button for actively downloading entries
       if (normalized === "downloading") {
         const pauseBtn = document.createElement("button");
-        pauseBtn.className = "btn btn--secondary btn--small pause-button";
-        pauseBtn.textContent = "Pause";
+        pauseBtn.className = `${CSS_CLASSES.BTN_SECONDARY} ${CSS_CLASSES.BTN_SMALL} ${CSS_CLASSES.PAUSE_BUTTON}`;
+        pauseBtn.textContent = "⏸"; // pause icon (whitelisted)
+        pauseBtn.setAttribute("aria-label", "Pause");
         pauseBtn.title = "Pause";
         pauseBtn.setAttribute("aria-label", "Pause");
         pauseBtn.addEventListener("click", e => {
           e.stopPropagation();
-          chrome.runtime.sendMessage({ type: "pauseDownload", downloadId: item.id }, () => {});
+          chrome.runtime.sendMessage(
+            { type: MESSAGE_TYPES.PAUSE_DOWNLOAD, downloadId: item.id },
+            () => {}
+          );
         });
         li.appendChild(pauseBtn);
       }
@@ -654,13 +761,16 @@ export async function renderDownloadStatus(data: {
       // Add a resume button for paused entries
       if (normalized === "paused") {
         const resumeBtn = document.createElement("button");
-        resumeBtn.className = "resume-button";
+        resumeBtn.className = CSS_CLASSES.RESUME_BUTTON;
         resumeBtn.textContent = "Resume";
         resumeBtn.title = "Resume";
         resumeBtn.setAttribute("aria-label", "Resume");
         resumeBtn.addEventListener("click", e => {
           e.stopPropagation();
-          chrome.runtime.sendMessage({ type: "resumeDownload", downloadId: item.id }, () => {});
+          chrome.runtime.sendMessage(
+            { type: MESSAGE_TYPES.RESUME_DOWNLOAD, downloadId: item.id },
+            () => {}
+          );
         });
         li.appendChild(resumeBtn);
       }
@@ -668,7 +778,7 @@ export async function renderDownloadStatus(data: {
       // Add a retry button (⟳) for failed/canceled entries
       if (["error", "failed", "fail", "canceled", "cancelled"].includes(normalized)) {
         const retryBtn = document.createElement("button");
-        retryBtn.className = "btn btn--secondary btn--small retry-button";
+        retryBtn.className = `${CSS_CLASSES.BTN_SECONDARY} ${CSS_CLASSES.BTN_SMALL} ${CSS_CLASSES.RETRY_BUTTON}`;
         retryBtn.textContent = "Retry";
         retryBtn.title = "Retry";
         retryBtn.setAttribute("aria-label", "Retry");
@@ -689,6 +799,9 @@ export async function renderDownloadStatus(data: {
         });
         li.appendChild(retryBtn);
       }
+
+      // Append cancel/delete as the last action so it stays on the far right
+      li.appendChild(cancelBtn);
 
       ul.appendChild(li);
     });
@@ -866,29 +979,29 @@ export async function renderDownloadStatus(data: {
  * @param status - The server status ('connected', 'disconnected', or 'checking')
  */
 export function updatePopupServerStatus(status: "connected" | "disconnected" | "checking"): void {
-  const indicator = document.getElementById("server-status-indicator");
-  const text = document.getElementById("server-status-text");
+  const indicator = document.querySelector(DOM_SELECTORS.STATUS_INDICATOR);
+  const text = document.querySelector(DOM_SELECTORS.STATUS_TEXT);
 
   if (indicator && text) {
     // Remove all status classes
-    indicator.classList.remove("connected", "disconnected");
-    text.classList.remove("status-connected", "status-disconnected");
+    indicator.classList.remove(CSS_CLASSES.CONNECTED, CSS_CLASSES.DISCONNECTED);
+    text.classList.remove(CSS_CLASSES.STATUS_CONNECTED, CSS_CLASSES.STATUS_DISCONNECTED);
 
     switch (status) {
-      case "connected":
-        indicator.classList.add("connected");
-        text.classList.add("status-connected");
-        chrome.storage.local.get("serverPort", res => {
+      case STATUS_CONSTANTS.CONNECTED:
+        indicator.classList.add(CSS_CLASSES.CONNECTED);
+        text.classList.add(CSS_CLASSES.STATUS_CONNECTED);
+        chrome.storage.local.get(STORAGE_KEYS.SERVER_PORT, res => {
           const port = res.serverPort || "?";
           (text as HTMLElement).textContent = `Server: Connected @ ${port}`;
         });
         break;
-      case "disconnected":
-        indicator.classList.add("disconnected");
-        text.classList.add("status-disconnected");
+      case STATUS_CONSTANTS.DISCONNECTED:
+        indicator.classList.add(CSS_CLASSES.DISCONNECTED);
+        text.classList.add(CSS_CLASSES.STATUS_DISCONNECTED);
         (text as HTMLElement).textContent = "Server: Disconnected";
         break;
-      case "checking":
+      case STATUS_CONSTANTS.CHECKING:
         text.textContent = "Checking...";
         break;
     }
@@ -905,7 +1018,7 @@ export async function initPopup(): Promise<void> {
 
   // Initialize server status immediately
   try {
-    chrome.runtime.sendMessage({ type: "getServerStatus" }, (resp: any) => {
+    chrome.runtime.sendMessage({ type: MESSAGE_TYPES.GET_SERVER_STATUS }, (resp: any) => {
       if (!chrome.runtime.lastError && resp && resp.status) {
         updatePopupServerStatus(resp.status);
       }
@@ -915,7 +1028,7 @@ export async function initPopup(): Promise<void> {
   }
 
   // Set up settings button click handler
-  const settingsButton = document.getElementById("open-settings");
+  const settingsButton = domManager.querySelector(DOM_SELECTORS.SETTINGS_BUTTON);
   if (settingsButton) {
     settingsButton.addEventListener("click", () => {
       (chrome.runtime as any).openOptionsPage();
@@ -923,7 +1036,7 @@ export async function initPopup(): Promise<void> {
   }
 
   // Wire Side Panel open (Chrome Side Panel API)
-  const sidepanelBtn = document.getElementById("open-sidepanel");
+  const sidepanelBtn = domManager.querySelector(DOM_SELECTORS.SIDE_PANEL_BUTTON);
   if (sidepanelBtn) {
     sidepanelBtn.addEventListener("click", async () => {
       const hasSidePanel = Boolean((chrome as any).sidePanel && (chrome.sidePanel as any).open);
@@ -981,13 +1094,13 @@ export async function initPopup(): Promise<void> {
   };
 
   // Wire HIDE/SHOW toggle
-  const toggleBtn = document.getElementById(
-    "toggle-enhanced-download-button"
+  const toggleBtn = domManager.querySelector(
+    DOM_SELECTORS.TOGGLE_BUTTON
   ) as HTMLButtonElement | null;
   if (toggleBtn) {
     // Initialize label based on active tab's per-domain state
     try {
-      sendToActiveTab({ type: "getButtonVisibility" }, resp => {
+      sendToActiveTab({ type: MESSAGE_TYPES.GET_BUTTON_VISIBILITY }, resp => {
         type VisibilityResp = { success?: boolean; hidden?: boolean };
         const r = (resp || {}) as VisibilityResp;
         if (r && r.success) {
@@ -1001,17 +1114,17 @@ export async function initPopup(): Promise<void> {
     toggleBtn.addEventListener("click", () => {
       const currentlyHiding = toggleBtn.textContent?.trim().toUpperCase() === "HIDE";
       const newHidden = currentlyHiding; // if showing, next action hides
-      sendToActiveTab({ type: "toggleButtonVisibility", hidden: newHidden }, () => {
+      sendToActiveTab({ type: MESSAGE_TYPES.TOGGLE_BUTTON_VISIBILITY, hidden: newHidden }, () => {
         toggleBtn.textContent = newHidden ? "SHOW" : "HIDE";
       });
     });
   }
 
   // Wire RESET position
-  const resetBtn = document.getElementById("reset-button-position") as HTMLButtonElement | null;
+  const resetBtn = domManager.querySelector(DOM_SELECTORS.RESET_BUTTON) as HTMLButtonElement | null;
   if (resetBtn) {
     resetBtn.addEventListener("click", () => {
-      sendToActiveTab({ type: "resetButtonPosition" }, () => {
+      sendToActiveTab({ type: MESSAGE_TYPES.RESET_BUTTON_POSITION }, () => {
         // no-op
       });
     });
@@ -1019,7 +1132,7 @@ export async function initPopup(): Promise<void> {
 
   // Initialize download status
   chrome.runtime.sendMessage(
-    { type: "getQueue" },
+    { type: MESSAGE_TYPES.GET_QUEUE },
     (
       response:
         | { active: ActiveDownloadMap; queue: string[]; queuedDetails?: QueuedDetailsMap }
@@ -1030,11 +1143,17 @@ export async function initPopup(): Promise<void> {
   );
 
   // --- History wiring (pagination + live updates) ---
-  const historyListEl = document.getElementById("download-history") as HTMLElement | null;
-  const prevPageBtn = document.getElementById("prev-page") as HTMLButtonElement | null;
-  const nextPageBtn = document.getElementById("next-page") as HTMLButtonElement | null;
-  const itemsPerPageSelect = document.getElementById("items-per-page") as HTMLSelectElement | null;
-  const pageInfoEl = document.getElementById("page-info") as HTMLElement | null;
+  const historyListEl = domManager.querySelector(DOM_SELECTORS.HISTORY_LIST) as HTMLElement | null;
+  const prevPageBtn = domManager.querySelector(
+    DOM_SELECTORS.PREV_PAGE_BUTTON
+  ) as HTMLButtonElement | null;
+  const nextPageBtn = domManager.querySelector(
+    DOM_SELECTORS.NEXT_PAGE_BUTTON
+  ) as HTMLButtonElement | null;
+  const itemsPerPageSelect = domManager.querySelector(
+    DOM_SELECTORS.ITEMS_PER_PAGE_SELECT
+  ) as HTMLSelectElement | null;
+  const pageInfoEl = domManager.querySelector(DOM_SELECTORS.PAGE_INFO) as HTMLElement | null;
 
   let currentPage = 1;
   let perPage = (() => {
@@ -1097,17 +1216,29 @@ export async function initPopup(): Promise<void> {
       data?: { active: ActiveDownloadMap; queue: string[]; queuedDetails?: QueuedDetailsMap };
       status?: "connected" | "disconnected";
     }) => {
-      if (msg.type === "downloadStatusUpdate" && msg.data) {
+      if (msg.type === MESSAGE_TYPES.DOWNLOAD_STATUS_UPDATE && msg.data) {
         void renderDownloadStatus(msg.data);
-      } else if (msg.type === "queueUpdated" && msg.data) {
-        void renderDownloadStatus({
-          active: msg.data.active,
-          queue: msg.data.queue,
-          queuedDetails: msg.data.queuedDetails,
-        });
-      } else if (msg.type === "historyUpdated") {
+      } else if (msg.type === MESSAGE_TYPES.QUEUE_UPDATED) {
+        const payload = msg.data as
+          | { active: ActiveDownloadMap; queue: string[]; queuedDetails?: QueuedDetailsMap }
+          | undefined;
+        // Support legacy shape without data wrapper: { type, active, queue, queuedDetails }
+        const legacy = msg as unknown as {
+          active?: ActiveDownloadMap;
+          queue?: string[];
+          queuedDetails?: QueuedDetailsMap;
+        };
+        const dataToRender =
+          payload ||
+          ({
+            active: legacy.active || {},
+            queue: legacy.queue || [],
+            queuedDetails: legacy.queuedDetails || {},
+          } as { active: ActiveDownloadMap; queue: string[]; queuedDetails?: QueuedDetailsMap });
+        void renderDownloadStatus(dataToRender);
+      } else if (msg.type === MESSAGE_TYPES.HISTORY_UPDATED) {
         if (lastDownloadStatusData) void renderDownloadStatus(lastDownloadStatusData);
-      } else if (msg.type === "serverStatusUpdate" && msg.status) {
+      } else if (msg.type === MESSAGE_TYPES.SERVER_STATUS_UPDATE && msg.status) {
         updatePopupServerStatus(msg.status);
       }
     }

@@ -19,6 +19,7 @@ import {
 } from "../../extension/src/content";
 import { debounce } from "../../extension/src/lib/utils";
 import { CentralizedLogger } from "../../extension/src/core/logger";
+import { UI_CONSTANTS, CSS_CLASSES } from "../../extension/src/core/constants";
 
 describe("Content Script Tests", () => {
   let logger: CentralizedLogger;
@@ -40,8 +41,8 @@ describe("Content Script Tests", () => {
     it("should create download button", async () => {
       const button = await createOrUpdateButton();
       expect(button).toBeInstanceOf(HTMLButtonElement);
-      expect(button.id).toBe("evd-download-button-main");
-      expect(button.textContent).toBe("DOWNLOAD");
+      expect(button.id).toBe(UI_CONSTANTS.BUTTON_ID_PREFIX + "main");
+      expect(button.textContent).toBe(UI_CONSTANTS.BUTTON_TEXT);
     });
 
     it("should update existing button", async () => {
@@ -64,12 +65,12 @@ describe("Content Script Tests", () => {
       const button = await createOrUpdateButton();
 
       await setButtonHiddenState(true);
-      expect(button.classList.contains("hidden")).toBe(true);
-      expect(button.classList.contains("evd-visible")).toBe(false);
+      expect(button.classList.contains(CSS_CLASSES.HIDDEN)).toBe(true);
+      expect(button.classList.contains(CSS_CLASSES.EVD_VISIBLE)).toBe(false);
 
       await setButtonHiddenState(false);
-      expect(button.classList.contains("hidden")).toBe(false);
-      expect(button.classList.contains("evd-visible")).toBe(true);
+      expect(button.classList.contains(CSS_CLASSES.HIDDEN)).toBe(false);
+      expect(button.classList.contains(CSS_CLASSES.EVD_VISIBLE)).toBe(true);
     });
   });
 
@@ -204,7 +205,7 @@ describe("Content Script Tests", () => {
       document.body.appendChild(button);
 
       ensureDownloadButtonStyle(button);
-      expect(button.classList.contains("evd-visible")).toBe(true);
+      expect(button.classList.contains(CSS_CLASSES.EVD_VISIBLE)).toBe(true);
     });
   });
 

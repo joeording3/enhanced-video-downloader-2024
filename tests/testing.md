@@ -100,6 +100,52 @@ ruff check .
 npm run lint:all
 ```
 
+## Media Detection Matrix Testing
+
+### Stable vs. Wide Matrix Runs
+
+The project maintains two testing approaches for media detection:
+
+- **Stable Set (Default)**: A curated list of reliable test sites used in CI and regular development
+- **Wide Matrix**: Full test coverage across all supported media platforms
+
+#### Stable Set (CI Default)
+- **Purpose**: Fast, reliable testing for CI pipelines and development
+- **Target**: `make test-playwright` (default)
+- **Sites**: Limited to proven, stable domains (Vimeo, Dailymotion, Twitch, Streamable)
+- **Use Case**: Daily development, CI validation, regression testing
+
+#### Wide Matrix (Manual/Advanced)
+- **Purpose**: Comprehensive testing across all supported platforms
+- **Target**: `make test-media-wide`
+- **Sites**: Full media platform coverage including adult content sites
+- **Use Case**: Platform validation, new feature testing, release preparation
+
+#### Environment Variables
+- `EVD_MEDIA_SITES_WIDE=true`: Enables wide matrix testing
+- `EVD_MEDIA_URL=<url>`: Test specific URL only
+- `EVD_MEDIA_FILTER=<pattern>`: Filter sites by pattern
+
+#### Usage Examples
+```bash
+# Stable set (CI default)
+make test-playwright
+
+# Wide matrix (manual)
+make test-media-wide
+
+# Single URL testing
+EVD_MEDIA_URL="https://example.com" make test-playwright
+
+# Pattern-based filtering
+EVD_MEDIA_FILTER="youtube" make test-media-wide
+```
+
+#### CI Policy
+- **Default**: CI runs stable set only for reliability and speed
+- **Wide Matrix**: Available via manual trigger with `EVD_MEDIA_SITES_WIDE=true`
+- **Documentation**: Wide matrix results documented in test reports
+
 ### Extension UI (Headless Browser)
 
 Tests for the Chrome extension UI (popup and options) using Jest with Playwright.

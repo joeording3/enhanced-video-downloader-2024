@@ -2,6 +2,7 @@
 
 import { renderHistoryItems } from "../../extension/src/history";
 import type { HistoryEntry } from "../../extension/src/types";
+import { CSS_CLASSES, DOM_SELECTORS } from "../../extension/src/core/constants";
 
 describe("renderHistoryItems", () => {
   let listEl: HTMLElement;
@@ -11,19 +12,19 @@ describe("renderHistoryItems", () => {
 
   beforeEach(() => {
     document.body.innerHTML =
-      '<ul id="history-list"></ul>' +
-      '<div id="page-info"></div>' +
+      `<ul id="${DOM_SELECTORS.HISTORY_LIST.replace("#", "")}"></ul>` +
+      `<div id="${DOM_SELECTORS.PAGE_INFO.replace("#", "")}"></div>` +
       '<button id="prev-btn"></button>' +
       '<button id="next-btn"></button>';
-    listEl = document.getElementById("history-list") as HTMLElement;
-    pageInfoEl = document.getElementById("page-info") as HTMLElement;
+    listEl = document.getElementById(DOM_SELECTORS.HISTORY_LIST.replace("#", "")) as HTMLElement;
+    pageInfoEl = document.getElementById(DOM_SELECTORS.PAGE_INFO.replace("#", "")) as HTMLElement;
     prevBtn = document.getElementById("prev-btn") as HTMLButtonElement;
     nextBtn = document.getElementById("next-btn") as HTMLButtonElement;
   });
 
   it("renders empty history correctly", () => {
     renderHistoryItems([], 1, 10, 0, listEl, pageInfoEl, prevBtn, nextBtn);
-    const emptyItems = listEl.querySelectorAll("li.empty-history");
+    const emptyItems = listEl.querySelectorAll(`li.${CSS_CLASSES.HISTORY_EMPTY}`);
     expect(emptyItems).toHaveLength(1);
     expect(pageInfoEl.textContent).toBe("No items");
     expect(prevBtn.disabled).toBe(true);
@@ -51,7 +52,7 @@ describe("renderHistoryItems", () => {
       },
     ];
     renderHistoryItems(items, 1, 2, 2, listEl, pageInfoEl, prevBtn, nextBtn);
-    const rendered = listEl.querySelectorAll("li.history-item");
+    const rendered = listEl.querySelectorAll(`li.${CSS_CLASSES.HISTORY_ITEM}`);
     expect(rendered).toHaveLength(2);
     expect(pageInfoEl.textContent).toBe("Showing 1-2 of 2 items");
     expect(prevBtn.disabled).toBe(true);
@@ -73,12 +74,12 @@ describe("renderHistoryItems", () => {
       },
     ];
     renderHistoryItems(items, 1, 1, 1, listEl, pageInfoEl, prevBtn, nextBtn);
-    const rendered = listEl.querySelectorAll("li.history-item");
+    const rendered = listEl.querySelectorAll(`li.${CSS_CLASSES.HISTORY_ITEM}`);
     expect(rendered).toHaveLength(1);
 
     const itemEl = rendered[0];
     expect(itemEl.querySelector("b")?.textContent).toBe("file3.mp4"); // Fallback to filename
-    expect(itemEl.querySelector(".history-item-timestamp")?.textContent).toBe(""); // Empty timestamp
-    expect(itemEl.querySelector(".history-item-detail")?.textContent).toBe("just a string detail");
+    expect(itemEl.querySelector(`.${CSS_CLASSES.HISTORY_ITEM_TIMESTAMP}`)?.textContent).toBe(""); // Empty timestamp
+    expect(itemEl.querySelector(`.${CSS_CLASSES.HISTORY_ITEM_DETAIL}`)?.textContent).toBe("just a string detail");
   });
 });

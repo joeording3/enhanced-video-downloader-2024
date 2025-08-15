@@ -24,6 +24,8 @@ module.exports = {
     "**/tests/extension/**/*.test.ts",
     "**/tests/extension/**/*.spec.js",
     "**/tests/extension/**/*.spec.ts",
+    "**/tests/integration/**/*.test.ts",
+    "**/tests/integration/**/*.test.js",
     "!**/tests/extension/**/*.e2e.*",
     "!**/tests/extension/**/playwright-*",
     "!**/tests/extension/**/test_extension_ui_e2e*",

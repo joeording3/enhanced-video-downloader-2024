@@ -10,6 +10,7 @@ import {
   handleThemeToggle,
 } from "../../extension/src/options";
 import { ExtensionStateManager } from "../../extension/src/core/state-manager";
+import { CSS_CLASSES, DOM_SELECTORS } from "../../extension/src/core/constants";
 
 // Mock the constants module to return a wider port range for testing
 jest.mock("../../extension/src/core/constants", () => ({
@@ -241,8 +242,8 @@ describe("Options Script Unit Tests", () => {
   describe("Server Status", () => {
     it("should update server status to connected", () => {
       updateOptionsServerStatus("connected");
-      const indicator = document.getElementById("server-status-indicator");
-      const text = document.getElementById("server-status-text");
+      const indicator = document.getElementById(DOM_SELECTORS.STATUS_INDICATOR.replace("#", ""));
+      const text = document.getElementById(DOM_SELECTORS.STATUS_TEXT.replace("#", ""));
       expect(indicator?.classList.contains("connected")).toBe(true);
       // Text includes prefix and port placeholder per current implementation
       expect(text?.textContent).toMatch(/^Server: Connected @/);
@@ -250,8 +251,8 @@ describe("Options Script Unit Tests", () => {
 
     it("should update server status to disconnected", () => {
       updateOptionsServerStatus("disconnected");
-      const indicator = document.getElementById("server-status-indicator");
-      const text = document.getElementById("server-status-text");
+      const indicator = document.getElementById(DOM_SELECTORS.STATUS_INDICATOR.replace("#", ""));
+      const text = document.getElementById(DOM_SELECTORS.STATUS_TEXT.replace("#", ""));
       expect(indicator?.classList.contains("disconnected")).toBe(true);
       expect(text?.textContent).toBe("Server: Disconnected");
     });
@@ -273,10 +274,10 @@ describe("Options Script Unit Tests", () => {
   describe("Theme Management", () => {
     it("applyOptionsTheme should apply theme classes", () => {
       applyOptionsTheme("dark");
-      expect(document.body.classList.contains("dark-theme")).toBe(true);
+      expect(document.body.classList.contains(CSS_CLASSES.DARK_THEME)).toBe(true);
 
       applyOptionsTheme("light");
-      expect(document.body.classList.contains("dark-theme")).toBe(false);
+      expect(document.body.classList.contains(CSS_CLASSES.DARK_THEME)).toBe(false);
     });
 
     it("handleThemeToggle should toggle theme", async () => {
@@ -296,7 +297,7 @@ describe("Options Script Unit Tests", () => {
 
       // Verify that the theme was toggled from light to dark
       expect(savedTheme).toBe("dark");
-      expect(document.body.classList.contains("dark-theme")).toBe(true);
+      expect(document.body.classList.contains(CSS_CLASSES.DARK_THEME)).toBe(true);
     });
   });
 
@@ -304,13 +305,13 @@ describe("Options Script Unit Tests", () => {
     it("should apply theme without state manager integration", () => {
       // The actual implementation doesn't update state manager, so we test the actual behavior
       applyOptionsTheme("dark");
-      expect(document.body.classList.contains("dark-theme")).toBe(true);
+      expect(document.body.classList.contains(CSS_CLASSES.DARK_THEME)).toBe(true);
     });
 
     it("should handle theme changes correctly", () => {
-      // The actual implementation doesn't log theme changes, so we test the actual behavior
+      // The actual implementation doesn't update state manager, so we test the actual behavior
       applyOptionsTheme("light");
-      expect(document.body.classList.contains("dark-theme")).toBe(false);
+      expect(document.body.classList.contains(CSS_CLASSES.DARK_THEME)).toBe(false);
     });
   });
 

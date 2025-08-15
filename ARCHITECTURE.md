@@ -331,11 +331,47 @@ maintainability:
 Adoption status:
 
 - Background and content scripts are fully integrated with the centralized services.
-- Popup and options scripts are largely migrated, but a few items remain and are tracked in
-  `TODO.md`:
-  - Replace `validatePort()` in `extension/src/options.ts` with `validationService`
-  - Adopt `domManager` for remaining direct DOM queries in `popup.ts` and `options.ts`
-  - Replace remaining `console.*` calls with the centralized `logger`
+- **Popup and options scripts are now fully migrated to use constants and domManager**:
+  - ✅ All direct DOM selectors replaced with `DOM_SELECTORS` constants
+  - ✅ All CSS class names replaced with `CSS_CLASSES` constants
+  - ✅ `domManager` wrapper adopted for standardized DOM access
+  - ✅ Remaining items tracked in `TODO.md`:
+    - Replace `validatePort()` in `extension/src/options.ts` with `validationService`
+    - Replace remaining `console.*` calls with the centralized `logger`
+
+## DOM Selector & Class Migration
+
+### Recent Progress (Completed)
+
+The extension has successfully migrated from direct DOM string literals to centralized constants:
+
+- **Constants Added**: Extended `extension/src/core/constants.ts` with:
+
+  - `DOM_SELECTORS`: `STATUS_MESSAGE`, `TOGGLE_BUTTON`, `HISTORY_ITEMS`, `DOWNLOAD_QUEUE`
+  - `CSS_CLASSES`: `BTN_SMALL`, `STATUS_PILL`, `STATUS_SUCCESS`, `STATUS_ERROR`, `ERROR_TIP`,
+    `PRIORITY_CONTROLS`, `PRIORITY_SET_BUTTON`, `PRIORITY_SELECT`, `PAUSE_BUTTON`, `RESUME_BUTTON`,
+    `RETRY_BUTTON`, `CANCEL_BUTTON`, `DRAG_OVER`, `HISTORY_EMPTY`, `ACTIVE`, `VALID`, `INVALID`,
+    `DARK_THEME`
+
+- **Files Migrated**:
+
+  - ✅ `extension/src/popup.ts`: All selectors and classes now use constants
+  - ✅ `extension/src/options.ts`: All selectors and classes now use constants
+  - ✅ `tests/extension/popup.test.ts`: Test selectors updated to use constants
+  - ✅ `tests/extension/popup.util.test.ts`: Test selectors updated to use constants
+
+- **DOM Manager Integration**: Both popup and options now use `domManager` wrapper for:
+  - Standardized DOM queries with `domManager.querySelector()`
+  - Consistent error handling and element validation
+  - Cached selector performance benefits
+
+### Next Steps
+
+1. **Validation Service Migration**: Replace remaining validation functions in `options.ts` with
+   `validationService`
+2. **Logger Integration**: Replace remaining `console.*` calls with centralized `logger`
+3. **Test Coverage**: Ensure all test files use constants for selectors and classes
+4. **Documentation**: Update any remaining documentation references to old selectors
 
 ## CSS design system
 
@@ -359,8 +395,8 @@ Adoption status:
   dynamic classes used by the popup's unified list (rendered at runtime from `popup.ts`). To avoid
   breaking layouts, the current build step copies source CSS to `extension/ui/optimized/` and then
   minifies to `extension/ui/minified/` and `extension/dist/` without purging.
-- If PurgeCSS is re-enabled in the future, you must keep `purgecss.config.cjs` in sync and include
-  a safelist for all runtime selectors used by the unified list:
+- If PurgeCSS is re-enabled in the future, you must keep `purgecss.config.cjs` in sync and include a
+  safelist for all runtime selectors used by the unified list:
   - Classes: `.unified-list`, `.unified-item`, `.status-icon`, `.item-title`, `.item-percent`,
     `.status-pill`, `.cancel-button`, `.retry-button`, `.pause-button`, `.resume-button`
   - IDs: `#download-status`, `#download-history`
@@ -387,8 +423,8 @@ Adoption status:
    environment variable. Existing contents are imported when appending; the file is never blindly
    overwritten.
 7. **Advanced History**: After download completion (`_progress_finished`), the server reads yt-dlp's
-   `.info.json` file (enabled via `writeinfojson`), appends rich metadata to the consolidated history,
-   and then deletes the sidecar `.info.json` to avoid clutter.
+   `.info.json` file (enabled via `writeinfojson`), appends rich metadata to the consolidated
+   history, and then deletes the sidecar `.info.json` to avoid clutter.
 8. **Extraction Rules**: `server/extraction_rules.py` loads rules from
    `server/config/extraction_rules.json`.
 9. **Lock File**: `server/lock.py` manages lock file at `server/data/server.lock`.
@@ -537,6 +573,13 @@ Adoption status:
 2. **Docstring Standardization**: Convert all Python docstrings to reStructuredText format
 3. **Test Pattern Documentation**: Create comprehensive test pattern documentation
 
+### Recently Completed ✅
+
+1. **DOM Selector & Class Migration**: Successfully migrated popup and options to use centralized
+   constants
+2. **DOM Manager Integration**: Standardized DOM access patterns across popup and options
+3. **Test Selector Updates**: Updated test files to use constants instead of string literals
+
 ### Medium Priority (Week 3-6)
 
 1. **Coverage Expansion**: Add tests for critical edge cases and error conditions
@@ -587,7 +630,7 @@ Adoption status:
 
 ## Last Updated
 
-_Last updated: 2025-01-27_
+_Last updated: 2025-01-27 (DOM Selector Migration Completed)_
 
 ## Temporary Files and Outputs
 

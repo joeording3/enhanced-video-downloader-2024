@@ -9,7 +9,10 @@ This module defines endpoints to restart the server in two modes:
 import logging
 import os
 import platform
+import shutil
 import subprocess
+import sys
+from contextlib import suppress
 from typing import Any
 
 from flask import Blueprint, jsonify, request
@@ -75,6 +78,11 @@ def _build_managed_restart_commands() -> list[list[str]]:
         # Use shell execution for complex commands
         commands.append(["/bin/sh", "-c", explicit])
 
+    # If a direct CLI is discoverable on PATH, prefer its absolute path to avoid PATH issues
+    which_cli = shutil.which("videodownloader-server")
+    if which_cli:
+        commands.append([which_cli, "restart"])  # absolute path to CLI
+
     system = platform.system().lower()
     # systemd (user) service
     systemd_service = os.getenv("EVD_SYSTEMD_SERVICE")
@@ -92,12 +100,22 @@ def _build_managed_restart_commands() -> list[list[str]]:
         uid = str(os.getuid())
         commands.append(["launchctl", "kickstart", "-k", f"gui/{uid}/{launchctl_label}"])
 
+    # Last-resort: invoke the CLI via the current Python interpreter/module path
+    # Ensures restart works even when PATH lacks the console script
+    with suppress(Exception):
+        commands.append([sys.executable, "-m", "server.cli_main", "restart"])  # module entrypoint
+
     return commands
 
 
 @restart_bp.route("/restart/managed", methods=["POST", "OPTIONS"])
 def managed_restart_route() -> Any:
-    """Attempt to restart the server via an external process manager."""
+    """Attempt to restart the server via an external process manager.
+
+    This endpoint returns immediately (202) after starting a restart command in a
+    detached subprocess so the HTTP response is sent before the current process
+    receives a termination signal. This avoids client-side 500/network errors.
+    """
     if request.method == "OPTIONS":
         return "", 204
 
@@ -118,15 +136,19 @@ def managed_restart_route() -> Any:
     for cmd in candidates:
         try:
             log.info("Attempting managed restart command: %s", " ".join(cmd))
-            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=10, check=False)
-            if proc.returncode == 0:
-                return (
-                    jsonify({"success": True, "message": "Managed restart command executed."}),
-                    200,
-                )
-            last_error = f"exit {proc.returncode}: {(proc.stderr or proc.stdout).strip()}"
-        except Exception as e:  # noqa: PERF203
+            # Start the command in a detached subprocess so we can return a response immediately
+            # and avoid being killed before sending the HTTP response.
+            proc = subprocess.Popen(
+                cmd,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+            log.info("Managed restart command started (pid=%s)", proc.pid)
+            return jsonify({"success": True, "message": "Restart initiated."}), 202
+        except Exception as e:
             last_error = str(e)
+            # Try next candidate
 
     return (
         jsonify(

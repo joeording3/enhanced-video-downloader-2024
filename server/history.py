@@ -7,8 +7,9 @@ entries stored in a JSON file.
 
 import contextlib
 import json
+from collections.abc import Iterable  # Added cast
 from pathlib import Path
-from typing import Any, cast  # Added cast
+from typing import Any, cast
 
 from server.config import Config
 from server.utils import cache_result
@@ -155,3 +156,104 @@ def clear_history() -> bool:
         return False
     else:
         return True
+
+
+def consolidate_lingering_info_json(scan_dir: Path | None = None, recursive: bool = True) -> int:
+    """
+    Import lingering per-video metadata JSON files into consolidated history and remove them.
+
+    Scans the configured download directory (or the provided scan_dir) for files
+    matching "*.info.json". For each JSON file found, attempts to load its
+    contents and append the entry to history (avoiding simple duplicates by id or url),
+    then deletes the metadata JSON file. Returns the number of metadata files processed
+    (regardless of whether they resulted in a new history entry).
+
+    Parameters
+    ----------
+    scan_dir : Path | None
+        Directory to scan. If None, uses the configured download_dir.
+    recursive : bool
+        Whether to scan subdirectories recursively.
+
+    Returns
+    -------
+    int
+        Count of metadata JSON files processed and removed.
+    """
+    try:
+        # Resolve scan directory
+        base_dir: Path | None = scan_dir
+        if base_dir is None:
+            try:
+                cfg = Config.load()
+                dl = getattr(cfg, "download_dir", None)
+                if dl:
+                    base_dir = Path(dl)
+            except Exception:
+                base_dir = None
+        if base_dir is None or not base_dir.exists() or not base_dir.is_dir():
+            return 0
+
+        # Prepare deduplication sets from current history
+        existing_history = load_history()
+
+        def _iter(values: Iterable[dict[str, Any]]) -> Iterable[dict[str, Any]]:
+            return values
+
+        existing_ids: set[str] = set()
+        existing_urls: set[str] = set()
+        for h in _iter(existing_history):
+            try:
+                if "id" in h and h.get("id") is not None:
+                    existing_ids.add(str(h.get("id")))
+                url_val = h.get("webpage_url") or h.get("url")
+                if url_val is not None:
+                    existing_urls.add(str(url_val))
+            except Exception:
+                # Best-effort; skip malformed entries
+                continue
+
+        # Find candidate files
+        candidates = base_dir.rglob("*.info.json") if recursive else base_dir.glob("*.info.json")
+
+        processed = 0
+        for p in list(candidates):
+            # Only handle regular files
+            if not p.is_file():
+                continue
+            data: Any = None
+            try:
+                with p.open(encoding="utf-8") as f:
+                    data = json.load(f)
+            except Exception:
+                data = None
+
+            # Append if dict-like and not a simple duplicate
+            if isinstance(data, dict):
+                try:
+                    new_id = data.get("id")
+                    new_url = data.get("webpage_url") or data.get("url")
+                    is_duplicate = False
+                    if new_id is not None and str(new_id) in existing_ids:
+                        is_duplicate = True
+                    if not is_duplicate and new_url is not None and str(new_url) in existing_urls:
+                        is_duplicate = True
+                    if not is_duplicate:
+                        append_history_entry(data)
+                        if new_id is not None:
+                            existing_ids.add(str(new_id))
+                        if new_url is not None:
+                            existing_urls.add(str(new_url))
+                except Exception:
+                    # Do not block cleanup on append errors
+                    pass
+
+            # Remove the metadata JSON regardless of append outcome
+            with contextlib.suppress(Exception):
+                p.unlink()
+                processed += 1
+
+        return processed
+    except Exception:
+        # Never raise from a maintenance helper
+        return 0

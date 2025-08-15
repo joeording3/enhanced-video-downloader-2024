@@ -254,6 +254,74 @@ body.dark-theme .btn--secondary {
   border-color: color-mix(in oklab, var(--status-skipped), black 20%);
 }
 
+/* Server status (shared across popup and options) */
+.server-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.server-status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--status-pending);
+  box-shadow: 0 0 0 2px rgb(0 0 0 / 0.08);
+}
+
+.server-status-indicator.checking {
+  animation: pulse-gpu 2s infinite;
+}
+
+.server-status-indicator.connected {
+  background-color: var(--status-complete);
+}
+
+.server-status-indicator.disconnected {
+  background-color: var(--status-error);
+}
+
+.server-status-text {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.server-status-text.status-connected {
+  color: var(--success-color);
+  font-weight: var(--font-weight-bold);
+}
+
+.server-status-text.status-disconnected {
+  color: var(--error-color);
+  font-weight: var(--font-weight-bold);
+}
+
+/* Status pill (shared visual tag for history/status values) */
+.status-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background-color: color-mix(in srgb, var(--container-bg), #8888 30%);
+  color: var(--text-color);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+}
+
+.status-pill.is-success {
+  background-color: color-mix(in srgb, var(--success), #0000 80%);
+  color: var(--success);
+}
+
+.status-pill.is-warning {
+  background-color: color-mix(in srgb, var(--warning), #0000 80%);
+  color: var(--warning);
+}
+
+.status-pill.is-error {
+  background-color: color-mix(in srgb, var(--error), #0000 80%);
+  color: var(--error);
+}
+
 /* ===== UTILITY CLASSES ===== */
 
 /* Button Icon */

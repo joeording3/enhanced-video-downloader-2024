@@ -1,11 +1,12 @@
 // @jest-environment jsdom
 import { fetchHistory, renderHistoryItems } from "../../extension/src/history";
+import { CSS_CLASSES, DOM_SELECTORS } from "../../extension/src/core/constants";
 
 describe("history.ts core functions", () => {
   beforeEach(() => {
     document.body.innerHTML =
-      '<ul id="history-list"></ul>' +
-      '<div id="page-info"></div>' +
+      `<ul id="${DOM_SELECTORS.HISTORY_LIST.replace("#", "")}"></ul>` +
+      `<div id="${DOM_SELECTORS.PAGE_INFO.replace("#", "")}"></div>` +
       '<button id="prev-btn"></button>' +
       '<button id="next-btn"></button>';
     (global as any).chrome = {
@@ -47,8 +48,8 @@ describe("history.ts core functions", () => {
 
   describe("renderHistoryItems", () => {
     it("renders empty state when no items", () => {
-      const listEl = document.getElementById("history-list");
-      const pageInfoEl = document.getElementById("page-info");
+      const listEl = document.getElementById(DOM_SELECTORS.HISTORY_LIST.replace("#", ""));
+      const pageInfoEl = document.getElementById(DOM_SELECTORS.PAGE_INFO.replace("#", ""));
       const prevBtn = document.getElementById("prev-btn") as HTMLButtonElement;
       const nextBtn = document.getElementById("next-btn") as HTMLButtonElement;
 
@@ -57,14 +58,14 @@ describe("history.ts core functions", () => {
       }
 
       renderHistoryItems([], 1, 5, 0, listEl, pageInfoEl, prevBtn, nextBtn);
-      expect(listEl.innerHTML).toContain("empty-history");
+      expect(listEl.innerHTML).toContain(CSS_CLASSES.HISTORY_EMPTY);
       expect(pageInfoEl.textContent).toBe("No items");
       expect(prevBtn.disabled).toBe(true);
       expect(nextBtn.disabled).toBe(true);
     });
 
     it("renders list of items", () => {
-      const listEl = document.getElementById("history-list");
+      const listEl = document.getElementById(DOM_SELECTORS.HISTORY_LIST.replace("#", ""));
       if (!listEl) {
         throw new Error("History list element not found");
       }
@@ -76,8 +77,8 @@ describe("history.ts core functions", () => {
         1,
         listEl
       );
-      expect(listEl.querySelectorAll("li.history-item").length).toBe(1);
-      const titleElement = listEl.querySelector("li.history-item b");
+      expect(listEl.querySelectorAll(`li.${CSS_CLASSES.HISTORY_ITEM}`).length).toBe(1);
+      const titleElement = listEl.querySelector(`li.${CSS_CLASSES.HISTORY_ITEM} b`);
       expect(titleElement?.textContent).toBe("Test");
     });
   });

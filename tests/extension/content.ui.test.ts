@@ -5,6 +5,7 @@ import {
   setButtonHiddenState,
   resetButtonPosition,
 } from "../../extension/src/content";
+import { CSS_CLASSES, UI_CONSTANTS } from "../../extension/src/core/constants";
 
 describe("content.ts UI functions", () => {
   beforeEach(() => {
@@ -28,7 +29,7 @@ describe("content.ts UI functions", () => {
       const btn = document.body.querySelector("button");
       expect(btn).not.toBeNull();
       // ID should start with our prefix
-      expect(btn?.id).toMatch(/^evd-download-button-/);
+      expect(btn?.id).toMatch(new RegExp(`^${UI_CONSTANTS.BUTTON_ID_PREFIX}`));
     });
   });
 
@@ -37,9 +38,9 @@ describe("content.ts UI functions", () => {
       const btn = document.createElement("button");
       document.body.appendChild(btn);
       ensureDownloadButtonStyle(btn);
-      expect(btn.classList.contains("evd-visible")).toBe(true);
+      expect(btn.classList.contains(CSS_CLASSES.EVD_VISIBLE)).toBe(true);
       const hasContrastClass =
-        btn.classList.contains("evd-on-dark") || btn.classList.contains("evd-on-light");
+        btn.classList.contains(CSS_CLASSES.EVD_ON_DARK) || btn.classList.contains(CSS_CLASSES.EVD_ON_LIGHT);
       expect(hasContrastClass).toBe(true);
     });
   });

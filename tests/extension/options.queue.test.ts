@@ -3,6 +3,7 @@
  */
 
 import "../jest/jest.setup";
+import { CSS_CLASSES, DOM_SELECTORS } from "../../extension/src/core/constants";
 
 describe("Options Queue Admin", () => {
   beforeEach(() => {

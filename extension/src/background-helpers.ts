@@ -4,6 +4,7 @@
  */
 
 import { Theme } from "./types";
+import { logger } from "./core/logger";
 
 // Function to get icon paths for different themes - using chrome.runtime.getURL for proper extension URL resolution
 export function getActionIconPaths(): Record<Theme, Record<string, string>> {
@@ -60,17 +61,22 @@ export function applyThemeToActionIcon(themeToApply: Theme): void {
   const paths = getActionIconPaths()[validTheme];
 
   if (!paths) {
-    console.warn(
-      "[BG] No icon paths found for theme: " + validTheme + ". Defaulting to light theme icons."
+    logger.warn(
+      `No icon paths found for theme: ${validTheme}. Defaulting to light theme icons.`,
+      { component: "background-helpers", operation: "applyThemeToActionIcon" }
     );
   }
 
   if (typeof chrome !== "undefined" && chrome.action && chrome.action.setIcon) {
     chrome.action.setIcon({ path: paths || getActionIconPaths().light }, () => {
       if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.lastError) {
-        console.error(
-          "[BG] Error setting action icon for theme " + validTheme + ":",
-          chrome.runtime.lastError.message
+        logger.error(
+          `Error setting action icon for theme ${validTheme}:`,
+          {
+            component: "background-helpers",
+            operation: "applyThemeToActionIcon",
+            data: chrome.runtime.lastError.message
+          }
         );
       }
     });

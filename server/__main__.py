@@ -102,6 +102,27 @@ def graceful_shutdown(sig: int | None = None, _frame: types.FrameType | None = N
     # Save current progress state
     save_download_state()
 
+    # Clear queue on shutdown if configured
+    try:
+        cfg = Config.load()
+        clear_on_stop = bool(os.getenv("CLEAR_QUEUE_ON_STOP", "").lower() in {"1", "true", "yes", "on"})
+        if not clear_on_stop:
+            try:
+                clear_on_stop = bool(getattr(cfg, "clear_queue_on_stop", False))
+            except Exception:
+                logger.debug("Failed to get clear_queue_on_stop setting, defaulting to False", exc_info=True)
+                clear_on_stop = False
+        if clear_on_stop:
+            try:
+                from server.queue import queue_manager
+
+                queue_manager.clear()
+                logger.info("Queue cleared on shutdown due to CLEAR_QUEUE_ON_STOP setting.")
+            except Exception:
+                logger.debug("Failed to clear queue during shutdown", exc_info=True)
+    except Exception:
+        logger.debug("Error evaluating CLEAR_QUEUE_ON_STOP during shutdown", exc_info=True)
+
     # Terminate active downloads
     terminate_active_downloads()
 
@@ -192,7 +213,7 @@ def _remove_part_files(part_files: "list[Path]") -> None:
         try:
             logger.debug(f"Removing partial download file: {part_file}")
             part_file.unlink()
-        except Exception as e:  # noqa: PERF203
+        except Exception as e:
             logger.warning(f"Failed to remove {part_file}: {e}")
 
 
@@ -208,7 +229,7 @@ def find_orphaned_processes(port: int) -> "list[int]":
             try:
                 if _is_potential_server_process(proc) and _process_uses_port(proc, port):
                     orphaned_pids.append(proc.info["pid"])
-            except (psutil.NoSuchProcess, psutil.AccessDenied):  # noqa: PERF203
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
                 continue
     except Exception:
         logger.debug("Error while scanning processes for orphaned PIDs", exc_info=True)
@@ -267,6 +288,7 @@ def _process_uses_port(proc: psutil.Process, port: int) -> bool:
                 conns = []
         return any(getattr(conn.laddr, "port", None) == port for conn in conns)
     except Exception:
+        logger.debug(f"Error checking if process uses port {port}", exc_info=True)
         return False
 
 
@@ -314,7 +336,7 @@ def _terminate_download_processes_gracefully(procs: "list[psutil.Process]") -> N
             if proc.is_running():
                 logger.debug(f"Sending SIGTERM to process {proc.pid}")
                 proc.terminate()
-        except Exception as e:  # noqa: PERF203
+        except Exception as e:
             logger.debug(f"Error terminating process {proc.pid}: {e}")
 
 
@@ -334,7 +356,7 @@ def _kill_download_processes(procs: "list[psutil.Process]") -> None:
         try:
             logger.debug(f"Sending SIGKILL to process {proc.pid}")
             proc.kill()
-        except Exception as e:  # noqa: PERF203
+        except Exception as e:
             logger.debug(f"Error killing process {proc.pid}: {e}")
 
 
@@ -425,6 +447,16 @@ def _run_flask_server(cfg: Config, host: str, port: int, lock_handle: TextIO) ->
     except Exception:
         # Do not block server startup on resume errors
         logger.debug("Failed to evaluate resume_on_start flag", exc_info=True)
+    # Best-effort: consolidate lingering per-video metadata JSON into history on startup
+    try:
+        from server.history import consolidate_lingering_info_json
+
+        with app.app_context():
+            processed = consolidate_lingering_info_json(None, recursive=True)
+            if processed:
+                logger.info("Consolidated and removed %d lingering metadata JSON files on startup", processed)
+    except Exception:
+        logger.debug("Startup metadata consolidation skipped due to error", exc_info=True)
     # Emit a clear startup line to the configured log file
     with contextlib.suppress(Exception):
         logger.info(f"Server starting on {host}:{port}")

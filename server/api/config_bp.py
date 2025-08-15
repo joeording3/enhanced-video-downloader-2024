@@ -83,6 +83,8 @@ def _handle_get_config(cfg: Config) -> tuple[Response, int]:
                 "evd_workers": _int_or_none(env_workers),
                 "evd_verbose": _truthy(env_verbose),
                 "ytdlp_concurrent_fragments": _int_or_none(env_ytdlp_conc),
+                # New: expose queue clear toggle from env
+                "clear_queue_on_stop": _truthy(os.getenv("CLEAR_QUEUE_ON_STOP")),
             }
         )
         return _with_cors(jsonify(data), 200)
@@ -140,6 +142,11 @@ def _handle_post_config(cfg: Config) -> tuple[Response, int]:
             v = data.pop("ytdlp_concurrent_fragments")
             if v is not None:
                 env_updates["YTDLP_CONCURRENT_FRAGMENTS"] = str(int(v))
+        # Clear queue on stop toggle (env-backed)
+        if "clear_queue_on_stop" in data:
+            v = data.pop("clear_queue_on_stop")
+            if v is not None:
+                env_updates["CLEAR_QUEUE_ON_STOP"] = "true" if bool(v) else "false"
         # Allow setting consolidated history file via env (optional)
         if "history_file" in data:
             v = data["history_file"]
@@ -161,6 +168,24 @@ def _handle_post_config(cfg: Config) -> tuple[Response, int]:
                 for k, v in env_updates.items():
                     set_key(dotenv_path, k, v)
                     os.environ[k] = v
+
+        # Log a concise summary of what was updated for visibility in Server Logs UI
+        try:
+            updated_config_keys = list(data.keys()) if isinstance(data, dict) else []
+            updated_env_keys = list(env_updates.keys()) if isinstance(env_updates, dict) else []
+            # Surface the queue clear toggle explicitly since it's commonly used
+            clear_flag = env_updates.get("CLEAR_QUEUE_ON_STOP")
+            logger.info(
+                "API /config update applied",
+                extra={
+                    "updated_config_keys": updated_config_keys,
+                    "updated_env_keys": updated_env_keys,
+                    "clear_queue_on_stop": clear_flag,
+                },
+            )
+        except Exception:
+            # Never fail the request due to logging issues
+            ...
 
         # Return merged view including env-only values
         merged = cfg.as_dict()

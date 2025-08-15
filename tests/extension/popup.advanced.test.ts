@@ -10,6 +10,7 @@
 /* eslint-env jest */
 
 import * as popup from "../../extension/src/popup";
+import { CSS_CLASSES, DOM_SELECTORS } from "../../extension/src/core/constants";
 
 describe("loadConfig", () => {
   beforeEach(() => {
@@ -46,7 +47,7 @@ describe("updateDownloadDirDisplay", () => {
   });
 
   it("updates text when element present", async () => {
-    document.body.innerHTML = '<div id="download-dir-display"></div>';
+    document.body.innerHTML = `<div id="${DOM_SELECTORS.DOWNLOAD_DIR_DISPLAY.replace("#", "")}"></div>`;
     // Stub chrome to force storage fallback with download_dir
     (global as any).chrome = {
       runtime: {
@@ -62,7 +63,7 @@ describe("updateDownloadDirDisplay", () => {
       },
     };
     await popup.updateDownloadDirDisplay();
-    expect(document.getElementById("download-dir-display")?.textContent).toBe("Saving to: /tmp");
+    expect(document.getElementById(DOM_SELECTORS.DOWNLOAD_DIR_DISPLAY.replace("#", ""))?.textContent).toBe("Saving to: /tmp");
   });
 });
 
@@ -73,7 +74,7 @@ describe("updatePortDisplay", () => {
   });
 
   it("updates text on presence", async () => {
-    document.body.innerHTML = '<div id="server-port-display"></div>';
+    document.body.innerHTML = `<div id="${DOM_SELECTORS.SERVER_PORT_DISPLAY.replace("#", "")}"></div>`;
     // Stub chrome to return serverConfig via runtime
     (global as any).chrome = {
       runtime: {
@@ -85,7 +86,7 @@ describe("updatePortDisplay", () => {
       storage: { local: { get: jest.fn() } },
     };
     await popup.updatePortDisplay();
-    expect(document.getElementById("server-port-display")?.textContent).toBe("Server Port: 1234");
+    expect(document.getElementById(DOM_SELECTORS.SERVER_PORT_DISPLAY.replace("#", ""))?.textContent).toBe("Server Port: 1234");
   });
 });
 
@@ -96,7 +97,7 @@ describe("showConfigErrorIfPresent", () => {
   });
 
   it("displays error when configError set", () => {
-    document.body.innerHTML = '<div id="config-error-display"></div>';
+    document.body.innerHTML = `<div id="${DOM_SELECTORS.CONFIG_ERROR_DISPLAY.replace("#", "")}"></div>`;
     (global as any).chrome = {
       storage: {
         local: {
@@ -105,10 +106,10 @@ describe("showConfigErrorIfPresent", () => {
       },
     };
     popup.showConfigErrorIfPresent();
-    const el = document.getElementById("config-error-display");
+    const el = document.getElementById(DOM_SELECTORS.CONFIG_ERROR_DISPLAY.replace("#", ""));
     expect(el?.textContent).toBe("Configuration Error: oops");
-    expect(el?.classList.contains("hidden")).toBe(false);
-    expect(el?.classList.contains("evd-visible")).toBe(true);
+    expect(el?.classList.contains(CSS_CLASSES.HIDDEN)).toBe(false);
+    expect(el?.classList.contains(CSS_CLASSES.EVD_VISIBLE)).toBe(true);
   });
 });
 
@@ -127,9 +128,9 @@ describe("createErrorListItem", () => {
     const li = popup.createErrorListItem("id1", info);
     // Data attribute and title
     expect(li.dataset.downloadId).toBe("id1");
-    expect(li.querySelector(".item-title")?.textContent).toContain("file.mp4");
+    expect(li.querySelector(`.${CSS_CLASSES.ITEM_STATUS}`)?.textContent).toContain("file.mp4");
     // Details element should be present
-    const detailsEl = li.querySelector("details.error-details");
+    const detailsEl = li.querySelector(`details.${CSS_CLASSES.ERROR_DETAILS}`);
     expect(detailsEl).not.toBeNull();
     const summary = detailsEl?.querySelector("summary");
     expect(summary?.textContent).toBe("Details");
@@ -139,10 +140,10 @@ describe("createErrorListItem", () => {
     summary?.click();
     expect(detailsEl?.hasAttribute("open")).toBe(true);
     // Content should contain error info
-    const content = detailsEl?.querySelector(".error-details-content");
+    const content = detailsEl?.querySelector(`.${CSS_CLASSES.ERROR_DETAILS_CONTENT}`);
     expect(content?.textContent).toContain("TypeX: msg (orig)");
     // Contextual help link should be present and callable
-    const helpBtn = detailsEl?.querySelector("button.error-help-link");
+    const helpBtn = detailsEl?.querySelector(`button.${CSS_CLASSES.ERROR_HELP_LINK}`);
     expect(helpBtn).not.toBeNull();
     (helpBtn as HTMLElement)?.click();
     expect((global as any).chrome.runtime.openOptionsPage).toHaveBeenCalled();
@@ -152,8 +153,8 @@ describe("createErrorListItem", () => {
 describe("createGenericListItem", () => {
   it("renders paused status with resume button", () => {
     const li = popup.createGenericListItem("id2", { status: "paused" });
-    expect(li.classList.contains("status-paused")).toBe(true);
-    const btn = li.querySelector("button.resume-button");
+    expect(li.classList.contains(`status-${CSS_CLASSES.STATUS_PREFIX}paused`)).toBe(true);
+    const btn = li.querySelector(`button.${CSS_CLASSES.RESUME_BUTTON}`);
     expect(btn).not.toBeNull();
   });
 });
@@ -163,7 +164,7 @@ describe("createQueuedListItem", () => {
     (global as any).chrome = { runtime: { sendMessage: jest.fn() } };
     const item = { id: "id3", filename: "f.mp4" };
     const li = popup.createQueuedListItem(item);
-    const btn = li.querySelector("button.cancel-button");
+    const btn = li.querySelector(`button.${CSS_CLASSES.CANCEL_BUTTON}`);
     (btn as HTMLElement)?.click();
     expect((global as any).chrome.runtime.sendMessage).toHaveBeenCalledWith(
       { type: "cancelDownload", downloadId: "id3" },

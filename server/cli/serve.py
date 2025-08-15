@@ -153,7 +153,7 @@ def stop_command() -> None:
         try:
             proc.terminate()
             click.echo(f"Terminated process {proc.pid}")
-        except Exception as e:  # noqa: PERF203
+        except Exception as e:
             click.echo(f"Error terminating process {proc.pid}: {e}")
 
     # Remove lock file

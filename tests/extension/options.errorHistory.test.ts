@@ -1,5 +1,6 @@
 import { loadErrorHistory } from "extension/src/options";
 import * as historyModule from "extension/src/history";
+import { CSS_CLASSES, DOM_SELECTORS } from "../../extension/src/core/constants";
 
 describe("loadErrorHistory", () => {
   let listEl: HTMLElement;

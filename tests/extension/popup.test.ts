@@ -9,6 +9,7 @@ import {
   createActiveListItem,
   renderDownloadStatus,
 } from "../../extension/src/popup";
+import { CSS_CLASSES, DOM_SELECTORS } from "../../extension/src/core/constants";
 
 // Mock the utils logger
 jest.mock("../../extension/src/lib/utils", () => ({
@@ -38,15 +39,16 @@ describe("Popup Script Tests", () => {
     mockLogger.debug.mockClear();
 
     // Setup DOM
+    const toggleId = DOM_SELECTORS.TOGGLE_BUTTON.replace("#", "");
     document.body.innerHTML =
-      '<div id="status"></div>' +
-      '<button id="toggle-enhanced-download-button"></button>' +
-      '<div id="history-items"></div>' +
-      '<div id="download-dir-display"></div>' +
-      '<div id="server-port-display"></div>' +
-      '<div id="config-error-display" style="display: none;"></div>' +
-      '<div id="download-status"></div>' +
-      '<div id="download-queue"></div>' +
+      `<div id="${DOM_SELECTORS.STATUS_MESSAGE.replace("#", "")}"></div>` +
+      `<button id="${toggleId}"></button>` +
+      `<div id="${DOM_SELECTORS.HISTORY_ITEMS.replace("#", "")}"></div>` +
+      `<div id="${DOM_SELECTORS.DOWNLOAD_DIR_DISPLAY.replace("#", "")}"></div>` +
+      `<div id="${DOM_SELECTORS.SERVER_PORT_DISPLAY.replace("#", "")}"></div>` +
+      `<div id="${DOM_SELECTORS.CONFIG_ERROR_DISPLAY.replace("#", "")}" style="display: none;"></div>` +
+      `<div id="${DOM_SELECTORS.DOWNLOAD_STATUS.replace("#", "")}"></div>` +
+      `<div id="${DOM_SELECTORS.DOWNLOAD_QUEUE.replace("#", "")}"></div>` +
       '<img id="header-logo" src="icon48.png" />';
 
     // Reset Chrome API mocks
@@ -65,30 +67,30 @@ describe("Popup Script Tests", () => {
   describe("Status Management", () => {
     it("should set status message", () => {
       setStatus("Test message", false, 100);
-      const statusEl = document.getElementById("status");
+      const statusEl = document.getElementById(DOM_SELECTORS.STATUS_MESSAGE.replace("#", ""));
       expect(statusEl?.textContent).toBe("Test message");
-      expect(statusEl?.className).toBe("status-success");
+      expect(statusEl?.className).toBe(CSS_CLASSES.STATUS_SUCCESS);
     });
 
     it("should set error status", () => {
       setStatus("Error message", true, 100);
-      const statusEl = document.getElementById("status");
+      const statusEl = document.getElementById(DOM_SELECTORS.STATUS_MESSAGE.replace("#", ""));
       expect(statusEl?.textContent).toBe(
         "Error messageTip: check your network connection and try again"
       );
-      expect(statusEl?.className).toBe("status-error");
+      expect(statusEl?.className).toBe(CSS_CLASSES.STATUS_ERROR);
       // Check that error tip is added
-      expect(statusEl?.querySelector(".error-tip")).toBeTruthy();
+      expect(statusEl?.querySelector(`.${CSS_CLASSES.ERROR_TIP}`)).toBeTruthy();
     });
 
     it("should apply dark theme", () => {
       applyPopupTheme("dark");
-      expect(document.body.classList.contains("dark-theme")).toBe(true);
+      expect(document.body.classList.contains(CSS_CLASSES.DARK_THEME)).toBe(true);
     });
 
     it("should apply light theme", () => {
       applyPopupTheme("light");
-      expect(document.body.classList.contains("dark-theme")).toBe(false);
+      expect(document.body.classList.contains(CSS_CLASSES.DARK_THEME)).toBe(false);
     });
   });
 
@@ -101,7 +103,7 @@ describe("Popup Script Tests", () => {
 
       loadAndRenderHistory();
 
-      const container = document.getElementById("history-items");
+      const container = document.getElementById(DOM_SELECTORS.HISTORY_ITEMS.replace("#", ""));
       // The actual implementation doesn't clear the container on error, it just doesn't add items
       expect(container).toBeTruthy();
     });
@@ -167,7 +169,7 @@ describe("Popup Script Tests", () => {
       const item = createQueuedListItem({ id: "queued-123" });
 
       expect(item).toBeInstanceOf(HTMLLIElement);
-      expect(item.classList.contains("queued-item")).toBe(true);
+      expect(item.classList.contains(CSS_CLASSES.QUEUED_ITEM)).toBe(true);
     });
 
     it("should create active list item", () => {
@@ -191,14 +193,14 @@ describe("Popup Script Tests", () => {
 
       renderDownloadStatus(status);
 
-      const statusEl = document.getElementById("download-status");
+      const statusEl = document.getElementById(DOM_SELECTORS.DOWNLOAD_STATUS.replace("#", ""));
       expect(statusEl).toBeTruthy();
     });
 
     it("should handle null status", () => {
       renderDownloadStatus({ active: {}, queue: [] });
 
-      const statusEl = document.getElementById("download-status");
+      const statusEl = document.getElementById(DOM_SELECTORS.DOWNLOAD_STATUS.replace("#", ""));
       expect(statusEl).toBeTruthy();
     });
   });
@@ -206,7 +208,7 @@ describe("Popup Script Tests", () => {
   describe("Theme Management", () => {
     it("should apply dark theme", () => {
       applyPopupTheme("dark");
-      expect(document.body.classList.contains("dark-theme")).toBe(true);
+      expect(document.body.classList.contains(CSS_CLASSES.DARK_THEME)).toBe(true);
     });
   });
 });

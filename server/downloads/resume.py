@@ -109,15 +109,16 @@ def resume_all_incomplete_downloads() -> dict[str, Any]:
             "message": "Download directory invalid, nothing to resume.",
         }
 
-    logger.info(f"Scanning {download_dir} for partial downloads to resume...")
-    # Common partial file extensions
-    # yt-dlp typically uses .part, but can also leave .ytdl files if interrupted early.
-    # gallery-dl might use others, or just incomplete files.
-    # Include both .part and .ytdl sidecar temp files
-    patterns = ("*.part", "*.ytdl")
+    logger.info(f"Scanning {download_dir} (recursively) for partial downloads to resume...")
+    # Common partial file extensions. Search recursively to catch nested structures.
+    patterns = ("**/*.part", "**/*.ytdl")
     part_files: list[str] = []
-    for pattern in patterns:
-        part_files.extend(str(p) for p in Path(download_dir).glob(pattern))
+    try:
+        base = Path(download_dir)
+        for pattern in patterns:
+            part_files.extend(str(p) for p in base.glob(pattern))
+    except Exception:
+        logger.error("Error scanning for partial files", exc_info=True)
 
     resumed_count = 0
     failed_to_resume_count = 0

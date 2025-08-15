@@ -6,7 +6,7 @@
 
 - **Overall Test Coverage**: 67% (target: 80%)
 - **Python Server Coverage**: 67% (target: 80%)
-- **Frontend Extension Coverage**: 76.68% (target: 80%)
+- **Frontend Extension Coverage**: 62.95% (target: 80%)
 - **JS/TS Mutation Score**: 89.47% (target: 80%, minimum: 70%)
 - **Python Mutation Testing**: Baseline establishment in progress
 - **Code Quality**: 100% lint compliance
@@ -288,7 +288,7 @@ make audit-docs        # Documentation check
 
 - **Overall Test Coverage**: 67% (target: 80%)
 - **Python Server Coverage**: 67% (target: 80%)
-- **Frontend Extension Coverage**: 76.68% (target: 80%)
+- **Frontend Extension Coverage**: 62.95% (target: 80%)
 - **JS/TS Mutation Score**: 98.85% (target: 80%, minimum: 70%)
 
 ### Test Types
@@ -865,6 +865,7 @@ Server configuration is environment-driven and persisted to `.env` via the API/C
 - `log_level`
 - `console_log_level`
 - `log_file`
+- `resume_on_start` (enable with env `RESUME_ON_START=true`)
 
 ### Configuration via CLI
 
@@ -895,6 +896,8 @@ videodownloader-server utils config set <key> <value>
 - `POST /api/gallery-dl`: Download galleries using gallery-dl
 - `GET /api/status`: Get download progress and status
 - `GET /api/history`: Get download history
+- `POST /api/history`: Sync/append/clear/delete-one history entries. Deletion accepts `id` or
+  `download_id`, or `url`/`webpage_url` and is idempotent.
 - `GET /api/config`: Get server configuration
 - `POST /api/config`: Update server configuration
 - `GET /api/logs`: Get server logs
@@ -941,6 +944,18 @@ videodownloader-server utils config set <key> <value>
   - `history.ts`: History page functionality
   - `lib/utils.ts`: Shared utility functions
   - `types/`: TypeScript type definitions
+
+### Port Resolution (Single Source)
+
+Background code must resolve the server port via a single helper:
+
+```ts
+// Use this helper instead of reading getServerPort() or storage directly
+const p = await getEffectiveServerPort();
+```
+
+Do not call `getServerPort()` or `storageService.getPort()` directly in new code. The helper prefers
+the cached port and seeds it with the default when missing, avoiding dual sources.
 
 ### Adding New Extension Features
 
@@ -1290,6 +1305,10 @@ Follow this folder-by-folder conversion order:
    `resume.py`, `system_maintenance.py`).
 6. **server/downloads/** (`ytdlp.py`, `gallery_dl.py`).
 7. **server/history.py** and **server/utils.py**.
+   - Note: `server/history.py` includes `consolidate_lingering_info_json` which imports lingering
+     `*.info.json` sidecars into consolidated history and removes them. It is invoked on server
+     startup (best-effort) and from the CLI cleanup utility. History deletion is idempotent and
+     accepts `id`/`download_id` or `url`/`webpage_url` for matching.
 8. **extension/src/lib/utils.ts**.
 9. **extension/src/content.ts**, **history.ts**, **options.ts**, **popup.ts**.
 10. **extension/src/background-helpers.ts** and **background.ts**.
@@ -1598,19 +1617,26 @@ make audit-docs        # Documentation check
 ## Current Priorities
 
 ### Critical (Week 1-2)
-1. **Test Quality Crisis Resolution**: Improve JS/TS mutation scores from 38.24% to 80%
-2. **Python Mutation Testing Baseline**: Establish baseline and improvement plan
-3. **Server Test Coverage**: Continue improving remaining modules to 80%
+1. Centralize remaining hardcoded strings
+   - Replace any lingering `getElementById`/`querySelector` IDs with `DOM_SELECTORS`
+   - Replace any remaining UI classes with `CSS_CLASSES`
+   - Confirm all message type and storage key literals are gone in extension sources and tests
+2. API constants adoption
+   - Ensure all background fetches build URLs from `NETWORK_CONSTANTS.SERVER_BASE_URL` and endpoint constants
+   - Remove any stray `http://127.0.0.1:${port}/...` string templates
+3. Test suite stability
+   - Keep background helpers exported for tests where needed
+   - Maintain defensive error handling in test mode branches (avoid unhandled rejections)
 
 ### High Priority (Week 2-4)
-1. **TypeScript Migration**: Complete conversion of remaining extension modules
-2. **Docstring Standardization**: Convert all Python docstrings to reStructuredText format
-3. **Test Pattern Documentation**: Create comprehensive test pattern documentation
+1. Add `domManager` wrappers in popup/options and migrate direct DOM selection gradually
+2. Consolidate options validation messages and selectors using `CSS_CLASSES`/`DOM_SELECTORS`
+3. Author test pattern documentation for message handlers and storage interactions
 
 ### Medium Priority (Week 3-6)
-1. **Coverage Expansion**: Add tests for critical edge cases and error conditions
-2. **Integration Test Enhancement**: Improve complex workflow testing
-3. **Performance Optimization**: Optimize slow tests and improve CI pipeline efficiency
+1. Coverage expansion in low-hit background paths (port discovery fallbacks, legacy logs endpoints)
+2. Integration enhancements for queue/history sync and server restart flows
+3. Performance: reduce background polling work under heavy test loads
 
 ## Troubleshooting
 

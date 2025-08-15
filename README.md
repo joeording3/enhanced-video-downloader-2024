@@ -172,6 +172,20 @@ Enhanced Video Downloader/
 Note: Test suite and Playwright E2E audit details now live in `tests/testing.md` (Test Audit &
 Coverage Metrics). The old standalone audit reports have been removed.
 
+### Testing progress (frontend)
+
+- Background service worker coverage increased with focused tests on restart endpoints, queue
+  reorder, badge/status UI, and message handlers.
+- Current snapshots (Jest): `background.ts` Statements 54.00% / Lines 54.71%; extension overall
+  Statements 61.48% / Lines 62.95%.
+
+Planned next steps to raise coverage:
+
+- Backoff growth and discovery notification paths in `findServerPort`
+- `GET_CONFIG` fallback when server returns empty config
+- Status polling transitions and icon updates across connect/disconnect
+- Non-test-mode success paths for `GET_LOGS`/`CLEAR_LOGS`
+
 #### E2E Media Detection Matrix
 
 Run the Playwright-based real-site checks headfully. By default a small, stable list is used.
@@ -356,8 +370,8 @@ CLI logging/output hygiene
 
 - CLI logs are plain text and printed to stderr to keep stdout clean for command output.
 - Default CLI verbosity is WARNING; pass `--verbose` to see INFO/DEBUG.
-- Server and Gunicorn logs are written as NDJSON to the active `LOG_PATH`; when starting via
-  the CLI in Gunicorn mode, `accesslog` and `errorlog` are routed to that same file by default.
+- Server and Gunicorn logs are written as NDJSON to the active `LOG_PATH`; when starting via the CLI
+  in Gunicorn mode, `accesslog` and `errorlog` are routed to that same file by default.
 
 ### Using Docker
 
@@ -428,7 +442,12 @@ message for specifics (network error vs server response).
   - Real-time progress updates (speed, ETA, file size)
 - **Queued Downloads**: View pending downloads with priority management
 - **Server Status**: Visual indicator showing server connectivity
-- **History Toggle**: Quick access to download history
+- **History entries**: For completed/errored items, click the X/Delete on a row to remove a single
+  entry.
+  - Deletes locally and also requests server-side deletion when connected (matches by
+    `id`/`download_id` or `url`/`webpage_url`, idempotent)
+  - Active/queued items still use X as Cancel; once inactive, X acts as Delete
+  - History list updates live on deletion
 
 ### Options Page
 
@@ -438,13 +457,13 @@ message for specifics (network error vs server response).
 - **Theme Toggle**: Switch between light and dark themes
 - **Log Display**: View server logs with different verbosity levels
 - **Log File Path**: The log viewer reads from the server's current log file path exposed via
-  `/api/config` as `log_file`. If `LOG_PATH` is not set in the environment, the server uses a default at
-  startup to a stable default path `server_output.log` in the project root. You can override this
-  path from the Options page (Log File field) or by setting `LOG_PATH` in your shell or `.env`. Logs
-  are emitted in structured NDJSON format (one JSON object per line) so you can parse and sort
-  easily. Request logs include optional `start_ts` and `duration_ms` fields for latency analysis.
-  When running under Gunicorn via the CLI helpers, Gunicorn's access and error logs are also wired
-  by default to the same log file.
+  `/api/config` as `log_file`. If `LOG_PATH` is not set in the environment, the server uses a
+  default at startup to a stable default path `server_output.log` in the project root. You can
+  override this path from the Options page (Log File field) or by setting `LOG_PATH` in your shell
+  or `.env`. Logs are emitted in structured NDJSON format (one JSON object per line) so you can
+  parse and sort easily. Request logs include optional `start_ts` and `duration_ms` fields for
+  latency analysis. When running under Gunicorn via the CLI helpers, Gunicorn's access and error
+  logs are also wired by default to the same log file.
 
   Log path precedence:
 
@@ -457,6 +476,8 @@ message for specifics (network error vs server response).
 - **Download History**: Browse local download history with pagination. Controls include Items per
   page, Prev/Next navigation, and a clear-all action under Actions → Clear History. The view updates
   live when new history entries are added.
+  - Deleting a single entry is idempotent and also requests server-side removal when the server is
+    available. The server accepts `id`/`download_id` or `url`/`webpage_url` for matching.
 - **Server Status**: Real-time server connectivity status
 - **Settings Persistence**: All settings are automatically saved and restored
 - **Smart Injection**: Toggle whether the in-page Download button is shown only when a downloadable
@@ -492,7 +513,10 @@ Notes:
   browser.
 - The server writes a consolidated download history JSON. By default it lives at
   `<download_dir>/history.json`; you can override the path in Options (History File) or via the
-  `HISTORY_FILE` environment variable. Per-video `.info.json` metadata is ingested and then removed.
+  `HISTORY_FILE` environment variable. Per-video `.info.json` metadata is ingested immediately on
+  completion and the sidecar is removed. On server startup and during
+  `videodownloader-server utils cleanup`, any lingering `*.info.json` files in the download
+  directory are imported into history (skipping simple duplicates) and then deleted.
 
 ### Background Features
 
@@ -523,8 +547,14 @@ Notes:
 ### Configure
 
 In the popup or options page set your download directory, server port, debug & log level. Settings
-write through the server API; configuration is environment-driven and persisted via `.env` updates
-when using the CLI, not a central `config.json` file.
+write through the server API; configuration is environment-driven and persisted via `.env` updates.
+The Options Save posts only non-empty fields and also persists env-backed keys like:
+
+- `MAX_CONCURRENT_DOWNLOADS`: set via Options → Server Configuration → “Max Concurrent Downloads”
+- `CLEAR_QUEUE_ON_STOP`: set via Options → Server Configuration → “Clear queued items on server
+  stop/restart”
+
+If you edit `.env` manually, restart the server for changes to take effect.
 
 ### Download
 
@@ -534,15 +564,16 @@ the popup. Watch progress live in the popup; completed downloads move to history
 ### History & Resume
 
 View past downloads in History (filter by status, domain). History is stored in a single JSON file
-at `<download_dir>/history.json` by default (configurable via Options → History File or `HISTORY_FILE`).
-Entries include full metadata ingested from yt-dlp's `.info.json`. Use Resume partials in options to
-recover interrupted tasks. For galleries, the server invokes `gallery-dl` with continuation enabled
-and the configured download directory, attempting to resume previously started gallery downloads.
+at `<download_dir>/history.json` by default (configurable via Options → History File or
+`HISTORY_FILE`). Entries include full metadata ingested from yt-dlp's `.info.json`. Use Resume
+partials in options to recover interrupted tasks. For galleries, the server invokes `gallery-dl`
+with continuation enabled and the configured download directory, attempting to resume previously
+started gallery downloads.
 
 ## Configuration
 
-Server configuration is derived from environment variables (and persisted to `.env` by CLI helpers)
-and includes:
+Server configuration is derived from environment variables (and persisted to `.env` by API/CLI) and
+includes:
 
 - `server_port`: The port the server listens on (default: 5001, but see port discovery).
 - `download_dir`: Directory where downloaded videos are saved (e.g.,
@@ -555,10 +586,17 @@ and includes:
   `"error"`, or `"critical"`. Default: `"info"`.
 - `console_log_level`: String, controls console output verbosity. Can be `"debug"`, `"info"`,
   `"warning"`, `"error"`, or `"critical"`. Default: `"warning"` (shows only warnings and errors).
-- `log_file`: File path used by the server's log endpoints. If not provided, the server sets
-  the server uses `<project_root>/server_output.log` by default so the Options page can display the
+- `log_file`: File path used by the server's log endpoints. If not provided, the server sets the
+  server uses `<project_root>/server_output.log` by default so the Options page can display the
   active path. You can update it via the Options page or by setting `LOG_PATH` in the environment
   (persisted to `.env` when changed via the API/CLI).
+- `resume_on_start`: Boolean. If `true`, on startup the server scans the configured `download_dir`
+  for partial/incomplete downloads and attempts to resume them automatically. Default: `false`.
+  Enable by setting `RESUME_ON_START=true` in your environment or `.env`.
+- `max_concurrent_downloads`: Integer. Maximum number of simultaneous downloads. Default: `3`. Env
+  key: `MAX_CONCURRENT_DOWNLOADS`. Can be set from Options → Server Configuration.
+- `clear_queue_on_stop`: Boolean. If `true`, queued (not-yet-started) items are cleared on server
+  shutdown/restart. Env key: `CLEAR_QUEUE_ON_STOP`. Can be set from Options → Server Configuration.
 
 Log path resolution details
 
@@ -589,6 +627,11 @@ export YTDLP_CONCURRENT_FRAGMENTS=8
 
 # .env file
 YTDLP_CONCURRENT_FRAGMENTS=8
+
+# Auto-resume on startup
+export RESUME_ON_START=true
+# or in .env
+RESUME_ON_START=true
 ```
 
 ---
@@ -596,12 +639,17 @@ YTDLP_CONCURRENT_FRAGMENTS=8
 ### Hardcoded Variables Policy
 
 - Ports: Use centralized accessors in `server/constants.py` and mirrored helpers in
-  `extension/src/core/constants.ts` (e.g., `get_server_port()`, `get_port_range()`), never literals.
-- Hosts: Use the centralized base host from `NETWORK_CONSTANTS.SERVER_BASE_URL` in
-  `extension/src/core/constants.ts` when building URLs. Avoid duplicating `http://127.0.0.1` in
-  fetch calls.
+  `extension/src/core/constants.ts` (e.g., `getServerPort()`, `getPortRange()`), never literals.
+- Hosts: Use the centralized base host from `NETWORK_CONSTANTS.SERVER_BASE_URL` when building URLs.
+  Avoid duplicating `http://127.0.0.1` in fetch calls.
 - API Endpoints: Use endpoint constants (e.g., `CONFIG_ENDPOINT`, `HEALTH_ENDPOINT`,
-  `DOWNLOAD_ENDPOINT`) from `extension/src/core/constants.ts` instead of string literals.
+  `DOWNLOAD_ENDPOINT`, `LOGS_ENDPOINT`, `LOGS_CLEAR_ENDPOINT`) instead of string literals.
+- Message Types: Use `MESSAGE_TYPES` across background/content/popup/options/tests. Avoid inline
+  string comparisons or sendMessage literals.
+- Storage Keys: Use `STORAGE_KEYS` for all `chrome.storage.local.get/set` keys.
+- CSS Classes: Use `CSS_CLASSES` for UI state (visibility, drag, status pill variants, server
+  status, validation, list items).
+- DOM Selectors: Use `DOM_SELECTORS` for `querySelector`/`querySelectorAll` instead of raw `#id`.
 - File paths: Avoid hardcoded OS-specific paths. Server data/lock files are under `server/data/` by
   default; tests should prefer `tempfile`/`pytest` tmp dirs.
 - Timeouts: Centralize extension timeouts under `NETWORK_CONSTANTS`; server/CLI timeouts should be
@@ -864,4 +912,5 @@ For complete API documentation, see `server/api/api.md`.
 
 ---
 
-_Last updated: 2025-01-27_
+_Last updated: 2025-01-27 (centralized constants adoption: messages, storage, CSS, selectors, logs
+endpoints)_

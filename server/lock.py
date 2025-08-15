@@ -113,8 +113,33 @@ def get_lock_pid(lock_path: Path) -> int | None:
                 pid_str, _ = content.split(":", 1)
                 if pid_str.isdigit():
                     return int(pid_str)
-        except Exception:
-            # If parsing fails, return None gracefully
+                # Log non-digit PID format
+                try:
+                    import logging
+                    logging.getLogger(__name__).warning(
+                        f"Lock file PID format invalid: '{pid_str}' is not a digit"
+                    )
+                except Exception:
+                    pass
+            else:
+                # Log malformed content
+                try:
+                    import logging
+                    logging.getLogger(__name__).warning(
+                        f"Lock file content malformed, missing ':' separator: '{content}'"
+                    )
+                except Exception:
+                    pass
+        except Exception as e:
+            # Log parsing/read errors
+            try:
+                import logging
+                logging.getLogger(__name__).warning(
+                    f"Error reading/parsing lock file {lock_path}: {e}"
+                )
+            except Exception:
+                # As a last resort, remain silent
+                pass
             return None
     return None
 
@@ -140,7 +165,38 @@ def get_lock_pid_port(lock_path: Path) -> tuple[int, int] | None:
                 pid_str, port_str = content.split(":", 1)
                 if pid_str.isdigit() and port_str.isdigit():
                     return int(pid_str), int(port_str)
-        except Exception:
+                # Log invalid format
+                try:
+                    import logging
+                    if not pid_str.isdigit():
+                        logging.getLogger(__name__).warning(
+                            f"Lock file PID format invalid: '{pid_str}' is not a digit"
+                        )
+                    if not port_str.isdigit():
+                        logging.getLogger(__name__).warning(
+                            f"Lock file port format invalid: '{port_str}' is not a digit"
+                        )
+                except Exception:
+                    pass
+            else:
+                # Log malformed content
+                try:
+                    import logging
+                    logging.getLogger(__name__).warning(
+                        f"Lock file content malformed, missing ':' separator: '{content}'"
+                    )
+                except Exception:
+                    pass
+        except Exception as e:
+            # Log parsing/read errors
+            try:
+                import logging
+                logging.getLogger(__name__).warning(
+                    f"Error reading/parsing lock file {lock_path}: {e}"
+                )
+            except Exception:
+                # As a last resort, remain silent
+                pass
             return None
     return None
 

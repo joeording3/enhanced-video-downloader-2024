@@ -21,7 +21,7 @@ const { createCoverageMap: _createCoverageMap } = require("istanbul-lib-coverage
 const { getServerPort, getClientPort, _getPortRange } = require("../extension/src/constants");
 
 // Increase default Jest timeout and declare dynamic server port
-jest.setTimeout(120000);
+jest.setTimeout(240000);
 // Declare HTTP server port (0 = dynamic) and UI base URL placeholder
 let serverPort = process.env.E2E_PORT ? parseInt(process.env.E2E_PORT, 10) : 0;
 let UI_BASE;

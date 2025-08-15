@@ -17,11 +17,14 @@ export const STORAGE_KEYS = {
   // Download management
   DOWNLOAD_HISTORY: "downloadHistory",
   DOWNLOAD_QUEUE: "downloadQueue",
+  ACTIVE_DOWNLOADS: "activeDownloads",
 
   // UI configuration
   THEME: "theme",
   BUTTON_STATE: "buttonState",
   HISTORY_ENABLED: "isHistoryEnabled",
+  EXTENSION_CONFIG: "extensionConfig",
+  CONFIG_ERROR: "configError",
   // Extension-only behavior toggles
   SMART_INJECTION: "smartInjectionEnabled",
 } as const;
@@ -65,9 +68,18 @@ export const NETWORK_CONSTANTS = {
   CONFIG_ENDPOINT: "/api/config",
   RESTART_ENDPOINT: "/api/restart",
   DOWNLOAD_ENDPOINT: "/api/download",
+  LOGS_ENDPOINT: "/api/logs",
+  LOGS_CLEAR_ENDPOINT: "/api/logs/clear",
+  LEGACY_LOGS_ENDPOINT: "/logs",
+  LEGACY_LOGS_CLEAR_ENDPOINT: "/logs/clear",
 
   // Server base URL
   SERVER_BASE_URL: "http://127.0.0.1",
+
+  // URL builder utility
+  buildServerUrl: (port: number, endpoint: string): string => {
+    return `${NETWORK_CONSTANTS.SERVER_BASE_URL}:${port}${endpoint}`;
+  },
 } as const;
 
 // ============================================================================
@@ -164,13 +176,24 @@ export const DOM_SELECTORS = {
   ].join(", "),
 
   // UI elements
+  STATUS_MESSAGE: "#status",
   STATUS_INDICATOR: "#server-status-indicator",
   STATUS_TEXT: "#server-status-text",
   SETTINGS_BUTTON: "#open-settings",
   DOWNLOAD_STATUS: "#download-status",
+  TOGGLE_BUTTON: "#toggle-enhanced-download-button",
   CONFIG_ERROR_DISPLAY: "#config-error-display",
   SERVER_PORT_DISPLAY: "#server-port-display",
   DOWNLOAD_DIR_DISPLAY: "#download-dir-display",
+  SIDE_PANEL_BUTTON: "#open-sidepanel",
+  RESET_BUTTON: "#reset-button-position",
+  HISTORY_ITEMS: "#history-items",
+  HISTORY_LIST: "#download-history",
+  DOWNLOAD_QUEUE: "#download-queue",
+  PREV_PAGE_BUTTON: "#prev-page",
+  NEXT_PAGE_BUTTON: "#next-page",
+  ITEMS_PER_PAGE_SELECT: "#items-per-page",
+  PAGE_INFO: "#page-info",
 } as const;
 
 // ============================================================================
@@ -187,6 +210,87 @@ export const CSS_CLASSES = {
   HIDDEN: "hidden",
   DRAG_HANDLE: "evd-drag-handle",
   DOWNLOAD_BUTTON: "download-button",
+
+  // Theme/UI density
+  DARK_THEME: "dark-theme",
+  COMPACT: "compact",
+  ACTIVE: "active",
+
+  // Visibility helpers
+  EVD_VISIBLE: "evd-visible",
+  EVD_ON_DARK: "evd-on-dark",
+  EVD_ON_LIGHT: "evd-on-light",
+  CLICKED: "clicked",
+
+  // Status components
+  STATUS_PILL: "status-pill",
+  IS_SUCCESS: "is-success",
+  IS_ERROR: "is-error",
+  IS_WARNING: "is-warning",
+
+  // Status/severity prefixes
+  STATUS_PREFIX: "status-",
+  SEVERITY_PREFIX: "severity-",
+
+  // List/item classes
+  QUEUED_ITEM: "queued-item",
+  ACTIVE_ITEM: "active-item",
+  ITEM_STATUS: "item-status",
+  UNIFIED_LIST: "unified-list",
+  UNIFIED_ITEM: "unified-item",
+  STATUS_ICON: "status-icon",
+
+  // Drag and drop
+  DRAGGING: "dragging",
+  DRAG_OVER: "drag-over",
+
+  // Server status text classes
+  STATUS_CONNECTED: "status-connected",
+  STATUS_DISCONNECTED: "status-disconnected",
+
+  // Generic state classes
+  CONNECTED: "connected",
+  DISCONNECTED: "disconnected",
+  VALID: "valid",
+  INVALID: "invalid",
+
+  // History and popup UI
+  HISTORY_ITEM: "history-item",
+  HISTORY_LEFT: "history-left",
+  HISTORY_ITEM_TIMESTAMP: "history-item-timestamp",
+  HISTORY_ACTIONS: "history-actions",
+  HISTORY_ITEM_DETAIL: "history-item-detail",
+  HISTORY_ITEM_ERROR: "history-item-error",
+  HISTORY_ITEM_URL: "history-item-url",
+
+  // Error details UI
+  ERROR_DETAILS: "error-details",
+  ERROR_DETAILS_CONTENT: "error-details-content",
+  ERROR_HELP_LINK: "error-help-link",
+
+  // Buttons and controls
+  RESUME_BUTTON: "resume-button",
+  CANCEL_BUTTON: "cancel-button",
+  PAUSE_BUTTON: "pause-button",
+  RETRY_BUTTON: "retry-button",
+  PRIORITY_SET_BUTTON: "priority-set-button",
+  PRIORITY_SELECT: "priority-select",
+  PRIORITY_CONTROLS: "priority-controls",
+  ITEM_PERCENT: "item-percent",
+  BTN_SECONDARY: "btn btn--secondary",
+  BTN_PRIMARY: "btn btn--primary",
+  BTN_SMALL: "btn--small",
+
+  // Validation message
+  VALIDATION_MESSAGE: "validation-message",
+
+  // Status helpers (popup/options)
+  STATUS_SUCCESS: "status-success",
+  STATUS_ERROR: "status-error",
+  ERROR_TIP: "error-tip",
+
+  // History helpers
+  HISTORY_EMPTY: "history-empty",
 } as const;
 
 // ============================================================================
@@ -201,6 +305,11 @@ export const MESSAGE_TYPES = {
   TOGGLE_HISTORY: "toggleHistory",
   GET_HISTORY: "getHistory",
   SET_CONFIG: "setConfig",
+  SET_PRIORITY: "setPriority",
+  REORDER_QUEUE: "reorderQueue",
+  REMOVE_FROM_QUEUE: "removeFromQueue",
+  RESUME_DOWNLOADS: "resumeDownloads",
+  GALLERY_DOWNLOAD: "galleryDownload",
 
   // Server operations
   GET_SERVER_STATUS: "getServerStatus",
@@ -208,10 +317,23 @@ export const MESSAGE_TYPES = {
   PAUSE_DOWNLOAD: "pauseDownload",
   RESUME_DOWNLOAD: "resumeDownload",
   CANCEL_DOWNLOAD: "cancelDownload",
+  GET_CONFIG: "getConfig",
+  GET_LOGS: "getLogs",
+  CLEAR_LOGS: "clearLogs",
 
   // UI updates
   SERVER_STATUS_UPDATE: "serverStatusUpdate",
   SERVER_DISCOVERED: "serverDiscovered",
+  DOWNLOAD_STATUS_UPDATE: "downloadStatusUpdate",
+  QUEUE_UPDATED: "queueUpdated",
+  HISTORY_UPDATED: "historyUpdated",
+
+  // Content script bridge (tab messages)
+  EVD_EXTENSION_RELOADED: "evd_extension_reloaded",
+  TOGGLE_BUTTON_VISIBILITY: "toggleButtonVisibility",
+  RESET_BUTTON_POSITION: "resetButtonPosition",
+  GET_BUTTON_VISIBILITY: "getButtonVisibility",
+  SET_CONTENT_BUTTON_HIDDEN: "setContentButtonHidden",
 } as const;
 
 // ============================================================================

@@ -9,7 +9,7 @@ import {
   validateFormat,
   showValidationMessage,
 } from "extension/src/options";
-import { getServerPort, getClientPort, getPortRange } from "../../extension/src/core/constants";
+import { getServerPort, getClientPort, getPortRange, CSS_CLASSES, DOM_SELECTORS } from "../../extension/src/core/constants";
 
 // Mock the constants to return a wider port range for testing
 jest.mock("../../extension/src/core/constants", () => ({
@@ -21,10 +21,10 @@ describe("Options UI Logic Tests", () => {
   beforeEach(() => {
     // Set up DOM elements needed for tests
     document.body.innerHTML =
-      '<div id="port-validation" class="validation-message"></div>' +
-      '<div id="folder-validation" class="validation-message"></div>' +
-      '<div id="log-level-validation" class="validation-message"></div>' +
-      '<div id="format-validation" class="validation-message"></div>' +
+      `<div id="port-validation" class="${CSS_CLASSES.VALIDATION_MESSAGE}"></div>` +
+      `<div id="folder-validation" class="${CSS_CLASSES.VALIDATION_MESSAGE}"></div>` +
+      `<div id="log-level-validation" class="${CSS_CLASSES.VALIDATION_MESSAGE}"></div>` +
+      `<div id="format-validation" class="${CSS_CLASSES.VALIDATION_MESSAGE}"></div>` +
       '<div class="settings-container">' +
       '<section class="settings-group" data-category="server">' +
       '<h2 class="section-title">Server Configuration</h2>' +
@@ -56,8 +56,8 @@ describe("Options UI Logic Tests", () => {
       const result = validatePort(input);
 
       expect(result).toBe(false);
-      expect(input.classList.contains("invalid")).toBe(true);
-      expect(input.classList.contains("valid")).toBe(false);
+      expect(input.classList.contains(CSS_CLASSES.INVALID)).toBe(true);
+      expect(input.classList.contains(CSS_CLASSES.VALID)).toBe(false);
     });
 
     it("validates non-numeric port as invalid", () => {
@@ -67,7 +67,7 @@ describe("Options UI Logic Tests", () => {
       const result = validatePort(input);
 
       expect(result).toBe(false);
-      expect(input.classList.contains("invalid")).toBe(true);
+      expect(input.classList.contains(CSS_CLASSES.INVALID)).toBe(true);
     });
 
     it("validates port below range as invalid", () => {
@@ -77,7 +77,7 @@ describe("Options UI Logic Tests", () => {
       const result = validatePort(input);
 
       expect(result).toBe(false);
-      expect(input.classList.contains("invalid")).toBe(true);
+      expect(input.classList.contains(CSS_CLASSES.INVALID)).toBe(true);
     });
 
     it("validates port above range as invalid", () => {
@@ -87,7 +87,7 @@ describe("Options UI Logic Tests", () => {
       const result = validatePort(input);
 
       expect(result).toBe(false);
-      expect(input.classList.contains("invalid")).toBe(true);
+      expect(input.classList.contains(CSS_CLASSES.INVALID)).toBe(true);
     });
 
     it("validates common port with warning", () => {
@@ -99,7 +99,7 @@ describe("Options UI Logic Tests", () => {
       if (!validationElement) {
         validationElement = document.createElement("div");
         validationElement.id = "port-validation";
-        validationElement.className = "validation-message";
+        validationElement.className = CSS_CLASSES.VALIDATION_MESSAGE;
         document.body.appendChild(validationElement);
       }
 
@@ -107,8 +107,8 @@ describe("Options UI Logic Tests", () => {
 
       // Port 8080 is within the allowed range (5001-9099), so it should be valid
       expect(result).toBe(true);
-      expect(input.classList.contains("valid")).toBe(true);
-      expect(input.classList.contains("invalid")).toBe(false);
+      expect(input.classList.contains(CSS_CLASSES.VALID)).toBe(true);
+      expect(input.classList.contains(CSS_CLASSES.INVALID)).toBe(false);
     });
 
     it("validates valid port with success", () => {
@@ -120,15 +120,15 @@ describe("Options UI Logic Tests", () => {
       if (!validationElement) {
         validationElement = document.createElement("div");
         validationElement.id = "port-validation";
-        validationElement.className = "validation-message";
+        validationElement.className = CSS_CLASSES.VALIDATION_MESSAGE;
         document.body.appendChild(validationElement);
       }
 
       const result = validatePort(input);
 
       expect(result).toBe(true);
-      expect(input.classList.contains("valid")).toBe(true);
-      expect(input.classList.contains("invalid")).toBe(false);
+      expect(input.classList.contains(CSS_CLASSES.VALID)).toBe(true);
+      expect(input.classList.contains(CSS_CLASSES.INVALID)).toBe(false);
     });
   });
 
@@ -140,7 +140,7 @@ describe("Options UI Logic Tests", () => {
       const result = validateFolder(input);
 
       expect(result).toBe(false);
-      expect(input.classList.contains("invalid")).toBe(true);
+      expect(input.classList.contains(CSS_CLASSES.INVALID)).toBe(true);
     });
 
     it("validates path with suspicious patterns as invalid", () => {
@@ -150,7 +150,7 @@ describe("Options UI Logic Tests", () => {
       const result = validateFolder(input);
 
       expect(result).toBe(false);
-      expect(input.classList.contains("invalid")).toBe(true);
+      expect(input.classList.contains(CSS_CLASSES.INVALID)).toBe(true);
     });
 
     it("validates relative path with warning", () => {
@@ -160,7 +160,7 @@ describe("Options UI Logic Tests", () => {
       const result = validateFolder(input);
 
       expect(result).toBe(true);
-      expect(input.classList.contains("valid")).toBe(true);
+      expect(input.classList.contains(CSS_CLASSES.VALID)).toBe(true);
     });
 
     it("validates absolute Unix path with success", () => {
@@ -170,7 +170,7 @@ describe("Options UI Logic Tests", () => {
       const result = validateFolder(input);
 
       expect(result).toBe(true);
-      expect(input.classList.contains("valid")).toBe(true);
+      expect(input.classList.contains(CSS_CLASSES.VALID)).toBe(true);
     });
 
     it("validates absolute Windows path with success", () => {
@@ -180,7 +180,7 @@ describe("Options UI Logic Tests", () => {
       const result = validateFolder(input);
 
       expect(result).toBe(true);
-      expect(input.classList.contains("valid")).toBe(true);
+      expect(input.classList.contains(CSS_CLASSES.VALID)).toBe(true);
     });
   });
 
@@ -202,7 +202,7 @@ describe("Options UI Logic Tests", () => {
       const result = validateLogLevel(select);
 
       expect(result).toBe(false);
-      expect(select.classList.contains("invalid")).toBe(true);
+      expect(select.classList.contains(CSS_CLASSES.INVALID)).toBe(true);
     });
 
     it("validates invalid log level as invalid", () => {
@@ -212,7 +212,7 @@ describe("Options UI Logic Tests", () => {
       const result = validateLogLevel(select);
 
       expect(result).toBe(false);
-      expect(select.classList.contains("invalid")).toBe(true);
+      expect(select.classList.contains(CSS_CLASSES.INVALID)).toBe(true);
     });
 
     it("validates ERROR level as valid", () => {
@@ -224,7 +224,7 @@ describe("Options UI Logic Tests", () => {
       const result = validateLogLevel(select);
 
       expect(result).toBe(true);
-      expect(select.classList.contains("valid")).toBe(true);
+      expect(select.classList.contains(CSS_CLASSES.VALID)).toBe(true);
     });
 
     it("validates INFO level as valid", () => {
@@ -236,7 +236,7 @@ describe("Options UI Logic Tests", () => {
       const result = validateLogLevel(select);
 
       expect(result).toBe(true);
-      expect(select.classList.contains("valid")).toBe(true);
+      expect(select.classList.contains(CSS_CLASSES.VALID)).toBe(true);
     });
 
     it("validates DEBUG level as valid", () => {
@@ -248,7 +248,7 @@ describe("Options UI Logic Tests", () => {
       const result = validateLogLevel(select);
 
       expect(result).toBe(true);
-      expect(select.classList.contains("valid")).toBe(true);
+      expect(select.classList.contains(CSS_CLASSES.VALID)).toBe(true);
     });
   });
 
@@ -270,7 +270,7 @@ describe("Options UI Logic Tests", () => {
       const result = validateFormat(select);
 
       expect(result).toBe(false);
-      expect(select.classList.contains("invalid")).toBe(true);
+      expect(select.classList.contains(CSS_CLASSES.INVALID)).toBe(true);
     });
 
     it("validates invalid format as invalid", () => {
@@ -280,7 +280,7 @@ describe("Options UI Logic Tests", () => {
       const result = validateFormat(select);
 
       expect(result).toBe(false);
-      expect(select.classList.contains("invalid")).toBe(true);
+      expect(select.classList.contains(CSS_CLASSES.INVALID)).toBe(true);
     });
 
     it("validates bestvideo+bestaudio/best as valid", () => {
@@ -293,7 +293,7 @@ describe("Options UI Logic Tests", () => {
       const result = validateFormat(select);
 
       expect(result).toBe(true);
-      expect(select.classList.contains("valid")).toBe(true);
+      expect(select.classList.contains(CSS_CLASSES.VALID)).toBe(true);
     });
 
     it("validates best as valid", () => {
@@ -305,7 +305,7 @@ describe("Options UI Logic Tests", () => {
       const result = validateFormat(select);
 
       expect(result).toBe(true);
-      expect(select.classList.contains("valid")).toBe(true);
+      expect(select.classList.contains(CSS_CLASSES.VALID)).toBe(true);
     });
 
     it("validates mp4 as valid", () => {
@@ -317,7 +317,7 @@ describe("Options UI Logic Tests", () => {
       const result = validateFormat(select);
 
       expect(result).toBe(true);
-      expect(select.classList.contains("valid")).toBe(true);
+      expect(select.classList.contains(CSS_CLASSES.VALID)).toBe(true);
     });
 
     it("validates webm as valid", () => {
@@ -329,7 +329,7 @@ describe("Options UI Logic Tests", () => {
       const result = validateFormat(select);
 
       expect(result).toBe(true);
-      expect(select.classList.contains("valid")).toBe(true);
+      expect(select.classList.contains(CSS_CLASSES.VALID)).toBe(true);
     });
 
     it("validates bestaudio[ext=m4a] as valid", () => {
@@ -341,7 +341,7 @@ describe("Options UI Logic Tests", () => {
       const result = validateFormat(select);
 
       expect(result).toBe(true);
-      expect(select.classList.contains("valid")).toBe(true);
+      expect(select.classList.contains(CSS_CLASSES.VALID)).toBe(true);
     });
 
     it("validates bestaudio[ext=opus] as valid", () => {
@@ -353,7 +353,7 @@ describe("Options UI Logic Tests", () => {
       const result = validateFormat(select);
 
       expect(result).toBe(true);
-      expect(select.classList.contains("valid")).toBe(true);
+      expect(select.classList.contains(CSS_CLASSES.VALID)).toBe(true);
     });
   });
 
@@ -380,7 +380,7 @@ describe("Options UI Logic Tests", () => {
 
       jest.advanceTimersByTime(3000);
       expect(element?.textContent).toBe("");
-      expect(element?.className).toBe("validation-message");
+      expect(element?.className).toBe(CSS_CLASSES.VALIDATION_MESSAGE);
 
       jest.useRealTimers();
     });

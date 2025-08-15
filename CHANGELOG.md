@@ -9,19 +9,37 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Refactor (extension): centralized and de-duplicated hardcoded strings
+
+  - Message types → `MESSAGE_TYPES`; replaced inline `sendMessage({ type: "..." })` and switch cases
+    across `background.ts`, `content.ts`, `popup.ts`, `options.ts`, `history.ts`
+  - Storage keys → `STORAGE_KEYS`; replaced literal keys like `theme`, `activeDownloads`,
+    `serverConfig`, `serverPort`, `configError`
+  - CSS classes → `CSS_CLASSES`; replaced many `classList.add/remove/toggle("...")` in
+    popup/options/history/content (status pills, drag state, visibility, server status)
+  - DOM selectors → `DOM_SELECTORS`; replaced hardcoded `getElementById`/`querySelector` strings in
+    popup/options for server status, history pagination, and controls
+  - API paths → `NETWORK_CONSTANTS` (`LOGS_ENDPOINT`, `LOGS_CLEAR_ENDPOINT`, legacy fallbacks);
+    background log endpoints now built from constants
+  - Status literals → `STATUS_CONSTANTS` (connected/disconnected/checking) used by popup/options
+  - Minor: exported a few background helpers for tests and hardened `updateIcon` error handling in
+    test mode
+
 - Extension/server config flow hardening:
- - **Consolidated download history**: server now writes to a single history JSON file resolved at runtime.
-   - **default path**: `<download_dir>/history.json` (override via `HISTORY_FILE` env or Options → History File)
-   - **wiring**: all history endpoints and CLI clear operations honor the resolved path
-   - **cleanup**: yt-dlp sidecar `.info.json` files are ingested into history and then removed
-  - Background now retries config GET/POST across http/https and 127.0.0.1/localhost/[::1] with
-    timeouts
-  - When saving settings with a new `server_port`, background immediately caches the new port and
-    tries the new port first, then falls back once to the previous port if needed
-  - Options save now posts only non-empty fields to avoid overwriting server defaults; after a
-    successful save, if any fields are blank locally, it fetches `/api/config` and populates only
-    the missing fields
-  - Centralized logger no longer prints a trailing `undefined` when no data payload is supplied
+- **Consolidated download history**: server now writes to a single history JSON file resolved at
+  runtime.
+  - **default path**: `<download_dir>/history.json` (override via `HISTORY_FILE` env or Options →
+    History File)
+  - **wiring**: all history endpoints and CLI clear operations honor the resolved path
+  - **cleanup**: yt-dlp sidecar `.info.json` files are ingested into history and then removed
+- Background now retries config GET/POST across http/https and 127.0.0.1/localhost/[::1] with
+  timeouts
+- When saving settings with a new `server_port`, background immediately caches the new port and
+  tries the new port first, then falls back once to the previous port if needed
+- Options save now posts only non-empty fields to avoid overwriting server defaults; after a
+  successful save, if any fields are blank locally, it fetches `/api/config` and populates only the
+  missing fields
+- Centralized logger no longer prints a trailing `undefined` when no data payload is supplied
 
 ### E2E and Detection
 
@@ -46,14 +64,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 
 - Smart Injection option for the inline Download button
- - **Options**
-   - Server → Runtime: History File (consolidated) path field
-   - Download Settings: yt-dlp controls for cookies-from-browser, merge container, continue partials,
-     fragment retries
-  - New toggle in Options → Behavior → General Options
-  - When enabled, the content script only shows the button when a downloadable video is detected;
-    otherwise it stays hidden
-  - Popup SHOW/HIDE per-domain toggle still applies on top of smart mode
+- **Options**
+  - Server → Runtime: History File (consolidated) path field
+  - Download Settings: yt-dlp controls for cookies-from-browser, merge container, continue partials,
+    fragment retries
+- New toggle in Options → Behavior → General Options
+- When enabled, the content script only shows the button when a downloadable video is detected;
+  otherwise it stays hidden
+- Popup SHOW/HIDE per-domain toggle still applies on top of smart mode
 
 ### Fixed
 
@@ -78,6 +96,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Content script: Prevent transient disappearance of the floating Download button after click on
   YouTube. Removed an unnecessary remove→append cycle that triggered the MutationObserver and added
   a short post-click stabilization window to avoid removing/re-adding during page reflows.
+
+- Popup/History: Deleting an individual history entry now works reliably from the popup. The UI
+  prefers deletion by stable `id` and falls back to `url`, removes local entries matching either
+  `id` or `download_id`, and also requests server-side deletion. README and API docs updated
+  accordingly.
 
 ### Added
 
@@ -170,8 +193,37 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `README.md`.
 - Docs: Add consolidated Hardcoded Variables Policy to README and Architecture docs; track remaining
   cleanup tasks in `TODO.md`.
+
+### Documentation
+
+- Updated README/DEVELOPER to reflect centralized constants (messages, storage keys, CSS classes,
+  DOM selectors, logs endpoints) and guidance for new code
+
+### Testing
+
+- Extension test stability improvements; current run: all suites passing (47/47); 570–573 tests
+  depending on skips
 - Docs: Migrate CSS design system details into `ARCHITECTURE.md` and `README.md`; remove obsolete
   `reports/css_comprehensive_report.md` (all issues already resolved and reflected in codebase).
+
+### Frontend Testing Progress
+
+- Increased `extension/src/background.ts` coverage with targeted tests:
+  - Restart endpoints: managed fallback success (health check) and error when all endpoints fail
+  - Queue reordering: immediate success response plus fire-and-forget POST verification
+  - Badge and status UI: numeric badge set/clear and disconnected broadcast (no badge clear)
+  - Message handlers: `setContentButtonHidden`, `getServerStatus`, `getConfig` fallback,
+    `getLogs`/`clearLogs` error paths
+- Current `background.ts` coverage (Jest): Statements 54.00%, Branches 38.03%, Functions 55.19%,
+  Lines 54.71%
+- Frontend overall (extension) coverage: Statements 61.48%, Lines 62.95%
+
+### Next Steps (Frontend Coverage)
+
+- Add coverage for `findServerPort` backoff growth and options-page discovery notification
+- Exercise `GET_CONFIG` fallback when server returns empty object (cached state path)
+- Cover status poll transitions and icon updates across connect/disconnect cycles
+- Add non-test-mode success paths for `GET_LOGS`/`CLEAR_LOGS` via integration harness
 
 ### Tooling
 

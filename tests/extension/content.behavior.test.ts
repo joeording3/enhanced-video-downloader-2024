@@ -11,6 +11,7 @@ import {
   _resetStateForTesting,
 } from "../../extension/src/content";
 import * as utils from "../../extension/src/lib/utils";
+import { CSS_CLASSES, DOM_SELECTORS, UI_CONSTANTS } from "../../extension/src/core/constants";
 
 // Additional imports for direct style testing
 import { ensureDownloadButtonStyle } from "../../extension/src/content";
@@ -37,7 +38,7 @@ describe("Content script button behaviors", () => {
         cb({ "example.com": { x: 50, y: 60, hidden: false } })
       );
       await createOrUpdateButton();
-      const btn = document.getElementById("evd-download-button-main");
+      const btn = document.getElementById(`${UI_CONSTANTS.BUTTON_ID_PREFIX}main`);
       expect(btn).not.toBeNull();
       if (btn) {
         expect(btn.style.left).toBe("50px");
@@ -51,7 +52,7 @@ describe("Content script button behaviors", () => {
         cb({ "www.youtube.com": { x: 10, y: 10, hidden: false } })
       );
       await createOrUpdateButton();
-      const btn = document.getElementById("evd-download-button-main");
+      const btn = document.getElementById(`${UI_CONSTANTS.BUTTON_ID_PREFIX}main`);
       if (btn) {
         expect(btn.style.top).toBe("70px");
         expect(btn.style.right).toBe("20px");
@@ -66,12 +67,12 @@ describe("Content script button behaviors", () => {
         cb({ "example.com": { x: 0, y: 0, hidden: false } })
       );
       await createOrUpdateButton();
-      const btn = document.getElementById("evd-download-button-main");
+      const btn = document.getElementById(`${UI_CONSTANTS.BUTTON_ID_PREFIX}main`);
       // Hide
       await setButtonHiddenState(true);
       if (btn) {
-        expect(btn.classList.contains("hidden")).toBe(true);
-        expect(btn.classList.contains("evd-visible")).toBe(false);
+        expect(btn.classList.contains(CSS_CLASSES.HIDDEN)).toBe(true);
+        expect(btn.classList.contains(CSS_CLASSES.EVD_VISIBLE)).toBe(false);
       }
       expect(chrome.storage.local.set).toHaveBeenCalledWith(
         { "example.com": { x: 0, y: 0, hidden: true } },
@@ -80,8 +81,8 @@ describe("Content script button behaviors", () => {
       // Show
       await setButtonHiddenState(false);
       if (btn) {
-        expect(btn.classList.contains("hidden")).toBe(false);
-        expect(btn.classList.contains("evd-visible")).toBe(true);
+        expect(btn.classList.contains(CSS_CLASSES.HIDDEN)).toBe(false);
+        expect(btn.classList.contains(CSS_CLASSES.EVD_VISIBLE)).toBe(true);
       }
       expect(chrome.storage.local.set).toHaveBeenCalledWith(
         { "example.com": { x: 0, y: 0, hidden: false } },
@@ -91,7 +92,7 @@ describe("Content script button behaviors", () => {
 
     it("resets button position via resetButtonPosition", async () => {
       await createOrUpdateButton();
-      const btn = document.getElementById("evd-download-button-main");
+      const btn = document.getElementById(`${UI_CONSTANTS.BUTTON_ID_PREFIX}main`);
       // Change style
       if (btn) {
         btn.style.left = "123px";
@@ -118,7 +119,7 @@ describe("Content script button behaviors", () => {
     });
 
     it("should start dragging on mousedown", () => {
-      const button = document.getElementById("evd-download-button-main")!;
+      const button = document.getElementById(`${UI_CONSTANTS.BUTTON_ID_PREFIX}main`)!;
       const mouseDownEvent = new MouseEvent("mousedown", {
         bubbles: true,
         cancelable: true,
@@ -129,7 +130,7 @@ describe("Content script button behaviors", () => {
     });
 
     it("should move the button on mousemove", () => {
-      const button = document.getElementById("evd-download-button-main")!;
+      const button = document.getElementById(`${UI_CONSTANTS.BUTTON_ID_PREFIX}main`)!;
       const mouseDownEvent = new MouseEvent("mousedown", {
         bubbles: true,
         cancelable: true,
@@ -151,7 +152,7 @@ describe("Content script button behaviors", () => {
     });
 
     it("should stop dragging on mouseup and save the new position", async () => {
-      const button = document.getElementById("evd-download-button-main")!;
+      const button = document.getElementById(`${UI_CONSTANTS.BUTTON_ID_PREFIX}main`)!;
       const mouseDownEvent = new MouseEvent("mousedown", {
         bubbles: true,
         cancelable: true,
@@ -199,7 +200,7 @@ describe("Content script button behaviors", () => {
       btn.style.opacity = "0.5";
       document.body.appendChild(btn);
       ensureDownloadButtonStyle(btn);
-      expect(btn.classList.contains("evd-visible")).toBe(true);
+      expect(btn.classList.contains(CSS_CLASSES.EVD_VISIBLE)).toBe(true);
     });
 
     it("applies contrast-aware classes when not in temporary feedback state", () => {
@@ -208,7 +209,7 @@ describe("Content script button behaviors", () => {
       document.body.appendChild(btn);
       ensureDownloadButtonStyle(btn);
       const hasContrastClass =
-        btn.classList.contains("evd-on-dark") || btn.classList.contains("evd-on-light");
+        btn.classList.contains(CSS_CLASSES.EVD_ON_DARK) || btn.classList.contains(CSS_CLASSES.EVD_ON_LIGHT);
       expect(hasContrastClass).toBe(true);
     });
 
@@ -262,7 +263,7 @@ describe("Content script button behaviors", () => {
       // Simulate injection logic
       await createOrUpdateButton(video1);
       await createOrUpdateButton(video2);
-      const buttons = document.querySelectorAll("button[id^='evd-download-button-']");
+      const buttons = document.querySelectorAll(`button[id^='${UI_CONSTANTS.BUTTON_ID_PREFIX}']`);
       expect(buttons.length).toBeGreaterThanOrEqual(2);
     });
   });
@@ -309,9 +310,9 @@ describe("Content script button behaviors", () => {
     });
 
     it("should handle drag handle interactions", () => {
-      const button = document.getElementById("evd-download-button-main")!;
+      const button = document.getElementById(`${UI_CONSTANTS.BUTTON_ID_PREFIX}main`)!;
       const dragHandle = document.createElement("div");
-      dragHandle.className = "evd-drag-handle";
+      dragHandle.className = CSS_CLASSES.DRAG_HANDLE;
       button.appendChild(dragHandle);
 
       const mouseDownEvent = new MouseEvent("mousedown", {
@@ -327,7 +328,7 @@ describe("Content script button behaviors", () => {
     });
 
     it("should distinguish between click and drag", () => {
-      const button = document.getElementById("evd-download-button-main")!;
+      const button = document.getElementById(`${UI_CONSTANTS.BUTTON_ID_PREFIX}main`)!;
       const originalLeft = button.style.left;
       const originalTop = button.style.top;
 
@@ -358,7 +359,7 @@ describe("Content script button behaviors", () => {
     it("should handle button state reset for testing", () => {
       _resetStateForTesting();
       // Should not throw and should reset internal state
-      expect(document.getElementById("evd-download-button-main")).toBeNull();
+      expect(document.getElementById(`${UI_CONSTANTS.BUTTON_ID_PREFIX}main`)).toBeNull();
     });
 
     it("should handle storage errors gracefully", async () => {
@@ -400,7 +401,7 @@ describe("Content script button behaviors", () => {
       // Restore original
       window.getComputedStyle = originalGetComputedStyle;
 
-      expect(btn.classList.contains("evd-visible")).toBe(true);
+      expect(btn.classList.contains(CSS_CLASSES.EVD_VISIBLE)).toBe(true);
     });
   });
 

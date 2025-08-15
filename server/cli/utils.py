@@ -114,7 +114,7 @@ def run_cleanup() -> dict[str, Any]:
         try:
             part_file.unlink()
             partial_removed += 1
-        except Exception:  # noqa: PERF203
+        except Exception:
             # Best-effort cleanup; ignore individual file errors
             continue
 
@@ -123,11 +123,20 @@ def run_cleanup() -> dict[str, Any]:
         try:
             ytdl_file.unlink()
             temp_files_removed += 1
-        except Exception:  # noqa: PERF203
+        except Exception:
             # Best-effort cleanup; ignore individual file errors
             continue
 
-    return {"temp_files": temp_files_removed, "partial_downloads": partial_removed}
+    # Best-effort: consolidate lingering per-video metadata JSON into history and remove them
+    consolidated = 0
+    try:
+        from server.history import consolidate_lingering_info_json
+
+        consolidated = consolidate_lingering_info_json(base_dir, recursive=True)
+    except Exception:
+        consolidated = 0
+
+    return {"temp_files": temp_files_removed, "partial_downloads": partial_removed, "metadata_files": consolidated}
 
 
 @click.group(name="config", invoke_without_command=True)
@@ -567,7 +576,7 @@ def _show_changes(config_data: Config, updates: dict[str, Any]) -> None:
                 click.echo(f"   {key}: {old_value} → {new_value}")
             else:
                 click.echo(f"   {key}: {new_value} (no change)")
-        except AttributeError:  # noqa: PERF203
+        except AttributeError:
             click.echo(f"   {key}: {new_value} (new setting)")
 
     click.echo()
@@ -690,7 +699,7 @@ def logs_view_command(
             for log_file in log_files:
                 try:
                     subprocess.run(["tail", "-f", log_file], check=True)
-                except (FileNotFoundError, subprocess.CalledProcessError):  # noqa: PERF203
+                except (FileNotFoundError, subprocess.CalledProcessError):
                     # Fallback to Python implementation
                     with Path(log_file).open() as f:
                         f.seek(0, 2)  # Seek to end
@@ -733,7 +742,7 @@ def logs_view_command(
                         click.echo(colored_line)
                     click.echo()
 
-            except Exception as e:  # noqa: PERF203
+            except Exception as e:
                 click.echo(f" Error reading log file {log_file}: {e}", err=True)
                 continue
 

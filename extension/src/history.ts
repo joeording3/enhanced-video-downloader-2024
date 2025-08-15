@@ -4,6 +4,7 @@
  */
 
 import { HistoryEntry, ServerHistoryItem, ServerHistoryResponse } from "./types";
+import { MESSAGE_TYPES, STORAGE_KEYS, CSS_CLASSES } from "./core/constants";
 
 // --- History utility functions ---
 export const historyStorageKey = "downloadHistory";
@@ -59,7 +60,7 @@ export async function fetchHistory(
 
   // Fallback: attempt to fetch from server if a port is known
   try {
-    const { serverPort } = await chrome.storage.local.get("serverPort");
+    const { serverPort } = await chrome.storage.local.get(STORAGE_KEYS.SERVER_PORT as any);
     const port = serverPort as number | undefined;
     if (!port) return { history: [], totalItems: 0 };
 
@@ -261,14 +262,14 @@ export function renderHistoryItems(
   // Render history items
   deduped.forEach(item => {
     const li = document.createElement("li");
-    li.className = "history-item";
+    li.className = CSS_CLASSES.HISTORY_ITEM;
     if (item.id) {
       li.dataset.itemId = item.id.toString(); // Store ID for potential actions like delete
     }
 
     // Left column wrapper
     const leftWrapper = document.createElement("div");
-    leftWrapper.className = "history-left";
+    leftWrapper.className = CSS_CLASSES.HISTORY_LEFT;
 
     const titleDiv = document.createElement("div");
     const titleBold = document.createElement("b");
@@ -278,7 +279,7 @@ export function renderHistoryItems(
     titleDiv.appendChild(titleBold);
 
     const timestampDiv = document.createElement("div");
-    timestampDiv.className = "history-item-timestamp";
+    timestampDiv.className = CSS_CLASSES.HISTORY_ITEM_TIMESTAMP;
     timestampDiv.textContent = item.timestamp ? new Date(item.timestamp).toLocaleString() : "";
 
     const statusDiv = document.createElement("div");
@@ -287,30 +288,33 @@ export function renderHistoryItems(
     const normalized = rawStatus.toLowerCase();
     statusBold.textContent = rawStatus;
     // Apply status pill classes
-    statusBold.classList.add("status-pill");
+    statusBold.classList.add(CSS_CLASSES.STATUS_PILL);
     if (["success", "complete", "completed", "done"].includes(normalized)) {
-      statusBold.classList.add("is-success");
+      statusBold.classList.add(CSS_CLASSES.IS_SUCCESS);
     } else if (["error", "failed", "fail"].includes(normalized)) {
-      statusBold.classList.add("is-error");
+      statusBold.classList.add(CSS_CLASSES.IS_ERROR);
     } else if (["queued", "pending", "waiting", "paused"].includes(normalized)) {
-      statusBold.classList.add("is-warning");
+      statusBold.classList.add(CSS_CLASSES.IS_WARNING);
     }
     statusDiv.appendChild(document.createTextNode("Status: "));
     statusDiv.appendChild(statusBold);
 
     const actionsWrapper = document.createElement("div");
-    actionsWrapper.className = "history-actions";
+    actionsWrapper.className = CSS_CLASSES.HISTORY_ACTIONS;
 
     const retryButton = document.createElement("button");
-    retryButton.className = "btn btn--secondary retry-btn";
+    retryButton.className = CSS_CLASSES.BTN_SECONDARY + " retry-btn";
     retryButton.textContent = "Retry";
     retryButton.title = "Retry download";
+    retryButton.type = "button";
     retryButton.addEventListener("click", e => {
+      e.preventDefault();
+      e.stopImmediatePropagation();
       e.stopPropagation(); // Prevent li click if any
       // Retry clicked for item
       chrome.runtime.sendMessage(
         {
-          type: "downloadVideo",
+          type: MESSAGE_TYPES.DOWNLOAD_VIDEO,
           url: item.url,
           downloadId: item.id || undefined,
           page_title: item.page_title || document.title,
@@ -330,16 +334,22 @@ export function renderHistoryItems(
     });
 
     const deleteButton = document.createElement("button");
-    deleteButton.className = "btn btn--secondary delete-btn";
+    deleteButton.className = CSS_CLASSES.BTN_SECONDARY + " delete-btn";
     deleteButton.textContent = "Delete";
     deleteButton.title = "Remove from history";
+    deleteButton.type = "button";
     deleteButton.addEventListener("click", async e => {
+      e.preventDefault();
+      e.stopImmediatePropagation();
       e.stopPropagation();
-      if (!item.id) return;
-      // Delete clicked for item
+      // Prefer deletion by stable id; fall back to URL when id is missing
       try {
-        await removeHistoryItemAndNotify(item.id);
-        // The historyUpdated message from removeHistoryItemAndNotify will trigger a re-render
+        if (item.id) {
+          await removeHistoryItemAndNotify(item.id);
+        } else if (item.url) {
+          await removeHistoryItemByUrlAndNotify(item.url);
+        }
+        // The historyUpdated message from removeHistoryItem*AndNotify will trigger a re-render
       } catch (error) {
         console.error("[EVD][HISTORY] Failed to delete history item from UI action:", error);
       }
@@ -350,7 +360,7 @@ export function renderHistoryItems(
 
     // Also tag item with normalized status for styling hooks
     if (normalized) {
-      li.classList.add("status-" + normalized);
+      li.classList.add(CSS_CLASSES.STATUS_PREFIX + normalized);
     }
     // Assemble left column
     leftWrapper.appendChild(titleDiv);
@@ -360,7 +370,7 @@ export function renderHistoryItems(
     if (item.detail) {
       const detailDiv = document.createElement("div");
       const detailSpan = document.createElement("span");
-      detailSpan.className = "history-item-detail";
+      detailSpan.className = CSS_CLASSES.HISTORY_ITEM_DETAIL;
       // If detail is an array, join it. Otherwise, display as is.
       detailSpan.textContent = Array.isArray(item.detail) ? item.detail.join(", ") : item.detail;
       detailDiv.appendChild(document.createTextNode("Detail: "));
@@ -370,14 +380,14 @@ export function renderHistoryItems(
 
     if (item.error) {
       const errorDiv = document.createElement("div");
-      errorDiv.className = "history-item-error";
+      errorDiv.className = CSS_CLASSES.HISTORY_ITEM_ERROR;
       errorDiv.textContent = "Error: " + item.error;
       leftWrapper.appendChild(errorDiv);
     }
 
     if (item.url) {
       const urlDiv = document.createElement("div");
-      urlDiv.className = "history-item-url";
+      urlDiv.className = CSS_CLASSES.HISTORY_ITEM_URL;
       const urlLink = document.createElement("a");
       urlLink.href = item.url;
       urlLink.target = "_blank";
@@ -454,7 +464,7 @@ export async function addToHistory(entry: HistoryEntry): Promise<void> {
         }
         // Attempt to sync to backend history API (best effort)
         try {
-          chrome.storage.local.get("serverPort", async res => {
+          chrome.storage.local.get(STORAGE_KEYS.SERVER_PORT, async res => {
             const port = (res as any).serverPort;
             if (!port) return;
             try {
@@ -490,7 +500,7 @@ export async function clearHistory(): Promise<void> {
       } else {
         // Attempt to clear backend history API as well (best effort)
         try {
-          chrome.storage.local.get("serverPort", async res => {
+          chrome.storage.local.get(STORAGE_KEYS.SERVER_PORT, async res => {
             const port = (res as any).serverPort;
             if (!port) return;
             try {
@@ -527,7 +537,7 @@ export async function clearHistory(): Promise<void> {
  */
 export async function clearHistoryAndNotify(): Promise<void> {
   await clearHistory();
-  chrome.runtime.sendMessage({ type: "historyUpdated" });
+  chrome.runtime.sendMessage({ type: MESSAGE_TYPES.HISTORY_UPDATED });
 }
 
 /**
@@ -549,7 +559,12 @@ export async function removeHistoryItem(itemId?: string | number): Promise<void>
       }
 
       const history = result[historyStorageKey] || [];
-      const newHistory = history.filter((item: HistoryEntry) => item.id !== itemId);
+      const idStr = String(itemId);
+      const newHistory = history.filter((item: HistoryEntry) => {
+        const currentId = String((item as any).id ?? "");
+        const currentDownloadId = String((item as any).download_id ?? "");
+        return currentId !== idStr && currentDownloadId !== idStr;
+      });
 
       chrome.storage.local.set({ [historyStorageKey]: newHistory }, () => {
         if (chrome.runtime.lastError) {
@@ -575,7 +590,7 @@ export async function removeHistoryItemAndNotify(itemId?: string | number): Prom
   await removeHistoryItem(itemId);
   try {
     // Best-effort delete on server as well (if accessible)
-    const { serverPort } = await chrome.storage.local.get("serverPort");
+    const { serverPort } = await chrome.storage.local.get(STORAGE_KEYS.SERVER_PORT as any);
     const port = serverPort as number | undefined;
     if (port && itemId) {
       await fetch(`http://127.0.0.1:${port}/api/history`, {
@@ -587,7 +602,7 @@ export async function removeHistoryItemAndNotify(itemId?: string | number): Prom
   } catch {
     /* ignore */
   }
-  chrome.runtime.sendMessage({ type: "historyUpdated" });
+  chrome.runtime.sendMessage({ type: MESSAGE_TYPES.HISTORY_UPDATED });
 }
 
 /**
@@ -618,7 +633,7 @@ export async function removeHistoryItemByUrl(url?: string): Promise<void> {
 export async function removeHistoryItemByUrlAndNotify(url?: string): Promise<void> {
   await removeHistoryItemByUrl(url);
   try {
-    const { serverPort } = await chrome.storage.local.get("serverPort");
+    const { serverPort } = await chrome.storage.local.get(STORAGE_KEYS.SERVER_PORT as any);
     const port = serverPort as number | undefined;
     if (port && url) {
       await fetch(`http://127.0.0.1:${port}/api/history`, {
