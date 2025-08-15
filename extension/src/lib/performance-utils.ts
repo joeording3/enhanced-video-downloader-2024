@@ -1,13 +1,7 @@
 /**
- * Performance utilities for the Enhanced Video Downloader extension.
- * Provides performance monitoring and optimization tools.
+ * Performance Utilities
+ * Optimized functions for better performance
  */
-
-export interface PerformanceMetric {
-  name: string;
-  value: number;
-  timestamp: number;
-}
 
 /**
  * Debounce function to limit execution frequency
@@ -16,31 +10,10 @@ export function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  let timeoutId: NodeJS.Timeout;
   return (...args: Parameters<T>) => {
-    if (timeoutId !== null) {
-      clearTimeout(timeoutId);
-    }
-    // Use minimal timeout path for very small waits to improve responsiveness in tight loops
-    if (wait <= 10) {
-      // Schedule on microtask queue when possible to coalesce bursts
-      Promise.resolve().then(() => {
-        if (timeoutId !== null) {
-          // another call scheduled a timer; let that handle it
-          return;
-        }
-        // Fallback to setTimeout with minimal delay to yield to event loop
-        timeoutId = setTimeout(() => {
-          timeoutId = null;
-          func(...args);
-        }, wait);
-      });
-      return;
-    }
-    timeoutId = setTimeout(() => {
-      timeoutId = null;
-      func(...args);
-    }, wait);
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func(...args), wait);
   };
 }
 
@@ -51,14 +24,12 @@ export function throttle<T extends (...args: any[]) => any>(
   func: T,
   limit: number
 ): (...args: Parameters<T>) => void {
-  let inThrottle = false;
+  let inThrottle: boolean;
   return (...args: Parameters<T>) => {
     if (!inThrottle) {
       func(...args);
       inThrottle = true;
-      setTimeout(() => {
-        inThrottle = false;
-      }, limit);
+      setTimeout(() => (inThrottle = false), limit);
     }
   };
 }
@@ -66,7 +37,9 @@ export function throttle<T extends (...args: any[]) => any>(
 /**
  * Memoize function results
  */
-export function memoize<T extends (...args: any[]) => any>(func: T): T {
+export function memoize<T extends (...args: any[]) => any>(
+  func: T
+): T {
   const cache = new Map();
   return ((...args: Parameters<T>) => {
     const key = JSON.stringify(args);
@@ -115,12 +88,12 @@ export class Cache<T> {
   get(key: string): T | undefined {
     const entry = this.cache.get(key);
     if (!entry) return undefined;
-
+    
     if (Date.now() - entry.timestamp > this.maxAge) {
       this.cache.delete(key);
       return undefined;
     }
-
+    
     return entry.value;
   }
 

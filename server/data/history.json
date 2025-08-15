@@ -1,791 +1,325 @@
 [
   {
-    "download_id": "cleanup123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08:14T22:35:33-0700"
-  },
-  {
-    "download_id": "test123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08:14T22:35:30-0700"
-  },
-  {
-    "download_id": "id2",
+    "downloadId": "id2",
     "url": "http://example.com/path/video2",
     "status": "error",
     "error_type": "YT_DLP_UNKNOWN_ERROR",
     "message": "A download error occurred: fail download. Contact support if this persists.",
     "original_error": "fail download",
-    "timestamp": "2025-08-15T05:35:21.182355+00:00"
+    "timestamp": "2025-08-15T23:53:46.391393+00:00"
   },
   {
-    "download_id": "id1",
+    "downloadId": "id1",
     "url": "http://example.com/path/video1",
     "status": "complete",
     "filename": null,
     "filepath": null,
-    "timestamp": "2025-08-15T05:35:21.171898+00:00"
+    "timestamp": "2025-08-15T23:53:46.382218+00:00"
   },
   {
-    "download_id": "cleanup123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08:14T22:32:48-0700"
-  },
-  {
-    "download_id": "test123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08:14T22:32:45-0700"
-  },
-  {
-    "download_id": "id2",
+    "downloadId": "id2",
     "url": "http://example.com/path/video2",
     "status": "error",
     "error_type": "YT_DLP_UNKNOWN_ERROR",
     "message": "A download error occurred: fail download. Contact support if this persists.",
     "original_error": "fail download",
-    "timestamp": "2025-08-15T05:32:36.152050+00:00"
+    "timestamp": "2025-08-15T23:49:40.370161+00:00"
   },
   {
-    "download_id": "id1",
+    "downloadId": "id1",
     "url": "http://example.com/path/video1",
     "status": "complete",
     "filename": null,
     "filepath": null,
-    "timestamp": "2025-08-15T05:32:36.141088+00:00"
+    "timestamp": "2025-08-15T23:49:40.353747+00:00"
   },
   {
-    "download_id": "id2",
+    "downloadId": "id2",
     "url": "http://example.com/path/video2",
     "status": "error",
     "error_type": "YT_DLP_UNKNOWN_ERROR",
     "message": "A download error occurred: fail download. Contact support if this persists.",
     "original_error": "fail download",
-    "timestamp": "2025-08-15T05:29:35.721368+00:00"
+    "timestamp": "2025-08-15T23:45:52.498230+00:00"
   },
   {
-    "download_id": "id1",
+    "downloadId": "id1",
     "url": "http://example.com/path/video1",
     "status": "complete",
     "filename": null,
     "filepath": null,
-    "timestamp": "2025-08-15T05:29:35.709851+00:00"
+    "timestamp": "2025-08-15T23:45:52.490251+00:00"
   },
   {
-    "download_id": "id2",
+    "downloadId": "id2",
     "url": "http://example.com/path/video2",
     "status": "error",
     "error_type": "YT_DLP_UNKNOWN_ERROR",
     "message": "A download error occurred: fail download. Contact support if this persists.",
     "original_error": "fail download",
-    "timestamp": "2025-08-15T04:45:24.364648+00:00"
+    "timestamp": "2025-08-15T23:41:59.739974+00:00"
   },
   {
-    "download_id": "id1",
+    "downloadId": "id1",
     "url": "http://example.com/path/video1",
     "status": "complete",
     "filename": null,
     "filepath": null,
-    "timestamp": "2025-08-15T04:45:24.353560+00:00"
+    "timestamp": "2025-08-15T23:41:59.734401+00:00"
   },
   {
-    "download_id": "cleanup123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T21:44:43-0700"
-  },
-  {
-    "download_id": "test123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T21:44:40-0700"
-  },
-  {
-    "download_id": "id2",
+    "downloadId": "id2",
     "url": "http://example.com/path/video2",
     "status": "error",
     "error_type": "YT_DLP_UNKNOWN_ERROR",
     "message": "A download error occurred: fail download. Contact support if this persists.",
     "original_error": "fail download",
-    "timestamp": "2025-08-15T04:38:06.226216+00:00"
+    "timestamp": "2025-08-15T23:39:09.611651+00:00"
   },
   {
-    "download_id": "id1",
+    "downloadId": "id1",
     "url": "http://example.com/path/video1",
     "status": "complete",
     "filename": null,
     "filepath": null,
-    "timestamp": "2025-08-15T04:38:06.218955+00:00"
+    "timestamp": "2025-08-15T23:39:09.606720+00:00"
   },
   {
-    "download_id": "cleanup123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T21:37:45-0700"
-  },
-  {
-    "download_id": "test123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T21:37:42-0700"
-  },
-  {
-    "download_id": "id2",
+    "downloadId": "id2",
     "url": "http://example.com/path/video2",
     "status": "error",
     "error_type": "YT_DLP_UNKNOWN_ERROR",
     "message": "A download error occurred: fail download. Contact support if this persists.",
     "original_error": "fail download",
-    "timestamp": "2025-08-15T04:32:51.247342+00:00"
+    "timestamp": "2025-08-15T23:32:42.674527+00:00"
   },
   {
-    "download_id": "id1",
+    "downloadId": "id1",
     "url": "http://example.com/path/video1",
     "status": "complete",
     "filename": null,
     "filepath": null,
-    "timestamp": "2025-08-15T04:32:51.240402+00:00"
+    "timestamp": "2025-08-15T23:32:42.668211+00:00"
   },
   {
-    "download_id": "cleanup123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T21:32:32-0700"
-  },
-  {
-    "download_id": "test123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T21:32:29-0700"
-  },
-  {
-    "download_id": "id2",
+    "downloadId": "id2",
     "url": "http://example.com/path/video2",
     "status": "error",
     "error_type": "YT_DLP_UNKNOWN_ERROR",
     "message": "A download error occurred: fail download. Contact support if this persists.",
     "original_error": "fail download",
-    "timestamp": "2025-08-15T04:28:49.995236+00:00"
+    "timestamp": "2025-08-15T23:31:01.204461+00:00"
   },
   {
-    "download_id": "id1",
+    "downloadId": "id1",
     "url": "http://example.com/path/video1",
     "status": "complete",
     "filename": null,
     "filepath": null,
-    "timestamp": "2025-08-15T04:28:49.989894+00:00"
+    "timestamp": "2025-08-15T23:31:01.199627+00:00"
   },
   {
-    "download_id": "cleanup123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T21:28:31-0700"
-  },
-  {
-    "download_id": "test123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T21:28:28-0700"
-  },
-  {
-    "download_id": "id2",
+    "downloadId": "id2",
     "url": "http://example.com/path/video2",
     "status": "error",
     "error_type": "YT_DLP_UNKNOWN_ERROR",
     "message": "A download error occurred: fail download. Contact support if this persists.",
     "original_error": "fail download",
-    "timestamp": "2025-08-15T04:22:00.051196+00:00"
+    "timestamp": "2025-08-15T23:28:12.095939+00:00"
   },
   {
-    "download_id": "id1",
+    "downloadId": "id1",
     "url": "http://example.com/path/video1",
     "status": "complete",
     "filename": null,
     "filepath": null,
-    "timestamp": "2025-08-15T04:22:00.040079+00:00"
+    "timestamp": "2025-08-15T23:28:12.091127+00:00"
   },
   {
-    "download_id": "cleanup123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T21:21:45-0700"
-  },
-  {
-    "download_id": "test123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T21:21:42-0700"
-  },
-  {
-    "download_id": "id2",
+    "downloadId": "id2",
     "url": "http://example.com/path/video2",
     "status": "error",
     "error_type": "YT_DLP_UNKNOWN_ERROR",
     "message": "A download error occurred: fail download. Contact support if this persists.",
     "original_error": "fail download",
-    "timestamp": "2025-08-15T04:19:36.016197+00:00"
+    "timestamp": "2025-08-15T23:25:27.951561+00:00"
   },
   {
-    "download_id": "id1",
+    "downloadId": "id1",
     "url": "http://example.com/path/video1",
     "status": "complete",
     "filename": null,
     "filepath": null,
-    "timestamp": "2025-08-15T04:19:36.010060+00:00"
+    "timestamp": "2025-08-15T23:25:27.946607+00:00"
   },
   {
-    "download_id": "cleanup123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T21:19:21-0700"
-  },
-  {
-    "download_id": "test123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T21:19:18-0700"
-  },
-  {
-    "download_id": "id2",
+    "downloadId": "id2",
     "url": "http://example.com/path/video2",
     "status": "error",
     "error_type": "YT_DLP_UNKNOWN_ERROR",
     "message": "A download error occurred: fail download. Contact support if this persists.",
     "original_error": "fail download",
-    "timestamp": "2025-08-15T04:14:40.466889+00:00"
+    "timestamp": "2025-08-15T23:24:23.502438+00:00"
   },
   {
-    "download_id": "id1",
+    "downloadId": "id1",
     "url": "http://example.com/path/video1",
     "status": "complete",
     "filename": null,
     "filepath": null,
-    "timestamp": "2025-08-15T04:14:40.456416+00:00"
+    "timestamp": "2025-08-15T23:24:23.495439+00:00"
   },
   {
-    "download_id": "cleanup123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T21:13:05-0700"
-  },
-  {
-    "download_id": "test123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T21:13:02-0700"
-  },
-  {
-    "download_id": "id2",
+    "downloadId": "id2",
     "url": "http://example.com/path/video2",
     "status": "error",
     "error_type": "YT_DLP_UNKNOWN_ERROR",
     "message": "A download error occurred: fail download. Contact support if this persists.",
     "original_error": "fail download",
-    "timestamp": "2025-08-15T04:05:48.843734+00:00"
+    "timestamp": "2025-08-15T23:23:10.918277+00:00"
   },
   {
-    "download_id": "id1",
+    "downloadId": "id1",
     "url": "http://example.com/path/video1",
     "status": "complete",
     "filename": null,
     "filepath": null,
-    "timestamp": "2025-08-15T04:05:48.838306+00:00"
+    "timestamp": "2025-08-15T23:23:10.911501+00:00"
   },
   {
-    "download_id": "cleanup123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T21:05:35-0700"
-  },
-  {
-    "download_id": "test123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T21:05:32-0700"
-  },
-  {
-    "download_id": "id2",
+    "downloadId": "id2",
     "url": "http://example.com/path/video2",
     "status": "error",
     "error_type": "YT_DLP_UNKNOWN_ERROR",
     "message": "A download error occurred: fail download. Contact support if this persists.",
     "original_error": "fail download",
-    "timestamp": "2025-08-15T04:04:23.257162+00:00"
+    "timestamp": "2025-08-15T23:22:05.584272+00:00"
   },
   {
-    "download_id": "id1",
+    "downloadId": "id1",
     "url": "http://example.com/path/video1",
     "status": "complete",
     "filename": null,
     "filepath": null,
-    "timestamp": "2025-08-15T04:04:23.253539+00:00"
+    "timestamp": "2025-08-15T23:22:05.579750+00:00"
   },
   {
-    "download_id": "cleanup123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T21:04:10-0700"
-  },
-  {
-    "download_id": "test123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T21:04:08-0700"
-  },
-  {
-    "download_id": "id2",
+    "downloadId": "id2",
     "url": "http://example.com/path/video2",
     "status": "error",
     "error_type": "YT_DLP_UNKNOWN_ERROR",
     "message": "A download error occurred: fail download. Contact support if this persists.",
     "original_error": "fail download",
-    "timestamp": "2025-08-15T04:03:02.767994+00:00"
+    "timestamp": "2025-08-15T23:20:42.280689+00:00"
   },
   {
-    "download_id": "id1",
+    "downloadId": "id1",
     "url": "http://example.com/path/video1",
     "status": "complete",
     "filename": null,
     "filepath": null,
-    "timestamp": "2025-08-15T04:03:02.765361+00:00"
+    "timestamp": "2025-08-15T23:20:42.277007+00:00"
   },
   {
-    "download_id": "cleanup123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T21:02:29-0700"
-  },
-  {
-    "download_id": "test123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T21:02:26-0700"
-  },
-  {
-    "download_id": "id2",
+    "downloadId": "id2",
     "url": "http://example.com/path/video2",
     "status": "error",
     "error_type": "YT_DLP_UNKNOWN_ERROR",
     "message": "A download error occurred: fail download. Contact support if this persists.",
     "original_error": "fail download",
-    "timestamp": "2025-08-15T03:31:08.026381+00:00"
+    "timestamp": "2025-08-15T23:19:22.247362+00:00"
   },
   {
-    "download_id": "id1",
+    "downloadId": "id1",
     "url": "http://example.com/path/video1",
     "status": "complete",
     "filename": null,
     "filepath": null,
-    "timestamp": "2025-08-15T03:31:08.018257+00:00"
+    "timestamp": "2025-08-15T23:19:22.240404+00:00"
   },
   {
-    "download_id": "cleanup123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T20:30:36-0700"
-  },
-  {
-    "download_id": "test123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T20:30:33-0700"
-  },
-  {
-    "download_id": "id2",
+    "downloadId": "id2",
     "url": "http://example.com/path/video2",
     "status": "error",
     "error_type": "YT_DLP_UNKNOWN_ERROR",
     "message": "A download error occurred: fail download. Contact support if this persists.",
     "original_error": "fail download",
-    "timestamp": "2025-08-15T03:28:58.356993+00:00"
+    "timestamp": "2025-08-15T23:18:35.824721+00:00"
   },
   {
-    "download_id": "id1",
+    "downloadId": "id1",
     "url": "http://example.com/path/video1",
     "status": "complete",
     "filename": null,
     "filepath": null,
-    "timestamp": "2025-08-15T03:28:58.352994+00:00"
+    "timestamp": "2025-08-15T23:18:35.820221+00:00"
   },
   {
-    "download_id": "cleanup123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T20:28:40-0700"
-  },
-  {
-    "download_id": "test123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T20:28:37-0700"
-  },
-  {
-    "download_id": "id2",
+    "downloadId": "id2",
     "url": "http://example.com/path/video2",
     "status": "error",
     "error_type": "YT_DLP_UNKNOWN_ERROR",
     "message": "A download error occurred: fail download. Contact support if this persists.",
     "original_error": "fail download",
-    "timestamp": "2025-08-15T02:21:27.511313+00:00"
+    "timestamp": "2025-08-15T23:18:04.694471+00:00"
   },
   {
-    "download_id": "id1",
+    "downloadId": "id1",
     "url": "http://example.com/path/video1",
     "status": "complete",
     "filename": null,
     "filepath": null,
-    "timestamp": "2025-08-15T02:21:27.505788+00:00"
+    "timestamp": "2025-08-15T23:18:04.688271+00:00"
   },
   {
-    "download_id": "cleanup123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T19:21:10-0700"
-  },
-  {
-    "download_id": "test123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T19:21:08-0700"
-  },
-  {
-    "download_id": "id2",
+    "downloadId": "id2",
     "url": "http://example.com/path/video2",
     "status": "error",
     "error_type": "YT_DLP_UNKNOWN_ERROR",
     "message": "A download error occurred: fail download. Contact support if this persists.",
     "original_error": "fail download",
-    "timestamp": "2025-08-15T01:21:32.856597+00:00"
+    "timestamp": "2025-08-15T23:17:23.658689+00:00"
   },
   {
-    "download_id": "id1",
+    "downloadId": "id1",
     "url": "http://example.com/path/video1",
     "status": "complete",
     "filename": null,
     "filepath": null,
-    "timestamp": "2025-08-15T01:21:32.851120+00:00"
+    "timestamp": "2025-08-15T23:17:23.652299+00:00"
   },
   {
-    "download_id": "cleanup123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T18:21:16-0700"
-  },
-  {
-    "download_id": "test123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T18:21:13-0700"
-  },
-  {
-    "download_id": "id2",
+    "downloadId": "id2",
     "url": "http://example.com/path/video2",
     "status": "error",
     "error_type": "YT_DLP_UNKNOWN_ERROR",
     "message": "A download error occurred: fail download. Contact support if this persists.",
     "original_error": "fail download",
-    "timestamp": "2025-08-15T00:36:30.673877+00:00"
+    "timestamp": "2025-08-15T23:16:48.109656+00:00"
   },
   {
-    "download_id": "id1",
+    "downloadId": "id1",
     "url": "http://example.com/path/video1",
     "status": "complete",
     "filename": null,
     "filepath": null,
-    "timestamp": "2025-08-15T00:36:30.668787+00:00"
+    "timestamp": "2025-08-15T23:16:48.101974+00:00"
   },
   {
-    "download_id": "cleanup123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T17:36:10-0700"
-  },
-  {
-    "download_id": "test123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T17:36:07-0700"
-  },
-  {
-    "download_id": "id2",
+    "downloadId": "id2",
     "url": "http://example.com/path/video2",
     "status": "error",
     "error_type": "YT_DLP_UNKNOWN_ERROR",
     "message": "A download error occurred: fail download. Contact support if this persists.",
     "original_error": "fail download",
-    "timestamp": "2025-08-15T00:31:39.075613+00:00"
+    "timestamp": "2025-08-15T23:10:26.949991+00:00"
   },
   {
-    "download_id": "id1",
+    "downloadId": "id1",
     "url": "http://example.com/path/video1",
     "status": "complete",
     "filename": null,
     "filepath": null,
-    "timestamp": "2025-08-15T00:31:39.069596+00:00"
-  },
-  {
-    "download_id": "cleanup123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T17:30:02-0700"
-  },
-  {
-    "download_id": "test123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T17:29:59-0700"
-  },
-  {
-    "download_id": "id2",
-    "url": "http://example.com/path/video2",
-    "status": "error",
-    "error_type": "YT_DLP_UNKNOWN_ERROR",
-    "message": "A download error occurred: fail download. Contact support if this persists.",
-    "original_error": "fail download",
-    "timestamp": "2025-08-15T00:20:38.848302+00:00"
-  },
-  {
-    "download_id": "id1",
-    "url": "http://example.com/path/video1",
-    "status": "complete",
-    "filename": null,
-    "filepath": null,
-    "timestamp": "2025-08-15T00:20:38.844342+00:00"
-  },
-  {
-    "download_id": "cleanup123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T17:20:27-0700"
-  },
-  {
-    "download_id": "test123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T17:20:24-0700"
-  },
-  {
-    "download_id": "id2",
-    "url": "http://example.com/path/video2",
-    "status": "error",
-    "error_type": "YT_DLP_UNKNOWN_ERROR",
-    "message": "A download error occurred: fail download. Contact support if this persists.",
-    "original_error": "fail download",
-    "timestamp": "2025-08-15T00:15:30.413001+00:00"
-  },
-  {
-    "download_id": "id1",
-    "url": "http://example.com/path/video1",
-    "status": "complete",
-    "filename": null,
-    "filepath": null,
-    "timestamp": "2025-08-15T00:15:30.399785+00:00"
-  },
-  {
-    "download_id": "cleanup123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T17:13:53-0700"
-  },
-  {
-    "download_id": "test123",
-    "url": null,
-    "status": "canceled",
-    "message": "Cancelled by user",
-    "timestamp": "2025-08-14T17:13:50-0700"
-  },
-  {
-    "download_id": "id2",
-    "url": "http://example.com/path/video2",
-    "status": "error",
-    "error_type": "YT_DLP_UNKNOWN_ERROR",
-    "message": "A download error occurred: fail download. Contact support if this persists.",
-    "original_error": "fail download",
-    "timestamp": "2025-08-14T22:34:00.747237+00:00"
-  },
-  {
-    "download_id": "id1",
-    "url": "http://example.com/path/video1",
-    "status": "complete",
-    "filename": null,
-    "filepath": null,
-    "timestamp": "2025-08-14T22:34:00.742221+00:00"
-  },
-  {
-    "download_id": "id2",
-    "url": "http://example.com/path/video2",
-    "status": "error",
-    "error_type": "YT_DLP_UNKNOWN_ERROR",
-    "message": "A download error occurred: fail download. Contact support if this persists.",
-    "original_error": "fail download",
-    "timestamp": "2025-08-14T22:33:09.393465+00:00"
-  },
-  {
-    "download_id": "id1",
-    "url": "http://example.com/path/video1",
-    "status": "complete",
-    "filename": null,
-    "filepath": null,
-    "timestamp": "2025-08-14T22:33:09.384371+00:00"
-  },
-  {
-    "download_id": "id2",
-    "url": "http://example.com/path/video2",
-    "status": "error",
-    "error_type": "YT_DLP_UNKNOWN_ERROR",
-    "message": "A download error occurred: fail download. Contact support if this persists.",
-    "original_error": "fail download",
-    "timestamp": "2025-08-14T21:15:55.656889+00:00"
-  },
-  {
-    "download_id": "id1",
-    "url": "http://example.com/path/video1",
-    "status": "complete",
-    "filename": null,
-    "filepath": null,
-    "timestamp": "2025-08-14T21:15:55.646908+00:00"
-  },
-  {
-    "download_id": "id2",
-    "url": "http://example.com/path/video2",
-    "status": "error",
-    "error_type": "YT_DLP_UNKNOWN_ERROR",
-    "message": "A download error occurred: fail download. Contact support if this persists.",
-    "original_error": "fail download",
-    "timestamp": "2025-08-14T21:08:16.094702+00:00"
-  },
-  {
-    "download_id": "id1",
-    "url": "http://example.com/path/video1",
-    "status": "complete",
-    "filename": null,
-    "filepath": null,
-    "timestamp": "2025-08-14T21:08:16.085699+00:00"
-  },
-  {
-    "download_id": "id2",
-    "url": "http://example.com/path/video2",
-    "status": "error",
-    "error_type": "YT_DLP_UNKNOWN_ERROR",
-    "message": "A download error occurred: fail download. Contact support if this persists.",
-    "original_error": "fail download",
-    "timestamp": "2025-08-14T21:04:54.380978+00:00"
-  },
-  {
-    "download_id": "id1",
-    "url": "http://example.com/path/video1",
-    "status": "complete",
-    "filename": null,
-    "filepath": null,
-    "timestamp": "2025-08-14T21:04:54.369995+00:00"
-  },
-  {
-    "download_id": "id2",
-    "url": "http://example.com/path/video2",
-    "status": "error",
-    "error_type": "YT_DLP_UNKNOWN_ERROR",
-    "message": "A download error occurred: fail download. Contact support if this persists.",
-    "original_error": "fail download",
-    "timestamp": "2025-08-14T20:58:38.047010+00:00"
-  },
-  {
-    "download_id": "id1",
-    "url": "http://example.com/path/video1",
-    "status": "complete",
-    "filename": null,
-    "filepath": null,
-    "timestamp": "2025-08-14T20:58:38.041841+00:00"
-  },
-  {
-    "download_id": "id2",
-    "url": "http://example.com/path/video2",
-    "status": "error",
-    "error_type": "YT_DLP_UNKNOWN_ERROR",
-    "message": "A download error occurred: fail download. Contact support if this persists.",
-    "original_error": "fail download",
-    "timestamp": "2025-08-14T20:56:39.926489+00:00"
-  },
-  {
-    "download_id": "id1",
-    "url": "http://example.com/path/video1",
-    "status": "complete",
-    "filename": null,
-    "filepath": null,
-    "timestamp": "2025-08-14T20:56:39.920497+00:00"
-  },
-  {
-    "download_id": "1755204625051",
-    "url": "https://media.hypnotube.com/videos/6/7/3/3/e/6733e433a219a.mp4?token=ceZnV6A2JfdD3Sah9ngXnt9O_-UeLEK2SGVChhX3SMM&expires=1755219018",
-    "status": "complete",
-    "filename": "Become the Porn - PMV Loop - Videos - Hypnotube_6733e433a219a.mp4.mp4",
-    "filepath": "/Users/josephording/Downloads/VideoDownloader/Become the Porn - PMV Loop - Videos - Hypnotube_6733e433a219a.mp4.mp4",
-    "timestamp": "2025-08-14T20:50:26.819680+00:00"
-  },
-  {
-    "download_id": "id2",
-    "url": "http://example.com/path/video2",
-    "status": "error",
-    "error_type": "YT_DLP_UNKNOWN_ERROR",
-    "message": "A download error occurred: fail download. Contact support if this persists.",
-    "original_error": "fail download",
-    "timestamp": "2025-08-14T20:13:24.882277+00:00"
-  },
-  {
-    "download_id": "id1",
-    "url": "http://example.com/path/video1",
-    "status": "complete",
-    "filename": null,
-    "filepath": null,
-    "timestamp": "2025-08-14T20:13:24.872685+00:00"
-  },
-  {
-    "download_id": "1755200932733",
-    "url": "https://www.youtube.com/shorts/5ORZ0jr_zY8",
-    "status": "complete",
-    "filename": "Anna Alekseevna Kazan championship #\u043b\u0451\u0433\u043a\u0430\u044f\u0430\u0442\u043b\u0435\u0442\u0438\u043a\u0430 #sports #trackandfield #runner #worldathletics - YouTube_5ORZ0jr_zY8.mp4",
-    "filepath": "/Users/josephording/Downloads/untitled folder/Anna Alekseevna Kazan championship #\u043b\u0451\u0433\u043a\u0430\u044f\u0430\u0442\u043b\u0435\u0442\u0438\u043a\u0430 #sports #trackandfield #runner #worldathletics - YouTube_5ORZ0jr_zY8.mp4",
-    "timestamp": "2025-08-14T19:49:12.661297+00:00"
+    "timestamp": "2025-08-15T23:10:26.943455+00:00"
   }
 ]

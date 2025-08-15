@@ -28,7 +28,7 @@ def test_download_missing_url(client: FlaskClient) -> None:
     :param client: FlaskClient to send HTTP requests.
     :returns: None
     """
-    resp = client.post("/api/download", json={"download_id": "id1"})
+    resp = client.post("/api/download", json={"downloadId": "id1"})
     assert resp.status_code == 400
     data = resp.get_json()
     assert data["error_type"] == "MISSING_URL"
@@ -50,10 +50,10 @@ def test_download_success(client: FlaskClient, monkeypatch: MonkeyPatch) -> None
         :param data: validated request data.
         :returns: tuple of JSON response and HTTP status code.
         """
-        return jsonify({"status": "success", "downloadId": data.get("download_id")}), 200
+        return jsonify({"status": "success", "downloadId": data.get("downloadId")}), 200
 
     monkeypatch.setattr("server.api.download_bp.handle_ytdlp_download", fake_handle)
-    resp = client.post("/api/download", json={"url": "http://example.com", "download_id": "id2"})
+    resp = client.post("/api/download", json={"url": "http://example.com", "downloadId": "id2"})
     assert resp.status_code == 200
     data = resp.get_json()
     assert data["status"] == "success"

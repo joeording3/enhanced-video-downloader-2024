@@ -897,7 +897,7 @@ videodownloader-server utils config set <key> <value>
 - `GET /api/status`: Get download progress and status
 - `GET /api/history`: Get download history
 - `POST /api/history`: Sync/append/clear/delete-one history entries. Deletion accepts `id` or
-  `download_id`, or `url`/`webpage_url` and is idempotent.
+  `downloadId`, or `url`/`webpage_url` and is idempotent.
 - `GET /api/config`: Get server configuration
 - `POST /api/config`: Update server configuration
 - `GET /api/logs`: Get server logs
@@ -1308,7 +1308,7 @@ Follow this folder-by-folder conversion order:
    - Note: `server/history.py` includes `consolidate_lingering_info_json` which imports lingering
      `*.info.json` sidecars into consolidated history and removes them. It is invoked on server
      startup (best-effort) and from the CLI cleanup utility. History deletion is idempotent and
-     accepts `id`/`download_id` or `url`/`webpage_url` for matching.
+     accepts `id`/`downloadId` or `url`/`webpage_url` for matching.
 8. **extension/src/lib/utils.ts**.
 9. **extension/src/content.ts**, **history.ts**, **options.ts**, **popup.ts**.
 10. **extension/src/background-helpers.ts** and **background.ts**.

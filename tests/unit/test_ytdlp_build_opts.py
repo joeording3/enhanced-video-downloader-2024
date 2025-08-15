@@ -33,7 +33,7 @@ class DummyConfig:
 
 def test_build_opts_default(monkeypatch: MonkeyPatch) -> None:
     """
-    Test build_opts with default configuration and no download_id or playlist.
+    Test build_opts with default configuration and no downloadId or playlist.
 
     :param monkeypatch: pytest MonkeyPatch fixture for stubbing functions.
     :returns: None
@@ -47,15 +47,15 @@ def test_build_opts_default(monkeypatch: MonkeyPatch) -> None:
     assert "yesplaylist" not in opts
 
 
-def test_build_opts_with_download_id(monkeypatch: MonkeyPatch) -> None:
+def test_build_opts_with_downloadId(monkeypatch: MonkeyPatch) -> None:
     """
-    Test build_opts includes progress_hooks when download_id is provided.
+    Test build_opts includes progress_hooks when downloadId is provided.
 
     :param monkeypatch: pytest MonkeyPatch fixture for stubbing functions.
     :returns: None
     """
     monkeypatch.setattr(Config, "load", lambda *args, **kwargs: DummyConfig({}))
-    opts = build_opts("out.mp4", download_id="123")
+    opts = build_opts("out.mp4", downloadId="123")
     assert "progress_hooks" in opts
     hooks = opts["progress_hooks"]
     assert isinstance(hooks, list) and len(hooks) == 1

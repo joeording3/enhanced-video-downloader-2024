@@ -32,7 +32,7 @@ def test_apply_custom_opts_overrides_and_skips_protected() -> None:
     """
     opts = {"outtmpl": "foo", "custom": 1}
     custom = {"custom": 2, "outtmpl": "bar", "logger": "bad"}
-    _apply_custom_opts(opts, custom, _download_id=None)
+    _apply_custom_opts(opts, custom, _downloadId=None)
     assert opts["custom"] == 2
     # Protected keys should not be overwritten
     assert opts["outtmpl"] == "foo"
@@ -63,7 +63,7 @@ def test_assign_progress_hook_and_invoke() -> None:
     :returns: None
     """
     opts: dict[str, Any] = {}
-    _assign_progress_hook(opts, download_id="abc")
+    _assign_progress_hook(opts, downloadId="abc")
     assert "progress_hooks" in opts
     hooks = opts["progress_hooks"]
     assert isinstance(hooks, list) and len(hooks) == 1
@@ -75,11 +75,11 @@ def test_assign_progress_hook_and_invoke() -> None:
 
 def test_handle_cookies_no_key() -> None:
     """
-    Test that no cookiefile is added when download_id is None.
+    Test that no cookiefile is added when downloadId is None.
 
     :returns: None
     """
     opts: dict[str, Any] = {}
     # Should not raise or add cookiefile
-    _handle_cookies(opts, download_id=None)
+    _handle_cookies(opts, downloadId=None)
     assert "cookiefile" not in opts

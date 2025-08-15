@@ -12,48 +12,37 @@ let loadPromise: Promise<void> | null = null;
 /**
  * Lazy load the main content script functionality
  */
-export const lazyLoadContent = async (): Promise<void> => {
-  if (isLoaded) {
-    return;
+export const lazyLoadContent = async (priority: 'high' | 'medium' | 'low' = 'medium') => {
+  const loadHighPriority = async () => {
+    // Load essential functionality immediately
+    const { createOrUpdateButton, ensureDownloadButtonStyle } = await import('./content');
+    return { createOrUpdateButton, ensureDownloadButtonStyle };
+  };
+
+  const loadMediumPriority = async () => {
+    // Load secondary functionality after a delay
+    await new Promise(resolve => setTimeout(resolve, 100));
+    const { getButtonState, saveButtonState } = await import('./content');
+    return { getButtonState, saveButtonState };
+  };
+
+  const loadLowPriority = async () => {
+    // Load non-critical functionality after user interaction
+    await new Promise(resolve => setTimeout(resolve, 500));
+    const { resetButtonPosition, setButtonHiddenState } = await import('./content');
+    return { resetButtonPosition, setButtonHiddenState };
+  };
+
+  switch (priority) {
+    case 'high':
+      return await loadHighPriority();
+    case 'medium':
+      return await loadMediumPriority();
+    case 'low':
+      return await loadLowPriority();
+    default:
+      return await loadMediumPriority();
   }
-
-  if (loadPromise) {
-    return loadPromise;
-  }
-
-  loadPromise = (async () => {
-    try {
-      logger.debug("Lazy loading content script functionality", {
-        component: "content-lazy",
-        operation: "lazyLoadContent"
-      });
-
-      // Dynamic import of the main content script
-      const contentModule = await import("./content");
-
-      // The content module initializes automatically, so we just need to ensure it's loaded
-      // No need to call initContent since it doesn't exist
-      logger.debug("Content module loaded successfully", {
-        component: "content-lazy",
-        operation: "lazyLoadContent"
-      });
-
-      isLoaded = true;
-      logger.info("Content script functionality loaded successfully", {
-        component: "content-lazy",
-        operation: "lazyLoadContent"
-      });
-    } catch (error) {
-      logger.error("Failed to lazy load content script", {
-        component: "content-lazy",
-        operation: "lazyLoadContent",
-        data: error
-      });
-      throw error;
-    }
-  })();
-
-  return loadPromise;
 };
 
 /**

@@ -86,12 +86,12 @@ def _handle_history_delete_one(data: dict[str, Any]) -> tuple[Response, int]:
     """Delete a single history entry by id or url."""
     try:
         history = load_history()
-        entry_id = data.get("id") or data.get("download_id")
+        entry_id = data.get("id") or data.get("downloadId")
         url = data.get("url") or data.get("webpage_url")
         new_history: list[dict[str, Any]]
         if entry_id:
             new_history = [
-                h for h in history if str(h.get("id")) != str(entry_id) and str(h.get("download_id")) != str(entry_id)
+                h for h in history if str(h.get("id")) != str(entry_id) and str(h.get("downloadId")) != str(entry_id)
             ]
         elif url:
 

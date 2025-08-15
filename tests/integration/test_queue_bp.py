@@ -5,19 +5,19 @@ from flask.testing import FlaskClient
 
 from server.__main__ import create_app
 from server.config import Config
-from server.queue import DownloadQueueManager
+from server.downloads import unified_download_manager
 from server.schemas import ServerConfig
 
 
 @pytest.fixture
 def client(monkeypatch: pytest.MonkeyPatch) -> FlaskClient:
-    # Set up a fresh queue manager for isolation
-    mgr = DownloadQueueManager()
+    # Set up a fresh unified download manager for isolation
+    mgr = unified_download_manager
 
     # Replace global singleton with our instance
     import server.api.queue_bp as qbp
 
-    monkeypatch.setattr(qbp, "queue_manager", mgr, raising=True)
+    monkeypatch.setattr(qbp, "unified_download_manager", mgr, raising=True)
 
     # Create app
     cfg = Config(ServerConfig())
@@ -36,12 +36,12 @@ def test_reorder_and_remove_endpoints(client: FlaskClient, monkeypatch: pytest.M
     # Access the injected manager
     import server.api.queue_bp as qbp
 
-    mgr = qbp.queue_manager
+    mgr = qbp.unified_download_manager
 
     # Seed items (include legacy key to exercise normalization)
-    mgr.enqueue({"download_id": "A", "url": "u1"})
-    mgr.enqueue({"downloadId": "B", "url": "u2"})
-    mgr.enqueue({"downloadId": "C", "url": "u3"})
+    mgr.add_download("A", "u1")
+    mgr.add_download("B", "u2")
+    mgr.add_download("C", "u3")
 
     # Reorder B, A (C should be appended)
     resp = client.post("/api/queue/reorder", json={"order": ["B", "A"]})
@@ -60,17 +60,22 @@ def test_reorder_and_remove_endpoints(client: FlaskClient, monkeypatch: pytest.M
 def test_force_start_endpoint(client: FlaskClient, monkeypatch: pytest.MonkeyPatch) -> None:
     # Inject a fake handler into queue module used by manager
     import server.api.queue_bp as qbp
-    import server.queue as qmod
+    import server.downloads as downloads_mod
 
     started: dict[str, Any] = {}
 
     def fake_run(task: dict) -> None:
         started["id"] = task.get("downloadId")
 
-    monkeypatch.setattr(qmod.DownloadQueueManager, "_run_download_task", staticmethod(fake_run), raising=True)
+    monkeypatch.setattr(
+        downloads_mod.unified_download_manager,
+        "_run_download_task",
+        staticmethod(fake_run),
+        raising=True
+    )
 
-    mgr = qbp.queue_manager
-    mgr.enqueue({"downloadId": "X1", "url": "u"})
+    mgr = qbp.unified_download_manager
+    mgr.add_download("X1", "u")
 
     resp = client.post("/api/queue/X1/force-start")
     assert resp.status_code == 200

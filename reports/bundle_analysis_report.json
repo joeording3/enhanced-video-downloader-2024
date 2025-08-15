@@ -1,23 +1,27 @@
 {
-  "timestamp": "2025-08-10T04:54:10.703Z",
-  "totalSize": 173587,
+  "timestamp": "2025-08-15T17:28:51.796Z",
+  "totalSize": 433287,
   "totalFiles": 6,
   "largeFiles": [
     {
-      "path": "background.js",
-      "size": 57146
-    },
-    {
       "path": "options.js",
-      "size": 50050
+      "size": 125578
     },
     {
-      "path": "content.js",
-      "size": 33621
+      "path": "background.js",
+      "size": 118682
     },
     {
       "path": "popup.js",
-      "size": 22686
+      "size": 94312
+    },
+    {
+      "path": "content.js",
+      "size": 64799
+    },
+    {
+      "path": "history.js",
+      "size": 28636
     }
   ],
   "recommendations": [

@@ -204,8 +204,8 @@ def consolidate_lingering_info_json(scan_dir: Path | None = None, recursive: boo
         existing_urls: set[str] = set()
         for h in _iter(existing_history):
             try:
-                if "id" in h and h.get("id") is not None:
-                    existing_ids.add(str(h.get("id")))
+                if "downloadId" in h and h.get("downloadId") is not None:
+                    existing_ids.add(str(h.get("downloadId")))
                 url_val = h.get("webpage_url") or h.get("url")
                 if url_val is not None:
                     existing_urls.add(str(url_val))
@@ -231,7 +231,7 @@ def consolidate_lingering_info_json(scan_dir: Path | None = None, recursive: boo
             # Append if dict-like and not a simple duplicate
             if isinstance(data, dict):
                 try:
-                    new_id = data.get("id")
+                    new_id = data.get("downloadId")
                     new_url = data.get("webpage_url") or data.get("url")
                     is_duplicate = False
                     if new_id is not None and str(new_id) in existing_ids:

@@ -319,9 +319,9 @@ videodownloader-server download url <URL>  # Download a specific URL
 videodownloader-server download resume incomplete  # Resume incomplete downloads
 videodownloader-server download resume partials  # Resume partial downloads
 videodownloader-server download resume failed  # Resume failed downloads
-videodownloader-server download cancel <download_id>  # Cancel a specific download
+videodownloader-server download cancel <downloadId>  # Cancel a specific download
 videodownloader-server download batch <file>  # Batch download from file
-videodownloader-server download priority <download_id> <priority>  # Set download priority
+videodownloader-server download priority <downloadId> <priority>  # Set download priority
 videodownloader-server download list  # List active downloads
 
 # History management
@@ -445,7 +445,7 @@ message for specifics (network error vs server response).
 - **History entries**: For completed/errored items, click the X/Delete on a row to remove a single
   entry.
   - Deletes locally and also requests server-side deletion when connected (matches by
-    `id`/`download_id` or `url`/`webpage_url`, idempotent)
+    `id`/`downloadId` or `url`/`webpage_url`, idempotent)
   - Active/queued items still use X as Cancel; once inactive, X acts as Delete
   - History list updates live on deletion
 
@@ -477,7 +477,7 @@ message for specifics (network error vs server response).
   page, Prev/Next navigation, and a clear-all action under Actions → Clear History. The view updates
   live when new history entries are added.
   - Deleting a single entry is idempotent and also requests server-side removal when the server is
-    available. The server accepts `id`/`download_id` or `url`/`webpage_url` for matching.
+    available. The server accepts `id`/`downloadId` or `url`/`webpage_url` for matching.
 - **Server Status**: Real-time server connectivity status
 - **Settings Persistence**: All settings are automatically saved and restored
 - **Smart Injection**: Toggle whether the in-page Download button is shown only when a downloadable

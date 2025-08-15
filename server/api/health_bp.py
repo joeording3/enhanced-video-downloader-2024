@@ -10,7 +10,7 @@ from typing import Any
 
 from flask import Blueprint, jsonify
 
-from server.downloads import progress_data
+from server.downloads import unified_download_manager
 from server.downloads.ytdlp import download_process_registry, download_tempfile_registry
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ def health() -> Any:
         # Get download statistics
         active_downloads = len(download_process_registry)
         temp_files = sum(len(files) for files in download_tempfile_registry.values())
-        progress_entries = len(progress_data)
+        progress_entries = len(unified_download_manager.get_all_downloads())
 
         # Get system information
         import psutil

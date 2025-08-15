@@ -190,8 +190,8 @@ class TestDownloaderHelpers:
 
         # Prepare fake history with two entries
         history = [
-            {"download_id": "id1", "url": "http://ex/1"},
-            {"download_id": "id2", "url": "http://ex/2"},
+            {"downloadId": "id1", "url": "http://ex/1"},
+            {"downloadId": "id2", "url": "http://ex/2"},
         ]
 
         monkeypatch.setattr(h, "load_history", lambda: history)

@@ -20,7 +20,7 @@ from flask import Flask
 
 from server import create_app
 from server.config import Config
-from server.downloads import progress_data, progress_lock
+from server.downloads import unified_download_manager
 from server.downloads.resume import resume_all_incomplete_downloads
 from server.lock import cleanup_lock_file, create_lock_file, get_lock_file_path
 
@@ -114,9 +114,11 @@ def graceful_shutdown(sig: int | None = None, _frame: types.FrameType | None = N
                 clear_on_stop = False
         if clear_on_stop:
             try:
-                from server.queue import queue_manager
-
-                queue_manager.clear()
+                # Clear queue on shutdown using unified download manager
+                all_downloads = unified_download_manager.get_all_downloads()
+                for downloadId in list(all_downloads.keys()):
+                    if all_downloads[downloadId].get("status") == "queued":
+                        unified_download_manager.remove_download(downloadId)
                 logger.info("Queue cleared on shutdown due to CLEAR_QUEUE_ON_STOP setting.")
             except Exception:
                 logger.debug("Failed to clear queue during shutdown", exc_info=True)
@@ -147,13 +149,13 @@ def save_download_state() -> None:
         This function does not return a value.
     """
     try:
-        with progress_lock:
-            if progress_data:
-                logger.info(f"Saving state for {len(progress_data)} active downloads")
-                # Save the state - could write to a file for persistence if needed
-                # Log active download statuses; the built-in history captures completed downloads
-                for download_id, data in progress_data.items():
-                    logger.info(f"Download {download_id} status: {data.get('status', 'unknown')}")
+        all_downloads = unified_download_manager.get_all_downloads()
+        if all_downloads:
+            logger.info(f"Saving state for {len(all_downloads)} active downloads")
+            # Save the state - could write to a file for persistence if needed
+            # Log active download statuses; the built-in history captures completed downloads
+            for downloadId, data in all_downloads.items():
+                logger.info(f"Download {downloadId} status: {data.get('status', 'unknown')}")
     except Exception:
         logger.exception("Error saving download state")
 

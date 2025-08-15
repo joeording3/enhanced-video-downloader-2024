@@ -619,3 +619,20 @@ export type StatusConstant = keyof typeof STATUS_CONSTANTS;
 export type ErrorMessage = keyof typeof ERROR_MESSAGES;
 export type SuccessMessage = keyof typeof SUCCESS_MESSAGES;
 export type NotificationMessage = keyof typeof NOTIFICATION_MESSAGES;
+
+// Only export constants that are actually used
+export const USED_CONSTANTS = {
+  // Server configuration
+  DEFAULT_SERVER_PORT,
+  DEFAULT_CLIENT_PORT,
+  getCurrentPortConfig,
+
+  // Core functionality
+  getServerPort,
+  getClientPort,
+  getPortRange,
+
+  // Essential UI constants
+  getStorageKey,
+  getCSSSelector,
+} as const;

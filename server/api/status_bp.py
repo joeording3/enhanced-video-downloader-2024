@@ -11,14 +11,16 @@ from typing import Any
 from flask import Blueprint, jsonify, request
 from flask.wrappers import Response
 
-from server.downloads import progress_data, progress_lock
+from server.downloads import unified_download_manager
 from server.downloads.ytdlp import download_errors_from_hooks, map_error_message, parse_bytes
-from server.queue import queue_manager
 
 status_bp = Blueprint("status", __name__, url_prefix="/api")
 
 # Auto-expire finished entries from the in-memory status after a grace period
 _FINISHED_TTL_SECONDS = int(os.getenv("STATUS_FINISHED_TTL", "120"))
+
+# Track previous download count to only log when it changes
+_previous_download_count = 0
 
 
 def _format_duration(seconds: float) -> str:
@@ -170,122 +172,95 @@ def _enhance_status_data(status: dict[str, Any]) -> dict[str, Any]:
 @status_bp.route("/status", methods=["GET"])
 def get_all_status() -> Response:
     """Return current download progress data with enhanced details."""
-    # Return both progress and any error details for all downloads
-    with progress_lock:
-        combined = {}
-        now = datetime.now(timezone.utc)
-        # Include progress entries with enhanced data
-        for download_id, status in list(progress_data.items()):
-            # Ignore ephemeral queued placeholders to keep default response minimal/empty
-            if status.get("status") in {"queued", "canceled"}:
-                continue
-            # Skip stale finished entries beyond TTL
+    global _previous_download_count
+
+    # Get all downloads from the unified manager
+    all_downloads = unified_download_manager.get_status_summary()
+
+    # Only log when the download count changes
+    current_count = len(all_downloads)
+    if current_count != _previous_download_count:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"Status endpoint returning {current_count} downloads: {list(all_downloads.keys())}")
+        _previous_download_count = current_count
+
+    # Include errors and troubleshooting suggestions
+    for downloadId, error in download_errors_from_hooks.items():
+        # Determine user-friendly suggestion
+        _, suggestion = map_error_message(error.get("original_message", ""))
+        if downloadId in all_downloads:
+            all_downloads[downloadId]["error"] = error
+            all_downloads[downloadId]["troubleshooting"] = error.get("troubleshooting", suggestion)
+            # Surface top-level url from error if not already present
             try:
-                if (
-                    _FINISHED_TTL_SECONDS > 0
-                    and status.get("status") == "finished"
-                    and isinstance(status.get("last_update"), str)
-                ):
-                    lu = datetime.fromisoformat(status["last_update"])  # may raise
-                    if (now - lu).total_seconds() > _FINISHED_TTL_SECONDS:
-                        # Do not include in response; leave actual deletion to explicit DELETE or background cleanup
-                        continue
+                if not all_downloads[downloadId].get("url") and isinstance(error, dict):
+                    err_url = error.get("url") or error.get("original_url")
+                    if isinstance(err_url, str) and err_url:
+                        all_downloads[downloadId]["url"] = err_url
             except Exception:
-                # If parsing fails, include entry; better to show than hide unexpectedly
-                ...
-            combined[download_id] = _enhance_status_data(status)
-
-        # Include errors and troubleshooting suggestions
-        for download_id, error in download_errors_from_hooks.items():
-            # Determine user-friendly suggestion
-            _, suggestion = map_error_message(error.get("original_message", ""))
-            if download_id in combined:
-                combined[download_id]["error"] = error
-                combined[download_id]["troubleshooting"] = error.get("troubleshooting", suggestion)
-                # Surface top-level url from error if not already present
-                try:
-                    if not combined[download_id].get("url") and isinstance(error, dict):
-                        err_url = error.get("url") or error.get("original_url")
-                        if isinstance(err_url, str) and err_url:
-                            combined[download_id]["url"] = err_url
-                except Exception:
-                    ...
-            else:
-                combined[download_id] = {
-                    "error": error,
-                    "troubleshooting": error.get("troubleshooting", suggestion),
-                    "status": "error",
-                }
-                # Also include url if present on error object
-                try:
-                    if isinstance(error, dict):
-                        err_url = error.get("url") or error.get("original_url")
-                        if isinstance(err_url, str) and err_url:
-                            combined[download_id]["url"] = err_url
-                except Exception:
-                    ...
-        # Optionally include queued (server-side) items if requested by client
-        include_queue = request.args.get("include_queue", "").lower() in {"1", "true", "yes"}
-        if include_queue:
+                pass
+        else:
+            all_downloads[downloadId] = {
+                "error": error,
+                "troubleshooting": error.get("troubleshooting", suggestion),
+                "status": "error",
+            }
+            # Also include url if present on error object
             try:
-                queued = queue_manager.list()
-                # Represent queued items minimally under their id (camelCase only)
-                for item in queued:
-                    did = str(item.get("downloadId") or "unknown")
-                    if did and did not in combined:
-                        combined[did] = {"status": "queued", "url": item.get("url", "")}
+                if isinstance(error, dict):
+                    err_url = error.get("url") or error.get("original_url")
+                    if isinstance(err_url, str) and err_url:
+                        all_downloads[downloadId]["url"] = err_url
             except Exception:
-                # Non-fatal: queue listing is best-effort
-                # Avoid noisy logs for expected failures; keep at debug level
-                try:
-                    # Use local import to avoid circulars in some test runtimes
-                    import logging
+                pass
 
-                    logging.getLogger(__name__).debug("Failed to include queued items in /status", exc_info=True)
-                except Exception:
-                    # As a last resort, remain silent
-                    ...
+    # Enhance status data for all downloads
+    enhanced_downloads = {}
+    for downloadId, status in all_downloads.items():
+        enhanced_status = _enhance_status_data(status)
+        enhanced_downloads[downloadId] = enhanced_status
 
-        return jsonify(combined)
+    # Auto-cleanup old finished downloads
+    unified_download_manager.cleanup_finished_downloads(_FINISHED_TTL_SECONDS)
+
+    return jsonify(enhanced_downloads)
 
 
-@status_bp.route("/status/<download_id>", methods=["GET"])
-def get_status_by_id(download_id: str) -> Response | tuple[Response, int]:
+@status_bp.route("/status/<downloadId>", methods=["GET"])
+def get_status_by_id(downloadId: str) -> Response | tuple[Response, int]:
     """Return detailed status for a specific download."""
-    with progress_lock:
-        status = progress_data.get(download_id)
-        error = download_errors_from_hooks.get(download_id)
-        if not status and not error:
-            return jsonify({"status": "error", "message": "Download not found"}), 404
-
-        response_data: dict[str, Any] = {}
-
-        if status:
-            response_data = _enhance_status_data(status)
-
-        if error:
-            response_data["error"] = error
-            # Add troubleshooting suggestion
-            _, suggestion = map_error_message(error.get("original_message", ""))
-            response_data["troubleshooting"] = error.get("troubleshooting", suggestion)
-
-        return jsonify(response_data)
-
-
-@status_bp.route("/status/<download_id>", methods=["DELETE"])
-def clear_status_by_id(download_id: str) -> Response | tuple[Response, int]:
-    """Clear status for a specific download."""
-    with progress_lock:
-        cleared = False
-        if download_id in progress_data:
-            del progress_data[download_id]
-            cleared = True
-        if download_id in download_errors_from_hooks:
-            del download_errors_from_hooks[download_id]
-            cleared = True
-        if cleared:
-            return jsonify({"status": "success", "message": "Status cleared"})
+    status = unified_download_manager.get_download(downloadId)
+    error = download_errors_from_hooks.get(downloadId)
+    if not status and not error:
         return jsonify({"status": "error", "message": "Download not found"}), 404
+
+    response_data: dict[str, Any] = {}
+
+    if status:
+        response_data = _enhance_status_data(status)
+
+    if error:
+        response_data["error"] = error
+        # Add troubleshooting suggestion
+        _, suggestion = map_error_message(error.get("original_message", ""))
+        response_data["troubleshooting"] = error.get("troubleshooting", suggestion)
+
+    return jsonify(response_data)
+
+
+@status_bp.route("/status/<downloadId>", methods=["DELETE"])
+def clear_status_by_id(downloadId: str) -> Response | tuple[Response, int]:
+    """Clear status for a specific download."""
+    cleared = False
+    if unified_download_manager.remove_download(downloadId):
+        cleared = True
+    if downloadId in download_errors_from_hooks:
+        del download_errors_from_hooks[downloadId]
+        cleared = True
+    if cleared:
+        return jsonify({"status": "success", "message": "Status cleared"})
+    return jsonify({"status": "error", "message": "Download not found"}), 404
 
 
 @status_bp.route("/status", methods=["DELETE"])
@@ -303,26 +278,26 @@ def clear_status_bulk() -> Response | tuple[Response, int]:
             return jsonify({"status": "error", "message": f"Invalid age value: {age_param}"}), 400
 
     cleared_ids: list[str] = []
-    with progress_lock:
-        ids_to_remove: list[str] = []
-        for download_id, v in progress_data.items():
-            # Apply status filter if provided
-            if status_filter and v.get("status") != status_filter:
+    all_downloads = unified_download_manager.get_all_downloads()
+    ids_to_remove: list[str] = []
+    for downloadId, v in all_downloads.items():
+        # Apply status filter if provided
+        if status_filter and v.get("status") != status_filter:
+            continue
+        # Apply age filter if provided
+        if cutoff:
+            hist = v.get("history")
+            if not hist:
                 continue
-            # Apply age filter if provided
-            if cutoff:
-                hist = v.get("history")
-                if not hist:
-                    continue
-                try:
-                    last_ts = datetime.fromisoformat(hist[-1]["timestamp"])
-                except Exception:
-                    continue
-                if last_ts > cutoff:
-                    continue
-            ids_to_remove.append(download_id)
-        for download_id in ids_to_remove:
-            del progress_data[download_id]
-            cleared_ids.append(download_id)
+            try:
+                last_ts = datetime.fromisoformat(hist[-1]["timestamp"])
+            except Exception:
+                continue
+            if last_ts > cutoff:
+                continue
+        ids_to_remove.append(downloadId)
+    for downloadId in ids_to_remove:
+        if unified_download_manager.remove_download(downloadId):
+            cleared_ids.append(downloadId)
 
     return jsonify({"status": "success", "cleared_count": len(cleared_ids), "cleared_ids": cleared_ids})

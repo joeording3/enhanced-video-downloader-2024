@@ -162,20 +162,18 @@ class TestGracefulShutdown:
 class TestSaveDownloadState:
     """Test save_download_state function."""
 
-    @patch("server.__main__.progress_data")
-    @patch("server.__main__.progress_lock")
-    def test_save_download_state(self, mock_lock, mock_data):
+    @patch("server.__main__.unified_download_manager")
+    def test_save_download_state(self, mock_unified_manager):
         """Test saving download state."""
-        # Mock progress_data to have some content so the if block is entered
-        mock_data.__bool__.return_value = True
-        mock_data.__len__.return_value = 1
-        mock_data.items.return_value = [("test_id", {"status": "downloading"})]
+        # Mock unified_download_manager to have some content
+        mock_unified_manager.get_all_downloads.return_value = {
+            "test_id": {"status": "downloading"}
+        }
 
         save_download_state()
 
-        # The function uses 'with progress_lock:' so we check that the context manager was used
-        mock_lock.__enter__.assert_called_once()
-        mock_lock.__exit__.assert_called_once()
+        # Verify that get_all_downloads was called
+        mock_unified_manager.get_all_downloads.assert_called_once()
 
 
 class TestCleanupPartFiles:

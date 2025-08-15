@@ -17,12 +17,12 @@ def test_concurrent_clear_by_id(live_server: str) -> None:
     :returns: None
     """
     url_base = f"{live_server}/api/status"
-    download_id = "race1"
+    downloadId = "race1"
     with progress_lock:
         progress_data.clear()
-        progress_data[download_id] = {"status": "downloading", "history": []}
+        progress_data[downloadId] = {"status": "downloading", "history": []}
 
-    delete_url = f"{url_base}/{download_id}"
+    delete_url = f"{url_base}/{downloadId}"
 
     def send_delete(_: Any) -> requests.Response:
         """

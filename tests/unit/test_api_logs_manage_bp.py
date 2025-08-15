@@ -103,44 +103,37 @@ class TestLogsManageEndpoints:
 
         with app.test_client() as client:
             response = client.get("/logs/clear")
-
-            # Should return 405 Method Not Allowed
             assert response.status_code == 405
 
-    def test_clear_logs_endpoint_performance(self):
-        """Test that clear_logs endpoint responds in reasonable time."""
+    def test_clear_logs_functionality_with_temp_files(self):
+        """Test clear_logs endpoint actually renames log file to .bak and creates new one."""
         app = Flask(__name__)
         app.register_blueprint(logs_manage_bp)
 
         with app.test_client() as client:
+            # Test that the endpoint exists and responds
             response = client.post("/logs/clear")
 
-            # Allow 200 when logs are cleared successfully in the environment
-            assert response.status_code in [200, 404, 500]
+            # Should succeed (even if no log file exists in test environment)
+            assert response.status_code == 200
+            response_text = response.get_data(as_text=True)
+
+            # Check that we get a meaningful response
+            assert "Log file cleared and archived to" in response_text
             assert response.content_type.startswith("text/plain")
 
-    def test_clear_logs_endpoint_content_type(self):
-        """Test that clear_logs endpoint returns correct content type."""
+    def test_clear_logs_creates_new_log_file_when_none_exists(self):
+        """Test clear_logs endpoint creates new log file when none exists."""
         app = Flask(__name__)
         app.register_blueprint(logs_manage_bp)
 
         with app.test_client() as client:
             response = client.post("/logs/clear")
 
-            assert response.content_type.startswith("text/plain")
-            assert "text/plain" in response.headers.get("Content-Type", "")
+            # Should succeed
+            assert response.status_code == 200
+            response_text = response.get_data(as_text=True)
 
-
-class TestClearLogsFunction:
-    """Test the clear_logs function."""
-
-    def test_clear_logs_function(self):
-        """Test clear_logs function."""
-        app = Flask(__name__)
-        app.register_blueprint(logs_manage_bp)
-
-        with app.test_client() as client:
-            response = client.post("/logs/clear")
-            # Allow 200 when logs are cleared successfully in the environment
-            assert response.status_code in [200, 404, 500]
+            # Check that we get a meaningful response
+            assert "Log file cleared and archived to" in response_text
             assert response.content_type.startswith("text/plain")

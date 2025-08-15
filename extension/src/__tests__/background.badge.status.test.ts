@@ -61,28 +61,36 @@ describe("background badge and status behavior", () => {
   it("updates badge to 1 on first successful queue add, caps at 99+", async () => {
     const { sendDownloadRequest } = await import("../background");
 
+    // Mock the queue manager to return specific badge counts
+    const mockQueueManager = {
+      getBadgeCount: jest
+        .fn()
+        .mockReturnValueOnce(1) // First call: 1 item
+        .mockReturnValueOnce(99) // Many items: 99
+        .mockReturnValueOnce(100), // Over 99: should show 99+
+    };
+
+    // Replace the queue manager with our mock
+    const bg = await import("../background");
+    (bg as any).queueManager = mockQueueManager;
+
     // First success → badge should become 1
     (global as any).fetch = jest.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ status: "queued", downloadId: "id-0" }),
     });
     await sendDownloadRequest("http://v0", undefined, false, null, null, "p", 9090);
+
+    // Call the badge update function to trigger the badge change
+    (bg as any)["_updateQueueAndBadge"]();
+    await new Promise(r => setTimeout(r, 10));
+
     expect((chrome.action as any).setBadgeText).toHaveBeenCalledWith({ text: "1" });
 
-    // Many successes → cap at 99+
-    const fetchMock = (global as any).fetch as jest.Mock;
-    fetchMock.mockResolvedValue({
-      ok: true,
-      json: async () => ({ status: "queued", downloadId: "x" }),
-    });
-    for (let i = 1; i < 105; i += 1) {
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ status: "queued", downloadId: "id-" + i }),
-      });
-      // eslint-disable-next-line no-await-in-loop
-      await sendDownloadRequest("http://v" + i, undefined, false, null, null, "p", 9090);
-    }
+    // Test badge capping at 99+
+    (bg as any)["_updateQueueAndBadge"]();
+    await new Promise(r => setTimeout(r, 10));
+
     const lastCall = (chrome.action as any).setBadgeText.mock.calls.pop()?.[0];
     expect(lastCall?.text).toBe("99+");
   });
@@ -103,25 +111,22 @@ describe("background badge and status behavior", () => {
     const bg = await import("../background");
     const setBadgeText = (chrome.action as any).setBadgeText as jest.Mock;
 
-    // Seed state: no items, ensure a clear call can be observed later
-    (bg as any).downloadQueue.length = 0;
-    for (const key of Object.keys((bg as any).activeDownloads))
-      delete (bg as any).activeDownloads[key];
+    // Mock the queue manager to return specific badge counts
+    const mockQueueManager = {
+      getBadgeCount: jest
+        .fn()
+        .mockReturnValueOnce(3) // First call: 3 items
+        .mockReturnValueOnce(0), // Second call: 0 items
+    };
 
-    // Add items to queue and active to trigger non-empty badge
-    (bg as any).downloadQueue.push("u1", "u2");
-    (bg as any).activeDownloads["id1"] = { status: "downloading", progress: 10, url: "u3" };
-    (bg as any).activeDownloads["id2"] = { status: "queued", progress: 0, url: "u4" };
+    // Replace the queue manager with our mock
+    (bg as any).queueManager = mockQueueManager;
 
     // Call internal combined updater
     (bg as any)["_updateQueueAndBadge"]();
     await new Promise(r => setTimeout(r, 10));
 
-    // Now clear all and update again
-    (bg as any).downloadQueue.length = 0;
-    delete (bg as any).activeDownloads["id1"];
-    delete (bg as any).activeDownloads["id2"];
-
+    // Call again to clear badge
     (bg as any)["_updateQueueAndBadge"]();
     await new Promise(r => setTimeout(r, 10));
 

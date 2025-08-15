@@ -276,7 +276,7 @@ class DownloadRequest(BaseModel):
     """
 
     url: str = Field(..., description="URL of the video to download")
-    download_id: str | None = Field(None, description="Client-provided unique ID for the download")
+    downloadId: str | None = Field(None, description="Client-provided unique ID for the download")
     user_agent: str = Field(default="chrome", description="User agent to use for the download")
     referrer: str | None = Field(None, description="Referrer URL")
     format: str | None = Field(None, description="Video format specification")
@@ -333,10 +333,10 @@ class DownloadRequest(BaseModel):
 
         return v
 
-    @field_validator("download_id")
+    @field_validator("downloadId")
     @classmethod
-    def validate_download_id(cls, v: str | None) -> str | None:
-        """Validate download_id format if provided."""
+    def validate_downloadId(cls, v: str | None) -> str | None:
+        """Validate downloadId format if provided."""
         if v is None:
             return v
 
@@ -471,7 +471,7 @@ class GalleryDLRequest(BaseModel):
     """
 
     url: str = Field(..., description="URL of the gallery to download")
-    download_id: str | None = Field(None, description="Client-provided unique ID for the download")  # Added download_id
+    downloadId: str | None = Field(None, description="Client-provided unique ID for the download")  # Added downloadId
     download_type: str = Field(default="gallery", description="Type of download (gallery or media)")
 
 

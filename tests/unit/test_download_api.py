@@ -63,7 +63,7 @@ def test_cancel_download_not_found(client: FlaskClient) -> None:
         def wait(self, timeout: Any) -> None:
             pass
 
-    download_process_registry["id1"] = DummyProc()  # type: ignore[assignment]
+    download_process_registry.register("id1", DummyProc())
     resp = client.post("/api/download/id1/cancel")
     assert resp.status_code == 200
     data = resp.get_json()
@@ -114,7 +114,7 @@ def test_cancel_download_race_condition(client: FlaskClient) -> None:
         def wait(self, timeout: Any) -> None:
             pass
 
-    download_process_registry["race1"] = DummyProc()  # type: ignore[assignment]
+    download_process_registry.register("race1", DummyProc())
     # First cancellation should succeed
     resp1 = client.post("/api/download/race1/cancel")
     assert resp1.status_code == 200

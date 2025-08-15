@@ -69,7 +69,7 @@ def test_build_opts_playlist_and_hooks(tmp_path: Path) -> None:
     :returns: None
     """
     out_file = str(tmp_path / "video.mp4")
-    opts = build_opts(out_file, download_id="123", download_playlist=True)
+    opts = build_opts(out_file, downloadId="123", download_playlist=True)
     # progress_hooks should include our wrapper
     assert "progress_hooks" in opts and isinstance(opts["progress_hooks"], list)
     hook_fn = opts["progress_hooks"][0]
@@ -89,7 +89,7 @@ def test_build_opts_single_video(tmp_path: Path) -> None:
     :returns: None
     """
     out_file = str(tmp_path / "video.mp4")
-    opts = build_opts(out_file, download_id=None, download_playlist=False)
+    opts = build_opts(out_file, downloadId=None, download_playlist=False)
     assert opts.get("noplaylist") is True
     assert "yesplaylist" not in opts
     assert "yesplaylist" not in opts

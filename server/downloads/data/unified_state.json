@@ -1,0 +1,13 @@
+{
+  "downloads": {},
+  "queue_order": [],
+  "metrics": {
+    "enqueue_count": 18,
+    "dequeue_count": 0,
+    "total_enqueue_time": 6.723403930664062e-05,
+    "total_dequeue_time": 0.0,
+    "max_queue_size": 2,
+    "start_time": 1755280734.8043132
+  },
+  "last_activity": 1755301944.327874
+}

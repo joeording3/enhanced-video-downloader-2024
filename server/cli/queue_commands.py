@@ -35,7 +35,7 @@ def list_command() -> None:
             click.echo("Queue is empty")
             return
         for it in items:
-            did = it.get("downloadId") or it.get("download_id") or "unknown"
+            did = it.get("downloadId") or "unknown"
             url = it.get("url", "")
             click.echo(f"{did}\t{url}")
     except Exception as e:

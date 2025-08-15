@@ -283,14 +283,20 @@ class TestStatusAPIEndpoints:
         :param client: Flask test client fixture.
         :returns: None.
         """
-        # Mock the progress data and errors
-        with pytest.MonkeyPatch().context() as m:
-            m.setattr("server.api.status_bp.progress_data", {})
-            m.setattr("server.api.status_bp.download_errors_from_hooks", {})
+        # Clear all downloads and errors to ensure empty state
+        from server.downloads import unified_download_manager
+        from server.downloads.ytdlp import download_errors_from_hooks
 
-            response = client.get("/api/status")
-            assert response.status_code == 200
-            assert response.get_json() == {}
+        with unified_download_manager._lock:
+            unified_download_manager._downloads.clear()
+            unified_download_manager._queue_order.clear()
+
+        # Clear error hooks
+        download_errors_from_hooks.clear()
+
+        response = client.get("/api/status")
+        assert response.status_code == 200
+        assert response.get_json() == {}
 
     def test_get_all_status_with_progress_data(self, client: FlaskClient) -> None:
         """Test GET /api/status with progress data.
@@ -298,11 +304,10 @@ class TestStatusAPIEndpoints:
         :param client: Flask test client fixture.
         :returns: None.
         """
-        # Mock the progress data
+        # Mock the unified download manager to return progress data
         with pytest.MonkeyPatch().context() as m:
             progress_data = {"download1": {"status": "downloading", "percent": "50%"}}
-            m.setattr("server.api.status_bp.progress_data", progress_data)
-            m.setattr("server.api.status_bp.download_errors_from_hooks", {})
+            m.setattr("server.api.status_bp.unified_download_manager.get_status_summary", lambda: progress_data)
 
             response = client.get("/api/status")
             assert response.status_code == 200
@@ -316,17 +321,24 @@ class TestStatusAPIEndpoints:
         :param client: Flask test client fixture.
         :returns: None.
         """
-        # Mock the errors
-        with pytest.MonkeyPatch().context() as m:
-            m.setattr("server.api.status_bp.progress_data", {})
-            errors = {"error1": {"original_message": "test error"}}
-            m.setattr("server.api.status_bp.download_errors_from_hooks", errors)
+        # Clear all downloads and errors to ensure clean state
+        from server.downloads import unified_download_manager
+        from server.downloads.ytdlp import download_errors_from_hooks
 
-            response = client.get("/api/status")
-            assert response.status_code == 200
-            data = response.get_json()
-            assert "error1" in data
-            assert data["error1"]["status"] == "error"
+        with unified_download_manager._lock:
+            unified_download_manager._downloads.clear()
+            unified_download_manager._queue_order.clear()
+
+        # Set up error data
+        errors = {"error1": {"original_message": "test error"}}
+        download_errors_from_hooks.clear()
+        download_errors_from_hooks.update(errors)
+
+        response = client.get("/api/status")
+        assert response.status_code == 200
+        data = response.get_json()
+        assert "error1" in data
+        assert data["error1"]["status"] == "error"
 
     def test_get_status_by_id_not_found(self, client: FlaskClient) -> None:
         """Test GET /api/status/<id> with non-existent download.
@@ -336,8 +348,7 @@ class TestStatusAPIEndpoints:
         """
         # Mock empty data
         with pytest.MonkeyPatch().context() as m:
-            m.setattr("server.api.status_bp.progress_data", {})
-            m.setattr("server.api.status_bp.download_errors_from_hooks", {})
+            m.setattr("server.downloads.unified_download_manager.get_status_summary", dict)
 
             response = client.get("/api/status/nonexistent")
             assert response.status_code == 404
@@ -354,8 +365,7 @@ class TestStatusAPIEndpoints:
         # Mock progress data
         with pytest.MonkeyPatch().context() as m:
             progress_data = {"download1": {"status": "downloading", "percent": "50%"}}
-            m.setattr("server.api.status_bp.progress_data", progress_data)
-            m.setattr("server.api.status_bp.download_errors_from_hooks", {})
+            m.setattr("server.api.status_bp.unified_download_manager.get_status_summary", lambda: progress_data)
 
             response = client.get("/api/status/download1")
             assert response.status_code == 200
@@ -371,9 +381,8 @@ class TestStatusAPIEndpoints:
         """
         # Mock error data
         with pytest.MonkeyPatch().context() as m:
-            m.setattr("server.api.status_bp.progress_data", {})
             errors = {"error1": {"original_message": "test error"}}
-            m.setattr("server.api.status_bp.download_errors_from_hooks", errors)
+            m.setattr("server.api.status_bp.unified_download_manager.get_status_summary", lambda: errors)
 
             response = client.get("/api/status/error1")
             assert response.status_code == 200

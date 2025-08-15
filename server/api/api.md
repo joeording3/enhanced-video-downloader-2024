@@ -381,6 +381,12 @@ Return current download progress, full progress history, and any error details f
 }
 ```
 
+**Logging Behavior:**
+- **Change-based logging**: The endpoint only logs when the number of downloads changes
+- **First call**: Logs the current download count and list
+- **Subsequent calls**: No logging unless download count changes
+- **Reduces log noise**: Prevents repetitive logging of the same information
+
 ### GET /status/{download_id}
 
 Return detailed progress information for a specific download.
@@ -518,6 +524,12 @@ Response:
 ```json
 { "queue": [{ "downloadId": "id1", "url": "https://..." }, { "downloadId": "id2" }] }
 ```
+
+**Logging Behavior:**
+- **Change-based logging**: The endpoint only logs when the queue count changes
+- **First call**: Logs the current queue count and items
+- **Subsequent calls**: No logging unless queue count changes
+- **Reduces log noise**: Prevents repetitive logging of the same queue state
 
 ### POST /api/queue/reorder
 
@@ -809,16 +821,34 @@ Plain text log output.
 
 ### POST /logs/clear
 
-Clears all server logs.
+Archives the current server log file and creates a fresh one.
+
+**What it does:**
+- Renames the current `server_output.log` to `server_output.bak` (overwriting any existing .bak file)
+- Creates a new empty `server_output.log` file with an initialization entry
+- Starts fresh logging from that point forward
 
 **Response (200):**
 
+Plain text confirmation message:
+```
+Log file cleared and archived to server_output.bak
+```
+
+**Response (500):**
+
 ```json
 {
-  "success": true,
-  "message": "Logs cleared successfully."
+  "status": "error",
+  "message": "Failed to clear logs: <error details>",
+  "error_type": "SERVER_ERROR"
 }
 ```
+
+**Notes:**
+- The backup file (`server_output.bak`) will contain all previous log entries
+- If no log file exists, a new one will be created
+- This is useful for log rotation and reducing log file sizes
 
 ## Error Handling
 

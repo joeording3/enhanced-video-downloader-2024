@@ -102,18 +102,18 @@ def test_cancel_active_download(client: FlaskClient, tmp_path: Path) -> None:
     :param tmp_path: temporary directory fixture.
     :returns: None
     """
-    download_id = "test123"
+    downloadId = "test123"
     # Register dummy process
     dummy = DummyProcess()
-    download_process_registry[download_id] = dummy  # type: ignore[assignment]
+    download_process_registry[downloadId] = dummy  # type: ignore[assignment]
     # Register tempfile prefix and create a .part file
     prefix = "prefix"
-    download_tempfile_registry[download_id] = prefix
+    download_tempfile_registry[downloadId] = prefix
     tmp_part = tmp_path / f"{prefix}.mp4.part"
     tmp_part.write_text("partial")
 
     # Cancel
-    resp = client.post(f"/api/download/{download_id}/cancel")
+    resp = client.post(f"/api/download/{downloadId}/cancel")
     assert resp.status_code == 200
     data = resp.get_json()
     assert data["status"] == "success"
@@ -121,6 +121,6 @@ def test_cancel_active_download(client: FlaskClient, tmp_path: Path) -> None:
     # Partial file should be removed
     assert not tmp_part.exists()
     # Registries cleaned
-    assert download_id not in download_process_registry
-    assert download_id not in download_tempfile_registry
-    assert download_id not in download_tempfile_registry
+    assert downloadId not in download_process_registry
+    assert downloadId not in download_tempfile_registry
+    assert downloadId not in download_tempfile_registry

@@ -92,7 +92,7 @@ def test_priority_success(client: FlaskClient) -> None:
     :param client: Flask test client.
     :returns: None
     """
-    download_id = "prio1"
+    downloadId = "prio1"
 
     class DummyProc:
         def __init__(self) -> None:
@@ -102,8 +102,8 @@ def test_priority_success(client: FlaskClient) -> None:
             self.priority = value
 
     dummy = DummyProc()
-    download_process_registry[download_id] = dummy  # type: ignore[assignment]
-    resp = client.post(f"/api/download/{download_id}/priority", json={"priority": 42})
+    download_process_registry[downloadId] = dummy  # type: ignore[assignment]
+    resp = client.post(f"/api/download/{downloadId}/priority", json={"priority": 42})
     assert resp.status_code == 200
     data = resp.get_json()
     assert data["status"] == "success"
@@ -118,15 +118,15 @@ def test_priority_error(client: FlaskClient) -> None:
     :param client: Flask test client.
     :returns: None
     """
-    download_id = "prio2"
+    downloadId = "prio2"
 
     class DummyProc:
         def nice(self, value: int) -> None:
             raise Exception("nice error")
 
     dummy = DummyProc()
-    download_process_registry[download_id] = dummy  # type: ignore[assignment]
-    resp = client.post(f"/api/download/{download_id}/priority", json={"priority": 3})
+    download_process_registry[downloadId] = dummy  # type: ignore[assignment]
+    resp = client.post(f"/api/download/{downloadId}/priority", json={"priority": 3})
     assert resp.status_code == 500
     data = resp.get_json()
     assert data["status"] == "error"

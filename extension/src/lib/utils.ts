@@ -15,11 +15,11 @@ export function debounce<T extends (...args: any[]) => any>(
   func: T,
   delay: number
 ): (...args: Parameters<T>) => void {
-  let timeout: number | undefined;
+  let timeout: ReturnType<typeof setTimeout> | undefined;
 
   return function (this: ThisParameterType<T>, ...args: Parameters<T>) {
     clearTimeout(timeout);
-    timeout = self.setTimeout(() => func.apply(this, args), delay);
+    timeout = setTimeout(() => func.apply(this, args), delay);
   };
 }
 

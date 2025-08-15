@@ -36,6 +36,7 @@ import {
   removeHistoryItemAndNotify,
   removeHistoryItemByUrlAndNotify,
 } from "./history";
+import { queueManager } from "./background-queue";
 
 /**
  * Download status interface for the popup UI
@@ -778,14 +779,29 @@ export async function renderDownloadStatus(data: {
       // Add a retry button (⟳) for failed/canceled entries
       if (["error", "failed", "fail", "canceled", "cancelled"].includes(normalized)) {
         const retryBtn = document.createElement("button");
-        retryBtn.className = `${CSS_CLASSES.BTN_SECONDARY} ${CSS_CLASSES.BTN_SMALL} ${CSS_CLASSES.RETRY_BUTTON}`;
+        retryBtn.className = `${CSS_CLASSES.BTN_PRIMARY} ${CSS_CLASSES.BTN_SMALL} ${CSS_CLASSES.RETRY_BUTTON}`;
         retryBtn.textContent = "Retry";
         retryBtn.title = "Retry";
         retryBtn.setAttribute("aria-label", "Retry");
         retryBtn.addEventListener("click", e => {
           e.stopPropagation();
           if (!item.url) {
-            setStatus("Original URL unavailable for retry", true, 3000);
+            // Try to get URL from other sources or provide helpful error
+            const fallbackUrl = (item as any).webpage_url || (item as any).original_url;
+            if (fallbackUrl) {
+              // Use fallback URL for retry
+              chrome.runtime.sendMessage(
+                {
+                  type: "downloadVideo",
+                  url: fallbackUrl,
+                  pageTitle: item.pageTitle || item.label,
+                },
+                () => {}
+              );
+              return;
+            }
+            // No URL available - show helpful error message
+            setStatus("Original URL unavailable for retry. This download cannot be retried.", true, 5000);
             return;
           }
           chrome.runtime.sendMessage(
@@ -907,7 +923,7 @@ export async function renderDownloadStatus(data: {
     const histList: any[] = Array.isArray(result?.history) ? result.history : [];
     const historyUnified: Unified[] = [];
     for (const h of histList) {
-      const id = String((h as any).id || (h as any).download_id || Math.random());
+      const id = String((h as any).id || Math.random());
       const label = computeLabel(
         (h as any).page_title || (h as any).title,
         (h as any).filename,
@@ -1130,17 +1146,37 @@ export async function initPopup(): Promise<void> {
     });
   }
 
-  // Initialize download status
-  chrome.runtime.sendMessage(
-    { type: MESSAGE_TYPES.GET_QUEUE },
-    (
-      response:
-        | { active: ActiveDownloadMap; queue: string[]; queuedDetails?: QueuedDetailsMap }
-        | undefined
-    ) => {
-      renderDownloadStatus(response || { active: {}, queue: [] });
-    }
-  );
+  // Initialize download status using the queue manager
+  try {
+    const status = await queueManager.getQueueStatus();
+    renderDownloadStatus({
+      active: Object.fromEntries(
+        Object.entries(status.active).map(([id, item]) => [
+          id,
+          {
+            status: item.status,
+            progress: item.progress || 0,
+            filename: item.filename,
+            title: item.pageTitle,
+            page_title: item.pageTitle,
+            id: item.downloadId,
+            url: item.url,
+            error: undefined,
+            message: undefined,
+          },
+        ])
+      ),
+      queue: status.queued.map(item => item.downloadId),
+      queuedDetails: Object.fromEntries(
+        status.queued.map(item => [
+          item.downloadId,
+          { url: item.url, title: item.pageTitle, filename: item.filename },
+        ])
+      ),
+    });
+  } catch (error) {
+    renderDownloadStatus({ active: {}, queue: [] });
+  }
 
   // --- History wiring (pagination + live updates) ---
   const historyListEl = domManager.querySelector(DOM_SELECTORS.HISTORY_LIST) as HTMLElement | null;
@@ -1208,6 +1244,35 @@ export async function initPopup(): Promise<void> {
   }
 
   // Initial unified render will call fetchHistory via renderDownloadStatus when data arrives
+
+  // Set up queue manager listener for real-time updates
+  const unsubscribeQueue = queueManager.addUpdateListener(status => {
+    renderDownloadStatus({
+      active: Object.fromEntries(
+        Object.entries(status.active).map(([id, item]) => [
+          id,
+          {
+            status: item.status,
+            progress: item.progress || 0,
+            filename: item.filename,
+            title: item.pageTitle,
+            page_title: item.pageTitle,
+            id: item.downloadId,
+            url: item.url,
+            error: undefined,
+            message: undefined,
+          },
+        ])
+      ),
+      queue: status.queued.map(item => item.downloadId),
+      queuedDetails: Object.fromEntries(
+        status.queued.map(item => [
+          item.downloadId,
+          { url: item.url, title: item.pageTitle, filename: item.filename },
+        ])
+      ),
+    });
+  });
 
   // Set up message listeners
   chrome.runtime.onMessage.addListener(

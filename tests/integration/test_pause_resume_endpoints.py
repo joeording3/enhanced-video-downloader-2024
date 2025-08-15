@@ -71,51 +71,51 @@ def test_options_methods(client: FlaskClient, endpoint: str, expected_status: in
 
 
 @pytest.mark.parametrize(
-    "operation, download_id, status_code, expected_error_message",
+    "operation, downloadId, status_code, expected_error_message",
     [
         ("pause", "nonexistent", 404, "No active download with given ID."),
         ("resume", "nonexistent", 404, "No paused download with given ID."),
     ],
 )
 def test_nonexistent_operations(
-    client: FlaskClient, operation: str, download_id: str, status_code: int, expected_error_message: str
+    client: FlaskClient, operation: str, downloadId: str, status_code: int, expected_error_message: str
 ) -> None:
     """Test operations on nonexistent downloads return appropriate errors.
 
     :param client: Flask test client fixture
     :param operation: Operation to test (pause or resume)
-    :param download_id: Download ID being tested
+    :param downloadId: Download ID being tested
     :param status_code: Expected HTTP status code
     :param expected_error_message: Expected error message
     """
-    resp = client.post(f"/api/download/{download_id}/{operation}")
+    resp = client.post(f"/api/download/{downloadId}/{operation}")
     assert resp.status_code == status_code
     data = resp.get_json()
     assert data["status"] == "error"
-    assert data.get("downloadId") == download_id
+    assert data.get("downloadId") == downloadId
 
 
 @pytest.mark.parametrize(
-    "operation, download_id, expected_state_attr, expected_success_message",
+    "operation, downloadId, expected_state_attr, expected_success_message",
     [
         ("pause", "pause1", "suspended", "Download paused."),
         ("resume", "resume1", "resumed", "Download resumed."),
     ],
 )
 def test_successful_operations(
-    client: FlaskClient, operation: str, download_id: str, expected_state_attr: str, expected_success_message: str
+    client: FlaskClient, operation: str, downloadId: str, expected_state_attr: str, expected_success_message: str
 ) -> None:
     """Test successful pause and resume operations.
 
     :param client: Flask test client fixture
     :param operation: Operation to test (pause or resume)
-    :param download_id: Download ID being tested
+    :param downloadId: Download ID being tested
     :param expected_state_attr: Expected state attribute to be set
     :param expected_success_message: Expected success message
     """
     proc = DummyProcess()
-    download_process_registry[download_id] = proc  # type: ignore[assignment]
-    resp = client.post(f"/api/download/{download_id}/{operation}")
+    download_process_registry[downloadId] = proc  # type: ignore[assignment]
+    resp = client.post(f"/api/download/{downloadId}/{operation}")
     assert resp.status_code == 200
     data = resp.get_json()
     assert data["status"] == "success"
@@ -123,23 +123,23 @@ def test_successful_operations(
 
 
 @pytest.mark.parametrize(
-    "operation, download_id, expected_error_message",
+    "operation, downloadId, expected_error_message",
     [
         ("pause", "pause2", "suspend error"),
         ("resume", "resume2", "resume error"),
     ],
 )
-def test_error_operations(client: FlaskClient, operation: str, download_id: str, expected_error_message: str) -> None:
+def test_error_operations(client: FlaskClient, operation: str, downloadId: str, expected_error_message: str) -> None:
     """Test pause and resume operations that raise exceptions.
 
     :param client: Flask test client fixture
     :param operation: Operation to test (pause or resume)
-    :param download_id: Download ID being tested
+    :param downloadId: Download ID being tested
     :param expected_error_message: Expected error message
     """
     proc = DummyProcess(should_raise=True)
-    download_process_registry[download_id] = proc  # type: ignore[assignment]
-    resp = client.post(f"/api/download/{download_id}/{operation}")
+    download_process_registry[downloadId] = proc  # type: ignore[assignment]
+    resp = client.post(f"/api/download/{downloadId}/{operation}")
     assert resp.status_code == 500
     data = resp.get_json()
     assert data["status"] == "error"

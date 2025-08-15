@@ -72,7 +72,7 @@ def test_resume_endpoint(monkeypatch: MonkeyPatch, client: FlaskClient) -> None:
 
 
 @pytest.mark.parametrize(
-    "endpoint, download_id, expected_message, expected_download_id",
+    "endpoint, downloadId, expected_message, expected_downloadId",
     [
         ("/api/download/nonexistent/cancel", "nonexistent", "No active download with given ID.", "nonexistent"),
         ("/api/download/nonexistent/pause", "nonexistent", "No active download with given ID.", "nonexistent"),
@@ -80,22 +80,22 @@ def test_resume_endpoint(monkeypatch: MonkeyPatch, client: FlaskClient) -> None:
     ],
 )
 def test_nonexistent_download_operations(
-    client: FlaskClient, endpoint: str, download_id: str, expected_message: str, expected_download_id: str
+    client: FlaskClient, endpoint: str, downloadId: str, expected_message: str, expected_downloadId: str
 ) -> None:
     """Test operations on nonexistent downloads return appropriate errors.
 
     :param client: Flask test client fixture
     :param endpoint: API endpoint to test
-    :param download_id: Download ID being tested
+    :param downloadId: Download ID being tested
     :param expected_message: Expected error message
-    :param expected_download_id: Expected download ID in response
+    :param expected_downloadId: Expected download ID in response
     """
     response = client.post(endpoint)
     assert response.status_code == 404
     data = response.get_json()
     assert data["status"] == "error"
     assert data.get("message") == expected_message
-    assert data.get("downloadId") == expected_download_id
+    assert data.get("downloadId") == expected_downloadId
 
 
 @pytest.mark.parametrize(
@@ -151,7 +151,7 @@ def test_gallery_dl_success(monkeypatch: MonkeyPatch, client: FlaskClient) -> No
 
 
 @pytest.mark.parametrize(
-    "endpoint, download_id, expected_message, mock_method",
+    "endpoint, downloadId, expected_message, mock_method",
     [
         ("/api/download/p123/pause", "p123", "Download paused.", "suspend"),
         ("/api/download/r123/resume", "r123", "Download resumed.", "resume"),
@@ -161,7 +161,7 @@ def test_pause_resume_operations(
     monkeypatch: MonkeyPatch,
     client: FlaskClient,
     endpoint: str,
-    download_id: str,
+    downloadId: str,
     expected_message: str,
     mock_method: str,
 ) -> None:
@@ -170,18 +170,18 @@ def test_pause_resume_operations(
     :param monkeypatch: Pytest monkeypatch fixture
     :param client: Flask test client fixture
     :param endpoint: API endpoint to test
-    :param download_id: Download ID being tested
+    :param downloadId: Download ID being tested
     :param expected_message: Expected success message
     :param mock_method: Method to mock on the dummy process
     """
     fake_proc = type("DummyProc", (), {mock_method: lambda self: None})()  # type: ignore[attr-defined]
-    monkeypatch.setitem(download_process_registry, download_id, fake_proc)
+    monkeypatch.setitem(download_process_registry, downloadId, fake_proc)
     response = client.post(endpoint)
     assert response.status_code == 200
     data = response.get_json()
     assert data["status"] == "success"
     assert data.get("message") == expected_message
-    assert data.get("downloadId") == download_id
+    assert data.get("downloadId") == downloadId
 
 
 def test_cancel_success(monkeypatch: MonkeyPatch, client: FlaskClient) -> None:
@@ -199,7 +199,7 @@ def test_cancel_success(monkeypatch: MonkeyPatch, client: FlaskClient) -> None:
     # Skip actual termination logic
     monkeypatch.setattr(
         "server.api.download_bp._terminate_proc",
-        lambda proc, download_id: (None, None),  # type: ignore[attr-defined]
+        lambda proc, downloadId: (None, None),  # type: ignore[attr-defined]
     )
     response = client.post("/api/download/c123/cancel")
     assert response.status_code == 200

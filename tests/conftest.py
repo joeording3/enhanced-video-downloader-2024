@@ -188,3 +188,44 @@ def _reset_rate_limits() -> Generator[None, None, None]:
     clear_rate_limit_storage()
     yield
     clear_rate_limit_storage()
+
+
+@pytest.fixture(autouse=True)
+def _cleanup_download_registries() -> Generator[None, None, None]:
+    """Clear download registries after each test to prevent test processes from creating real history entries."""
+    # Clean up before each test to ensure clean state
+    try:
+        from server.downloads import unified_download_manager
+        from server.downloads.ytdlp import download_process_registry
+
+        # Clear any existing test downloads
+        test_ids = [did for did in list(unified_download_manager._downloads.keys())
+                    if did.startswith(("test", "cleanup", "pause_error", "resume_error", "priority_error"))]
+        for test_id in test_ids:
+            unified_download_manager.remove_download(test_id)
+
+    except Exception as e:
+        # Don't fail tests on cleanup errors
+        print(f"Warning: Failed to cleanup download registries before test: {e}")
+
+    yield
+
+    # Clean up after each test
+    try:
+        # Clear the download process registry
+        download_process_registry._processes.clear()
+        download_process_registry._cleanup_count = 0
+
+        # Clear the unified download manager
+        unified_download_manager._downloads.clear()
+        unified_download_manager._queue_order.clear()
+
+        # Clear any test downloads from the unified manager
+        test_ids = [did for did in list(unified_download_manager._downloads.keys())
+                    if did.startswith(("test", "cleanup", "pause_error", "resume_error", "priority_error"))]
+        for test_id in test_ids:
+            unified_download_manager.remove_download(test_id)
+
+    except Exception as e:
+        # Don't fail tests on cleanup errors
+        print(f"Warning: Failed to cleanup download registries after test: {e}")

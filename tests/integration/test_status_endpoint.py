@@ -42,7 +42,7 @@ def test_status_with_data(client: FlaskClient) -> None:
 
 
 def test_status_by_id_not_found(client: FlaskClient) -> None:
-    """Test that GET /api/status/<download_id> returns 404 when no entry exists.
+    """Test that GET /api/status/<downloadId> returns 404 when no entry exists.
 
     :param client: Flask test client fixture
     """
@@ -61,7 +61,7 @@ def test_status_by_id_not_found(client: FlaskClient) -> None:
 
 
 def test_status_by_id_success(client: FlaskClient) -> None:
-    """Test that GET /api/status/<download_id> returns stored progress data.
+    """Test that GET /api/status/<downloadId> returns stored progress data.
 
     :param client: Flask test client fixture
     """
@@ -77,7 +77,7 @@ def test_status_by_id_success(client: FlaskClient) -> None:
 
 
 def test_status_by_id_error_only(client: FlaskClient) -> None:
-    """Test that GET /api/status/<download_id> returns error info when only error exists.
+    """Test that GET /api/status/<downloadId> returns error info when only error exists.
 
     :param client: Flask test client fixture
     """
@@ -107,7 +107,7 @@ def test_status_by_id_error_only(client: FlaskClient) -> None:
 
 
 def test_status_by_id_with_details(client: FlaskClient) -> None:
-    """Test that GET /api/status/<download_id> returns detailed progress info.
+    """Test that GET /api/status/<downloadId> returns detailed progress info.
 
     :param client: Flask test client fixture
     """
@@ -142,7 +142,7 @@ def test_status_by_id_with_details(client: FlaskClient) -> None:
 
 
 def test_historical_rate_tracking(client: FlaskClient) -> None:
-    """Test that GET /api/status/<download_id> accumulates speeds history.
+    """Test that GET /api/status/<downloadId> accumulates speeds history.
 
     :param client: Flask test client fixture
     """

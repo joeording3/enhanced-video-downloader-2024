@@ -8,6 +8,7 @@ yt-dlp, including option building, progress hooks, process tracking, and error c
 import json
 import logging
 import tempfile
+import threading
 import time
 from contextlib import suppress
 from datetime import datetime, timezone
@@ -22,7 +23,7 @@ from flask import jsonify
 from yt_dlp.utils import sanitize_filename
 
 from server.config import Config
-from server.downloads import progress_data, progress_lock
+from server.downloads import progress_data, progress_lock, unified_download_manager
 from server.history import append_history_entry
 
 # Get a logger instance
@@ -36,26 +37,26 @@ class _DownloadControl:
     API routes: terminate, wait, kill, suspend, resume, nice.
     """
 
-    def __init__(self, download_id: str) -> None:
-        self.download_id = str(download_id)
+    def __init__(self, downloadId: str) -> None:
+        self.downloadId = str(downloadId)
         self._paused = False
 
     def terminate(self) -> None:
-        cancellation_requests.add(self.download_id)
+        cancellation_requests.add(self.downloadId)
 
     def wait(self, timeout: int | None = None) -> None:  # noqa: ARG002
         return
 
     def kill(self) -> None:
-        cancellation_requests.add(self.download_id)
+        cancellation_requests.add(self.downloadId)
 
     def suspend(self) -> None:
         self._paused = True
-        paused_requests.add(self.download_id)
+        paused_requests.add(self.downloadId)
 
     def resume(self) -> None:
         self._paused = False
-        paused_requests.discard(self.download_id)
+        paused_requests.discard(self.downloadId)
 
     def nice(self, _priority: int) -> None:
         # No-op priority setter for compatibility
@@ -90,7 +91,7 @@ class _HasModelDump(Protocol):
     def model_dump(self, *, mode: str = "json") -> dict[str, Any]: ...
 
 
-def _apply_custom_opts(ydl_opts: dict[str, Any], custom_opts: Any, _download_id: str | None) -> None:
+def _apply_custom_opts(ydl_opts: dict[str, Any], custom_opts: Any, _downloadId: str | None) -> None:
     """Merge custom yt-dlp options into ydl_opts, tolerating various input shapes.
 
     Accepts:
@@ -155,24 +156,24 @@ def _apply_playlist_flags(ydl_opts: dict[str, Any], download_playlist: bool) -> 
         ydl_opts.pop("yesplaylist", None)  # Remove yesplaylist if present
 
 
-def _assign_progress_hook(ydl_opts: dict[str, Any], download_id: str) -> None:
+def _assign_progress_hook(ydl_opts: dict[str, Any], downloadId: str) -> None:
     def progress_hook_wrapper(d: dict[str, Any]) -> None:
         # Fast-path cancellation: raise a controlled error to stop yt-dlp
-        if str(download_id) in cancellation_requests:
+        if str(downloadId) in cancellation_requests:
             # Clear request so repeated hooks don't raise again
-            cancellation_requests.discard(str(download_id))
+            cancellation_requests.discard(str(downloadId))
             from yt_dlp.utils import DownloadError as _HookCancel
 
             raise _HookCancel("Cancelled by user")
         # Lightweight pause: skip updating progress; yt-dlp will continue internal loop
-        if str(download_id) in paused_requests:
+        if str(downloadId) in paused_requests:
             return None
-        return ytdlp_progress_hook(d, download_id)
+        return ytdlp_progress_hook(d, downloadId)
 
     ydl_opts["progress_hooks"] = [progress_hook_wrapper]
 
 
-def _handle_cookies(ydl_opts: dict[str, Any], download_id: str | None) -> None:
+def _handle_cookies(ydl_opts: dict[str, Any], downloadId: str | None) -> None:
     # When cookiesfrombrowser is set, let yt-dlp handle cookie extraction natively
     if ydl_opts.get("cookiesfrombrowser"):
         return
@@ -187,12 +188,12 @@ def _handle_cookies(ydl_opts: dict[str, Any], download_id: str | None) -> None:
             with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as tmp_file:
                 save_method(tmp_file.name)
                 ydl_opts["cookiefile"] = tmp_file.name
-            logger.debug(f"[{download_id}] Using cookie file: {tmp_file.name}")
+            logger.debug(f"[{downloadId}] Using cookie file: {tmp_file.name}")
     except Exception as e:
-        logger.warning(f"[{download_id}] Could not extract browser cookies: {e}")
+        logger.warning(f"[{downloadId}] Could not extract browser cookies: {e}")
 
 
-def build_opts(output_path: str, download_id: str | None = None, download_playlist: bool = False) -> dict[str, Any]:
+def build_opts(output_path: str, downloadId: str | None = None, download_playlist: bool = False) -> dict[str, Any]:
     """
     Build options dictionary for yt-dlp.
 
@@ -200,7 +201,7 @@ def build_opts(output_path: str, download_id: str | None = None, download_playli
     ----------
     output_path : str
         Path where the downloaded file should be saved.
-    download_id : Optional[str], optional
+    downloadId : Optional[str], optional
         ID for tracking the download (used in progress hook), by default None.
     download_playlist : bool, optional
         Whether to download a playlist, by default False.
@@ -235,17 +236,17 @@ def build_opts(output_path: str, download_id: str | None = None, download_playli
     ydl_opts: dict[str, Any] = _default_ydl_opts(output_path, download_playlist)
 
     # Override with config options if present (including 'format')
-    _apply_custom_opts(ydl_opts, ytdlp_config_options, download_id)
+    _apply_custom_opts(ydl_opts, ytdlp_config_options, downloadId)
 
     # Ensure only one of noplaylist or yesplaylist is present based on download_playlist
     _apply_playlist_flags(ydl_opts, download_playlist)
 
-    # Only add progress hook if download_id is provided
-    if download_id is not None:
-        _assign_progress_hook(ydl_opts, download_id)
+    # Only add progress hook if downloadId is provided
+    if downloadId is not None:
+        _assign_progress_hook(ydl_opts, downloadId)
 
     # Handle cookies_from_browser: extract browser cookies to a temp file
-    _handle_cookies(ydl_opts, download_id)
+    _handle_cookies(ydl_opts, downloadId)
 
     return ydl_opts
 
@@ -255,8 +256,130 @@ def build_opts(output_path: str, download_id: str | None = None, download_playli
 download_errors_from_hooks: dict[str, dict[str, Any]] = {}
 # Registry mapping download IDs to partial-file prefixes for cleanup
 download_tempfile_registry: dict[str, str] = {}
+
+# Process registry with automatic cleanup for single worker
+
+
+class ProcessRegistry:
+    """Managed registry for download processes with automatic cleanup."""
+
+    def __init__(self):
+        """Initialize the process registry with cleanup thread."""
+        self._processes: dict[str, Any] = {}
+        self._lock = threading.RLock()
+        self._stop_event = threading.Event()
+        self._cleanup_thread = threading.Thread(
+            target=self._cleanup_loop,
+            name="evd-process-cleanup",
+            daemon=True
+        )
+        self._cleanup_thread.start()
+        self._cleanup_count = 0
+        self._start_time = time.time()
+
+    def register(self, downloadId: str, process: Any):
+        """Register a new download process."""
+        with self._lock:
+            self._processes[downloadId] = {
+                "process": process,
+                "start_time": time.time(),
+                "last_heartbeat": time.time()
+            }
+
+    def unregister(self, downloadId: str):
+        """Unregister a download process."""
+        with self._lock:
+            self._processes.pop(downloadId, None)
+
+    def clear(self):
+        """Clear all registered processes."""
+        with self._lock:
+            self._processes.clear()
+
+    def get(self, downloadId: str) -> Any:
+        """Get a process by download ID."""
+        with self._lock:
+            return self._processes.get(downloadId, {}).get("process")
+
+    def __len__(self) -> int:
+        """Return the number of registered processes."""
+        with self._lock:
+            return len(self._processes)
+
+    def __contains__(self, downloadId: str) -> bool:
+        """Check if a download ID is registered."""
+        with self._lock:
+            return downloadId in self._processes
+
+    def get_health_metrics(self) -> dict[str, Any]:
+        """Get health metrics for single worker monitoring."""
+        with self._lock:
+            total_processes = len(self._processes)
+            active_processes = sum(
+                1 for info in self._processes.values()
+                if hasattr(info["process"], "is_running") and info["process"].is_running()
+            )
+            stuck_processes = sum(
+                1 for info in self._processes.values()
+                if time.time() - info["last_heartbeat"] > 300
+            )
+
+            # Calculate memory usage if possible
+            memory_usage = 0
+            for info in self._processes.values():
+                process = info["process"]
+                if hasattr(process, "memory_info"):
+                    try:
+                        memory_usage += process.memory_info().rss
+                    except (psutil.NoSuchProcess, psutil.AccessDenied):
+                        pass
+
+            return {
+                "total_processes": total_processes,
+                "active_processes": active_processes,
+                "stuck_processes": stuck_processes,
+                "cleanup_rate": self._cleanup_count / max(time.time() - self._start_time, 1),
+                "memory_usage_mb": memory_usage / 1024 / 1024
+            }
+
+    def stop(self):
+        """Stop the cleanup thread."""
+        self._stop_event.set()
+        self._cleanup_thread.join(timeout=5.0)
+
+    def _cleanup_loop(self):
+        """Simplified cleanup for single worker - more aggressive."""
+        while not self._stop_event.is_set():
+            with self._lock:
+                current_time = time.time()
+                to_remove = []
+
+                for did, info in self._processes.items():
+                    process = info["process"]
+
+                    # More aggressive cleanup for single worker
+                    if hasattr(process, "is_running"):
+                        if (not process.is_running() or
+                            current_time - info["start_time"] > 600 or
+                            current_time - info["last_heartbeat"] > 300):
+                            to_remove.append(did)
+                        else:
+                            # Update heartbeat
+                            info["last_heartbeat"] = current_time
+                    # Fallback for non-psutil objects
+                    elif current_time - info["start_time"] > 600:  # 10 minutes
+                        to_remove.append(did)
+
+                for did in to_remove:
+                    self._processes.pop(did, None)
+                    self._cleanup_count += 1
+
+            time.sleep(60)  # Check every minute (less frequent for single worker)
+
+
 # Registry mapping download IDs to their download process for cancellation
-download_process_registry: dict[str, psutil.Process] = {}
+download_process_registry = ProcessRegistry()
+
 # Track which download IDs have had history appended to avoid duplication across
 # finished hook and post-download fallback
 history_appended_ids: set[str] = set()
@@ -266,7 +389,7 @@ cancellation_requests: set[str] = set()
 paused_requests: set[str] = set()
 
 
-def _try_extract_title_with_ytdlp(url: str, download_id: str | None) -> str | None:
+def _try_extract_title_with_ytdlp(url: str, downloadId: str | None) -> str | None:
     """Attempt to extract a reliable title using yt-dlp metadata extraction.
 
     This performs a metadata-only extraction (no download).
@@ -275,7 +398,7 @@ def _try_extract_title_with_ytdlp(url: str, download_id: str | None) -> str | No
     ----------
     url : str
         Media URL to probe.
-    download_id : str | None
+    downloadId : str | None
         Optional download identifier for logging context.
 
     Returns
@@ -301,10 +424,10 @@ def _try_extract_title_with_ytdlp(url: str, download_id: str | None) -> str | No
         if isinstance(info, dict):
             title = info.get("title") or info.get("fulltitle")
         if title and isinstance(title, str) and title.strip():
-            logger.debug(f"[{download_id or 'N/A'}] Title extracted via yt-dlp: {title}")
+            logger.debug(f"[{downloadId or 'N/A'}] Title extracted via yt-dlp: {title}")
             return title.strip()
     except Exception as e:
-        logger.debug(f"[{download_id or 'N/A'}] yt-dlp metadata title extraction failed: {e}")
+        logger.debug(f"[{downloadId or 'N/A'}] yt-dlp metadata title extraction failed: {e}")
     return None
 
 
@@ -531,9 +654,9 @@ def _format_duration(seconds: float) -> str:
     return f"{hours}h{minutes}m"
 
 
-def _progress_downloading(d: dict[str, Any], download_id: str | None) -> None:
+def _progress_downloading(d: dict[str, Any], downloadId: str | None) -> None:
     """Handle 'downloading' status updates from yt-dlp."""
-    str_id = str(download_id) if download_id else "unknown_id"
+    str_id = str(downloadId) if downloadId else "unknown_id"
     percent = str(d.get("_percent_str", "")).strip()
     downloaded = d.get("_downloaded_bytes_str")
     total = d.get("_total_bytes_str") or d.get("_total_bytes_estimate_str")
@@ -605,55 +728,55 @@ def _progress_downloading(d: dict[str, Any], download_id: str | None) -> None:
     logger.debug(" ".join(parts))
 
     # Update detailed progress, historical speeds, and full progress history
-    with progress_lock:
-        old = progress_data.get(str_id, {})
+    old = unified_download_manager.get_download(str_id) or {}
 
-        # Accumulate speeds
-        speeds = old.get("speeds", [])
-        if speed:
-            speeds.append(speed)
+    # Accumulate speeds
+    speeds = old.get("speeds", [])
+    if speed:
+        speeds.append(speed)
 
-        # Calculate improved ETA using historical data
-        improved_eta = _calculate_improved_eta(
-            speeds, str(downloaded) if downloaded else "", str(total) if total else ""
-        )
+    # Calculate improved ETA using historical data
+    improved_eta = _calculate_improved_eta(
+        speeds, str(downloaded) if downloaded else "", str(total) if total else ""
+    )
 
-        # Accumulate history snapshots
-        history = old.get("history", [])
-        snapshot = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "percent": percent,
-            "downloaded": downloaded,
-            "total": total,
-            "speed": speed,
-            "eta": eta,
-            "improved_eta": improved_eta,
-        }
-        history.append(snapshot)
+    # Accumulate history snapshots
+    history = old.get("history", [])
+    snapshot = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "percent": percent,
+        "downloaded": downloaded,
+        "total": total,
+        "speed": speed,
+        "eta": eta,
+        "improved_eta": improved_eta,
+    }
+    history.append(snapshot)
 
-        # Update entry with enhanced data
-        progress_data[str_id] = {
-            "status": "downloading",
-            "percent": percent,
-            "downloaded": downloaded,
-            "total": total,
-            "speed": speed,
-            "eta": eta,
-            "improved_eta": improved_eta,
-            "speeds": speeds,
-            "history": history,
-            # Add video metadata
-            "metadata": metadata,
-            # Add download start time if not present
-            "start_time": old.get("start_time", datetime.now(timezone.utc).isoformat()),
-            # Add current timestamp
-            "last_update": datetime.now(timezone.utc).isoformat(),
-        }
+    # Update entry with enhanced data
+    unified_download_manager.update_download(
+        str_id,
+        status="downloading",
+        percent=percent,
+        downloaded=downloaded,
+        total=total,
+        speed=speed,
+        eta=eta,
+        improved_eta=improved_eta,
+        speeds=speeds,
+        history=history,
+        # Add video metadata
+        metadata=metadata,
+        # Add download start time if not present
+        start_time=old.get("start_time", datetime.now(timezone.utc).isoformat()),
+        # Add current timestamp
+        last_update=datetime.now(timezone.utc).isoformat(),
+    )
 
 
-def _progress_finished(d: dict[str, Any], download_id: str | None) -> None:
+def _progress_finished(d: dict[str, Any], downloadId: str | None) -> None:
     """Handle 'finished' status updates from yt-dlp."""
-    str_id = str(download_id) if download_id else "unknown_id"
+    str_id = str(downloadId) if downloadId else "unknown_id"
     filename = d.get("filename")
     # Append history entry from info JSON if available
     if filename:
@@ -706,37 +829,36 @@ def _progress_finished(d: dict[str, Any], download_id: str | None) -> None:
 
     # Mark status as finished only if an entry already exists; avoid creating new entries in this hook.
     try:
-        with progress_lock:
-            old = progress_data.get(str_id)
-            if not isinstance(old, dict) or not old:
-                return
-            history = old.get("history") or []
-            if not history or str(history[-1].get("percent", "")).strip() != "100%":
-                history.append(
-                    {
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
-                        "percent": "100%",
-                        "downloaded": old.get("total") or old.get("downloaded") or None,
-                        "total": old.get("total") or None,
-                        "speed": old.get("speed") or "",
-                        "eta": "0s",
-                        "improved_eta": "",
-                    }
-                )
-            progress_data[str_id] = {
-                **old,
-                "status": "finished",
-                "history": history,
-                "last_update": datetime.now(timezone.utc).isoformat(),
-            }
+        old = unified_download_manager.get_download(str_id)
+        if not isinstance(old, dict) or not old:
+            return
+        history = old.get("history") or []
+        if not history or str(history[-1].get("percent", "")).strip() != "100%":
+            history.append(
+                {
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "percent": "100%",
+                    "downloaded": old.get("total") or old.get("downloaded") or None,
+                    "total": old.get("total") or None,
+                    "speed": old.get("speed") or "",
+                    "eta": "0s",
+                    "improved_eta": "",
+                }
+            )
+        unified_download_manager.update_download(
+            str_id,
+            status="finished",
+            history=history,
+            last_update=datetime.now(timezone.utc).isoformat(),
+        )
     except Exception:
         # Best-effort; do not break hook processing
         pass
 
 
-def _progress_error(d: dict[str, Any], download_id: str | None) -> None:
+def _progress_error(d: dict[str, Any], downloadId: str | None) -> None:
     """Handle 'error' status updates from yt-dlp."""
-    str_id = str(download_id) if download_id else "unknown_id"
+    str_id = str(downloadId) if downloadId else "unknown_id"
     error_msg = str(d.get("error", "Unknown error from hook"))
     detailed = str(d.get("fragment_error") or d.get("message") or error_msg)
 
@@ -777,11 +899,11 @@ def _progress_error(d: dict[str, Any], download_id: str | None) -> None:
             "details": d,
             "troubleshooting": troubleshooting,
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "download_id": str_id,
+            "downloadId": str_id,
         }
 
 
-def ytdlp_progress_hook(d: dict[str, Any], download_id: str | None) -> None:
+def ytdlp_progress_hook(d: dict[str, Any], downloadId: str | None) -> None:
     """
     Process progress updates from yt-dlp.
 
@@ -791,7 +913,7 @@ def ytdlp_progress_hook(d: dict[str, Any], download_id: str | None) -> None:
     ----------
     d : Dict[str, Any]
         Progress data dictionary from yt-dlp hook.
-    download_id : Optional[str]
+    downloadId : Optional[str]
         Identifier for the current download.
 
     Returns
@@ -801,11 +923,11 @@ def ytdlp_progress_hook(d: dict[str, Any], download_id: str | None) -> None:
     """
     status: str | None = d.get("status")
     if status == "downloading":
-        _progress_downloading(d, download_id)
+        _progress_downloading(d, downloadId)
     elif status == "finished":
-        _progress_finished(d, download_id)
+        _progress_finished(d, downloadId)
     elif status == "error":
-        _progress_error(d, download_id)
+        _progress_error(d, downloadId)
 
 
 # Added helper to initialize download request data and prepare directory
@@ -816,17 +938,59 @@ def _init_download(data: dict[str, Any]) -> tuple[Path | None, str, str, str, bo
     Returns
     -------
     tuple[Path | None, str, str, str, bool, tuple[Any, int] | None]
-        (download_path, url, download_id, page_title, download_playlist_flag, error_tuple).
+        (download_path, url, downloadId, page_title, download_playlist_flag, error_tuple).
         error_tuple is (response, status) if error occurred; otherwise None.
     """
-    url = data.get("url", "").strip()
+    # Validate URL first - ensure it's not empty or None
+    raw_url = data.get("url")
+    if not raw_url or not isinstance(raw_url, str):
+        return (
+            None,
+            "",
+            str(data.get("downloadId") or "N/A"),
+            "video",
+            False,
+            (
+                jsonify(
+                    {
+                        "status": "error",
+                        "message": "No URL provided or invalid URL format",
+                        "error_type": "MISSING_URL",
+                        "downloadId": data.get("downloadId") or "N/A",
+                    }
+                ),
+                400,
+            ),
+        )
+
+    url = raw_url.strip()
+    if not url:
+        return (
+            None,
+            "",
+            str(data.get("downloadId") or "N/A"),
+            "video",
+            False,
+            (
+                jsonify(
+                    {
+                        "status": "error",
+                        "message": "URL cannot be empty or whitespace only",
+                        "error_type": "MISSING_URL",
+                        "downloadId": data.get("downloadId") or "N/A",
+                    }
+                ),
+                400,
+            ),
+        )
+
     # Accept both camelCase (client) and snake_case (validated) keys
     # Normalize id field from request data to camelCase
     if "download_id" in data and "downloadId" not in data:
         data["downloadId"] = str(data.get("download_id"))
         with suppress(Exception):
             del data["download_id"]
-    download_id = str(data.get("downloadId") or "N/A")
+    downloadId = str(data.get("downloadId") or "N/A")
     # Prefer explicit page_title; otherwise try yt-dlp metadata; finally derive from URL
     raw_title = data.get("page_title")
     if isinstance(raw_title, str) and raw_title.strip():
@@ -839,7 +1003,7 @@ def _init_download(data: dict[str, Any]) -> tuple[Path | None, str, str, str, bo
         page_title = None
 
     if not page_title:
-        extracted = _try_extract_title_with_ytdlp(url, download_id)
+        extracted = _try_extract_title_with_ytdlp(url, downloadId)
         if extracted:
             page_title = extracted
 
@@ -865,7 +1029,7 @@ def _init_download(data: dict[str, Any]) -> tuple[Path | None, str, str, str, bo
         return (
             None,
             url,
-            download_id,
+            downloadId,
             page_title,
             download_playlist,
             (
@@ -874,7 +1038,7 @@ def _init_download(data: dict[str, Any]) -> tuple[Path | None, str, str, str, bo
                         "status": "error",
                         "message": "No URL provided",
                         "error_type": "MISSING_URL",
-                        "downloadId": download_id,
+                        "downloadId": downloadId,
                     }
                 ),
                 400,
@@ -887,7 +1051,7 @@ def _init_download(data: dict[str, Any]) -> tuple[Path | None, str, str, str, bo
             return (
                 None,
                 url,
-                download_id,
+                downloadId,
                 page_title,
                 download_playlist,
                 (
@@ -896,7 +1060,7 @@ def _init_download(data: dict[str, Any]) -> tuple[Path | None, str, str, str, bo
                             "status": "error",
                             "message": "Download directory not configured on server.",
                             "error_type": "SERVER_CONFIG_ERROR_NO_DOWNLOAD_DIR",
-                            "downloadId": download_id,
+                            "downloadId": downloadId,
                         }
                     ),
                     500,
@@ -910,7 +1074,7 @@ def _init_download(data: dict[str, Any]) -> tuple[Path | None, str, str, str, bo
         return (
             None,
             url,
-            download_id,
+            downloadId,
             page_title,
             download_playlist,
             (
@@ -920,18 +1084,18 @@ def _init_download(data: dict[str, Any]) -> tuple[Path | None, str, str, str, bo
                         "message": f"Server error with download directory '{download_dir_display}': {e}",
                         "error_type": "SERVER_CONFIG_DOWNLOAD_DIR_ERROR",
                         "original_error": str(e),
-                        "downloadId": download_id,
+                        "downloadId": downloadId,
                     }
                 ),
                 500,
             ),
         )
-    return download_path, url, download_id, page_title, download_playlist, None
+    return download_path, url, downloadId, page_title, download_playlist, None
 
 
 # Helper to prepare file naming metadata and output template
 def _prepare_download_metadata(
-    url: str, page_title: str, download_id: str, download_path: Path
+    url: str, page_title: str, downloadId: str, download_path: Path
 ) -> tuple[str, str, str, str]:
     """
     Sanitize page title and URL to generate filename components and template.
@@ -942,7 +1106,7 @@ def _prepare_download_metadata(
         Source media URL.
     page_title : str
         Title used for naming the output file.
-    download_id : str
+    downloadId : str
         Unique identifier for the download.
     download_path : Path
         Directory where output files are written.
@@ -953,7 +1117,7 @@ def _prepare_download_metadata(
         safe_title, sanitized_id, prefix, output_template.
     """
     # Sanitize title
-    logger.info(f"[{download_id}] Received page_title for sanitization: '{page_title}'")
+    logger.info(f"[{downloadId}] Received page_title for sanitization: '{page_title}'")
     safe_title_raw = sanitize_filename(str(page_title) if page_title else "default_video_title")
     # Some sites include a file extension in the visible title (e.g., "something.mp4").
     # Strip any trailing media extension to avoid doubled extensions in final filenames.
@@ -979,7 +1143,7 @@ def _prepare_download_metadata(
         return name
 
     safe_title = _strip_trailing_media_extension(safe_title_raw)
-    logger.info(f"[{download_id}] Sanitized title for output template: '{safe_title}'")
+    logger.info(f"[{downloadId}] Sanitized title for output template: '{safe_title}'")
     # Derive a site label from the URL host and append if not already present in the title.
     # For compatibility with tests, only append host when the sanitized title equals the fallback 'video'.
     parsed = urlparse(url)
@@ -988,14 +1152,14 @@ def _prepare_download_metadata(
     safe_title_with_site = f"{safe_title} - {host}" if host and title_lower == "video" else safe_title
     # Extract unique ID from URL path (kept for logging/diagnostics and rare fallback naming)
     path_seg = parsed.path.rstrip("/").rsplit("/", 1)[-1]
-    id_component = path_seg or download_id
+    id_component = path_seg or downloadId
     # Many sites use a path segment that already ends with a file extension (e.g., ".../6733e433a219a.mp4").
     # Strip a trailing media extension before sanitization so we don't produce names like "..._id.mp4.mp4".
     id_component = _strip_trailing_media_extension(id_component)
-    sanitized_id = sanitize_filename(id_component) or sanitize_filename(str(download_id)) or "unique_id"
+    sanitized_id = sanitize_filename(id_component) or sanitize_filename(str(downloadId)) or "unique_id"
     # Register prefix for partial file cleanup (use human-readable title + sanitized id)
     prefix = f"{safe_title_with_site}_{sanitized_id}"
-    download_tempfile_registry[str(download_id)] = prefix
+    download_tempfile_registry[str(downloadId)] = prefix
     # Clear any pre-existing hook error for this id
     if id_component in download_errors_from_hooks:
         del download_errors_from_hooks[id_component]
@@ -1004,19 +1168,19 @@ def _prepare_download_metadata(
     # For test expectations, include sanitized id in the template when title already carries content
     output_template = str(download_path / f"{safe_title_with_site}_{sanitized_id}.%(ext)s")
     logger.info(
-        f"[{download_id}] Output template set to: '{output_template}' "
+        f"[{downloadId}] Output template set to: '{output_template}' "
         + f"(title: '{safe_title_with_site}', id_comp: '{sanitized_id}')"
     )
     return safe_title_with_site, sanitized_id, prefix, output_template
 
 
 # Helper to assert playlist downloads are allowed by config
-def _assert_playlist_allowed(download_id: str, download_playlist: bool) -> tuple[Any, int] | None:
+def _assert_playlist_allowed(downloadId: str, download_playlist: bool) -> tuple[Any, int] | None:
     """Check playlist permissions; return error tuple if disallowed.
 
     Parameters
     ----------
-    download_id : str
+    downloadId : str
         The unique download identifier.
     download_playlist : bool
         Whether the request asks to download a playlist.
@@ -1030,21 +1194,21 @@ def _assert_playlist_allowed(download_id: str, download_playlist: bool) -> tuple
         config = Config.load()
         allow_playlists = config.get_value("allow_playlists", False)
         if not allow_playlists:
-            logger.warning(f"[{download_id}] Playlist download denied: Playlists not allowed in server config")
+            logger.warning(f"[{downloadId}] Playlist download denied: Playlists not allowed in server config")
             return (
                 jsonify(
                     {
                         "status": "error",
                         "message": "Playlist downloads are not allowed by server configuration",
                         "error_type": "PLAYLIST_DOWNLOADS_DISABLED",
-                        "downloadId": download_id,
+                        "downloadId": downloadId,
                     }
                 ),
                 403,
             )
-        logger.info(f"[{download_id}] Playlist download requested and allowed by config")
+        logger.info(f"[{downloadId}] Playlist download requested and allowed by config")
     else:
-        logger.debug(f"[{download_id}] Single video download (not a playlist)")
+        logger.debug(f"[{downloadId}] Single video download (not a playlist)")
     return None
 
 
@@ -1136,15 +1300,15 @@ _YTDLP_ERROR_MESSAGE_MAPPINGS = [
 ]
 
 
-def _cleanup_partial_files(prefix: str, download_path: Path, download_id: str) -> None:
+def _cleanup_partial_files(prefix: str, download_path: Path, downloadId: str) -> None:
     """Remove partial .part files for the given download prefix."""
     try:
         pattern = f"{prefix}.*.part"
         for pf in download_path.glob(pattern):
             pf.unlink()
-            logger.debug(f"Removed partial file {pf} for aborted download {download_id}")
+            logger.debug(f"Removed partial file {pf} for aborted download {downloadId}")
     except Exception as cleanup_err:
-        logger.warning(f"[{download_id}] Failed to clean partial files: {cleanup_err}")
+        logger.warning(f"[{downloadId}] Failed to clean partial files: {cleanup_err}")
 
 
 def map_error_message(error_message: str) -> tuple[str, str]:
@@ -1185,7 +1349,7 @@ def _classify_transient_error_and_backoff(error_message: str) -> tuple[str | Non
 
 
 def _handle_yt_dlp_download_error(
-    download_id: str,
+    downloadId: str,
     url: str,
     prefix: str,
     download_path: Path,
@@ -1198,7 +1362,7 @@ def _handle_yt_dlp_download_error(
 
     Parameters
     ----------
-    download_id : str
+    downloadId : str
         Download identifier.
     url : str
         Source media URL.
@@ -1217,7 +1381,7 @@ def _handle_yt_dlp_download_error(
         Flask response object and HTTP status code.
     """
     # Cleanup partial files
-    _cleanup_partial_files(prefix, download_path, download_id)
+    _cleanup_partial_files(prefix, download_path, downloadId)
 
     # Prepare error messages
     exc_message = str(exception)
@@ -1226,33 +1390,38 @@ def _handle_yt_dlp_download_error(
         error_type = "USER_CANCELED"
         user_msg = "Download canceled by user."
         client_error = exc_message
-        # Reflect canceled state in progress_data and history, then return a 200 OK consistent with cancel endpoint
+        # Reflect canceled state in unified download manager and history, then return a 200 OK
+        # consistent with cancel endpoint
         try:
-            with progress_lock:
-                progress_data[str(download_id)] = {
-                    "status": "canceled",
-                    "message": user_msg,
-                    "last_update": datetime.now(timezone.utc).isoformat(),
-                }
+            unified_download_manager.update_download(
+                str(downloadId),
+                status="canceled",
+                message=user_msg,
+                last_update=datetime.now(timezone.utc).isoformat(),
+            )
         except Exception:
             pass
         with suppress(Exception):
-            append_history_entry(
-                {
-                    "download_id": download_id,
-                    "url": url,
-                    "status": "canceled",
-                    "message": user_msg,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                }
-            )
-        logger.info(f"[{download_id}] Download canceled by user.")
+            # Ensure URL is valid before creating history entry
+            if url and url.strip():
+                append_history_entry(
+                    {
+                        "downloadId": downloadId,
+                        "url": url.strip(),
+                        "status": "canceled",
+                        "message": user_msg,
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    }
+                )
+            else:
+                logger.warning(f"[{downloadId}] Skipping cancel history entry due to invalid URL: {url}")
+        logger.info(f"[{downloadId}] Download canceled by user.")
         return (
             jsonify(
                 {
                     "status": "success",
                     "message": user_msg,
-                    "downloadId": download_id,
+                    "downloadId": downloadId,
                 }
             ),
             200,
@@ -1263,51 +1432,56 @@ def _handle_yt_dlp_download_error(
         error_type = hook_details.get("parsed_type", "YT_DLP_HOOK_ERROR")
         user_msg = f"Download failed: {hook_details['original_message']}"
         client_error = hook_details["original_message"]
-        logger.info(f"[{download_id}] Using error details from progress hook: {error_type} - {client_error}")
+        logger.info(f"[{downloadId}] Using error details from progress hook: {error_type} - {client_error}")
     else:
         # Map common errors
         error_type, user_msg = map_error_message(exc_message)
         client_error = exc_message
 
-    logger.error(f"[{download_id}] yt-dlp download error for URL {url}: Type='{error_type}', Message='{client_error}'")
+    logger.error(f"[{downloadId}] yt-dlp download error for URL {url}: Type='{error_type}', Message='{client_error}'")
 
     # Surface an entry in the status endpoint even when the error is raised before any hook runs.
     try:
-        with progress_lock:
-            # Record an error entry that the /api/status endpoint will expose
-            download_errors_from_hooks[str(download_id)] = {
-                "original_message": client_error,
-                "parsed_type": error_type,
-                "source": "server",
-                "details": {"exception": exc_message},
-                "troubleshooting": user_msg,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "download_id": str(download_id),
-                "url": url,
-            }
-            # Optionally reflect a minimal status object as well
-            progress_data[str(download_id)] = {
-                "status": "error",
-                "message": user_msg,
-                "last_update": datetime.now(timezone.utc).isoformat(),
-            }
+        # Record an error entry that the /api/status endpoint will expose
+        download_errors_from_hooks[str(downloadId)] = {
+            "original_message": client_error,
+            "parsed_type": error_type,
+            "source": "server",
+            "details": {"exception": exc_message},
+            "troubleshooting": user_msg,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "downloadId": str(downloadId),
+            "url": url,
+        }
+        # Optionally reflect a minimal status object as well
+        unified_download_manager.update_download(
+            str(downloadId),
+            status="error",
+            message=user_msg,
+            last_update=datetime.now(timezone.utc).isoformat(),
+        )
     except Exception:
         # Best-effort; do not block response on status recording errors
         pass
 
     # Append a failure entry to history so errors are visible even without the 'finished' hook
     with suppress(Exception):
-        append_history_entry(
-            {
-                "download_id": download_id,
-                "url": url,
-                "status": "error",
-                "error_type": error_type,
-                "message": user_msg,
-                "original_error": client_error,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            }
-        )
+        # Ensure URL is valid before creating history entry
+        if url and url.strip():
+            append_history_entry(
+                {
+                    "downloadId": downloadId,
+                    "url": url.strip(),
+                    "status": "error",
+                    "error_type": error_type,
+                    "message": user_msg,
+                    "original_error": client_error,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }
+            )
+        else:
+            logger.warning(f"[{downloadId}] Skipping history entry due to invalid URL: {url}")
+
     return (
         jsonify(
             {
@@ -1315,7 +1489,7 @@ def _handle_yt_dlp_download_error(
                 "message": user_msg,
                 "error_type": error_type,
                 "original_error": client_error,
-                "downloadId": download_id,
+                "downloadId": downloadId,
             }
         ),
         500,
@@ -1341,7 +1515,7 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
         Flask JSON response tuple (response, status code) indicating the result.
     """
     # Validate request and prepare download directory
-    download_path, url, download_id, page_title, download_playlist_val, init_error = _init_download(data)
+    download_path, url, downloadId, page_title, download_playlist_val, init_error = _init_download(data)
     if init_error:
         return init_error
 
@@ -1352,34 +1526,34 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
     _, sanitized_id_component, prefix, output_template = _prepare_download_metadata(
         url,
         page_title,
-        download_id,
+        downloadId,
         download_path,
     )
 
     # Assert playlist permission
-    playlist_error = _assert_playlist_allowed(download_id, download_playlist_val)
+    playlist_error = _assert_playlist_allowed(downloadId, download_playlist_val)
     if playlist_error:
         return playlist_error
 
     ydl_opts = build_opts(
         output_template,
-        download_id,
-        download_playlist_val,  # Pass original download_id to build_opts for hook
+        downloadId,
+        download_playlist_val,  # Pass original downloadId to build_opts for hook
     )
 
-    logger.info(f"[{download_id}] Attempting to download URL: {url}")
-    logger.debug(f"[{download_id}] yt-dlp options: {ydl_opts}")
+    logger.info(f"[{downloadId}] Attempting to download URL: {url}")
+    logger.debug(f"[{downloadId}] yt-dlp options: {ydl_opts}")
 
     try:
         # Register a lightweight controller so cancel/pause endpoints can act
-        controller = cast(psutil.Process, cast(Any, _DownloadControl(str(download_id))))
-        download_process_registry[str(download_id)] = controller
+        controller = cast(psutil.Process, cast(Any, _DownloadControl(str(downloadId))))
+        download_process_registry.register(str(downloadId), controller)
 
         # Ensure a visible 'starting' status immediately in /api/status
         try:
             with progress_lock:
-                prev = progress_data.get(str(download_id)) or {}
-                progress_data[str(download_id)] = {
+                prev = unified_download_manager.get_download(str(downloadId)) or {}
+                progress_data[str(downloadId)] = {
                     **prev,
                     "status": "starting",
                     "url": url,
@@ -1411,7 +1585,7 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
             final_file = media_candidates_all[0] if media_candidates_all else None
             if final_file and final_file.exists() and final_file.stat().st_size == 0:
                 logger.warning(
-                    f"[{download_id}] Detected zero-byte file '{final_file.name}'. "
+                    f"[{downloadId}] Detected zero-byte file '{final_file.name}'. "
                     "Retrying with fallback format mp4 (itag 18) as single stream."
                 )
                 # Remove the empty stub before retry
@@ -1419,20 +1593,20 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
                     final_file.unlink()
                 # Build fallback options: prefer format 18/mp4; allow unmerged single stream
                 fallback_outtmpl = str(download_path / f"{prefix}.%(ext)s")
-                fallback_opts = build_opts(fallback_outtmpl, download_id, download_playlist_val)
+                fallback_opts = build_opts(fallback_outtmpl, downloadId, download_playlist_val)
                 # Force single-stream mp4 and avoid merge
-                fallback_opts["format"] = "18/mp4/best[ext=mp4]/best"
+                fallback_opts["format"] = "18/mp4/best[mp4]/best"
                 fallback_opts.pop("merge_output_format", None)
                 # Re-run yt-dlp with fallback
                 with yt_dlp.YoutubeDL(fallback_opts) as ydl_fb:  # type: ignore[import-untyped]
                     ydl_fb.download([url])
-                logger.info(f"[{download_id}] Fallback retry completed.")
+                logger.info(f"[{downloadId}] Fallback retry completed.")
         except Exception as fb_err:
-            logger.warning(f"[{download_id}] Fallback retry encountered an error: {fb_err}")
+            logger.warning(f"[{downloadId}] Fallback retry encountered an error: {fb_err}")
 
-        # Fallback: if the progress hook did not append history, attempt to append now
+        # Fallback: if the progress hook did not appended history, attempt to append now
         try:
-            if str(download_id) not in history_appended_ids:
+            if str(downloadId) not in history_appended_ids:
                 # Prefer appending rich metadata from the .info.json if it exists
                 # The info JSON is named after the final filename, which we do not know the ext for.
                 # Attempt to find any matching info JSON for this download's prefix.
@@ -1442,12 +1616,12 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
                         with candidates[0].open(encoding="utf-8") as f:
                             info_data = json.load(f)
                         append_history_entry(info_data)
-                        history_appended_ids.add(str(download_id))
-                        logger.info(f"[{download_id}] Fallback appended download metadata to history: {candidates[0]}")
+                        history_appended_ids.add(str(downloadId))
+                        logger.info(f"[{downloadId}] Fallback appended download metadata to history: {candidates[0]}")
                         # Clean up consolidated metadata file
                         with suppress(Exception):
                             candidates[0].unlink()
-                if str(download_id) not in history_appended_ids:
+                if str(downloadId) not in history_appended_ids:
                     # Append a minimal success entry
                     media_candidates = [
                         p
@@ -1458,14 +1632,14 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
                     # Clarify when the file is empty and ensure cleanup
                     if chosen and chosen.exists() and chosen.stat().st_size == 0:
                         logger.warning(
-                            f"[{download_id}] Appending history for zero-byte file and cleaning up stub: {chosen}"
+                            f"[{downloadId}] Appending history for zero-byte file and cleaning up stub: {chosen}"
                         )
                         with suppress(Exception):
                             chosen.unlink()
                         chosen = None
                     append_history_entry(
                         {
-                            "download_id": download_id,
+                            "downloadId": downloadId,
                             "url": url,
                             "status": "complete",
                             "filename": chosen.name if chosen else None,
@@ -1473,16 +1647,16 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
                             "timestamp": datetime.now(timezone.utc).isoformat(),
                         }
                     )
-                    history_appended_ids.add(str(download_id))
+                    history_appended_ids.add(str(downloadId))
         except Exception:
             # Do not fail the request due to history write issues
             pass
 
         # Ensure registry/flags are cleaned for this id before returning success
         with suppress(Exception):
-            download_process_registry.pop(str(download_id), None)
-            paused_requests.discard(str(download_id))
-            cancellation_requests.discard(str(download_id))
+            download_process_registry.unregister(str(downloadId))
+            paused_requests.discard(str(downloadId))
+            cancellation_requests.discard(str(downloadId))
 
         # Final safety cleanup: remove any leftover .info.json sidecars for this download's prefix
         try:
@@ -1496,8 +1670,8 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
         # Ensure a 'finished' status exists in case hooks didn't run (very fast downloads)
         try:
             with progress_lock:
-                current = progress_data.get(str(download_id)) or {}
-                progress_data[str(download_id)] = {
+                current = progress_data.get(str(downloadId)) or {}
+                progress_data[str(downloadId)] = {
                     **current,
                     "status": "finished",
                     "percent": "100%",
@@ -1507,13 +1681,13 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
         except Exception:
             pass
 
-        logger.info(f"[{download_id}] Download process completed for URL: {url}")
+        logger.info(f"[{downloadId}] Download process completed for URL: {url}")
         return (
             jsonify(
                 {
                     "status": "success",
                     "message": "Download initiated successfully and reported as complete by yt-dlp.",
-                    "downloadId": download_id,
+                    "downloadId": downloadId,
                     "url": url,
                     "page_title": page_title,
                 }
@@ -1530,9 +1704,9 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
         if "Requested Range Not Satisfiable" in msg or "HTTP Error 416" in msg:
             # Clean any partials first
             with suppress(Exception):
-                _cleanup_partial_files(prefix, download_path, str(download_id))
+                _cleanup_partial_files(prefix, download_path, str(downloadId))
             try:
-                retry_opts = build_opts(output_template, download_id, download_playlist_val)
+                retry_opts = build_opts(output_template, downloadId, download_playlist_val)
                 # Disable resuming and .part usage to force a clean download
                 retry_opts["continuedl"] = False
                 retry_opts["nopart"] = True
@@ -1540,20 +1714,20 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
                 retry_opts["overwrites"] = True
                 with yt_dlp.YoutubeDL(retry_opts) as ydl_retry:  # type: ignore[import-untyped]
                     ydl_retry.download([url])
-                logger.info(f"[{download_id}] 416 retry completed successfully.")
+                logger.info(f"[{downloadId}] 416 retry completed successfully.")
                 # As in the normal success path, ensure a history entry exists if hooks did not append
                 try:
-                    if str(download_id) not in history_appended_ids:
+                    if str(downloadId) not in history_appended_ids:
                         candidates = list(download_path.glob(f"{prefix}.*.info.json"))
                         if candidates:
                             with suppress(Exception):
                                 with candidates[0].open(encoding="utf-8") as f:
                                     info_data = json.load(f)
                                 append_history_entry(info_data)
-                                history_appended_ids.add(str(download_id))
+                                history_appended_ids.add(str(downloadId))
                                 with suppress(Exception):
                                     candidates[0].unlink()
-                        if str(download_id) not in history_appended_ids:
+                        if str(downloadId) not in history_appended_ids:
                             media_candidates = [
                                 p
                                 for p in download_path.glob(f"{prefix}.*")
@@ -1566,7 +1740,7 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
                                 chosen = None
                             append_history_entry(
                                 {
-                                    "download_id": download_id,
+                                    "downloadId": downloadId,
                                     "url": url,
                                     "status": "complete",
                                     "filename": chosen.name if chosen else None,
@@ -1574,7 +1748,7 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
                                     "timestamp": datetime.now(timezone.utc).isoformat(),
                                 }
                             )
-                            history_appended_ids.add(str(download_id))
+                            history_appended_ids.add(str(downloadId))
                 except Exception:
                     pass
                 # Return success response consistent with normal flow
@@ -1583,7 +1757,7 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
                         {
                             "status": "success",
                             "message": "Download retried after stale range and completed successfully.",
-                            "downloadId": download_id,
+                            "downloadId": downloadId,
                             "url": url,
                             "page_title": page_title,
                         }
@@ -1591,15 +1765,15 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
                     200,
                 )
             except Exception as retry_err:
-                logger.warning(f"[{download_id}] 416 retry failed: {retry_err}")
+                logger.warning(f"[{downloadId}] 416 retry failed: {retry_err}")
                 # fall through to standard error mapping/response
         # Transient error retry (single attempt with backoff)
         reason, backoff = _classify_transient_error_and_backoff(msg)
         if reason:
             try:
-                logger.warning(f"[{download_id}] Transient error detected ({reason}). Retrying once after {backoff}s.")
+                logger.warning(f"[{downloadId}] Transient error detected ({reason}). Retrying once after {backoff}s.")
                 time.sleep(backoff)
-                retry_opts_generic = build_opts(output_template, download_id, download_playlist_val)
+                retry_opts_generic = build_opts(output_template, downloadId, download_playlist_val)
                 with yt_dlp.YoutubeDL(retry_opts_generic) as ydl_retry2:  # type: ignore[import-untyped]
                     ydl_retry2.download([url])
 
@@ -1613,37 +1787,37 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
                     final_file = media_candidates_all[0] if media_candidates_all else None
                     if final_file and final_file.exists() and final_file.stat().st_size == 0:
                         logger.warning(
-                            f"[{download_id}] Detected zero-byte file '{final_file.name}' after retry. "
+                            f"[{downloadId}] Detected zero-byte file '{final_file.name}' after retry. "
                             "Retrying with fallback format mp4 (itag 18) as single stream."
                         )
                         with suppress(Exception):
                             final_file.unlink()
                         fallback_outtmpl2 = str(download_path / f"{prefix}.%(ext)s")
-                        fallback_opts2 = build_opts(fallback_outtmpl2, download_id, download_playlist_val)
+                        fallback_opts2 = build_opts(fallback_outtmpl2, downloadId, download_playlist_val)
                         fallback_opts2["format"] = "18/mp4/best[ext=mp4]/best"
                         fallback_opts2.pop("merge_output_format", None)
                         with yt_dlp.YoutubeDL(fallback_opts2) as ydl_fb2:  # type: ignore[import-untyped]
                             ydl_fb2.download([url])
-                        logger.info(f"[{download_id}] Fallback retry completed after transient error.")
+                        logger.info(f"[{downloadId}] Fallback retry completed after transient error.")
                 except Exception as fb2_err:
-                    logger.warning(f"[{download_id}] Post-retry fallback encountered an error: {fb2_err}")
+                    logger.warning(f"[{downloadId}] Post-retry fallback encountered an error: {fb2_err}")
 
                 try:
-                    if str(download_id) not in history_appended_ids:
+                    if str(downloadId) not in history_appended_ids:
                         candidates2 = list(download_path.glob(f"{prefix}.*.info.json"))
                         if candidates2:
                             with suppress(Exception):
                                 with candidates2[0].open(encoding="utf-8") as f:
                                     info_data2 = json.load(f)
                                 append_history_entry(info_data2)
-                                history_appended_ids.add(str(download_id))
+                                history_appended_ids.add(str(downloadId))
                                 logger.info(
-                                    f"[{download_id}] Fallback appended download metadata to history after retry: "
+                                    f"[{downloadId}] Fallback appended download metadata to history after retry: "
                                     f"{candidates2[0]}"
                                 )
                                 with suppress(Exception):
                                     candidates2[0].unlink()
-                    if str(download_id) not in history_appended_ids:
+                    if str(downloadId) not in history_appended_ids:
                         media_candidates2 = [
                             p
                             for p in download_path.glob(f"{prefix}.*")
@@ -1656,7 +1830,7 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
                             chosen2 = None
                         append_history_entry(
                             {
-                                "download_id": download_id,
+                                "downloadId": downloadId,
                                 "url": url,
                                 "status": "complete",
                                 "filename": chosen2.name if chosen2 else None,
@@ -1664,14 +1838,14 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
                                 "timestamp": datetime.now(timezone.utc).isoformat(),
                             }
                         )
-                        history_appended_ids.add(str(download_id))
+                        history_appended_ids.add(str(downloadId))
                 except Exception:
                     pass
 
                 with suppress(Exception):
-                    download_process_registry.pop(str(download_id), None)
-                    paused_requests.discard(str(download_id))
-                    cancellation_requests.discard(str(download_id))
+                    download_process_registry.unregister(str(downloadId))
+                    paused_requests.discard(str(downloadId))
+                    cancellation_requests.discard(str(downloadId))
                 try:
                     for p in download_path.glob(f"{prefix}.*.info.json"):
                         with suppress(Exception):
@@ -1679,13 +1853,13 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
                 except Exception:
                     pass
 
-                logger.info(f"[{download_id}] Download process completed after transient-retry for URL: {url}")
+                logger.info(f"[{downloadId}] Download process completed after transient-retry for URL: {url}")
                 return (
                     jsonify(
                         {
                             "status": "success",
                             "message": "Download completed successfully after a transient retry.",
-                            "downloadId": download_id,
+                            "downloadId": downloadId,
                             "url": url,
                             "page_title": page_title,
                         }
@@ -1693,16 +1867,16 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
                     200,
                 )
             except Exception as retry_generic_err:
-                logger.warning(f"[{download_id}] Transient retry failed: {retry_generic_err}")
+                logger.warning(f"[{downloadId}] Transient retry failed: {retry_generic_err}")
                 # Fall through to error mapping below
         # Cleanup registry/flags on error before mapping response
         with suppress(Exception):
-            download_process_registry.pop(str(download_id), None)
-            paused_requests.discard(str(download_id))
-            cancellation_requests.discard(str(download_id))
+            download_process_registry.unregister(str(downloadId))
+            paused_requests.discard(str(downloadId))
+            cancellation_requests.discard(str(downloadId))
 
         return _handle_yt_dlp_download_error(
-            download_id,
+            downloadId,
             url,
             prefix,
             download_path,
@@ -1711,26 +1885,27 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
         )
     except Exception as e:
         logger.error(
-            f"[{download_id}] Unexpected server error during download for URL {url}: {e}",
+            f"[{downloadId}] Unexpected server error during download for URL {url}: {e}",
             exc_info=True,
         )
         # Append a failure entry to history for unexpected server errors
         with suppress(Exception):
             append_history_entry(
                 {
-                    "download_id": download_id,
+                    "downloadId": downloadId,
                     "url": url,
                     "status": "error",
                     "error_type": "UNEXPECTED_SERVER_ERROR",
                     "message": str(e),
+                    "error": str(e),
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                 }
             )
         # Cleanup registry/flags on unexpected error
         with suppress(Exception):
-            download_process_registry.pop(str(download_id), None)
-            paused_requests.discard(str(download_id))
-            cancellation_requests.discard(str(download_id))
+            download_process_registry.unregister(str(downloadId))
+            paused_requests.discard(str(downloadId))
+            cancellation_requests.discard(str(downloadId))
 
         return (
             jsonify(
@@ -1739,7 +1914,7 @@ def handle_ytdlp_download(data: dict[str, Any]) -> Any:
                     "message": f"An unexpected server error occurred: {e!s}",
                     "error_type": "UNEXPECTED_SERVER_ERROR",
                     "original_error": str(e),
-                    "downloadId": download_id,
+                    "downloadId": downloadId,
                 }
             ),
             500,

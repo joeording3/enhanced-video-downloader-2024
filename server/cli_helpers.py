@@ -294,7 +294,7 @@ def find_server_processes_cli() -> list[dict[str, int | str | None]]:
 
 
 def resume_failed_downloads(
-    download_ids: list[str],
+    downloadIds: list[str],
     download_dir: Path,
     build_opts_func: Callable[[str, str, dict[str, Any] | None], dict[str, Any]],
     logger: logging.Logger | None = None,
@@ -308,7 +308,7 @@ def resume_failed_downloads(
 
     Parameters
     ----------
-    download_ids : List[str]
+    downloadIds : List[str]
         List of download IDs or URLs to resume.
     download_dir : Path
         Base download directory.
@@ -340,7 +340,7 @@ def resume_failed_downloads(
         return
 
     # Compute failed download IDs
-    failed_ids = _compute_failed_download_ids(download_ids, history_items, logger)
+    failed_ids = _compute_failed_download_ids(downloadIds, history_items, logger)
     if not failed_ids:
         logger.info("No failed downloads found to resume.")
         return
@@ -378,21 +378,21 @@ def resume_failed_downloads(
     _report_failed_summary(resumed, failed, non_resumable, logger)
 
 
-def _reorder_by_priority(download_ids: list[str], history_items: Sequence[dict[str, Any] | _HistoryItem]) -> list[str]:
+def _reorder_by_priority(downloadIds: list[str], history_items: Sequence[dict[str, Any] | _HistoryItem]) -> list[str]:
     """Reorder downloads by priority (highest priority first)."""
-    # Create a mapping of download_id to priority
+    # Create a mapping of downloadId to priority
     priority_map: dict[str, int] = {}
     for item in history_items:
-        download_id_val = item.get("download_id")
-        download_id = download_id_val if isinstance(download_id_val, str) else None
-        if download_id in download_ids:
+        downloadId_val = item.get("downloadId")
+        downloadId = downloadId_val if isinstance(downloadId_val, str) else None
+        if downloadId in downloadIds:
             # Use file size as priority indicator (larger files = higher priority)
             fs_val = item.get("file_size", 0)
             file_size = int(fs_val) if isinstance(fs_val, int) else 0
-            priority_map[download_id] = file_size
+            priority_map[downloadId] = file_size
 
     # Sort by priority (descending)
-    return sorted(download_ids, key=lambda x: priority_map.get(x, 0), reverse=True)
+    return sorted(downloadIds, key=lambda x: priority_map.get(x, 0), reverse=True)
 
 
 def _process_resume_batch(
@@ -406,13 +406,13 @@ def _process_resume_batch(
     results: dict[str, Any] = {"resumed": 0, "failed": 0, "non_resumable": []}
     results_lock = threading.Lock()
 
-    def process_single_download(download_id: str) -> dict[str, Any]:
+    def process_single_download(downloadId: str) -> dict[str, Any]:
         try:
             # Find the download in history
             history_items = load_history()
             download_info = None
             for item in history_items:
-                if item.get("download_id") == download_id:
+                if item.get("downloadId") == downloadId:
                     download_info = item
                     break
 
@@ -436,7 +436,7 @@ def _process_resume_batch(
                 downloader = cast(_HasDownload, ydl)
                 downloader.download([url])
         except Exception as e:
-            logger.exception(f"Failed to resume {download_id}")
+            logger.exception(f"Failed to resume {downloadId}")
             return {"status": "failed", "reason": str(e)}
         else:
             return {"status": "success"}
@@ -446,22 +446,22 @@ def _process_resume_batch(
         future_to_id = {executor.submit(process_single_download, did): did for did in batch}
 
         for future in concurrent.futures.as_completed(future_to_id):
-            download_id = future_to_id[future]
+            downloadId = future_to_id[future]
             try:
                 result = future.result()
                 with results_lock:
                     if result["status"] == "success":
                         results["resumed"] += 1
-                        logger.info(f" Successfully resumed: {download_id}")
+                        logger.info(f" Successfully resumed: {downloadId}")
                     else:
                         results["failed"] += 1
-                        results["non_resumable"].append(download_id)
-                        logger.warning(f" Failed to resume {download_id}: {result['reason']}")
+                        results["non_resumable"].append(downloadId)
+                        logger.warning(f" Failed to resume {downloadId}: {result['reason']}")
             except Exception:
                 with results_lock:
                     results["failed"] += 1
-                    results["non_resumable"].append(download_id)
-                    logger.exception(" Exception resuming {download_id}")
+                    results["non_resumable"].append(downloadId)
+                    logger.exception(" Exception resuming {downloadId}")
 
     return results
 
@@ -1340,24 +1340,24 @@ def set_config_value(key: str, value: Any) -> None:
 
 
 def _compute_failed_download_ids(
-    download_ids: list[str],
+    downloadIds: list[str],
     history_items: list[dict[str, Any]],
     log: logging.Logger,
 ) -> list[str]:
     """Compute list of failed download IDs to resume."""
-    if not download_ids:
+    if not downloadIds:
         computed = [
             url for item in history_items if item.get("status") == "error" and (url := item.get("url")) is not None
         ]
         if not computed:
             log.info("No failed downloads found in history to resume.")
         return computed
-    return download_ids
+    return downloadIds
 
 
-def _reorder_download_ids(download_ids: list[str], order: str) -> list[str]:
+def _reorder_download_ids(downloadIds: list[str], order: str) -> list[str]:
     """Reorder download IDs based on the specified order."""
-    return list(download_ids)[::-1] if order == "newest" else download_ids
+    return list(downloadIds)[::-1] if order == "newest" else downloadIds
 
 
 def _report_failed_summary(resumed: int, failed: int, non_resumable: list[str], log: logging.Logger) -> None:

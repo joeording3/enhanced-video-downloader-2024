@@ -20,7 +20,7 @@ from pydantic import ValidationError
 from werkzeug.exceptions import BadRequest, RequestEntityTooLarge
 
 from server.config import Config
-from server.downloads import progress_data, progress_lock
+from server.downloads import unified_download_manager
 from server.downloads.gallery_dl import handle_gallery_dl_download
 from server.downloads.resume import handle_resume_download
 from server.downloads.ytdlp import (
@@ -29,7 +29,6 @@ from server.downloads.ytdlp import (
     handle_ytdlp_download,
 )
 from server.history import append_history_entry
-from server.queue import queue_manager
 from server.schemas import DownloadRequest, GalleryDLRequest, PriorityRequest, ResumeRequest
 from server.utils import cleanup_expired_cache
 
@@ -146,38 +145,37 @@ def _cleanup_temp_files(temp_file: str) -> None:
         logger.debug(f"Failed to clean up temp file {temp_file}: {e}")
 
 
-def cleanup_failed_download(download_id: str) -> None:
+def cleanup_failed_download(downloadId: str) -> None:
     """
     Clean up resources for a failed download.
 
     Args:
-        download_id: The ID of the failed download to clean up
+        downloadId: The ID of the failed download to clean up
     """
     try:
         # Clean up process registry
-        if download_id in download_process_registry:
+        if downloadId in download_process_registry:
             try:
-                proc = download_process_registry[download_id]
+                proc = download_process_registry[downloadId]
                 if proc and proc.is_running():
                     proc.terminate()
                     proc.wait(timeout=5)
             finally:
-                del download_process_registry[download_id]
+                del download_process_registry[downloadId]
 
         # Clean up temp files
-        if download_id in download_tempfile_registry:
-            temp_file = download_tempfile_registry[download_id]
+        if downloadId in download_tempfile_registry:
+            temp_file = download_tempfile_registry[downloadId]
             _cleanup_temp_files(temp_file)
-            del download_tempfile_registry[download_id]
+            del download_tempfile_registry[downloadId]
 
-        # Remove from progress data
-        if download_id in progress_data:
-            del progress_data[download_id]
+        # Remove from unified download manager
+        unified_download_manager.remove_download(downloadId)
 
-        logger.info(f"Cleaned up failed download: {download_id}")
+        logger.info(f"Cleaned up failed download: {downloadId}")
 
     except Exception as e:
-        logger.error(f"Error during cleanup for {download_id}: {e}", exc_info=True)
+        logger.error(f"Error during cleanup for {downloadId}: {e}", exc_info=True)
 
 
 # Helper functions for the /api/download endpoint
@@ -193,18 +191,16 @@ def _parse_download_raw() -> dict[str, Any]:
     return {}
 
 
-def _get_download_id(raw_data: dict[str, Any]) -> str:
-    """Extract a download ID from either 'downloadId' or 'download_id'; generate one if missing."""
-    download_id = raw_data.get("downloadId")
-    if download_id is None:
-        download_id = raw_data.get("download_id")
-    if not download_id:
+def _get_downloadId(raw_data: dict[str, Any]) -> str:
+    """Extract a download ID from 'downloadId'; generate one if missing."""
+    downloadId = raw_data.get("downloadId")
+    if not downloadId:
         # Millisecond timestamp fallback for stability
         return str(int(time.time() * 1000))
-    return str(download_id)
+    return str(downloadId)
 
 
-def _missing_url_response(download_id: str) -> tuple[Response, int]:
+def _missing_url_response(downloadId: str) -> tuple[Response, int]:
     """Return a Flask JSON error response for a missing URL in the request."""
     return (
         jsonify(
@@ -212,7 +208,7 @@ def _missing_url_response(download_id: str) -> tuple[Response, int]:
                 "status": "error",
                 "message": "URL is required",
                 "error_type": "MISSING_URL",
-                "downloadId": download_id,
+                "downloadId": downloadId,
             }
         ),
         400,
@@ -227,20 +223,20 @@ def _maybe_handle_gallery(raw_data: dict[str, Any]) -> Any | None:
     return None
 
 
-def _validation_error_response(e: ValidationError, download_id: str) -> tuple[Response, int]:
+def _validation_error_response(e: ValidationError, downloadId: str) -> tuple[Response, int]:
     """Return JSON response for Pydantic validation errors."""
     field_errors: list[str] = []
     for error in e.errors():
         loc = ".".join(str(loc) for loc in error["loc"])
         field_errors.append(f"{loc}: {error['msg']}")
-    logger.warning(f"Validation failed for download request [{download_id}]: {'; '.join(field_errors)}")
+    logger.warning(f"Validation failed for download request [{downloadId}]: {'; '.join(field_errors)}")
     return (
         jsonify(
             {
                 "status": "error",
                 "message": f"Invalid request data: {'; '.join(field_errors)}",
                 "error_type": "VALIDATION_ERROR",
-                "downloadId": download_id,
+                "downloadId": downloadId,
                 "validation_errors": field_errors,
             }
         ),
@@ -248,46 +244,46 @@ def _validation_error_response(e: ValidationError, download_id: str) -> tuple[Re
     )
 
 
-def _playlist_permission_response(validated_data: dict[str, Any], download_id: str) -> tuple[Response, int] | None:
+def _playlist_permission_response(validated_data: dict[str, Any], downloadId: str) -> tuple[Response, int] | None:
     """Check if playlist downloads are allowed in config."""
     if validated_data.get("download_playlist", False):
         config = Config.load()
         if not config.get_value("allow_playlists", False):
-            logger.warning(f"Playlist download denied for [{download_id}]: Playlists not allowed")
+            logger.warning(f"Playlist download denied for [{downloadId}]: Playlists not allowed")
             return (
                 jsonify(
                     {
                         "status": "error",
                         "message": "Playlist downloads are not allowed by server configuration",
                         "error_type": "PLAYLIST_DOWNLOADS_DISABLED",
-                        "downloadId": download_id,
+                        "downloadId": downloadId,
                     }
                 ),
                 403,
             )
-        logger.info(f"Playlist download allowed for [{download_id}]: Playlists enabled")
+        logger.info(f"Playlist download allowed for [{downloadId}]: Playlists enabled")
     return None
 
 
-def _log_validated_request(download_id: str, validated_data: dict[str, Any]) -> None:
+def _log_validated_request(downloadId: str, validated_data: dict[str, Any]) -> None:
     """Log a safe copy of the validated request for debugging."""
     safe_data = validated_data.copy()
     if "url" in safe_data:
         url_val = safe_data["url"]
         safe_data["url"] = f"{url_val[:50]}..." if len(url_val) > 50 else url_val
-    logger.debug(f"Processing validated download request [{download_id}]: {safe_data}")
+    logger.debug(f"Processing validated download request [{downloadId}]: {safe_data}")
 
 
-def _get_cancel_proc(download_id: str) -> tuple[psutil.Process | None, tuple[Response, int] | None]:
+def _get_cancel_proc(downloadId: str) -> tuple[psutil.Process | None, tuple[Response, int] | None]:
     """Retrieve process for cancellation or return error response."""
-    proc = download_process_registry.get(download_id)
+    proc = download_process_registry.get(downloadId)
     if not proc:
         return None, (
             jsonify(
                 {
                     "status": "error",
                     "message": "No active download with given ID.",
-                    "downloadId": download_id,
+                    "downloadId": downloadId,
                 }
             ),
             404,
@@ -295,7 +291,7 @@ def _get_cancel_proc(download_id: str) -> tuple[psutil.Process | None, tuple[Res
     return proc, None
 
 
-def _terminate_proc(proc: psutil.Process, download_id: str) -> tuple[None, tuple[Response, int] | None]:
+def _terminate_proc(proc: psutil.Process, downloadId: str) -> tuple[None, tuple[Response, int] | None]:
     """Attempt graceful then forceful termination, or return error response."""
     try:
         proc.terminate()
@@ -309,7 +305,7 @@ def _terminate_proc(proc: psutil.Process, download_id: str) -> tuple[None, tuple
                 {
                     "status": "error",
                     "message": "Failed to terminate download process",
-                    "downloadId": download_id,
+                    "downloadId": downloadId,
                 }
             ),
             500,
@@ -318,21 +314,21 @@ def _terminate_proc(proc: psutil.Process, download_id: str) -> tuple[None, tuple
         return None, None
 
 
-def _cleanup_cancel_partfiles(download_id: str) -> None:
+def _cleanup_cancel_partfiles(downloadId: str) -> None:
     """Remove any .part files for a canceled download."""
     try:
         cfg = Config.load()
         download_dir = cfg.get_value("download_dir", "")
-        prefix = download_tempfile_registry.get(download_id)
+        prefix = download_tempfile_registry.get(downloadId)
         if download_dir and prefix:
             path = Path(download_dir)
             for pf in path.glob(f"{prefix}*.part"):
                 pf.unlink()
     except Exception as e:
-        logger.debug(f"Failed to clean cancel partfiles for {download_id}: {e}")
+        logger.debug(f"Failed to clean cancel partfiles for {downloadId}: {e}")
 
 
-def _download_error_response(message: str, error_type: str, download_id: str, status_code: int) -> tuple[Response, int]:
+def _download_error_response(message: str, error_type: str, downloadId: str, status_code: int) -> tuple[Response, int]:
     """Create standardized error response for download endpoint."""
     return (
         jsonify(
@@ -340,7 +336,7 @@ def _download_error_response(message: str, error_type: str, download_id: str, st
                 "status": "error",
                 "message": message,
                 "error_type": error_type,
-                "downloadId": download_id,
+                "downloadId": downloadId,
             }
         ),
         status_code,
@@ -348,21 +344,21 @@ def _download_error_response(message: str, error_type: str, download_id: str, st
 
 
 def _priority_response(
-    status: str, message: str, download_id: str, status_code: int, **kwargs: Any
+    status: str, message: str, downloadId: str, status_code: int, **kwargs: Any
 ) -> tuple[Response, int]:
     """Create standardized response for priority endpoint."""
-    response_data: dict[str, Any] = {"status": status, "message": message, "downloadId": download_id, **kwargs}
+    response_data: dict[str, Any] = {"status": status, "message": message, "downloadId": downloadId, **kwargs}
     return jsonify(response_data), status_code
 
 
 def _process_download_request(raw_data: dict[str, Any]) -> tuple[Any, str | None]:
     """Process download request and return response or None if validation fails."""
-    download_id = _get_download_id(raw_data)
+    downloadId = _get_downloadId(raw_data)
 
     # Missing URL check
     if not raw_data.get("url"):
-        logger.warning(f"Missing URL in download request [{download_id}]")
-        return _missing_url_response(download_id), None
+        logger.warning(f"Missing URL in download request [{downloadId}]")
+        return _missing_url_response(downloadId), None
 
     # GalleryDL flow
     resp = _maybe_handle_gallery(raw_data)
@@ -373,30 +369,30 @@ def _process_download_request(raw_data: dict[str, Any]) -> tuple[Any, str | None
     try:
         download_request = DownloadRequest(**raw_data)
     except ValidationError as e:
-        return _validation_error_response(e, download_id), None
+        return _validation_error_response(e, downloadId), None
 
     validated_data = download_request.model_dump()
 
-    # Ensure a non-null download_id flows to the downstream handler
-    if not validated_data.get("download_id"):
-        validated_data["download_id"] = download_id
+    # Ensure a non-null downloadId flows to the downstream handler
+    if not validated_data.get("downloadId"):
+        validated_data["downloadId"] = downloadId
 
     # Playlist permission check
-    resp = _playlist_permission_response(validated_data, download_id)
+    resp = _playlist_permission_response(validated_data, downloadId)
     if resp is not None:
         return resp, None
 
     # Log the validated request safely
-    _log_validated_request(download_id, validated_data)
+    _log_validated_request(downloadId, validated_data)
 
     # Reflect a minimal status entry immediately so /api/status is non-empty for observers/tests
     try:
-        with progress_lock:
-            progress_data[download_id] = {
-                "status": "queued",
-                "url": validated_data.get("url", ""),
-                "last_update": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
-            }
+        unified_download_manager.add_download(
+            downloadId=downloadId,
+            url=validated_data.get("url", ""),
+            status="queued",
+            last_update=time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+        )
     except Exception:
         # Best effort; do not block request processing
         logger.debug("Failed to pre-populate queued status entry", exc_info=True)
@@ -459,33 +455,50 @@ def download() -> Any:
             except Exception:
                 logger.debug("Failed to log safe download request fields", exc_info=True)
 
-            # Normalize id field: prefer camelCase 'downloadId'
-            try:
-                if isinstance(raw_data, dict) and "download_id" in raw_data and "downloadId" not in raw_data:
-                    raw_data["downloadId"] = str(raw_data.get("download_id"))
-                    with suppress(Exception):
-                        del raw_data["download_id"]
-            except Exception:
-                ...
-
             # If server is at capacity, enqueue and return queued status immediately
             try:
                 cfg = Config.load()
                 max_concurrent = int(cfg.get_value("max_concurrent_downloads", 3))
+                unified_download_manager.set_max_concurrent(max_concurrent)
             except Exception:
                 max_concurrent = 3
+                unified_download_manager.set_max_concurrent(max_concurrent)
+
             if len(download_process_registry) >= max_concurrent:
                 # Ensure a downloadId exists for queue tracking
-                if not raw_data.get("downloadId") and not raw_data.get("download_id"):
+                if not raw_data.get("downloadId"):
                     raw_data["downloadId"] = str(int(time.time() * 1000))
-                # Ensure enqueued item carries only 'downloadId'
-                queue_manager.enqueue({**dict(raw_data), "downloadId": str(raw_data.get("downloadId"))})
-                queue_manager.start()
+
+                # Validate URL before adding to queue
+                url = raw_data.get("url", "").strip()
+                if not url:
+                    return (
+                        jsonify(
+                            {
+                                "status": "error",
+                                "message": "No URL provided for queued download",
+                                "error_type": "MISSING_URL",
+                                "downloadId": raw_data.get("downloadId", "unknown"),
+                            }
+                        ),
+                        400,
+                    )
+
+                # Add to unified download manager
+                unified_download_manager.add_download(
+                    downloadId=raw_data.get("downloadId"),
+                    url=url,
+                    page_title=raw_data.get("page_title", ""),
+                    quality=raw_data.get("quality", "best"),
+                    format=raw_data.get("format", "mp4"),
+                    download_playlist=raw_data.get("download_playlist", False)
+                )
+
                 unified_response = jsonify(
                     {
                         "status": "queued",
                         "message": "Server at capacity. Request added to queue.",
-                        "downloadId": str(raw_data.get("downloadId") or raw_data.get("download_id") or "unknown"),
+                        "downloadId": raw_data.get("downloadId"),
                     }
                 )
             else:
@@ -550,13 +563,13 @@ def gallery_dl() -> Any:
         if not isinstance(json_obj, dict):
             return _download_error_response("Server error: Invalid JSON payload", "SERVER_ERROR", "unknown", 500)
         raw_data = cast(_RawGalleryData, json_obj)
-        download_id = raw_data.get("downloadId", "unknown")
+        downloadId = raw_data.get("downloadId", "unknown")
 
         # Validate with Pydantic
         gallery_request = GalleryDLRequest(**cast(dict[str, Any], raw_data))
         validated_data = gallery_request.model_dump()
 
-        logger.debug(f"Processing gallery-dl request [{download_id}]: {validated_data}")
+        logger.debug(f"Processing gallery-dl request [{downloadId}]: {validated_data}")
 
         # Pass to gallery-dl handler
         return handle_gallery_dl_download(cast(dict[str, Any], validated_data))
@@ -606,13 +619,13 @@ def resume() -> Any:
         if not isinstance(json_obj, dict):
             return _download_error_response("Server error: Invalid JSON payload", "SERVER_ERROR", "unknown", 500)
         raw_data = cast(_RawDownloadData, json_obj)
-        download_id = raw_data.get("downloadId", "unknown")
+        downloadId = raw_data.get("downloadId", "unknown")
 
         # Validate with Pydantic
         resume_request = ResumeRequest(**cast(dict[str, Any], raw_data))
         validated_data = resume_request.model_dump()
 
-        logger.debug(f"Processing resume request [{download_id}]: {validated_data}")
+        logger.debug(f"Processing resume request [{downloadId}]: {validated_data}")
 
         # Pass to resume handler
         return handle_resume_download(cast(dict[str, Any], validated_data))
@@ -645,14 +658,14 @@ def resume() -> Any:
         )
 
 
-@download_bp.route("/download/<download_id>/cancel", methods=["POST", "OPTIONS"])
-def cancel_download(download_id: str) -> Any:
+@download_bp.route("/download/<downloadId>/cancel", methods=["POST", "OPTIONS"])
+def cancel_download(downloadId: str) -> Any:
     """
     Cancel an active download and cleanup partial files.
 
     Parameters
     ----------
-    download_id : str
+    downloadId : str
         Identifier of the download to cancel.
 
     Returns
@@ -664,24 +677,21 @@ def cancel_download(download_id: str) -> Any:
         return "", 204
 
     # Lookup process and early error; if not found, try to remove from queue
-    proc, resp = _get_cancel_proc(download_id)
+    proc, resp = _get_cancel_proc(downloadId)
     if resp:
         # If there's no active process, attempt to cancel a queued item instead of 404
-        try:
-            removed = queue_manager.remove(str(download_id))
-        except Exception:
-            removed = False
+        removed = unified_download_manager.remove_download(str(downloadId))
         if removed:
             # Also clear any temp registry entries for consistency
-            download_tempfile_registry.pop(download_id, None)
+            download_tempfile_registry.pop(downloadId, None)
             with suppress(Exception):
-                logger.info(f"Queued download removed via cancel endpoint: {download_id}")
+                logger.info(f"Queued download removed via cancel endpoint: {downloadId}")
             return (
                 jsonify(
                     {
                         "status": "success",
                         "message": "Queued download removed.",
-                        "downloadId": download_id,
+                        "downloadId": downloadId,
                     }
                 ),
                 200,
@@ -691,70 +701,77 @@ def cancel_download(download_id: str) -> Any:
 
     # Terminate process and handle errors
     assert proc is not None  # If resp was None, proc should not be None
-    _, resp = _terminate_proc(proc, download_id)
+    _, resp = _terminate_proc(proc, downloadId)
     if resp:
         return resp
 
     # Cleanup partial files
-    _cleanup_cancel_partfiles(download_id)
+    _cleanup_cancel_partfiles(downloadId)
 
     # Remove from registries
-    download_process_registry.pop(download_id, None)
-    download_tempfile_registry.pop(download_id, None)
+    download_process_registry.unregister(downloadId)
+    download_tempfile_registry.pop(downloadId, None)
 
     # Reflect a canceled status immediately for clients polling /api/status
     # Capture any known URL before we overwrite the status for history purposes
     old_url: str | None = None
     try:
-        with progress_lock:
-            old = progress_data.get(download_id) or {}
-            try:
-                old_url = str(old.get("url")) if isinstance(old.get("url"), str) else None
-            except Exception:
+        old = unified_download_manager.get_download(downloadId) or {}
+        try:
+            old_url = str(old.get("url")) if isinstance(old.get("url"), str) else None
+            if not old_url or not old_url.strip():
+                logger.warning(f"Download {downloadId} has no valid URL in unified manager: {old.get('url')!r}")
                 old_url = None
-            progress_data[download_id] = {
-                **old,
-                "status": "canceled",
-                "last_update": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
-            }
+        except Exception:
+            old_url = None
+        unified_download_manager.update_download(
+            downloadId,
+            status="canceled",
+            last_update=time.strftime("%Y-%m-%dT%H:%M:%S%z")
+        )
     except Exception:
         # Best-effort; do not fail cancellation on status reflection errors
-        ...
+        pass
 
     # Append a minimal history entry marking the cancellation
     with suppress(Exception):
-        append_history_entry(
-            {
-                "download_id": download_id,
-                "url": old_url,
-                "status": "canceled",
-                "message": "Cancelled by user",
-                "timestamp": time.strftime("%Y-%m:%dT%H:%M:%S%z"),
-            }
-        )
+        # Only create history entry if we have a valid URL
+        if old_url and old_url.strip():
+            append_history_entry(
+                {
+                    "downloadId": downloadId,
+                    "url": old_url.strip(),
+                    "status": "canceled",
+                    "message": "Cancelled by user",
+                    "timestamp": time.strftime("%Y-%m:%dT%H:%M:%S%z"),
+                }
+            )
+            logger.info(f"Created cancel history entry for {downloadId} with URL: {old_url}")
+        else:
+            logger.warning(f"Skipping history entry for canceled download {downloadId} due to missing URL")
 
     with suppress(Exception):
-        logger.info(f"Active download canceled: {download_id}")
+        logger.info(f"Active download canceled: {downloadId}")
     return (
         jsonify(
             {
                 "status": "success",
                 "message": "Download canceled.",
-                "downloadId": download_id,
+                "downloadId": downloadId,
             }
         ),
         200,
     )
 
 
-@download_bp.route("/download/<download_id>/pause", methods=["POST", "OPTIONS"])
-def pause_download(download_id: str) -> Any:
+@download_bp.route("/download/<downloadId>/pause", methods=["POST", "OPTIONS"])
+def pause_download(downloadId: str) -> Any:
     """
     Pause an active download by suspending its process.
 
     Parameters
     ----------
-    download_id : str
+    downloadId : str
         Identifier of the download to pause.
 
     Returns
@@ -765,14 +782,14 @@ def pause_download(download_id: str) -> Any:
     if request.method == "OPTIONS":
         return "", 204
 
-    proc = download_process_registry.get(download_id)
+    proc = download_process_registry.get(downloadId)
     if not proc:
         return (
             jsonify(
                 {
                     "status": "error",
                     "message": "No active download with given ID.",
-                    "downloadId": download_id,
+                    "downloadId": downloadId,
                 }
             ),
             404,
@@ -785,7 +802,7 @@ def pause_download(download_id: str) -> Any:
                 {
                     "status": "error",
                     "message": f"Failed to pause download: {e}",
-                    "downloadId": download_id,
+                    "downloadId": downloadId,
                 }
             ),
             500,
@@ -795,21 +812,21 @@ def pause_download(download_id: str) -> Any:
             {
                 "status": "success",
                 "message": "Download paused.",
-                "downloadId": download_id,
+                "downloadId": downloadId,
             }
         ),
         200,
     )
 
 
-@download_bp.route("/download/<download_id>/resume", methods=["POST", "OPTIONS"])
-def resume_download(download_id: str) -> Any:
+@download_bp.route("/download/<downloadId>/resume", methods=["POST", "OPTIONS"])
+def resume_download(downloadId: str) -> Any:
     """
     Resume a paused download by continuing its process.
 
     Parameters
     ----------
-    download_id : str
+    downloadId : str
         Identifier of the download to resume.
 
     Returns
@@ -820,14 +837,14 @@ def resume_download(download_id: str) -> Any:
     if request.method == "OPTIONS":
         return "", 204
 
-    proc = download_process_registry.get(download_id)
+    proc = download_process_registry.get(downloadId)
     if not proc:
         return (
             jsonify(
                 {
                     "status": "error",
                     "message": "No paused download with given ID.",
-                    "downloadId": download_id,
+                    "downloadId": downloadId,
                 }
             ),
             404,
@@ -840,7 +857,7 @@ def resume_download(download_id: str) -> Any:
                 {
                     "status": "error",
                     "message": f"Failed to resume download: {e}",
-                    "downloadId": download_id,
+                    "downloadId": downloadId,
                 }
             ),
             500,
@@ -850,36 +867,36 @@ def resume_download(download_id: str) -> Any:
             {
                 "status": "success",
                 "message": "Download resumed.",
-                "downloadId": download_id,
+                "downloadId": downloadId,
             }
         ),
         200,
     )
 
 
-def _process_priority_request(download_id: str, data: dict[str, Any]) -> tuple[Response, int]:
+def _process_priority_request(downloadId: str, data: dict[str, Any]) -> tuple[Response, int]:
     """Process priority request and return response."""
     try:
         pr = PriorityRequest(**data)
     except ValidationError as e:
         errors = [err.get("msg") for err in e.errors()]
-        return _priority_response("error", f"Invalid priority value: {errors}", download_id, 400)
+        return _priority_response("error", f"Invalid priority value: {errors}", downloadId, 400)
 
     # Process mode: adjust OS process priority
-    proc = download_process_registry.get(download_id)
+    proc = download_process_registry.get(downloadId)
     if not proc:
-        return _priority_response("error", "Download not found", download_id, 404)
+        return _priority_response("error", "Download not found", downloadId, 404)
 
     try:
         proc.nice(pr.priority)
     except Exception as e:
-        return _priority_response("error", f"Failed to set priority: {e}", download_id, 500)
+        return _priority_response("error", f"Failed to set priority: {e}", downloadId, 500)
 
-    return _priority_response("success", "Priority set successfully", download_id, 200, priority=pr.priority)
+    return _priority_response("success", "Priority set successfully", downloadId, 200, priority=pr.priority)
 
 
-@download_bp.route("/download/<download_id>/priority", methods=["POST", "OPTIONS"])
-def set_priority(download_id: str) -> Any:
+@download_bp.route("/download/<downloadId>/priority", methods=["POST", "OPTIONS"])
+def set_priority(downloadId: str) -> Any:
     """Adjust the OS process priority (nice value) for a download process."""
     # Handle preflight
     if request.method == "OPTIONS":
@@ -889,11 +906,11 @@ def set_priority(download_id: str) -> Any:
     try:
         data = request.get_json(force=True)
         if data is None:
-            return _priority_response("error", "Invalid JSON", download_id, 400)
+            return _priority_response("error", "Invalid JSON", downloadId, 400)
     except BadRequest:
-        return _priority_response("error", "Invalid JSON", download_id, 400)
+        return _priority_response("error", "Invalid JSON", downloadId, 400)
 
-    return _process_priority_request(download_id, data)
+    return _process_priority_request(downloadId, data)
 
 
 def perform_background_cleanup() -> None:
@@ -918,11 +935,11 @@ def perform_background_cleanup() -> None:
         temp_files_to_clean: list[str] = []
 
         # Collect temp files to clean up
-        for download_id, temp_files in list(download_tempfile_registry.items()):
-            if download_id not in download_process_registry:
+        for downloadId, temp_files in list(download_tempfile_registry.items()):
+            if downloadId not in download_process_registry:
                 # Process is gone but temp files remain
                 temp_files_to_clean.extend(list(temp_files))
-                del download_tempfile_registry[download_id]
+                del download_tempfile_registry[downloadId]
 
         # Clean up temp files (moved try-except outside loop for performance)
         for temp_file in temp_files_to_clean:
@@ -935,9 +952,10 @@ def perform_background_cleanup() -> None:
 
         # Clean up stale progress data
         progress_cleaned = 0
-        for download_id in list(progress_data.keys()):
-            if download_id not in download_process_registry:
-                del progress_data[download_id]
+        all_downloads = unified_download_manager.get_all_downloads()
+        for downloadId in list(all_downloads.keys()):
+            if downloadId not in download_process_registry:
+                unified_download_manager.remove_download(downloadId)
                 progress_cleaned += 1
 
         if cache_cleaned > 0 or temp_files_cleaned > 0 or progress_cleaned > 0:

@@ -100,17 +100,22 @@ describe("background message handlers - download operations", () => {
     expect(global.fetch as jest.Mock).toHaveBeenCalled();
   });
 
-  it("cancelDownload removes from local queue and returns response", async () => {
-    // Ensure the id is in the local queue so optimistic update path runs
-    const bg = await import("../background");
-    bg.downloadQueue.push("will-cancel");
+  it("cancelDownload calls server and returns response", async () => {
+    // Mock successful server response
+    (global as any).fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ status: "success" }),
+    });
 
     const cb = jest.fn();
     await handler({ type: "cancelDownload", downloadId: "will-cancel" }, {}, cb);
     await flush();
     await flush();
     expect(cb.mock.calls.length).toBeGreaterThan(0);
-    expect(bg.downloadQueue.includes("will-cancel")).toBe(false);
+    expect((global as any).fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/download/will-cancel/cancel"),
+      expect.objectContaining({ method: "POST" })
+    );
   });
 
   it("setPriority validates arguments and posts to server", async () => {
@@ -175,30 +180,42 @@ describe("background message handlers - download operations", () => {
     expect(cb2.mock.calls[0]?.[0]?.status).toBeDefined();
   });
 
-  it("removeFromQueue removes item locally and responds immediately", async () => {
-    const bg = await import("../background");
-    bg.downloadQueue.push("queued-1", "queued-2");
+  it("removeFromQueue calls server and returns response", async () => {
+    // Mock successful server response
+    (global as any).fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ status: "success" }),
+    });
+
     const cb = jest.fn();
     await handler({ type: "removeFromQueue", downloadId: "queued-1" }, {}, cb);
-    // Immediate response
-    expect(cb).toHaveBeenCalledWith({ status: "success" });
-    // After microtasks, queue should be updated
     await flush();
     await flush();
-    expect(bg.downloadQueue.includes("queued-1")).toBe(false);
+    expect(cb.mock.calls.length).toBeGreaterThan(0);
+    expect((global as any).fetch).toHaveBeenCalledWith(
+      expect.stringMatching(/\/api\/queue\/queued-1\/remove$/),
+      expect.objectContaining({ method: "POST" })
+    );
   });
 
-  it("getQueue returns current queue and active state", async () => {
-    const bg = await import("../background");
-    bg.downloadQueue.length = 0;
-    bg.downloadQueue.push("a", "b");
+  it("getQueue returns queue status from server", async () => {
+    // Mock server response with queue data
+    (global as any).fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        download1: { status: "queued", url: "http://example.com/video1" },
+        download2: { status: "downloading", progress: 50, url: "http://example.com/video2" },
+      }),
+    });
+
     const cb = jest.fn();
     await handler({ type: "getQueue" }, {}, cb);
     await flush();
     expect(cb).toHaveBeenCalled();
     const payload = cb.mock.calls[0][0];
-    expect(payload.queue).toEqual(["a", "b"]);
+    expect(Array.isArray(payload.queue)).toBe(true);
     expect(typeof payload.active).toBe("object");
+    expect(typeof payload.queuedDetails).toBe("object");
   });
 
   it("resumeDownloads posts to server and returns response", async () => {
@@ -378,16 +395,23 @@ describe("background message handlers - download operations", () => {
   // Integration tests for non-test-mode HTTP functionality are in tests/integration/background.logs.integration.test.ts
   // These tests require a running server instance to test the actual HTTP endpoints
 
-  it("reorderQueue updates local state, responds success, and attempts POST", async () => {
-    (global as any).fetch = jest.fn().mockResolvedValue({ ok: true, status: 200 });
+  it("reorderQueue calls server and returns response", async () => {
+    // Mock successful server response
+    (global as any).fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ status: "success" }),
+    });
+
     const cb = jest.fn();
     await handler({ type: "reorderQueue", queue: ["q1", "q2", "q3"] }, {}, cb);
-    expect(cb).toHaveBeenCalledWith({ status: "success" });
-    // background code fires-and-forgets a POST; we only assert it was attempted
     await flush();
+    expect(cb).toHaveBeenCalledWith({ success: true });
     expect((global as any).fetch).toHaveBeenCalledWith(
       expect.stringMatching(/\/api\/queue\/reorder$/),
-      expect.objectContaining({ method: "POST" })
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ order: ["q1", "q2", "q3"] }),
+      })
     );
   });
 });
@@ -849,24 +873,15 @@ describe("background message handlers - status polling and icon updates", () => 
     expect(cb).toHaveBeenCalled();
   });
 
-  it("status polling updates queue state from server response", async () => {
-    const mockQueueData = {
-      download1: { status: "queued", url: "http://example.com/video1" },
-      download2: { status: "downloading", progress: 50 },
-    };
-
-    (global as any).fetch = jest.fn().mockResolvedValue({
-      ok: true,
-      json: async () => mockQueueData,
-    });
-
-    // Trigger status check
+  it("status polling is handled by queue manager", async () => {
+    // Queue status updates are now handled by the consolidated queue manager
+    // This test verifies that the message handler still works correctly
     const cb = jest.fn();
     await handler({ type: "getServerStatus" }, {}, cb);
     await flush();
 
-    // The getServerStatus handler just returns the current status
-    // Queue updates happen in background intervals, not in message handlers
+    // The getServerStatus handler returns the current status
+    // Queue updates happen through the queue manager, not in message handlers
     expect(cb).toHaveBeenCalledWith({ status: expect.any(String) });
   });
 });

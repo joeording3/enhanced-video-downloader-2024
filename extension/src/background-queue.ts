@@ -40,11 +40,12 @@ export class ConsolidatedQueueManager {
   private lastUpdateTime: number = 0;
   private updateListeners: Set<(status: QueueStatus) => void> = new Set();
   private isUpdating: boolean = false;
-  private updateInterval: number | null = null;
+  private updateInterval: ReturnType<typeof setInterval> | null = null;
   private readonly CACHE_TTL_MS = 2000; // 2 seconds cache validity
 
   constructor() {
-    this.setupPeriodicUpdates();
+    // Don't start periodic updates immediately - let the background script control this
+    // this.setupPeriodicUpdates();
   }
 
   /**
@@ -82,13 +83,13 @@ export class ConsolidatedQueueManager {
   /**
    * Get current queue status (from cache if valid, otherwise fetch from server)
    */
-  async getQueueStatus(forceRefresh: boolean = false): Promise<QueueStatus> {
+    async getQueueStatus(forceRefresh: boolean = false): Promise<QueueStatus> {
     const now = Date.now();
     const cacheValid = this.statusCache &&
                       (now - this.lastUpdateTime) < this.CACHE_TTL_MS;
 
     if (!forceRefresh && cacheValid) {
-      return this.statusCache;
+      return this.statusCache!;
     }
 
     return this.refreshQueueStatus();
@@ -136,7 +137,8 @@ export class ConsolidatedQueueManager {
       if (result.status === "success" || result.status === "queued") {
         // Invalidate cache to force refresh
         this.invalidateCache();
-
+        // Force a fresh refresh to ensure we have the latest server state
+        await this.refreshQueueStatus();
         // Notify listeners of the update
         await this.notifyListeners();
 
@@ -146,7 +148,7 @@ export class ConsolidatedQueueManager {
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Network error";
-      logger.error("Failed to add to queue:", message);
+      logger.error("Failed to add to queue", { component: "queue-manager" });
       return { success: false, message };
     }
   }
@@ -185,6 +187,8 @@ export class ConsolidatedQueueManager {
 
       if (success) {
         this.invalidateCache();
+        // Force a fresh refresh to ensure we have the latest server state
+        await this.refreshQueueStatus();
         await this.notifyListeners();
         return { success: true };
       } else {
@@ -192,7 +196,7 @@ export class ConsolidatedQueueManager {
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Network error";
-      logger.error("Failed to remove from queue:", message);
+      logger.error("Failed to remove from queue", { component: "queue-manager" });
       return { success: false, message };
     }
   }
@@ -227,6 +231,8 @@ export class ConsolidatedQueueManager {
 
       if (result.status === "success") {
         this.invalidateCache();
+        // Force a fresh refresh to ensure we have the latest server state
+        await this.refreshQueueStatus();
         await this.notifyListeners();
         return { success: true };
       } else {
@@ -234,7 +240,7 @@ export class ConsolidatedQueueManager {
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Network error";
-      logger.error("Failed to reorder queue:", message);
+      logger.error("Failed to reorder queue", { component: "queue-manager" });
       return { success: false, message };
     }
   }
@@ -265,6 +271,8 @@ export class ConsolidatedQueueManager {
 
       if (result.status === "success") {
         this.invalidateCache();
+        // Force a fresh refresh to ensure we have the latest server state
+        await this.refreshQueueStatus();
         await this.notifyListeners();
         return { success: true };
       } else {
@@ -272,7 +280,7 @@ export class ConsolidatedQueueManager {
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Network error";
-      logger.error("Failed to pause download:", message);
+      logger.error("Failed to pause download", { component: "queue-manager" });
       return { success: false, message };
     }
   }
@@ -280,7 +288,7 @@ export class ConsolidatedQueueManager {
   /**
    * Resume a download
    */
-  async resumeDownload(downloadId: string): Promise<QueueOperationResult> {
+    async resumeDownload(downloadId: string): Promise<QueueOperationResult> {
     if (!this.serverPort) {
       return { success: false, message: "Server not available" };
     }
@@ -303,6 +311,8 @@ export class ConsolidatedQueueManager {
 
       if (result.status === "success") {
         this.invalidateCache();
+        // Force a fresh refresh to ensure we have the latest server state
+        await this.refreshQueueStatus();
         await this.notifyListeners();
         return { success: true };
       } else {
@@ -310,7 +320,7 @@ export class ConsolidatedQueueManager {
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Network error";
-      logger.error("Failed to resume download:", message);
+      logger.error("Failed to resume download", { component: "queue-manager" });
       return { success: false, message };
     }
   }
@@ -345,6 +355,8 @@ export class ConsolidatedQueueManager {
 
       if (result.status === "success") {
         this.invalidateCache();
+        // Force a fresh refresh to ensure we have the latest server state
+        await this.refreshQueueStatus();
         await this.notifyListeners();
         return { success: true };
       } else {
@@ -352,7 +364,7 @@ export class ConsolidatedQueueManager {
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Network error";
-      logger.error("Failed to set priority:", message);
+      logger.error("Failed to set priority", { component: "queue-manager" });
       return { success: false, message };
     }
   }
@@ -383,6 +395,8 @@ export class ConsolidatedQueueManager {
 
       if (result.status === "success") {
         this.invalidateCache();
+        // Force a fresh refresh to ensure we have the latest server state
+        await this.refreshQueueStatus();
         await this.notifyListeners();
         return { success: true };
       } else {
@@ -390,7 +404,7 @@ export class ConsolidatedQueueManager {
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Network error";
-      logger.error("Failed to force start download:", message);
+      logger.error("Failed to force start download", { component: "queue-manager" });
       return { success: false, message };
     }
   }
@@ -408,7 +422,7 @@ export class ConsolidatedQueueManager {
    */
   startPeriodicUpdates(intervalMs: number = 5000): void {
     this.stopPeriodicUpdates();
-    this.updateInterval = window.setInterval(() => {
+    this.updateInterval = setInterval(() => {
       this.refreshQueueStatus().catch(error => {
         logger.error("Periodic queue update failed:", error);
       });
@@ -488,7 +502,7 @@ export class ConsolidatedQueueManager {
 
       return status;
     } catch (error) {
-      logger.error("Failed to refresh queue status:", error);
+      logger.error("Failed to refresh queue status", { component: "queue-manager" });
       // Return cached data if available, otherwise empty status
       return this.statusCache || { active: {}, queued: [], totalCount: 0 };
     } finally {
@@ -538,7 +552,7 @@ export class ConsolidatedQueueManager {
       try {
         listener(this.statusCache!);
       } catch (error) {
-        logger.error("Error in queue update listener:", error);
+        logger.error("Error in queue update listener", { component: "queue-manager" });
       }
     });
 

@@ -1,7 +1,6 @@
-"""
-Provide blueprint for log management API endpoints.
+"""Log management API endpoints.
 
-This module defines endpoints to archive, clear, and manage server log files.
+Exposes endpoints to manage server log files, including clearing and archiving.
 """
 
 import datetime
@@ -9,12 +8,8 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import TypedDict
 
 from flask import Blueprint, Response
-
-from server.config import Config
-from server.logging_setup import resolve_log_path
 
 logs_manage_bp = Blueprint("logs_manage_bp", __name__)
 logger = logging.getLogger(__name__)
@@ -25,8 +20,8 @@ def clear_logs() -> Response:
     """
     Archive and clear the current server log file.
 
-    Archive the existing log file by moving it to an archive directory with a
-    timestamped filename, then create a fresh log file with an initialization entry.
+    Archive the existing log file by renaming it with a .bak extension,
+    then create a fresh log file with an initialization entry.
 
     Parameters
     ----------
@@ -42,75 +37,69 @@ def clear_logs() -> Response:
     Exception
         If an error occurs during archiving or file operations.
     """
-    # Config is imported at module level
+    logger.info("Clear logs endpoint called")
 
-    logger.info("Archive logs endpoint called")
-
-    # Find the log file to archive
     try:
-        # Configuration is now environment-only
-        cfg = Config.load()
-        # Resolve path centrally: env > config > improbable default
-        env_log = os.getenv("LOG_PATH")
-        cfg_log = cfg.get_value("log_path")
+        # Find the current log file - check both project root and logs directory
         project_root = Path(__file__).parent.parent.parent
-        log_path = resolve_log_path(project_root, env_log, cfg_log, purpose="manage")
+        possible_log_paths = [
+            project_root / "server_output.log",  # Main log file
+            project_root / "logs" / "server_output.log",  # Alternative location
+        ]
 
-        if log_path.exists() and os.access(log_path, os.W_OK):
-            # Generate timestamp for the archive filename
-            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            log_dirname = log_path.parent
+        # Also check environment variable if set
+        env_log = os.getenv("LOG_PATH")
+        if env_log:
+            possible_log_paths.insert(0, Path(env_log))
 
-            # Create logs directory if it doesn't exist
-            logs_dir = log_dirname / "logs"
-            logs_dir.mkdir(parents=True, exist_ok=True)
+        log_path = None
+        for path in possible_log_paths:
+            if path.exists() and os.access(path, os.W_OK):
+                log_path = path
+                break
 
-            # Construct the archive filename
-            name_parts = (log_path.stem, log_path.suffix)
-            archive_basename = f"{name_parts[0]}.{timestamp}{name_parts[1]}"
-            archive_path = logs_dir / archive_basename
+        if not log_path:
+            # If no existing log file found, create one in the project root
+            log_path = project_root / "server_output.log"
+            log_path.parent.mkdir(parents=True, exist_ok=True)
 
-            # Move the current log file to the archive location
-            log_path.rename(archive_path)
+        # Generate backup filename - always use .bak (overwrite existing)
+        backup_path = log_path.with_suffix(".bak")
 
-            # Create a fresh log file with a structured initialization entry
-            with log_path.open("w", encoding="utf-8") as f:
-                now = datetime.datetime.now(datetime.timezone.utc)
+        # If the log file exists, rename it to backup (overwriting any existing .bak)
+        if log_path.exists():
+            # Remove existing backup file if it exists
+            if backup_path.exists():
+                try:
+                    backup_path.unlink()
+                except FileNotFoundError:
+                    # Backup file was already removed or doesn't exist
+                    pass
+            log_path.rename(backup_path)
+            logger.info(f"Log file archived to {backup_path}")
 
-                class _InitEvent(TypedDict):
-                    event: str
-                    archived_to: str
-                    ts: str
-                    start_ts: int
-                    duration_ms: int
-                    message: str
-                    logger: str
-                    level: str
+        # Create a fresh log file with a structured initialization entry
+        with log_path.open("w", encoding="utf-8") as f:
+            now = datetime.datetime.now(datetime.timezone.utc)
 
-                init_event: _InitEvent = {
-                    "event": "log_file_archived",
-                    "archived_to": archive_basename,
-                    "ts": now.isoformat(),
-                    "start_ts": int(now.timestamp() * 1000),
-                    "duration_ms": 0,
-                    "message": f"Log file archived to {archive_basename}",
-                    "logger": "server.logs",
-                    "level": "INFO",
-                }
-                f.write(json.dumps(init_event, ensure_ascii=False) + "\n")
-            return Response(
-                f"Log file archived to {archive_basename} and cleared",
-                mimetype="text/plain",
-            )
-        logger.error(f"Log file not found or not writable: {log_path}")
-        # Return 404 when not found, 500 when path exists but not writable
-        status = 404 if not log_path.exists() else 500
+            init_event = {
+                "event": "log_file_cleared",
+                "archived_to": backup_path.name if log_path.exists() else "none",
+                "ts": now.isoformat(),
+                "start_ts": int(now.timestamp() * 1000),
+                "duration_ms": 0,
+                "message": f"Log file cleared and restarted at {now.isoformat()}",
+                "logger": "server.logs",
+                "level": "INFO",
+            }
+            f.write(json.dumps(init_event, ensure_ascii=False) + "\n")
+
         return Response(
-            f"Error: Log file not found or not writable: {log_path}",
-            status=status,
+            f"Log file cleared and archived to {backup_path.name}",
             mimetype="text/plain",
         )
+
     except Exception as e:
-        error_msg = f"Error archiving log file: {e}"
+        error_msg = f"Error clearing log file: {e}"
         logger.exception(error_msg)
         return Response(error_msg, status=500, mimetype="text/plain")

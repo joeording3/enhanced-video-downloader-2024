@@ -1167,6 +1167,8 @@ const initializeExtension = async (): Promise<void> => {
     const port = await getEffectiveServerPort();
     if (port) {
       queueManager.setServerPort(port);
+      // Start periodic updates for the queue manager
+      queueManager.startPeriodicUpdates();
     }
   } catch (error) {
     log("Failed to initialize queue manager:", error);
@@ -1189,6 +1191,8 @@ const initializeExtension = async (): Promise<void> => {
         log("Discovered server on port " + port);
         // Set up queue manager with the discovered port
         queueManager.setServerPort(port);
+        // Start periodic updates for the queue manager
+        queueManager.startPeriodicUpdates();
         // Warm config cache and broadcast status in non-test mode only
         try {
           await fetchServerConfig(port);
@@ -1203,6 +1207,8 @@ const initializeExtension = async (): Promise<void> => {
         log("Discovered server on port " + port);
         // Set up queue manager with the discovered port
         queueManager.setServerPort(port);
+        // Start periodic updates for the queue manager
+        queueManager.startPeriodicUpdates();
         // In tests, avoid additional fetches here to keep the mocked fetch order intact.
       }
     }
@@ -2212,6 +2218,7 @@ export {
   actionIconPaths,
   resetServerState,
   expectedAppName,
+  queueManager,
 };
 
 /**
@@ -2225,3 +2232,22 @@ export const persistQueue = async (): Promise<void> => {
 if (!isTestEnvironment) {
   // Queue manager will handle its own initialization
 }
+
+// Dynamic imports for non-critical functionality
+const loadBackgroundModules = async () => {
+  try {
+    // Load queue management only when needed
+    const { ConsolidatedQueueManager } = await import("./background-queue");
+    const { checkServerStatus, fetchServerConfig } = await import("./background-server");
+
+    // Initialize modules dynamically
+    if (typeof ConsolidatedQueueManager !== "undefined") {
+      // Initialize queue manager
+    }
+  } catch (error) {
+    console.warn("Failed to load background modules:", error);
+  }
+};
+
+// Load modules after initial setup
+setTimeout(loadBackgroundModules, 1000);

@@ -233,7 +233,7 @@ class TestURLValidation:
         request = DownloadRequest(
             url=url,
             user_agent="test",
-            download_id=None,
+            downloadId=None,
             referrer=None,
             format=None,
             download_playlist=False,
@@ -251,7 +251,7 @@ class TestURLValidation:
             DownloadRequest(
                 url=url,
                 user_agent="test",
-                download_id=None,
+                downloadId=None,
                 referrer=None,
                 format=None,
                 download_playlist=False,

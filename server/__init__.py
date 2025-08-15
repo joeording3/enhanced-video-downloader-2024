@@ -265,13 +265,6 @@ def create_app(config: Config) -> Flask:
 
     # Explicitly support integration path for history endpoint
     app.add_url_rule("/api/history", "history_api", history_route, methods=["GET", "POST"])
-    # Start the queue worker so any persisted queued items are loaded and scheduled
-    try:
-        from .queue import queue_manager
-
-        queue_manager.start()
-    except Exception:
-        # Never block app creation due to queue worker startup issues
-        pass
+    # The unified download manager is already initialized and ready
 
     return app

@@ -46,10 +46,10 @@ def actual_resume_logic_for_file(part_file_path: str, _download_dir: str, _app_c
         logger.warning(f"Could not determine resume URL for {part_file_path}.")
         return False
     # Prepare data for downloader
-    download_id = part_path.stem
+    downloadId = part_path.stem
     data: dict[str, Any] = {
         "url": url,
-        "downloadId": download_id,
+        "downloadId": downloadId,
         "page_title": part_path.stem,
         "download_playlist": False,
     }

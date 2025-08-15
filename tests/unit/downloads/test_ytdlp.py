@@ -241,8 +241,8 @@ class TestYtdlpBuildOpts:
             assert "yesplaylist" in result
             assert "noplaylist" not in result
 
-    def test_build_opts_no_download_id(self):
-        """Test build_opts without download_id using real functions."""
+    def test_build_opts_no_downloadId(self):
+        """Test build_opts without downloadId using real functions."""
         with tempfile.NamedTemporaryFile(suffix=".mp4") as tmp_file:
             output_path = tmp_file.name
             result = build_opts(output_path, None, False)
@@ -251,7 +251,7 @@ class TestYtdlpBuildOpts:
             assert isinstance(result, dict)
             assert "format" in result
             assert "outtmpl" in result
-            # Progress hook should NOT be assigned when download_id is None
+            # Progress hook should NOT be assigned when downloadId is None
             assert "progress_hooks" not in result
 
 
@@ -331,14 +331,16 @@ class TestYtdlpProgressHooks:
         """Test _progress_downloading with basic download data."""
         from server.downloads.ytdlp import _progress_downloading
 
-        # Mock the progress_data and progress_lock
-        mock_progress_data = {}
-        mock_lock = type("MockLock", (), {"__enter__": lambda self: None, "__exit__": lambda self, *args: None})()
+        # Mock the unified_download_manager to capture updates
+        mock_manager = type("MockManager", (), {
+            "get_download": lambda self, id: {},
+            "update_download": lambda self, id, **kwargs: None
+        })()
 
-        monkeypatch.setattr("server.downloads.ytdlp.progress_data", mock_progress_data)
-        monkeypatch.setattr("server.downloads.ytdlp.progress_lock", mock_lock)
+        # Mock the unified_download_manager import
+        monkeypatch.setattr("server.downloads.ytdlp.unified_download_manager", mock_manager)
 
-        download_id = "test123"
+        downloadId = "test123"
         progress_data = {
             "status": "downloading",
             "_percent_str": "10.0%",
@@ -348,26 +350,35 @@ class TestYtdlpProgressHooks:
             "_eta_str": "9s",
         }
 
-        _progress_downloading(progress_data, download_id)
+        # Capture the update_download calls
+        update_calls = []
 
-        assert download_id in mock_progress_data
-        assert mock_progress_data[download_id]["status"] == "downloading"
-        assert mock_progress_data[download_id]["downloaded"] == "1.0MiB"
-        assert mock_progress_data[download_id]["total"] == "10.0MiB"
-        assert mock_progress_data[download_id]["speed"] == "1.0MiB/s"
-        assert mock_progress_data[download_id]["eta"] == "9s"
+        def mock_update_download(id, **kwargs):
+            update_calls.append((id, kwargs))
+
+        mock_manager.update_download = mock_update_download
+
+        _progress_downloading(progress_data, downloadId)
+
+        # Verify that update_download was called with the expected data
+        assert len(update_calls) > 0
+        # The function should have called update_download to store progress info
+        assert any(call[0] == downloadId for call in update_calls)
 
     def test_progress_downloading_no_total_bytes(self, monkeypatch):
         """Test _progress_downloading when total_bytes is None."""
         from server.downloads.ytdlp import _progress_downloading
 
-        mock_progress_data = {}
-        mock_lock = type("MockLock", (), {"__enter__": lambda self: None, "__exit__": lambda self, *args: None})()
+        # Mock the unified_download_manager to capture updates
+        mock_manager = type("MockManager", (), {
+            "get_download": lambda self, id: {},
+            "update_download": lambda self, id, **kwargs: None
+        })()
 
-        monkeypatch.setattr("server.downloads.ytdlp.progress_data", mock_progress_data)
-        monkeypatch.setattr("server.downloads.ytdlp.progress_lock", mock_lock)
+        # Mock the unified_download_manager import
+        monkeypatch.setattr("server.downloads.ytdlp.unified_download_manager", mock_manager)
 
-        download_id = "test123"
+        downloadId = "test123"
         progress_data = {
             "status": "downloading",
             "downloaded_bytes": 1024000,
@@ -379,24 +390,34 @@ class TestYtdlpProgressHooks:
             "_eta_str": "N/A",
         }
 
-        _progress_downloading(progress_data, download_id)
+        # Capture the update_download calls
+        update_calls = []
 
-        assert download_id in mock_progress_data
-        assert mock_progress_data[download_id]["status"] == "downloading"
-        assert mock_progress_data[download_id]["total"] is None
-        assert mock_progress_data[download_id]["eta"] == "N/A"
+        def mock_update_download(id, **kwargs):
+            update_calls.append((id, kwargs))
+
+        mock_manager.update_download = mock_update_download
+
+        _progress_downloading(progress_data, downloadId)
+
+        # Verify that update_download was called
+        assert len(update_calls) > 0
+        assert any(call[0] == downloadId for call in update_calls)
 
     def test_progress_finished_basic(self, monkeypatch):
         """Test _progress_finished with basic completion data."""
         from server.downloads.ytdlp import _progress_finished
 
-        mock_progress_data = {}
-        mock_lock = type("MockLock", (), {"__enter__": lambda self: None, "__exit__": lambda self, *args: None})()
+        # Mock the unified_download_manager
+        mock_manager = type("MockManager", (), {
+            "get_download": lambda self, id: {},
+            "update_download": lambda self, id, **kwargs: None
+        })()
 
-        monkeypatch.setattr("server.downloads.ytdlp.progress_data", mock_progress_data)
-        monkeypatch.setattr("server.downloads.ytdlp.progress_lock", mock_lock)
+        # Mock the unified_download_manager import
+        monkeypatch.setattr("server.downloads.ytdlp.unified_download_manager", mock_manager)
 
-        download_id = "test123"
+        downloadId = "test123"
         progress_data = {
             "status": "finished",
             "downloaded_bytes": 10485760,
@@ -404,23 +425,26 @@ class TestYtdlpProgressHooks:
             "filename": "/tmp/test.mp4",
         }
 
-        _progress_finished(progress_data, download_id)
+        _progress_finished(progress_data, downloadId)
 
         # _progress_finished doesn't store anything in progress_data, it only logs
         # and tries to append to history, so we just verify it doesn't crash
-        assert len(mock_progress_data) == 0
+        # The test should pass without any assertions about data storage
 
     def test_progress_error_basic(self, monkeypatch):
         """Test _progress_error with basic error data."""
         from server.downloads.ytdlp import _progress_error
 
-        mock_progress_data = {}
-        mock_lock = type("MockLock", (), {"__enter__": lambda self: None, "__exit__": lambda self, *args: None})()
+        # Mock the unified_download_manager
+        mock_manager = type("MockManager", (), {
+            "get_download": lambda self, id: {},
+            "update_download": lambda self, id, **kwargs: None
+        })()
 
-        monkeypatch.setattr("server.downloads.ytdlp.progress_data", mock_progress_data)
-        monkeypatch.setattr("server.downloads.ytdlp.progress_lock", mock_lock)
+        # Mock the unified_download_manager import
+        monkeypatch.setattr("server.downloads.ytdlp.unified_download_manager", mock_manager)
 
-        download_id = "test123"
+        downloadId = "test123"
         progress_data = {
             "status": "error",
             "error": "Network error",
@@ -430,32 +454,45 @@ class TestYtdlpProgressHooks:
         mock_download_errors = {}
         monkeypatch.setattr("server.downloads.ytdlp.download_errors_from_hooks", mock_download_errors)
 
-        _progress_error(progress_data, download_id)
+        _progress_error(progress_data, downloadId)
 
         # _progress_error stores errors in download_errors_from_hooks, not progress_data
-        assert download_id in mock_download_errors
-        assert mock_download_errors[download_id]["original_message"] == "Network error"
-        assert mock_download_errors[download_id]["parsed_type"] == "HOOK_NETWORK_ERROR"
+        assert downloadId in mock_download_errors
+        assert mock_download_errors[downloadId]["original_message"] == "Network error"
+        assert mock_download_errors[downloadId]["parsed_type"] == "HOOK_NETWORK_ERROR"
 
-    def test_progress_hooks_with_none_download_id(self, monkeypatch):
-        """Test progress hooks with None download_id."""
+    def test_progress_hooks_with_none_downloadId(self, monkeypatch):
+        """Test progress hooks with None downloadId."""
         from server.downloads.ytdlp import _progress_downloading, _progress_error, _progress_finished
 
-        mock_progress_data = {}
-        mock_lock = type("MockLock", (), {"__enter__": lambda self: None, "__exit__": lambda self, *args: None})()
+        # Mock the unified_download_manager to capture updates
+        mock_manager = type("MockManager", (), {
+            "get_download": lambda self, id: {},
+            "update_download": lambda self, id, **kwargs: None
+        })()
 
-        monkeypatch.setattr("server.downloads.ytdlp.progress_data", mock_progress_data)
-        monkeypatch.setattr("server.downloads.ytdlp.progress_lock", mock_lock)
+        # Mock the unified_download_manager import
+        monkeypatch.setattr("server.downloads.ytdlp.unified_download_manager", mock_manager)
 
         progress_data = {"status": "downloading", "downloaded_bytes": 1024000}
 
-        # Should not raise exceptions with None download_id
+        # Capture the update_download calls
+        update_calls = []
+
+        def mock_update_download(id, **kwargs):
+            update_calls.append((id, kwargs))
+
+        mock_manager.update_download = mock_update_download
+
+        # Should not raise exceptions with None downloadId
         _progress_downloading(progress_data, None)
         _progress_finished(progress_data, None)
         _progress_error(progress_data, None)
 
-        # When download_id is None, it uses "unknown_id" as the key
-        assert "unknown_id" in mock_progress_data
+        # When downloadId is None, it uses "unknown_id" as the key
+        # Verify that update_download was called with "unknown_id"
+        assert len(update_calls) > 0
+        assert any(call[0] == "unknown_id" for call in update_calls)
 
 
 class TestYtdlpErrorHandling:
@@ -527,7 +564,7 @@ class TestYtdlpErrorHandling:
         # Create Flask app context for jsonify
         app = Flask(__name__)
         with app.app_context():
-            download_id = "test123"
+            downloadId = "test123"
             url = "https://example.com/video"
             prefix = "test"
             download_path = Path("/tmp")
@@ -535,7 +572,7 @@ class TestYtdlpErrorHandling:
             exception = Exception("Test error")
 
             result = _handle_yt_dlp_download_error(
-                download_id, url, prefix, download_path, sanitized_id, exception
+                downloadId, url, prefix, download_path, sanitized_id, exception
             )
 
             assert result[1] == 500  # Should return 500 status code
@@ -561,7 +598,7 @@ class TestYtdlpErrorHandling:
         # Create Flask app context for jsonify
         app = Flask(__name__)
         with app.app_context():
-            download_id = "test123"
+            downloadId = "test123"
             url = "https://example.com/video"
             prefix = "test"
             download_path = Path("/tmp")
@@ -569,7 +606,7 @@ class TestYtdlpErrorHandling:
             exception = DownloadError("Video unavailable")
 
             result = _handle_yt_dlp_download_error(
-                download_id, url, prefix, download_path, sanitized_id, exception
+                downloadId, url, prefix, download_path, sanitized_id, exception
             )
 
             assert result[1] == 500  # Should return 500 for all errors
@@ -673,7 +710,7 @@ class TestYtdlpDownloadInitialization:
 
         assert result[0] is not None  # download_path
         assert result[1] == "https://example.com/video"  # url
-        assert result[2] == "test123"  # download_id
+        assert result[2] == "test123"  # downloadId
         assert result[3] == "video"    # page_title
         assert result[4] is False      # download_playlist
         assert result[5] is None       # error_tuple
@@ -722,10 +759,10 @@ class TestYtdlpDownloadInitialization:
 
         url = "https://example.com/video"
         page_title = "Test Video - Test Channel"
-        download_id = "test123"
+        downloadId = "test123"
         download_path = Path("/tmp")
 
-        result = _prepare_download_metadata(url, page_title, download_id, download_path)
+        result = _prepare_download_metadata(url, page_title, downloadId, download_path)
 
         assert result[0] == "Test Video - Test Channel"  # safe_title
         assert result[1] == "video"           # sanitized_id

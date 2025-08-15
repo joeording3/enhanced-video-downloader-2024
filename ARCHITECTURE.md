@@ -298,15 +298,15 @@ The project maintains comprehensive documentation across multiple files:
   - `POST /api/download`
   - `GET /api/status` and `/api/status/{id}` (returns combined progress, full history snapshots,
     error details, and troubleshooting suggestions)
-  - `DELETE /api/status` and `DELETE /api/status/{download_id}` (thread-safe status clearing with
+  - `DELETE /api/status` and `DELETE /api/status/{downloadId}` (thread-safe status clearing with
     optional `status` and `age` filters)
   - `GET/POST /api/history`
   - `GET/POST /api/config`
   - `GET /api/logs`
-  - `POST /api/download/{download_id}/cancel`
-  - `POST /api/download/{download_id}/pause`
-  - `POST /api/download/{download_id}/resume`
-  - `POST /api/download/{download_id}/priority`
+  - `POST /api/download/{downloadId}/cancel`
+  - `POST /api/download/{downloadId}/pause`
+  - `POST /api/download/{downloadId}/resume`
+  - `POST /api/download/{downloadId}/priority`
   - `POST /api/gallery-dl` (gallery downloads)
   - `POST /api/resume` (bulk resume)
   - `GET /api/debug/paths` (debugging)

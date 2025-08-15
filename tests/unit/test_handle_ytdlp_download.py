@@ -54,7 +54,7 @@ def test_handle_missing_url(app: Flask, monkeypatch: MonkeyPatch) -> None:
         assert status == 400
         json_data = resp.get_json()
         assert json_data["error_type"] == "MISSING_URL"
-        assert json_data["message"] == "No URL provided"
+        assert json_data["message"] == "No URL provided or invalid URL format"
         assert json_data["downloadId"] == "test1"
 
 

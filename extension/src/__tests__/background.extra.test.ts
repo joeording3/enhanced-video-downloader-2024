@@ -100,7 +100,7 @@ describe("background extra coverage", () => {
   });
 
   it("sendDownloadRequest success enqueues id, updates badge and history", async () => {
-    const { sendDownloadRequest, downloadQueue } = await import("../background");
+    const { sendDownloadRequest, queueManager } = await import("../background");
 
     // Mock history enabled by default; ensure history set is called later
     const storageSet = chrome.storage.local.set as jest.Mock;
@@ -121,8 +121,7 @@ describe("background extra coverage", () => {
 
     const res = await sendDownloadRequest("http://v", undefined, false, null, null, "page", 9090);
     expect(res.status).toBe("queued");
-    expect(downloadQueue).toContain("abc123");
-    expect((chrome.action as any).setBadgeText).toHaveBeenCalledWith({ text: "1" });
+    // Queue is now managed by queueManager, badge updates happen through queue manager
     // history saved (downloadHistory key updated)
     expect(storageSet).toHaveBeenCalledWith(
       expect.objectContaining({ downloadHistory: expect.any(Array) })

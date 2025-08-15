@@ -115,143 +115,200 @@ h2 {
   line-height: var(--line-height-tight);
 }
 
-#download-status, /* For unified list container */
+/* Downloads List - Let existing styles work */
+#download-status,
 #download-history {
   list-style-type: none;
   padding: 0;
   margin: 0 0 var(--space-md) 0;
-  max-height: clamp(160px, 45vh, 440px); /* increase to reduce nested scrollbars */
-  overflow-y: auto; /* only this container scrolls */
+  max-height: clamp(160px, 45vh, 440px);
+  overflow-y: auto;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   background-color: var(--bg-elevated);
 }
 
-/* Unified list rows (queued/active/history together) */
-.unified-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.unified-list .unified-item {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: var(--space-sm);
-  padding: calc(var(--list-row-padding-y) - 4px) calc(var(--list-row-padding-x) - 6px);
-  border-bottom: 1px solid var(--border-color);
-  font-size: 0.85em;
-  line-height: 1.2;
-  color: var(--text-color);
-  background-color: var(--bg-elevated);
-  white-space: nowrap; /* keep elements on one row */
-}
-
-/* Ensure unified layout even if parent markup changes */
-#download-status .unified-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-}
-
-.unified-list .unified-item:last-child {
-  border-bottom: none;
-}
-
-.unified-list .status-icon {
-  width: 1.25em;
-  min-width: 1.25em;
-  display: inline-block;
-  text-align: center;
-  opacity: 0.9;
-}
-
-#download-status .status-icon { width: 1.25em; min-width: 1.25em; display: inline-block; text-align: center; }
-
-.unified-list .item-title {
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-#download-status .item-title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-/* Uniform progress bar sizing across entries */
-.unified-list progress {
-  width: 35px;
-  height: 4px;
-  margin: 0 var(--space-sm);
-  accent-color: var(--button-bg);
-  flex: 0 0 35px; /* lock width to avoid layout shift */
-}
-
-#download-status progress { width: 35px; height: 4px; margin: 0 var(--space-sm); accent-color: var(--button-bg); flex: 0 0 35px; }
-
-/* Reduce progress bar width at minimum sidebar width */
-@media (max-width: 250px) {
-  .unified-list progress { width: 20px; flex: 0 0 20px; }
-  #download-status progress { width: 20px; flex: 0 0 20px; }
-}
-
-.unified-list .item-percent {
-  font-size: 0.75em;
-  color: var(--text-secondary);
-  min-width: 2.5em;
-  text-align: right;
-}
-
-#download-status .item-percent { font-size: 0.75em; color: var(--text-secondary); min-width: 2.5em; text-align: right; }
-
-.unified-list .status-pill {
-  margin-left: var(--space-sm);
-}
-
-#download-status .status-pill { margin-left: var(--space-sm); }
-
-/* Make inline action buttons in the unified list more compact */
-.unified-list .cancel-button,
-.unified-list .retry-button,
-.unified-list .pause-button,
-.unified-list .resume-button {
-  margin-left: var(--space-sm);
-  min-width: 28px;
-  padding: 2px 6px;
-  font-size: 0.85em;
-}
-
-#download-status .cancel-button,
-#download-status .retry-button { margin-left: var(--space-sm); }
-
-/* Compact list rows */
+/* List item styling - restore what was removed */
 #download-status li,
 #download-history li {
-  padding: calc(var(--list-row-padding-y) - 4px) calc(var(--list-row-padding-x) - 6px);
+  padding: var(--list-row-padding-y) var(--list-row-padding-x);
   border-bottom: 1px solid var(--border-color);
-  font-size: 0.85em;
-  line-height: 1.2;
-  color: var(--text-color);
   background-color: var(--bg-elevated);
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  min-height: 48px;
 }
 
-/* Empty state styling for lists */
-#download-status li:only-child {
-  background-color: var(--list-empty-bg);
-  color: var(--list-empty-text);
-  border: none;
-  backdrop-filter: none;
+/* Dark theme: ensure base row background uses dark elevated surface */
+body.dark-theme #download-status li,
+body.dark-theme #download-history li {
+  background-color: var(--bg-elevated-dark);
 }
 
+/* Use existing alternating row pattern from the style framework */
 #download-status li:nth-child(even),
 #download-history li:nth-child(even) {
   background-color: var(--row-alt-bg);
 }
 
+body.dark-theme #download-status li:nth-child(even),
+body.dark-theme #download-history li:nth-child(even) {
+  background-color: var(--row-alt-bg-dark);
+}
+
 #download-status li:last-child,
 #download-history li:last-child {
   border-bottom: none;
+}
+
+/* Hover effect using existing hover pattern */
+#download-status li:hover,
+#download-history li:hover {
+  background-color: var(--bg-hover);
+  transition: background-color 0.2s ease;
+}
+
+body.dark-theme #download-status li:hover,
+body.dark-theme #download-history li:hover {
+  background-color: var(--bg-hover-dark);
+}
+
+/* Status icon - use existing sizing patterns */
+#download-status .status-icon,
+#download-history .status-icon {
+  width: 1.2em;
+  min-width: 1.2em;
+  display: inline-block;
+  text-align: center;
+  opacity: 0.9;
+  font-size: var(--font-size-sm);
+  flex-shrink: 0;
+}
+
+/* Download ID/Title - use existing input styling patterns */
+#download-status .item-title,
+#download-history .item-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  /* Use existing input background pattern */
+  background-color: var(--bg-input);
+  padding: var(--control-padding-y) var(--control-padding-x);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-secondary);
+  flex-shrink: 0;
+}
+
+/* Dark theme adjustments for item title */
+body.dark-theme #download-status .item-title,
+body.dark-theme #download-history .item-title {
+  background-color: var(--bg-input-dark);
+  color: var(--text-primary-dark);
+  border-color: var(--border-secondary-dark);
+}
+
+/* Progress bar - use existing sizing */
+#download-status progress,
+#download-history progress {
+  width: 40px;
+  height: 6px;
+  margin: 0 var(--space-sm);
+  accent-color: var(--primary);
+  flex: 0 0 40px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+/* Progress percentage - use existing text patterns */
+#download-status .item-percent,
+#download-history .item-percent {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  min-width: 3em;
+  text-align: right;
+  font-weight: var(--font-weight-bold);
+  flex-shrink: 0;
+}
+
+/* Status pills - use existing pill styling from the framework */
+#download-status .status-pill,
+#download-history .status-pill {
+  margin-left: var(--space-md);
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background-color: color-mix(in srgb, var(--container-bg), #8888 30%);
+  color: var(--text-color);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  min-width: 80px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* Status pill variants - use existing semantic color patterns */
+.status-pill.is-success {
+  background-color: color-mix(in srgb, var(--success), #0000 80%);
+  color: var(--success);
+}
+
+.status-pill.is-error {
+  background-color: color-mix(in srgb, var(--error), #0000 80%);
+  color: var(--error);
+}
+
+.status-pill.is-warning {
+  background-color: color-mix(in srgb, var(--warning), #0000 80%);
+  color: var(--warning);
+}
+
+/* Action buttons - use existing button system */
+#download-status .cancel-button,
+#download-status .retry-button,
+#download-status .pause-button,
+#download-status .resume-button,
+#download-history .cancel-button,
+#download-history .retry-button,
+#download-history .pause-button,
+#download-history .resume-button {
+  margin-left: var(--space-md);
+  /* Let existing .btn classes handle styling */
+  flex-shrink: 0;
+}
+
+/* Cancel button should be secondary (less prominent) */
+#download-status .cancel-button,
+#download-history .cancel-button {
+  background-color: var(--bg-button) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-secondary) !important;
+  /* Keep the btn--secondary styling */
+}
+
+#download-status .cancel-button:hover,
+#download-history .cancel-button:hover {
+  background-color: var(--bg-tertiary) !important;
+  border-color: var(--border-primary) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Empty state styling - use existing empty list patterns */
+#download-status .no-downloads-message,
+#download-history .no-downloads-message {
+  background-color: var(--list-empty-bg);
+  color: var(--list-empty-text);
+  border: none;
+  backdrop-filter: none;
+  justify-content: center;
+  font-style: italic;
+  padding: var(--space-xl);
+  text-align: center;
 }
 
 /* Status text styling for list items - Now using shared styles from styles.css */

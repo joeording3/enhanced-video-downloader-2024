@@ -60,31 +60,31 @@ class DummyProc:
 
 
 @pytest.mark.parametrize(
-    "operation, download_id, expected_results, expected_count",
+    "operation, downloadId, expected_results, expected_count",
     [
         ("pause", "con_pause", [200, 200], 2),
         ("resume", "con_resume", [200, 200], 2),
     ],
 )
 def test_concurrent_operations(
-    live_server: str, operation: str, download_id: str, expected_results: list[int], expected_count: int
+    live_server: str, operation: str, downloadId: str, expected_results: list[int], expected_count: int
 ) -> None:
     """Test concurrent pause and resume operations.
 
     :param live_server: Live server fixture
     :param operation: Operation to test (pause or resume)
-    :param download_id: Download ID for testing
+    :param downloadId: Download ID for testing
     :param expected_results: Expected HTTP status codes
     :param expected_count: Expected operation count
     """
     # Register dummy process
-    download_process_registry[download_id] = DummyProc(operation)  # type: ignore[assignment]
+    download_process_registry[downloadId] = DummyProc(operation)  # type: ignore[assignment]
 
     # Perform two concurrent requests
     results: list[int] = []
 
     def call_operation() -> None:
-        resp = requests.post(f"{live_server}/api/download/{download_id}/{operation}")
+        resp = requests.post(f"{live_server}/api/download/{downloadId}/{operation}")
         results.append(resp.status_code)
 
     threads = [threading.Thread(target=call_operation) for _ in range(2)]
@@ -95,7 +95,7 @@ def test_concurrent_operations(
 
     # Both should succeed
     assert results == expected_results
-    proc = download_process_registry[download_id]
+    proc = download_process_registry[downloadId]
     assert proc.count == expected_count  # type: ignore[attr-defined]
 
 
@@ -105,11 +105,11 @@ def test_concurrent_cancel(monkeypatch: MonkeyPatch, live_server: str) -> None:
     :param monkeypatch: Pytest monkeypatch fixture
     :param live_server: Live server fixture
     """
-    download_id = "con_cancel"
+    downloadId = "con_cancel"
 
     # Setup registries
-    download_process_registry[download_id] = object()  # type: ignore[assignment]
-    download_tempfile_registry[download_id] = f"prefix_{download_id}"
+    download_process_registry[downloadId] = object()  # type: ignore[assignment]
+    download_tempfile_registry[downloadId] = f"prefix_{downloadId}"
 
     # Stub termination and cleanup to avoid real process/file ops
     monkeypatch.setattr(download_bp, "_terminate_proc", lambda proc, id: (None, None))  # type: ignore[attr-defined]
@@ -118,7 +118,7 @@ def test_concurrent_cancel(monkeypatch: MonkeyPatch, live_server: str) -> None:
     results: list[int] = []
 
     def call_cancel() -> None:
-        resp = requests.post(f"{live_server}/api/download/{download_id}/cancel")
+        resp = requests.post(f"{live_server}/api/download/{downloadId}/cancel")
         results.append(resp.status_code)
 
     threads = [threading.Thread(target=call_cancel) for _ in range(2)]

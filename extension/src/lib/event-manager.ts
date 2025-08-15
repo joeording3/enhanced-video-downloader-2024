@@ -1,17 +1,10 @@
 /**
- * Event management utilities for the Enhanced Video Downloader extension.
- * Handles event binding, unbinding, and event delegation.
+ * Event Manager
+ * Manages event listeners with automatic cleanup
  */
 
-export interface EventHandler {
-  element: Element;
-  type: string;
-  handler: EventListener;
-}
-
 export class EventManager {
-  private listeners: Map<string, EventHandler> = new Map();
-  private counter = 0;
+  private listeners: Map<string, { element: Element; type: string; handler: EventListener }> = new Map();
 
   addListener(
     element: Element,
@@ -19,7 +12,7 @@ export class EventManager {
     handler: EventListener,
     options?: AddEventListenerOptions
   ): void {
-    const key = `${element.tagName}-${type}-${Date.now()}-${++this.counter}`;
+    const key = `${element.tagName}-${type}-${Date.now()}`;
     this.listeners.set(key, { element, type, handler });
     element.addEventListener(type, handler, options);
   }

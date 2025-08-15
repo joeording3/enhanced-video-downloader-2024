@@ -2727,7 +2727,7 @@ async function clearQueueServer(): Promise<void> {
       const arr: any[] = Array.isArray(data?.queue) ? data.queue : [];
       await Promise.all(
         arr.map(async it => {
-          const id = String(it?.downloadId || it?.download_id || "");
+          const id = String(it?.downloadId || "");
           if (!id) return;
           try {
             await fetch(`http://127.0.0.1:${port}/api/queue/${encodeURIComponent(id)}/remove`, {

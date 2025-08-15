@@ -36,12 +36,12 @@ def handle_gallery_dl_download(data: dict[str, Any]) -> Any:
         Flask JSON response tuple (response, status code) indicating success or error.
     """
     # Initialize and validate
-    download_path, url, download_id, options, init_err = _init_gallery_dl(data)
+    download_path, url, downloadId, options, init_err = _init_gallery_dl(data)
     if init_err:
         return init_err
     # Build command and execute
     cmd = _build_gallery_command(options, url)
-    return _execute_gallery_download(cmd, download_path, download_id, url)
+    return _execute_gallery_download(cmd, download_path, downloadId, url)
 
 
 # Helper to initialize gallery-dl download and prepare directory
@@ -49,20 +49,20 @@ def _init_gallery_dl(data: dict[str, Any]) -> tuple[str | None, str, str, dict[s
     """
     Validate URL and prepare download directory for gallery-dl or return error.
 
-    Returns (download_path, url, download_id, options, error_tuple).
+    Returns (download_path, url, downloadId, options, error_tuple).
     """
     url = data.get("url", "").strip()
-    download_id = data.get("downloadId", "N/A")
+    downloadId = data.get("downloadId", "N/A")
     options = data.get("options", {})
     if not url:
-        logger.warning(f"[{download_id}] No URL provided for gallery-dl download.")
+        logger.warning(f"[{downloadId}] No URL provided for gallery-dl download.")
         return (
             None,
             url,
-            download_id,
+            downloadId,
             options,
             (
-                jsonify({"status": "error", "message": "No URL provided", "downloadId": download_id}),
+                jsonify({"status": "error", "message": "No URL provided", "downloadId": downloadId}),
                 400,
             ),
         )
@@ -70,15 +70,15 @@ def _init_gallery_dl(data: dict[str, Any]) -> tuple[str | None, str, str, dict[s
         config = Config.load()
         download_path = config.get_value("download_dir")
         if not download_path:
-            logger.error(f"[{download_id}] Download directory not configured for gallery-dl.")
+            logger.error(f"[{downloadId}] Download directory not configured for gallery-dl.")
             return (
                 None,
                 url,
-                download_id,
+                downloadId,
                 options,
                 (
                     jsonify(
-                        {"status": "error", "message": "Download directory not configured.", "downloadId": download_id}
+                        {"status": "error", "message": "Download directory not configured.", "downloadId": downloadId}
                     ),
                     500,
                 ),
@@ -87,26 +87,26 @@ def _init_gallery_dl(data: dict[str, Any]) -> tuple[str | None, str, str, dict[s
     except Exception as e:
         dir_msg = download_path if download_path else "an unconfigured path"
         logger.error(
-            f"[{download_id}] Error accessing or creating download directory {dir_msg} for gallery-dl: {e}",
+            f"[{downloadId}] Error accessing or creating download directory {dir_msg} for gallery-dl: {e}",
             exc_info=True,
         )
         return (
             None,
             url,
-            download_id,
+            downloadId,
             options,
             (
                 jsonify(
                     {
                         "status": "error",
                         "message": f"Server error with download directory: {e!s}",
-                        "downloadId": download_id,
+                        "downloadId": downloadId,
                     }
                 ),
                 500,
             ),
         )
-    return download_path, url, download_id, options, None
+    return download_path, url, downloadId, options, None
 
 
 # Helper to build the gallery-dl command based on options and URL
@@ -128,19 +128,19 @@ def _build_gallery_command(options: dict[str, Any], url: str) -> list[str]:
 
 
 # Helper to execute gallery-dl and return Flask JSON response
-def _execute_gallery_download(cmd: list[str], download_path: str | None, download_id: str, url: str) -> tuple[Any, int]:
+def _execute_gallery_download(cmd: list[str], download_path: str | None, downloadId: str, url: str) -> tuple[Any, int]:
     """Run gallery-dl subprocess and handle its output and errors."""
     if download_path is None:
-        logger.error(f"[{download_id}] Download path is None")
+        logger.error(f"[{downloadId}] Download path is None")
         return (
-            jsonify({"status": "error", "message": "Download path not configured", "downloadId": download_id}),
+            jsonify({"status": "error", "message": "Download path not configured", "downloadId": downloadId}),
             500,
         )
     try:
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=download_path)
         stdout, stderr = proc.communicate()
         if proc.returncode == 0:
-            logger.info(f"[{download_id}] gallery-dl succeeded for URL: {url}")
+            logger.info(f"[{downloadId}] gallery-dl succeeded for URL: {url}")
             if stdout:
                 logger.debug(stdout.decode("utf-8", "ignore"))
             return (
@@ -148,33 +148,33 @@ def _execute_gallery_download(cmd: list[str], download_path: str | None, downloa
                     {
                         "status": "success",
                         "message": "Gallery download initiated successfully.",
-                        "downloadId": download_id,
+                        "downloadId": downloadId,
                     }
                 ),
                 200,
             )
         error_msg = stderr.decode("utf-8", "ignore").strip()
-        logger.error(f"[{download_id}] gallery-dl failed (code {proc.returncode}): {error_msg}")
+        logger.error(f"[{downloadId}] gallery-dl failed (code {proc.returncode}): {error_msg}")
         return (
-            jsonify({"status": "error", "message": f"Gallery download failed: {error_msg}", "downloadId": download_id}),
+            jsonify({"status": "error", "message": f"Gallery download failed: {error_msg}", "downloadId": downloadId}),
             500,
         )
     except FileNotFoundError:
-        logger.exception(f"[{download_id}] gallery-dl not found.")
+        logger.exception(f"[{downloadId}] gallery-dl not found.")
         return (
             jsonify(
-                {"status": "error", "message": "gallery-dl command not found on server.", "downloadId": download_id}
+                {"status": "error", "message": "gallery-dl command not found on server.", "downloadId": downloadId}
             ),
             500,
         )
     except Exception as e:
-        logger.error(f"[{download_id}] Unexpected error: {e}", exc_info=True)
+        logger.error(f"[{downloadId}] Unexpected error: {e}", exc_info=True)
         return (
             jsonify(
                 {
                     "status": "error",
                     "message": f"Unexpected server error during gallery download: {e!s}",
-                    "downloadId": download_id,
+                    "downloadId": downloadId,
                 }
             ),
             500,

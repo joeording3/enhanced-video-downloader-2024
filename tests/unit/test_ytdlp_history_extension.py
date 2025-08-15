@@ -41,7 +41,7 @@ def test_progress_finished_appends_history(tmp_path: Path, monkeypatch: MonkeyPa
     monkeypatch.setattr("server.downloads.ytdlp.append_history_entry", fake_append_history)
 
     # Invoke the function
-    _progress_finished({"filename": str(filename)}, download_id="download-id-123")
+    _progress_finished({"filename": str(filename)}, downloadId="download-id-123")
 
     # Verify that append_history_entry was called with correct data
     assert "entry" in called
